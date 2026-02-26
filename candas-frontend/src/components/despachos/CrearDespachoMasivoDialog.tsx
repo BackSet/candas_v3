@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -19,16 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Box, FileText, MapPin, Truck, Plus, Copy, Package, SplitSquareVertical } from 'lucide-react'
+import { Box, FileText, MapPin, Truck, Copy, Package, SplitSquareVertical, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { TamanoSaca } from '@/types/saca'
 import { formatearTamanoSaca } from '@/utils/ensacado'
 import type { Paquete } from '@/types/paquete'
-import { PERMISSIONS } from '@/types/permissions'
 
 export interface AgenciaOption {
   idAgencia: number
@@ -163,6 +161,9 @@ export default function CrearDespachoMasivoDialog({
   confirmDisabled,
 }: CrearDespachoMasivoDialogProps) {
   const [repartirNSacas, setRepartirNSacas] = useState('')
+  const [busquedaAgencia, setBusquedaAgencia] = useState('')
+  const [busquedaDestinatario, setBusquedaDestinatario] = useState('')
+  const dialogContentRef = useRef<HTMLDivElement>(null)
   const totalDist = computeDistributionTotal(sacaDistribution)
   const isValidDist = totalDist === packageCount
 
@@ -178,9 +179,32 @@ export default function CrearDespachoMasivoDialog({
     }
   }
 
+  const agenciasOpciones: ComboboxOption<AgenciaOption>[] = agencias.map((a) => ({
+    value: a.idAgencia,
+    label: a.nombre,
+    description: a.canton ?? undefined,
+    data: a,
+  }))
+
+  const destinatariosOpciones: ComboboxOption<DestinatarioDirectoOption>[] = (destinatariosDirectos ?? [])
+    .filter((d) => d != null && (d.idDestinatarioDirecto != null && d.idDestinatarioDirecto > 0))
+    .map((d) => {
+      const label = [d.nombreDestinatario, d.nombreEmpresa].filter(Boolean).join(' — ').trim() || `Destinatario #${d.idDestinatarioDirecto}`
+      return {
+        value: d.idDestinatarioDirecto,
+        label,
+        description: d.canton ?? undefined,
+        data: d,
+      }
+    })
+
+  const handleGenerarPresinto = () => {
+    setBulkCodigoPresinto(String(Math.floor(1000000000 + Math.random() * 9000000000)))
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent ref={dialogContentRef} className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Truck className="h-5 w-5 text-emerald-600" />
@@ -203,9 +227,9 @@ export default function CrearDespachoMasivoDialog({
         </div>
 
         <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-w-0">
             {/* Card: Destino */}
-            <div className="rounded-lg border border-border bg-card p-4 space-y-4 shadow-sm">
+            <div className="rounded-lg border border-border bg-card p-4 space-y-4 shadow-sm min-w-0">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 border-b border-border pb-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 Destino
@@ -240,20 +264,21 @@ export default function CrearDespachoMasivoDialog({
                 </div>
 
                 {bulkTipoDestino === 'AGENCIA' && (
-                  <div className="grid gap-1.5">
+                  <div className="grid gap-1.5 min-w-0">
                     <Label className="text-sm">Agencia</Label>
-                    <Select value={bulkIdDestino} onValueChange={setBulkIdDestino}>
-                      <SelectTrigger className="h-9 min-w-0">
-                        <SelectValue placeholder="Seleccionar agencia..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {agencias.map((a) => (
-                          <SelectItem key={a.idAgencia} value={String(a.idAgencia)}>
-                            <span className="truncate block max-w-[200px]">{a.nombre}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox<AgenciaOption>
+                      options={agenciasOpciones}
+                      value={bulkIdDestino ? Number(bulkIdDestino) : null}
+                      onValueChange={(v) => setBulkIdDestino(v != null ? String(v) : '')}
+                      placeholder="Buscar agencia..."
+                      searchPlaceholder="Buscar por nombre o cantón..."
+                      emptyMessage="Sin resultados"
+                      className="h-9 text-sm"
+                      onSearchChange={setBusquedaAgencia}
+                      searchValue={busquedaAgencia}
+                      usePortal
+                      portalContainerRef={dialogContentRef}
+                    />
                   </div>
                 )}
 
@@ -280,38 +305,21 @@ export default function CrearDespachoMasivoDialog({
                     </div>
 
                     {bulkDestinatarioOrigen === 'EXISTENTE' && (
-                      <div className="grid gap-1.5">
+                      <div className="grid gap-1.5 relative z-[60] min-w-0">
                         <Label className="text-sm">Destinatario directo</Label>
-                        <div className="flex items-center gap-0 rounded-md border border-border bg-background overflow-hidden">
-                          <div className="flex-1 min-w-0">
-                            <Select value={bulkIdDestino} onValueChange={setBulkIdDestino}>
-                              <SelectTrigger className="h-9 min-w-0 rounded-none border-0 border-r border-border focus:ring-0 focus:ring-offset-0">
-                                <SelectValue placeholder="Seleccionar..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {destinatariosDirectos.map((d) => (
-                                  <SelectItem key={d.idDestinatarioDirecto} value={String(d.idDestinatarioDirecto)}>
-                                    <span className="truncate block max-w-[220px]">
-                                      {d.nombreDestinatario ?? d.nombreEmpresa ?? `#${d.idDestinatarioDirecto}`}
-                                    </span>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <ProtectedByPermission permission={PERMISSIONS.DESTINATARIOS_DIRECTOS.CREAR}>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 shrink-0 rounded-none border-l border-border hover:bg-primary hover:text-primary-foreground"
-                              onClick={onOpenCrearDestinatario}
-                              title="Crear destinatario directo"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </ProtectedByPermission>
-                        </div>
+                        <Combobox<DestinatarioDirectoOption>
+                          options={destinatariosOpciones}
+                          value={bulkIdDestino?.trim() ? Number(bulkIdDestino) : null}
+                          onValueChange={(v) => setBulkIdDestino(v != null ? String(v) : '')}
+                          placeholder="Buscar destinatario directo..."
+                          searchPlaceholder="Buscar por nombre o cantón..."
+                          emptyMessage="Sin destinatarios. Asegúrese de tener destinatarios directos dados de alta."
+                          className="h-9 text-sm"
+                          onSearchChange={setBusquedaDestinatario}
+                          searchValue={busquedaDestinatario}
+                          usePortal
+                          portalContainerRef={dialogContentRef}
+                        />
                       </div>
                     )}
 
@@ -326,6 +334,8 @@ export default function CrearDespachoMasivoDialog({
                           searchPlaceholder="Buscar por teléfono, nombre..."
                           emptyMessage="Sin resultados"
                           className="h-9 text-sm"
+                          usePortal
+                          portalContainerRef={dialogContentRef}
                         />
                         <div className="space-y-3 pt-2 border-t border-primary/20">
                           <p className="text-xs font-medium text-muted-foreground">Datos del destinatario (editable)</p>
@@ -399,14 +409,26 @@ export default function CrearDespachoMasivoDialog({
                   </div>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="bulk-codigo-presinto" className="text-sm">Código de presinto (opcional)</Label>
-                  <Input
-                    id="bulk-codigo-presinto"
-                    placeholder="Ej: PRESINTO-001"
-                    value={bulkCodigoPresinto}
-                    onChange={(e) => setBulkCodigoPresinto(e.target.value)}
-                    className="font-mono h-9"
-                  />
+                  <Label htmlFor="bulk-codigo-presinto" className="text-sm">Código de presinto de seguridad</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Input
+                      id="bulk-codigo-presinto"
+                      placeholder="Escribir o generar"
+                      value={bulkCodigoPresinto}
+                      onChange={(e) => setBulkCodigoPresinto(e.target.value)}
+                      className="font-mono h-9 flex-1 min-w-[200px]"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 shrink-0"
+                      onClick={handleGenerarPresinto}
+                    >
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      Generar
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="bulk-observaciones" className="text-sm">Observaciones</Label>

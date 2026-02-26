@@ -39,7 +39,6 @@ import {
   defaultLoteRecepcionFormData,
   type LoteRecepcionFormData,
 } from '@/schemas/lote-recepcion'
-import ImportarPaquetesDialog from './ImportarPaquetesDialog'
 
 interface LoteRecepcionFormProps {
   /** URL para volver (ej. /lotes-especiales) */
@@ -60,8 +59,6 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
   const refreshMe = useAuthStore((state) => state.refreshMe)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [nuevoLoteRecepcionId, setNuevoLoteRecepcionId] = useState<number | null>(null)
-  const [nuevoLoteEspecial, setNuevoLoteEspecial] = useState(false)
-  const [showImportarDialog, setShowImportarDialog] = useState(false)
 
   const { data: loteRecepcion, isLoading: loadingLoteRecepcion } = useLoteRecepcion(id ? Number(id) : undefined)
   const { data: agencias = [], isLoading: loadingAgencias } = useAgencias()
@@ -117,7 +114,6 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
       } else {
         const nuevoLoteRecepcion = await createMutation.mutateAsync(loteRecepcionData)
         setNuevoLoteRecepcionId(nuevoLoteRecepcion.idLoteRecepcion || null)
-        setNuevoLoteEspecial(nuevoLoteRecepcion.tipoLote === 'ESPECIAL')
         setShowSuccessDialog(true)
       }
     } catch (error) {
@@ -125,27 +121,15 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
     }
   }
 
-  const handleContinuarSinImportar = () => {
+  const handleVolverAlListado = () => {
     setShowSuccessDialog(false)
     navigate(backUrl)
   }
 
-  const handleIrATipiar = () => {
+  const handleIrAlLote = () => {
     setShowSuccessDialog(false)
     if (nuevoLoteRecepcionId) navigate({ to: `/lotes-recepcion/${nuevoLoteRecepcionId}` })
     else navigate(backUrl)
-  }
-
-  const handleImportarPaquetes = () => {
-    setShowSuccessDialog(false)
-    if (nuevoLoteRecepcionId) {
-      setShowImportarDialog(true)
-    }
-  }
-
-  const handleImportSuccess = () => {
-    setShowImportarDialog(false)
-    navigate(backUrl)
   }
 
   if (isEdit && loadingLoteRecepcion) {
@@ -161,7 +145,7 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
           subtitle ??
           (isEdit
             ? 'Modifica la información del lote de recepción'
-            : 'Crea un nuevo lote de recepción para registrar paquetes recibidos de la aduana')
+            : 'Crea un lote normal o especial; la gestión de paquetes (importar o tipiar) se hace desde el detalle del lote.')
         }
         actions={
           <Button variant="ghost" size="sm" onClick={() => navigate(backUrl)} className="text-muted-foreground hover:text-foreground">
@@ -182,7 +166,7 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
           <CardDescription>
             {isEdit
               ? 'Modifica los datos de la recepción'
-              : 'Completa los campos requeridos para crear la recepción. Luego podrás importar los paquetes.'}
+              : 'Completa los campos. Puedes crear lote normal o especial; la importación de paquetes o el tipiado se hace desde el detalle del lote.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -348,78 +332,33 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
                 <CheckCircle2 className="h-6 w-6 text-success" />
               </div>
               <div>
-                <DialogTitle>¡Recepción creada exitosamente!</DialogTitle>
+                <DialogTitle>Recepción creada</DialogTitle>
                 <DialogDescription className="mt-1">
-                  {nuevoLoteEspecial
-                    ? 'Lote especial registrado. Ve a tipiar y clasificar los paquetes que llegan.'
-                    : 'La recepción ha sido registrada en el sistema'}
+                  Desde el detalle del lote podrás importar paquetes (lote normal) o tipiar y clasificar por etiqueta (lote especial).
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <div className="py-4">
-            {nuevoLoteEspecial ? (
-              <>
-                <p className="text-sm text-muted-foreground mb-4">
-                  En la ventana de tipiado podrás escanear cada paquete, ver su tipo (etiqueta) según el registro y clasificarlo. Los que no estén en el registro se guardan en el lote para clasificarlos después.
-                </p>
-                <div className="bg-muted rounded-lg p-3 text-sm">
-                  <p className="font-medium mb-1">Próximos pasos:</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    <li>Tipiar cada paquete (número de guía) y ver su tipo</li>
-                    <li>Marcar como receptado o elegir etiqueta si está en varias listas</li>
-                    <li>Clasificar después los que no tenían etiqueta</li>
-                  </ul>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground mb-4">
-                  ¿Deseas importar los paquetes ahora? Puedes hacerlo desde Excel o ingresando un listado manual.
-                </p>
-                <div className="bg-muted rounded-lg p-3 text-sm">
-                  <p className="font-medium mb-1">Próximos pasos:</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    <li>Importar paquetes desde Excel o listado manual</li>
-                    <li>Verificar que todos los paquetes estén asociados</li>
-                    <li>Proceder con el despacho cuando esté listo</li>
-                  </ul>
-                </div>
-              </>
-            )}
+            <p className="text-sm text-muted-foreground mb-4">
+              ¿Ir al lote para continuar con la gestión de paquetes?
+            </p>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              onClick={handleContinuarSinImportar}
+              onClick={handleVolverAlListado}
               className="w-full sm:w-auto"
             >
-              {nuevoLoteEspecial ? 'Ver listado' : 'Continuar sin importar'}
+              Volver al listado
             </Button>
-            {nuevoLoteEspecial ? (
-              <Button onClick={handleIrATipiar} className="w-full sm:w-auto">
-                <Package className="h-4 w-4 mr-2" />
-                Ir a tipiar paquetes
-              </Button>
-            ) : (
-              <Button onClick={handleImportarPaquetes} className="w-full sm:w-auto">
-                <Package className="h-4 w-4 mr-2" />
-                Importar Paquetes
-              </Button>
-            )}
+            <Button onClick={handleIrAlLote} className="w-full sm:w-auto">
+              <Package className="h-4 w-4 mr-2" />
+              Ir al lote
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Diálogo de importar paquetes */}
-      {nuevoLoteRecepcionId && (
-        <ImportarPaquetesDialog
-          recepcionId={nuevoLoteRecepcionId}
-          open={showImportarDialog}
-          onOpenChange={setShowImportarDialog}
-          onImportSuccess={handleImportSuccess}
-        />
-      )}
     </PageContainer>
   )
 }

@@ -652,7 +652,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     setScannedPackagesForDespacho(combined)
                     setSelectedPackageIds(new Set(ids))
                     setSelectedPackageIdsOrder(ids)
-                }).catch(() => {})
+                }).catch(() => { })
             } else if (idsFromSession.length > 0) {
                 const paquetesList = paquetes ?? []
                 const scanned = resolvedInOrder.filter((p) => !paquetesList.some((q) => q.idPaquete === p.idPaquete))
@@ -664,37 +664,41 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
         if (payload.paquetesByMode) {
             const modes: Array<'DOMICILIO' | 'CLEMENTINA' | 'SEPARAR' | 'CADENITA'> = ['DOMICILIO', 'CLEMENTINA', 'SEPARAR', 'CADENITA']
-            const resolveMode = async (mode: 'DOMICILIO' | 'CLEMENTINA' | 'SEPARAR' | 'CADENITA') => {
-                const items = payload.paquetesByMode![mode] ?? []
-                if (items.length === 0) return []
-                const resolved: Paquete[] = []
-                for (const item of items) {
-                    const guia = item.numeroGuia?.trim()
-                    if (!guia) continue
-                    const existing = allPaquetes.find((p) => (p.numeroGuia ?? '').trim() === guia)
-                    if (existing) {
-                        resolved.push(existing)
-                    } else {
-                        try {
-                            const p = await paqueteService.findByNumeroGuia(guia)
-                            if (p?.idPaquete) resolved.push(p)
-                        } catch {
-                            // omitir guía no encontrada
+            const hasAnyInSession = modes.some((m) => (payload.paquetesByMode![m]?.length ?? 0) > 0)
+            if (hasAnyInSession) {
+                const resolveMode = async (mode: 'DOMICILIO' | 'CLEMENTINA' | 'SEPARAR' | 'CADENITA') => {
+                    const items = payload.paquetesByMode![mode] ?? []
+                    if (items.length === 0) return []
+                    const resolved: Paquete[] = []
+                    for (const item of items) {
+                        const guia = item.numeroGuia?.trim()
+                        if (!guia) continue
+                        const existing = allPaquetes.find((p) => (p.numeroGuia ?? '').trim() === guia)
+                        if (existing) {
+                            resolved.push(existing)
+                        } else {
+                            try {
+                                const p = await paqueteService.findByNumeroGuia(guia)
+                                if (p?.idPaquete) resolved.push(p)
+                            } catch {
+                                // omitir guía no encontrada
+                            }
                         }
                     }
+                    return resolved
                 }
-                return resolved
+                Promise.all(modes.map(resolveMode)).then((results) => {
+                    if (cancelled) return
+                    setTypedPackagesByMode((prev) => ({
+                        ...prev,
+                        DOMICILIO: results[0],
+                        CLEMENTINA: results[1],
+                        SEPARAR: results[2],
+                        CADENITA: results[3],
+                    }))
+                }).catch(() => { })
             }
-            Promise.all(modes.map(resolveMode)).then((results) => {
-                if (cancelled) return
-                setTypedPackagesByMode((prev) => ({
-                    ...prev,
-                    DOMICILIO: results[0],
-                    CLEMENTINA: results[1],
-                    SEPARAR: results[2],
-                    CADENITA: results[3],
-                }))
-            }).catch(() => {})
+            // Si la sesión tiene paquetesByMode pero todas las listas vacías, no sobrescribir estado actual
         }
 
         return () => {
@@ -757,8 +761,15 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
         const list = typedPackagesByMode[mode]
         if (list.length === 0) return
         const ids = list.map(p => p.idPaquete!).filter((id): id is number => id != null)
+        const loteId = id ? Number(id) : undefined
         setPuttingInLoteMode(mode)
         try {
+            // 1. Asociar los paquetes al lote de recepción (independientemente del modo)
+            if (loteId && ids.length > 0) {
+                await loteRecepcionService.agregarPaquetes(loteId, ids)
+            }
+
+            // 2. Aplicar el tipo/destino correspondiente
             if (mode === 'DOMICILIO') {
                 for (const p of list) {
                     if (!p.idPaquete) continue
@@ -772,13 +783,14 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 const tipo = mode === 'CLEMENTINA' ? TipoPaquete.CLEMENTINA : mode === 'SEPARAR' ? TipoPaquete.SEPARAR : TipoPaquete.CADENITA
                 await paqueteService.cambiarTipoMasivo(ids, tipo)
             }
+
             clearTypedQueue(mode)
-            queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', id ? Number(id) : undefined] })
-            queryClient.invalidateQueries({ queryKey: ['lote-recepcion', id ? Number(id) : undefined] })
-            toast.success(`${list.length} paquete(s) aplicados al lote (${mode})`)
+            queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', loteId] })
+            queryClient.invalidateQueries({ queryKey: ['lote-recepcion', loteId] })
+            toast.success(`${list.length} paquete(s) guardados en el lote (${mode})`)
         } catch (err) {
             console.error(err)
-            toast.error('Error al aplicar al lote')
+            toast.error('Error al guardar en el lote')
         } finally {
             setPuttingInLoteMode(null)
         }
@@ -814,7 +826,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             let despachoId = currentDespacho.idDespacho
             let newDespacho: Awaited<ReturnType<typeof despachoService.create>> | null = null
 
-                if (!despachoId) {
+            if (!despachoId) {
                 const destinoValido = bulkTipoDestino === 'AGENCIA'
                     ? !!bulkIdDestino
                     : bulkDestinatarioOrigen === 'EXISTENTE'
@@ -994,12 +1006,14 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     toast.error(`La guía ${paquete.numeroGuia || guia} ya está en la cola de ${alreadyInMode}. Sáquela de esa cola si desea añadirla aquí.`)
                     return
                 }
-                const hasTipo = paquete.tipoPaquete != null && paquete.tipoPaquete !== ''
+                const tipoP = paquete.tipoPaquete != null ? String(paquete.tipoPaquete).toUpperCase() : ''
+                const tipoD = paquete.tipoDestino != null ? String(paquete.tipoDestino).toUpperCase() : ''
+                const hasTipo = tipoP !== '' || tipoD !== ''
                 const mismoTipoQueModo =
-                    (mode === 'DOMICILIO' && paquete.tipoDestino === TipoDestino.DOMICILIO) ||
-                    (mode === 'CLEMENTINA' && paquete.tipoPaquete === TipoPaquete.CLEMENTINA) ||
-                    (mode === 'SEPARAR' && paquete.tipoPaquete === TipoPaquete.SEPARAR) ||
-                    (mode === 'CADENITA' && paquete.tipoPaquete === TipoPaquete.CADENITA)
+                    (mode === 'DOMICILIO' && tipoD === 'DOMICILIO') ||
+                    (mode === 'CLEMENTINA' && tipoP === 'CLEMENTINA') ||
+                    (mode === 'SEPARAR' && tipoP === 'SEPARAR') ||
+                    (mode === 'CADENITA' && tipoP === 'CADENITA')
                 if (hasTipo && !mismoTipoQueModo) {
                     setPendingTypeConfirm({ paquete, mode })
                     return
