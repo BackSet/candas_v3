@@ -1,0 +1,24 @@
+# ─── IDE / Editors ────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Gemini / AI Agent ───────────────────────────────────────
+.gemini/
+.agent/
+.cursor/
+.obsidian/
+
+# ─── Logs & Debug ────────────────────────────────────────────
+*.log
+debug_history.log
+
+# ─── Test files ──────────────────────────────────────────────
+archivos de prueba/
