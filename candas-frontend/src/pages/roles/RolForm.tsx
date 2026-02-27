@@ -21,8 +21,7 @@ import { usePermisos } from '@/hooks/usePermisos'
 import type { Rol } from '@/types/rol'
 import { Search, Key, Folder, Shield, Save, ArrowLeft, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 
 const rolSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -167,33 +166,27 @@ export default function RolForm() {
   }
 
   return (
-    <PageContainer width="full" spacing="0" className="w-full flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border/30 bg-background/70 backdrop-blur-xl z-10 shrink-0">
-        <PageHeader
-          className="pb-0 border-b-0"
-          icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center"><Shield className="h-4 w-4 text-violet-600 dark:text-violet-400" /></div>}
-          title={isEdit ? 'Editar Rol' : 'Nuevo Rol'}
-          subtitle={isEdit ? 'Modificar datos y permisos del rol' : 'Crear nuevo rol en el sistema'}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => navigate({ to: '/roles' })} disabled={isSaving} className="h-8 text-xs rounded-lg">
-                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                Volver
-              </Button>
-              <Button type="button" size="sm" disabled={isSaving} onClick={() => handleSubmit(onSubmit)()} className="h-8 text-xs rounded-lg shadow-sm">
-                {isSaving ? 'Guardando...' : (
-                  <>
-                    <Save className="h-3.5 w-3.5 mr-1.5" />
-                    Guardar
-                  </>
-                )}
-              </Button>
-            </div>
-          }
-        />
-      </div>
-
+    <StandardPageLayout
+      title={isEdit ? 'Editar Rol' : 'Nuevo Rol'}
+      subtitle={isEdit ? 'Modificar datos y permisos del rol' : 'Crear nuevo rol en el sistema'}
+      icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center"><Shield className="h-4 w-4 text-violet-600 dark:text-violet-400" /></div>}
+      actions={
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={() => navigate({ to: '/roles' })} disabled={isSaving} className="h-8 text-xs rounded-lg">
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+            Volver
+          </Button>
+          <Button type="button" size="sm" disabled={isSaving} onClick={() => handleSubmit(onSubmit)()} className="h-8 text-xs rounded-lg shadow-sm">
+            {isSaving ? 'Guardando...' : (
+              <>
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                Guardar
+              </>
+            )}
+          </Button>
+        </div>
+      }
+    >
       {/* Content */}
       <div className="flex-1 overflow-auto">
         <form id="rol-form" onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-8">
@@ -388,6 +381,6 @@ export default function RolForm() {
           </div>
         </form>
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

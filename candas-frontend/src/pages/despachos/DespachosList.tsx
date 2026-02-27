@@ -67,8 +67,7 @@ import type { Distribuidor } from '@/types/distribuidor'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
 import { useFiltersStore } from '@/stores/filtersStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -674,49 +673,47 @@ export default function DespachosList() {
   const currentPage = data?.number || 0
 
   return (
-    <PageContainer width="full" spacing="6" className="w-full py-2 animate-in fade-in duration-500 bg-background flex flex-col h-full min-h-0 overflow-hidden">
-      <PageHeader
-        icon={<Truck className="h-4 w-4" />}
-        title="Despachos"
-        className="shrink-0"
-        actions={
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {despachosSeleccionados.size > 0 && (
-              <>
-                <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.IMPRIMIR}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMostrarDialogoMultiples(true)}
-                    className="h-8 shadow-sm text-xs"
-                  >
-                    <Printer className="h-3.5 w-3.5 mr-1.5" />
-                    Imprimir ({despachosSeleccionados.size})
-                  </Button>
-                </ProtectedByPermission>
-                <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.EDITAR}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMostrarDialogoMarcarDespachadoBatch(true)}
-                    className="h-8 shadow-sm text-xs"
-                  >
-                    <PackageCheck className="h-3.5 w-3.5 mr-1.5" />
-                    Marcar despachado ({despachosSeleccionados.size})
-                  </Button>
-                </ProtectedByPermission>
-              </>
-            )}
-            <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>
+    <StandardPageLayout
+      title="Despachos"
+      icon={<Truck className="h-4 w-4" />}
+      className="py-2 animate-in fade-in duration-500"
+      actions={
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          {despachosSeleccionados.size > 0 && (
+            <>
+              <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.IMPRIMIR}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMostrarDialogoMultiples(true)}
+                  className="h-8 shadow-sm text-xs"
+                >
+                  <Printer className="h-3.5 w-3.5 mr-1.5" />
+                  Imprimir ({despachosSeleccionados.size})
+                </Button>
+              </ProtectedByPermission>
+              <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.EDITAR}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMostrarDialogoMarcarDespachadoBatch(true)}
+                  className="h-8 shadow-sm text-xs"
+                >
+                  <PackageCheck className="h-3.5 w-3.5 mr-1.5" />
+                  Marcar despachado ({despachosSeleccionados.size})
+                </Button>
+              </ProtectedByPermission>
+            </>
+          )}
+          <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>
             <Button onClick={() => navigate({ to: '/despachos/new' })} size="sm" className="h-8 shadow-sm">
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Nuevo
             </Button>
-            </ProtectedByPermission>
-          </div>
-        }
-      />
-
+          </ProtectedByPermission>
+        </div>
+      }
+    >
       <ListToolbar
         search={busqueda}
         onSearchChange={setBusqueda}
@@ -1169,6 +1166,6 @@ export default function DespachosList() {
           </div>
         </DialogContent>
       </Dialog>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

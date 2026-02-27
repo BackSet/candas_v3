@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/lib/api/auth.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { LoginRequest } from '@/types/user'
 import { AlertCircle, ArrowRight, Loader2, Lock, User } from 'lucide-react'
 
@@ -33,16 +34,19 @@ export default function Login() {
     try {
       await authService.login(data)
       navigate({ to: '/dashboard' })
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMessage = 'Error al iniciar sesión'
-      if (err?.code === 'ERR_NETWORK' || !err?.response) {
+      const errObj = err as { code?: string; response?: { status?: number; data?: { message?: string } } }
+      if (errObj?.code === 'ERR_NETWORK' || !errObj?.response) {
         errorMessage = 'No se pudo conectar con el servidor.'
-      } else if (err?.response?.data?.message) {
-        errorMessage = err.response.data.message
-      } else if (err?.response?.status === 401) {
+      } else if (errObj?.response?.status === 401) {
         errorMessage = 'Credenciales incorrectas'
-      } else if (err?.response?.status) {
-        errorMessage = `Error (${err.response.status})`
+      } else if (errObj?.response?.data?.message) {
+        errorMessage = errObj.response.data.message
+      } else if (errObj?.response?.status) {
+        errorMessage = `Error (${errObj.response.status})`
+      } else {
+        errorMessage = getApiErrorMessage(err, 'Error al iniciar sesión')
       }
       setError(errorMessage)
     } finally {

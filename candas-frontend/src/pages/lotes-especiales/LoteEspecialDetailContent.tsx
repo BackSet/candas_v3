@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLoteRecepcion, usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -98,7 +99,7 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
       toast.success('Etiqueta asignada')
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error'
+      const msg = getApiErrorMessage(err, 'Error')
       toast.error(msg)
     },
   })

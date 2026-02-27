@@ -3,6 +3,7 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLoteRecepcion, usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScanLine, Loader2, List } from 'lucide-react'
@@ -36,7 +37,7 @@ export default function LoteEspecialTipeo() {
       inputRef.current?.focus()
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al marcar'
+      const msg = getApiErrorMessage(err, 'Error al marcar')
       toast.error(msg)
     },
   })

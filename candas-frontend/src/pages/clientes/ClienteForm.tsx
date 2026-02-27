@@ -19,8 +19,7 @@ import { LoadingState } from '@/components/states'
 import { SectionTitle } from '@/components/ui/section-title'
 import { FormError } from '@/components/ui/form-error'
 import { Label } from '@/components/ui/label'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 
 export default function ClienteForm() {
   const navigate = useNavigate()
@@ -77,28 +76,27 @@ export default function ClienteForm() {
   }
 
   return (
-    <PageContainer className="w-full flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-500">
-      <PageHeader
-        icon={<User className="h-4 w-4" />}
-        title={isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
-        subtitle={isEdit ? `Modificando: ${cliente?.nombreCompleto || '...'}` : 'Registrar un nuevo cliente en el sistema'}
-        actions={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/clientes' })} className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
-            <Button variant="outline" onClick={() => navigate({ to: '/clientes' })}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmit(onSubmit)} disabled={createMutation.isPending || updateMutation.isPending}>
-              {createMutation.isPending || updateMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-              {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : 'Guardar'}
-            </Button>
-          </>
-        }
-      />
-
+    <StandardPageLayout
+      title={isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
+      subtitle={isEdit ? `Modificando: ${cliente?.nombreCompleto || '...'}` : 'Registrar un nuevo cliente en el sistema'}
+      icon={<User className="h-4 w-4" />}
+      className="animate-in fade-in duration-500"
+      actions={
+        <>
+          <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/clientes' })} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+          <Button variant="outline" onClick={() => navigate({ to: '/clientes' })}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit(onSubmit)} disabled={createMutation.isPending || updateMutation.isPending}>
+            {createMutation.isPending || updateMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </>
+      }
+    >
       <div className="flex-1 overflow-y-auto p-6 md:p-8">
         <div className="max-w-5xl mx-auto space-y-8">
           <section className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-4">
@@ -170,6 +168,6 @@ export default function ClienteForm() {
           </section>
         </div>
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

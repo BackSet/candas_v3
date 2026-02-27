@@ -273,18 +273,12 @@ public class PaqueteController {
     }
 
     /**
-     * FUNCIÓN TEMPORAL: Importa y actualiza paquetes desde Excel.
-     * Actualiza paquetes existentes o crea nuevos, eliminando clientes actuales y
-     * creando nuevos.
-     * 
-     * @deprecated Esta es una función temporal. Considerar remover después del uso.
+     * Importa y actualiza paquetes desde Excel.
+     * Actualiza paquetes existentes (por número de guía) o crea nuevos; reemplaza clientes (remitente y destinatario).
      */
     @PostMapping("/importar-actualizar")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.PAQUETES_EDITAR + "')")
-    @Operation(summary = "Importar y actualizar paquetes desde Excel (TEMPORAL)", description = "FUNCIÓN TEMPORAL: Actualiza paquetes existentes (por número de guía) o crea nuevos desde Excel. "
-            +
-            "Elimina los clientes actuales (remitente y destinatario) y crea nuevos. " +
-            "ADVERTENCIA: Esta función es destructiva y eliminará clientes de la base de datos.")
+    @Operation(summary = "Importar y actualizar paquetes desde Excel", description = "Actualiza paquetes existentes por número de guía o crea nuevos desde Excel. Reemplaza clientes remitente y destinatario.")
     public ResponseEntity<ImportResultDTO> importarYActualizarDesdeExcel(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(paqueteImportService.importarYActualizarDesdeExcel(file));
     }

@@ -34,17 +34,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Eye, Edit, Trash2, Plus, MoreHorizontal, Users, Loader2, AlertCircle } from 'lucide-react'
+import { Eye, Edit, Trash2, Plus, MoreHorizontal, Users } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPagination } from '@/components/list/ListPagination'
 import { PERMISSIONS } from '@/types/permissions'
 import { useFiltersStore } from '@/stores/filtersStore'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
+import { LoadingState } from '@/components/states/LoadingState'
+import { ErrorState } from '@/components/states/ErrorState'
 import { Label } from '@/components/ui/label'
 
 const LIST_KEY = 'clientes' as const
@@ -93,20 +94,18 @@ export default function ClientesList() {
   }
 
   return (
-    <PageContainer width="full" className="flex flex-col h-full min-h-0 overflow-hidden">
-      <PageHeader
-        icon={<Users className="h-4 w-4" />}
-        title="Clientes"
-        className="shrink-0"
-        actions={
-          <ProtectedByPermission permission={PERMISSIONS.CLIENTES.CREAR}>
-            <Button onClick={() => navigate({ to: '/clientes/new' })} size="sm" className="h-8 shadow-sm text-xs">
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Nuevo Cliente
-            </Button>
-          </ProtectedByPermission>
-        }
-      />
+    <StandardPageLayout
+      title="Clientes"
+      icon={<Users className="h-4 w-4" />}
+      actions={
+        <ProtectedByPermission permission={PERMISSIONS.CLIENTES.CREAR}>
+          <Button onClick={() => navigate({ to: '/clientes/new' })} size="sm" className="h-8 shadow-sm text-xs">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Nuevo Cliente
+          </Button>
+        </ProtectedByPermission>
+      }
+    >
 
       <ListToolbar
         search={busqueda}
@@ -186,20 +185,14 @@ export default function ClientesList() {
               <TableBody>
                 {(isLoading) ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-32 text-center">
-                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span className="text-sm">Cargando clientes...</span>
-                      </div>
+                    <TableCell colSpan={4} className="p-8">
+                      <LoadingState label="Cargando clientes..." />
                     </TableCell>
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-32 text-center text-destructive">
-                      <div className="flex flex-col items-center gap-1">
-                        <AlertCircle className="h-5 w-5" />
-                        <span>Error al cargar clientes</span>
-                      </div>
+                    <TableCell colSpan={4} className="p-8">
+                      <ErrorState title="Error al cargar clientes" />
                     </TableCell>
                   </TableRow>
                 ) : clientesFiltrados.length === 0 ? (
@@ -317,6 +310,6 @@ export default function ClientesList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

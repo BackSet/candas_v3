@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import { toast } from 'sonner'
 import { Loader2, Plus, AlertTriangle, ShieldAlert, BadgeHelp, Info } from 'lucide-react'
 import {
@@ -86,8 +87,8 @@ export default function CrearListaCard() {
       setEtiqueta('')
       setNumerosGuia('')
       setInstruccion('NINGUNA')
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Error al crear la lista'
+    } catch (error: unknown) {
+      const errorMessage = getApiErrorMessage(error, 'Error al crear la lista')
       // Si el backend indica que la guía ya está en otras listas, el mensaje ya incluye la sección "Guías en varias listas"
       if (errorMessage.includes('ya está registrada en la(s) lista(s)') || errorMessage.includes('Guías en varias listas')) {
         toast.error(errorMessage)

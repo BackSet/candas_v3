@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { usuarioService } from '@/lib/api/usuario.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Usuario } from '@/types/usuario'
 import { toast } from 'sonner'
 
@@ -39,9 +40,8 @@ export function useCreateUsuario() {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] })
       toast.success('Usuario creado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al crear el usuario'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear el usuario'))
     },
   })
 }
@@ -57,9 +57,8 @@ export function useUpdateUsuario() {
       queryClient.invalidateQueries({ queryKey: ['usuario', variables.id] })
       toast.success('Usuario actualizado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al actualizar el usuario'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar el usuario'))
     },
   })
 }
@@ -73,9 +72,8 @@ export function useDeleteUsuario() {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] })
       toast.success('Usuario eliminado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al eliminar el usuario'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar el usuario'))
     },
   })
 }
@@ -92,9 +90,8 @@ export function useAsignarRolesUsuario() {
       queryClient.invalidateQueries({ queryKey: ['usuario-roles', variables.id] })
       toast.success('Roles asignados exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al asignar los roles'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al asignar los roles'))
     },
   })
 }

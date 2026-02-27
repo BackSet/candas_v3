@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { atencionPaqueteService } from '@/lib/api/atencion-paquete.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { AtencionPaquete } from '@/types/atencion-paquete'
 import { toast } from 'sonner'
 
@@ -41,9 +42,8 @@ export function useCreateAtencionPaquete() {
       queryClient.invalidateQueries({ queryKey: ['atencion-paquetes-pendientes'] })
       toast.success('Solicitud de atención creada exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al crear la solicitud de atención'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear la solicitud de atención'))
     },
   })
 }
@@ -60,9 +60,8 @@ export function useUpdateAtencionPaquete() {
       queryClient.invalidateQueries({ queryKey: ['atencion-paquetes-pendientes'] })
       toast.success('Atención actualizada exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al actualizar la atención'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar la atención'))
     },
   })
 }
@@ -77,9 +76,8 @@ export function useDeleteAtencionPaquete() {
       queryClient.invalidateQueries({ queryKey: ['atencion-paquetes-pendientes'] })
       toast.success('Atención eliminada exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al eliminar la atención'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar la atención'))
     },
   })
 }
@@ -96,9 +94,8 @@ export function useResolverAtencionPaquete() {
       queryClient.invalidateQueries({ queryKey: ['atencion-paquetes-pendientes'] })
       toast.success('Atención resuelta exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al resolver la atención'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al resolver la atención'))
     },
   })
 }

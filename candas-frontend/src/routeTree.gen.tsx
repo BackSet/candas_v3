@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createRoute, createRouter, useParams } from '@tanstack/react-router'
 import { rootRoute } from './routes/__root'
 import { layoutRoute } from './routes/_layout'

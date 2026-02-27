@@ -47,8 +47,7 @@ import ImportarPaquetesDialog from './ImportarPaquetesDialog'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ErrorState, LoadingState } from '@/components/states'
 import { ListPagination } from '@/components/list/ListPagination'
 import { useFiltersStore } from '@/stores/filtersStore'
@@ -157,23 +156,18 @@ export default function LotesRecepcionList() {
   }
 
   return (
-    <PageContainer width="full" spacing="6" className="w-full flex flex-col h-full min-h-0 overflow-hidden">
-      <PageHeader
-        icon={<Package2 className="h-4 w-4" />}
-        title="Lotes de Recepción"
-        className="shrink-0"
-        actions={
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <ProtectedByPermission permission={PERMISSIONS.LOTES_RECEPCION.CREAR}>
-              <Button onClick={() => navigate({ to: '/lotes-recepcion/new' })} size="sm" className="h-8 shadow-sm">
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Nuevo
-              </Button>
-            </ProtectedByPermission>
-          </div>
-        }
-      />
-
+    <StandardPageLayout
+      title="Lotes de Recepción"
+      icon={<Package2 className="h-4 w-4" />}
+      actions={
+        <ProtectedByPermission permission={PERMISSIONS.LOTES_RECEPCION.CREAR}>
+          <Button onClick={() => navigate({ to: '/lotes-recepcion/new' })} size="sm" className="h-8 shadow-sm">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Nuevo
+          </Button>
+        </ProtectedByPermission>
+      }
+    >
       <ListToolbar
         search={busqueda}
         onSearchChange={setBusqueda}
@@ -453,6 +447,6 @@ export default function LotesRecepcionList() {
           }}
         />
       )}
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

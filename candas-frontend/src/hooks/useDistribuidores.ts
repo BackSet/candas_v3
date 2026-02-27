@@ -1,14 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { distribuidorService } from '@/lib/api/distribuidor.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Distribuidor } from '@/types/distribuidor'
 import { toast } from 'sonner'
-
-type ApiError = { response?: { data?: { message?: string } } }
-
-const getApiErrorMessage = (error: unknown, fallback: string): string => {
-  const message = (error as ApiError)?.response?.data?.message
-  return typeof message === 'string' && message.trim().length > 0 ? message : fallback
-}
 
 export function useDistribuidores(page: number = 0, size: number = 20) {
   return useQuery({

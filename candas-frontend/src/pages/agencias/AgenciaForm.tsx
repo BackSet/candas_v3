@@ -17,8 +17,7 @@ import { useAgencia, useCreateAgencia, useUpdateAgencia } from '@/hooks/useAgenc
 import { Building2, Save, Loader2, Plus, Trash2, Sparkles, MapPin, Phone } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { SectionTitle } from '@/components/ui/section-title'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { FormError } from '@/components/ui/form-error'
 import { LoadingState } from '@/components/states'
 import { cn } from '@/lib/utils'
@@ -112,24 +111,23 @@ export default function AgenciaForm() {
   }
 
   return (
-    <PageContainer className="w-full flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-500">
-      <PageHeader
-        icon={<Building2 className="h-4 w-4" />}
-        title={isEdit ? 'Editar Agencia' : 'Nueva Agencia'}
-        subtitle={isEdit ? `Modificando: ${agencia?.nombre ?? '...'}` : 'Registrar nueva agencia'}
-        actions={
-          <>
-            <Button variant="outline" onClick={() => navigate({ to: '/agencias' })}>
-              Cancelar
-            </Button>
-            <Button type="submit" form="agencia-form" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-              {isSubmitting ? 'Guardando...' : 'Guardar'}
-            </Button>
-          </>
-        }
-      />
-
+    <StandardPageLayout
+      title={isEdit ? 'Editar Agencia' : 'Nueva Agencia'}
+      subtitle={isEdit ? `Modificando: ${agencia?.nombre ?? '...'}` : 'Registrar nueva agencia'}
+      icon={<Building2 className="h-4 w-4" />}
+      className="animate-in fade-in duration-500"
+      actions={
+        <>
+          <Button variant="outline" onClick={() => navigate({ to: '/agencias' })}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="agencia-form" disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            {isSubmitting ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </>
+      }
+    >
       <div className="flex-1 overflow-y-auto p-6 md:p-8">
         <form id="agencia-form" onSubmit={handleSubmit(onSubmit)} className="max-w-5xl mx-auto space-y-8">
 
@@ -286,6 +284,6 @@ export default function AgenciaForm() {
 
         </form>
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

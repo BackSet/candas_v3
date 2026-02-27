@@ -70,45 +70,8 @@ import { imprimirLoteEspecial } from '@/utils/imprimirPdfLoteEspecial'
 import { generarExcelLoteRecepcion } from '@/utils/generarExcelLoteRecepcion'
 import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
 import CrearDespachoMasivoDialog from '@/components/despachos/CrearDespachoMasivoDialog'
-
-const SIN_ETIQUETA_KEY = '__SIN_ETIQUETA__'
-const VARIAS_LISTAS_KEY = 'VARIAS'
-
-function hasDespacho(p: Paquete): boolean {
-  return p.idDespacho != null && p.idDespacho > 0
-}
-
-/** Cliente destino para la tarjeta de feedback (modo Despacho). */
-function buildClienteDestinoFromPaquete(p: Paquete): {
-  nombre?: string
-  direccion?: string
-  ciudad?: string
-  canton?: string
-  pais?: string
-  telefono?: string
-} | undefined {
-  const nombre = p.nombreClienteDestinatario?.trim()
-  let direccion = (p.direccionDestinatarioCompleta || p.direccionDestinatario)?.trim() ?? ''
-  const ciudad = p.ciudadDestinatario?.trim()
-  const canton = p.cantonDestinatario?.trim()
-  const pais = p.paisDestinatario?.trim()
-  const telefono = p.telefonoDestinatario?.trim()
-  const sufijoUbicacion = [ciudad, canton, pais].filter(Boolean).join(', ')
-  if (sufijoUbicacion && direccion.endsWith(sufijoUbicacion)) {
-    direccion = direccion.slice(0, -sufijoUbicacion.length).replace(/,?\s*$/, '').trim()
-  } else {
-    direccion = direccion.replace(/,(\s*[^,]+,\s*[^,]+,\s*[^,]+)\s*$/, '').trim()
-  }
-  if (!nombre && !direccion && !ciudad && !canton && !pais && !telefono) return undefined
-  return {
-    nombre: nombre || undefined,
-    direccion: direccion || undefined,
-    ciudad: ciudad || undefined,
-    canton: canton || undefined,
-    pais: pais || undefined,
-    telefono: telefono || undefined,
-  }
-}
+import { getApiErrorMessage } from '@/lib/api/errors'
+import { hasDespacho, buildClienteDestinoFromPaquete, SIN_ETIQUETA_KEY, VARIAS_LISTAS_KEY } from './loteEspecialOperadorUtils'
 
 export interface LoteEspecialOperadorProps {
   embedded?: boolean
@@ -255,8 +218,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       inputRef.current?.focus()
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al marcar'
-      toast.error(msg)
+      toast.error(getApiErrorMessage(err, 'Error al marcar'))
     },
   })
 
@@ -311,8 +273,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       toast.success(`${count} paquete(s) guardado(s) en el lote`)
       inputRef.current?.focus()
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al guardar'
-      toast.error(msg)
+      toast.error(getApiErrorMessage(err, 'Error al guardar'))
     } finally {
       setGuardandoEnLote(false)
     }
@@ -637,8 +598,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       toast.success('Etiqueta asignada')
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error'
-      toast.error(msg)
+      toast.error(getApiErrorMessage(err, 'Error'))
     },
   })
 

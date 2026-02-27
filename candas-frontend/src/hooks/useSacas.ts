@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sacaService } from '@/lib/api/saca.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Saca } from '@/types/saca'
 import { toast } from 'sonner'
 
@@ -35,9 +36,8 @@ export function useCreateSaca() {
       queryClient.invalidateQueries({ queryKey: ['sacas'] })
       toast.success('Saca creada exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al crear la saca'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear la saca'))
     },
   })
 }
@@ -53,9 +53,8 @@ export function useUpdateSaca() {
       queryClient.invalidateQueries({ queryKey: ['saca', variables.id] })
       toast.success('Saca actualizada exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al actualizar la saca'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar la saca'))
     },
   })
 }
@@ -69,9 +68,8 @@ export function useDeleteSaca() {
       queryClient.invalidateQueries({ queryKey: ['sacas'] })
       toast.success('Saca eliminada exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al eliminar la saca'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar la saca'))
     },
   })
 }
@@ -88,9 +86,8 @@ export function useAgregarPaquetesSaca() {
       queryClient.invalidateQueries({ queryKey: ['saca-paquetes', variables.id] })
       toast.success('Paquetes agregados exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al agregar los paquetes'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al agregar los paquetes'))
     },
   })
 }
@@ -105,9 +102,8 @@ export function useCalcularPesoSaca() {
       queryClient.invalidateQueries({ queryKey: ['saca', id] })
       toast.success('Peso calculado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al calcular el peso'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al calcular el peso'))
     },
   })
 }

@@ -49,39 +49,43 @@ export function ListPagination({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 min-h-10 min-w-10 sm:h-8 sm:w-8 sm:min-h-0 sm:min-w-0"
               onClick={() => onPageChange(0)}
               disabled={!canPrev}
+              aria-label="Primera página"
             >
               <ChevronsLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 min-h-10 min-w-10 sm:h-8 sm:w-8 sm:min-h-0 sm:min-w-0"
               onClick={() => onPageChange(page - 1)}
               disabled={!canPrev}
+              aria-label="Página anterior"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center justify-center min-w-[3rem] text-sm font-medium tabular-nums">
+            <div className="flex items-center justify-center min-w-[3rem] text-sm font-medium tabular-nums px-1">
               {page + 1} / {totalPages}
             </div>
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 min-h-10 min-w-10 sm:h-8 sm:w-8 sm:min-h-0 sm:min-w-0"
               onClick={() => onPageChange(page + 1)}
               disabled={!canNext}
+              aria-label="Página siguiente"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 min-h-10 min-w-10 sm:h-8 sm:w-8 sm:min-h-0 sm:min-w-0"
               onClick={() => onPageChange(totalPages - 1)}
               disabled={!canNext}
+              aria-label="Última página"
             >
               <ChevronsRight className="h-4 w-4" />
             </Button>

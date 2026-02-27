@@ -46,9 +46,10 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/detail/StatusBadge'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
+import { LoadingState } from '@/components/states/LoadingState'
+import { EmptyState } from '@/components/states/EmptyState'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 
@@ -143,44 +144,38 @@ export default function AtencionPaquetesList() {
     atencionesFiltradas.every(a => atencionesSeleccionadas.has(a.idAtencion!))
 
   return (
-    <PageContainer width="full" spacing="0" className="w-full flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border/30 bg-background/70 backdrop-blur-xl z-10 shrink-0">
-        <PageHeader
-          className="pb-0 border-b-0"
-          icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"><AlertCircle className="h-4 w-4 text-primary" /></div>}
-          title="Atención Paquetes"
-          subtitle="Gestión de incidencias y problemas"
-          actions={
-            <div className="flex gap-2">
-              {atencionesSeleccionadas.size > 0 && (
-                <ProtectedByPermission permission={PERMISSIONS.ATENCION_PAQUETES.EDITAR}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportarSeleccionadas}
-                    disabled={exportando}
-                    className="h-8 text-xs shadow-sm rounded-lg border-dashed"
-                  >
-                    {exportando ? (
-                      <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generando...</>
-                    ) : (
-                      <><Printer className="h-3.5 w-3.5 mr-1.5" />Imprimir ({atencionesSeleccionadas.size})</>
-                    )}
-                  </Button>
-                </ProtectedByPermission>
-              )}
-              <ProtectedByPermission permission={PERMISSIONS.ATENCION_PAQUETES.CREAR}>
-                <Button onClick={() => navigate({ to: '/atencion-paquetes/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />
-                  Nueva Solicitud
-                </Button>
-              </ProtectedByPermission>
-            </div>
-          }
-        />
-      </div>
-
+    <StandardPageLayout
+      title="Atención Paquetes"
+      subtitle="Gestión de incidencias y problemas"
+      icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"><AlertCircle className="h-4 w-4 text-primary" /></div>}
+      actions={
+        <div className="flex flex-wrap gap-2 justify-end">
+          {atencionesSeleccionadas.size > 0 && (
+            <ProtectedByPermission permission={PERMISSIONS.ATENCION_PAQUETES.EDITAR}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportarSeleccionadas}
+                disabled={exportando}
+                className="h-8 text-xs shadow-sm rounded-lg border-dashed"
+              >
+                {exportando ? (
+                  <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generando...</>
+                ) : (
+                  <><Printer className="h-3.5 w-3.5 mr-1.5" />Imprimir ({atencionesSeleccionadas.size})</>
+                )}
+              </Button>
+            </ProtectedByPermission>
+          )}
+          <ProtectedByPermission permission={PERMISSIONS.ATENCION_PAQUETES.CREAR}>
+            <Button onClick={() => navigate({ to: '/atencion-paquetes/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Nueva Solicitud
+            </Button>
+          </ProtectedByPermission>
+        </div>
+      }
+    >
       {/* Toolbar */}
       <div className="px-4 sm:px-6 py-3 border-b border-border/30 bg-muted/5 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="relative flex-1 max-w-md group">
@@ -255,37 +250,26 @@ export default function AtencionPaquetesList() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-40 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
-                      <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/20 border-t-primary animate-spin" />
-                      <span className="text-sm">Cargando datos...</span>
-                    </div>
+                  <TableCell colSpan={7} className="p-8">
+                    <LoadingState label="Cargando datos..." />
                   </TableCell>
                 </TableRow>
               ) : atencionesFiltradas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-64 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center gap-4 max-w-sm mx-auto p-8">
-                      <div className="h-16 w-16 rounded-2xl bg-muted/40 flex items-center justify-center">
-                        <AlertCircle className="h-8 w-8 text-muted-foreground/30" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <h3 className="font-bold text-foreground">No hay solicitudes</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {busqueda.trim().length > 0
-                            ? `No se encontraron resultados para "${busqueda}"`
-                            : "No hay solicitudes de atención que coincidan con los filtros."}
-                        </p>
-                      </div>
-                      {busqueda.trim().length === 0 && (
+                  <TableCell colSpan={7} className="p-8">
+                    <EmptyState
+                      title="No hay solicitudes"
+                      description={busqueda.trim().length > 0 ? `No se encontraron resultados para "${busqueda}"` : 'No hay solicitudes de atención que coincidan con los filtros.'}
+                      icon={<AlertCircle className="h-10 w-10 text-muted-foreground/50" />}
+                      action={busqueda.trim().length === 0 ? (
                         <ProtectedByPermission permission={PERMISSIONS.ATENCION_PAQUETES.CREAR}>
-                          <Button onClick={() => navigate({ to: '/atencion-paquetes/new' })} variant="outline" size="sm" className="mt-1 rounded-lg">
+                          <Button onClick={() => navigate({ to: '/atencion-paquetes/new' })} variant="outline" size="sm" className="rounded-lg">
                             <Plus className="h-3.5 w-3.5 mr-1.5" />
                             Nueva Solicitud
                           </Button>
                         </ProtectedByPermission>
-                      )}
-                    </div>
+                      ) : undefined}
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -429,6 +413,6 @@ export default function AtencionPaquetesList() {
           allowEstadoChange
         />
       )}
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

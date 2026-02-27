@@ -22,3 +22,6 @@ debug_history.log
 
 # ─── Test files ──────────────────────────────────────────────
 archivos de prueba/
+
+# ─── Dependencies ─────────────────────────────────────────────
+node_modules/

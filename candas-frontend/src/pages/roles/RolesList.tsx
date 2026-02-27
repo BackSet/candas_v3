@@ -4,7 +4,6 @@ import { useRoles, useDeleteRol } from '@/hooks/useRoles'
 import { useQuery } from '@tanstack/react-query'
 import { rolService } from '@/lib/api/rol.service'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,
@@ -30,12 +29,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Eye, Edit, Trash2, Plus, Shield, MoreHorizontal, Search, Key } from 'lucide-react'
+import { Eye, Edit, Trash2, Plus, Shield, MoreHorizontal, Key } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
+import { ListToolbar } from '@/components/list/ListToolbar'
+import { LoadingState } from '@/components/states/LoadingState'
+import { EmptyState } from '@/components/states/EmptyState'
+import { ErrorState } from '@/components/states/ErrorState'
 import { useFiltersStore } from '@/stores/filtersStore'
 
 const LIST_KEY = 'roles' as const
@@ -79,40 +81,29 @@ export default function RolesList() {
   const currentPage = data?.number || 0
 
   return (
-    <PageContainer width="full" spacing="0" className="w-full flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border/30 bg-background/70 backdrop-blur-xl z-10 shrink-0">
-        <PageHeader
-          className="pb-0 border-b-0"
-          icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center"><Shield className="h-4 w-4 text-violet-600 dark:text-violet-400" /></div>}
-          title="Roles"
-          subtitle="Gestión de roles y permisos"
-          actions={
-            <ProtectedByPermission permission={PERMISSIONS.ROLES.CREAR}>
-              <Button onClick={() => navigate({ to: '/roles/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Nuevo Rol
-              </Button>
-            </ProtectedByPermission>
-          }
-        />
-      </div>
-
-      {/* Search Toolbar */}
-      <div className="px-4 sm:px-6 py-3 border-b border-border/30 bg-muted/5 flex items-center justify-between gap-4 shrink-0">
-        <div className="relative flex-1 max-w-md group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-          <Input
-            placeholder="Buscar por nombre..."
-            className="h-9 w-full pl-9 pr-4 text-sm bg-background border-border/40 rounded-lg focus-visible:ring-primary/20 shadow-sm"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-        </div>
-        <span className="text-xs text-muted-foreground hidden sm:inline-block">
-          <span className="font-medium text-foreground">{rolesFiltrados.length}</span> roles
-        </span>
-      </div>
+    <StandardPageLayout
+      title="Roles"
+      subtitle="Gestión de roles y permisos"
+      icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center"><Shield className="h-4 w-4 text-violet-600 dark:text-violet-400" /></div>}
+      actions={
+        <ProtectedByPermission permission={PERMISSIONS.ROLES.CREAR}>
+          <Button onClick={() => navigate({ to: '/roles/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Nuevo Rol
+          </Button>
+        </ProtectedByPermission>
+      }
+    >
+      <ListToolbar
+        search={busqueda}
+        onSearchChange={setBusqueda}
+        searchPlaceholder="Buscar por nombre..."
+        actions={
+          <span className="text-xs text-muted-foreground hidden sm:inline-block">
+            <span className="font-medium text-foreground">{rolesFiltrados.length}</span> roles
+          </span>
+        }
+      />
 
       {/* Table */}
       <div className="flex-1 overflow-hidden relative">
@@ -130,46 +121,32 @@ export default function RolesList() {
             <TableBody>
               {(isLoading || loadingBusqueda) ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-40 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
-                      <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/20 border-t-violet-500 animate-spin" />
-                      <span className="text-sm">Cargando roles...</span>
-                    </div>
+                  <TableCell colSpan={5} className="p-8">
+                    <LoadingState label="Cargando roles..." />
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-40 text-center text-destructive">
-                    <div className="flex flex-col items-center gap-2">
-                      <Shield className="h-6 w-6 opacity-50" />
-                      <span className="text-sm">Error al cargar roles</span>
-                    </div>
+                  <TableCell colSpan={5} className="p-8">
+                    <ErrorState title="Error al cargar roles" />
                   </TableCell>
                 </TableRow>
               ) : rolesFiltrados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-64 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center gap-4 max-w-sm mx-auto p-8">
-                      <div className="h-16 w-16 rounded-2xl bg-muted/40 flex items-center justify-center">
-                        <Shield className="h-8 w-8 text-muted-foreground/30" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <h3 className="font-bold text-foreground">No se encontraron roles</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {busqueda.trim().length > 0
-                            ? `No hay resultados para "${busqueda}"`
-                            : "Aún no hay roles registrados en el sistema."}
-                        </p>
-                      </div>
-                      {busqueda.trim().length === 0 && (
+                  <TableCell colSpan={5} className="p-8">
+                    <EmptyState
+                      title="No se encontraron roles"
+                      description={busqueda.trim().length > 0 ? `No hay resultados para "${busqueda}"` : 'Aún no hay roles registrados en el sistema.'}
+                      icon={<Shield className="h-10 w-10 text-muted-foreground/50" />}
+                      action={busqueda.trim().length === 0 ? (
                         <ProtectedByPermission permission={PERMISSIONS.ROLES.CREAR}>
-                          <Button onClick={() => navigate({ to: '/roles/new' })} variant="outline" size="sm" className="mt-1 rounded-lg">
+                          <Button onClick={() => navigate({ to: '/roles/new' })} variant="outline" size="sm" className="rounded-lg">
                             <Plus className="h-3.5 w-3.5 mr-1.5" />
                             Crear Rol
                           </Button>
                         </ProtectedByPermission>
-                      )}
-                    </div>
+                      ) : undefined}
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -272,6 +249,6 @@ export default function RolesList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

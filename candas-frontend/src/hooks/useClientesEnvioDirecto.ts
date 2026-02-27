@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clienteEnvioDirectoService } from '@/lib/api/cliente-envio-directo.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { ClienteEnvioDirecto } from '@/types/cliente-envio-directo'
 import { toast } from 'sonner'
 
@@ -35,9 +36,8 @@ export function useCreateClienteEnvioDirecto() {
       queryClient.invalidateQueries({ queryKey: ['clientes-envio-directo'] })
       toast.success('Cliente de envío directo creado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al crear el cliente de envío directo'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear el cliente de envío directo'))
     },
   })
 }
@@ -53,9 +53,8 @@ export function useUpdateClienteEnvioDirecto() {
       queryClient.invalidateQueries({ queryKey: ['cliente-envio-directo', variables.id] })
       toast.success('Cliente de envío directo actualizado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al actualizar el cliente de envío directo'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar el cliente de envío directo'))
     },
   })
 }

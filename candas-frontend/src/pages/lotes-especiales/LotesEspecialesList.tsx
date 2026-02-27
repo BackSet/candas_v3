@@ -40,9 +40,8 @@ import {
   ChevronRight,
   AlertCircle
 } from 'lucide-react'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
-import { ErrorState } from '@/components/states'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { ErrorState, LoadingState } from '@/components/states'
 import { ListPagination } from '@/components/list/ListPagination'
 
 export default function LotesEspecialesList() {
@@ -85,36 +84,32 @@ export default function LotesEspecialesList() {
   }
 
   return (
-    <PageContainer width="full" spacing="6" className="w-full flex flex-col h-full min-h-0 overflow-hidden">
-      <PageHeader
-        icon={<Tag className="h-4 w-4" />}
-        title="Lotes especiales"
-        className="shrink-0"
-        actions={
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64 group">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="pl-8 bg-muted/40 border-transparent hover:bg-muted/60 focus:bg-background focus:border-border h-8 text-sm"
-              />
-            </div>
-            <Button onClick={() => navigate({ to: '/lotes-especiales/new' })} size="sm" className="h-8 shadow-sm">
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Crear lote especial
-            </Button>
+    <StandardPageLayout
+      title="Lotes especiales"
+      icon={<Tag className="h-4 w-4" />}
+      actions={
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="relative flex-1 sm:w-64 group min-w-0">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="pl-8 bg-muted/40 border-transparent hover:bg-muted/60 focus:bg-background focus:border-border h-8 text-sm"
+            />
           </div>
-        }
-      />
-
+          <Button onClick={() => navigate({ to: '/lotes-especiales/new' })} size="sm" className="h-8 shadow-sm">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Crear lote especial
+          </Button>
+        </div>
+      }
+    >
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="rounded-md border border-border bg-card shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
           {(isLoading || loadingBusqueda) ? (
-            <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-2">
-              <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm">Cargando...</p>
+            <div className="p-12">
+              <LoadingState label="Cargando..." />
             </div>
           ) : error ? (
             <div className="p-6">
@@ -267,6 +262,6 @@ export default function LotesEspecialesList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

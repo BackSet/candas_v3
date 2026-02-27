@@ -6,8 +6,8 @@ import com.candas.candas_backend.exception.BadRequestException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.*;
 import com.candas.candas_backend.repository.spec.UsuarioSpecs;
-import com.candas.candas_backend.util.PasswordEncoderUtil;
 import org.hibernate.Hibernate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class UsuarioService {
     private final AgenciaRepository agenciaRepository;
     private final RolRepository rolRepository;
     private final UsuarioRolRepository usuarioRolRepository;
-    private final PasswordEncoderUtil passwordEncoderUtil;
+    private final PasswordEncoder passwordEncoder;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
@@ -34,13 +34,13 @@ public class UsuarioService {
             AgenciaRepository agenciaRepository,
             RolRepository rolRepository,
             UsuarioRolRepository usuarioRolRepository,
-            PasswordEncoderUtil passwordEncoderUtil) {
+            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.clienteRepository = clienteRepository;
         this.agenciaRepository = agenciaRepository;
         this.rolRepository = rolRepository;
         this.usuarioRolRepository = usuarioRolRepository;
-        this.passwordEncoderUtil = passwordEncoderUtil;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Page<UsuarioDTO> findAll(Pageable pageable, String search, String username, String email, Boolean activo) {
@@ -96,7 +96,7 @@ public class UsuarioService {
         usuario.setCredencialesNoExpiradas(true);
         
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-            usuario.setPassword(passwordEncoderUtil.encode(dto.getPassword()));
+            usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
         } else {
             throw new BadRequestException("La contraseña es obligatoria");
         }
@@ -129,7 +129,7 @@ public class UsuarioService {
         if (dto.getCredencialesNoExpiradas() != null) usuario.setCredencialesNoExpiradas(dto.getCredencialesNoExpiradas());
         
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
-            usuario.setPassword(passwordEncoderUtil.encode(dto.getPassword()));
+            usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
         
         if (dto.getIdCliente() != null) {

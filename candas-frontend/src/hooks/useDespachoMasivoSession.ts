@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { despachoMasivoSessionService } from '@/lib/api/despacho-masivo-session.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { DespachoMasivoSessionPayload } from '@/types/despacho-masivo-session'
 import { toast } from 'sonner'
 
@@ -28,11 +29,7 @@ export function useUpdateDespachoMasivoSession() {
       queryClient.invalidateQueries({ queryKey: ['despacho-masivo-session'] })
     },
     onError: (error: unknown) => {
-      const message =
-        error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
-          : null
-      toast.error(message ?? 'No se pudo sincronizar la sesión de despacho masivo')
+      toast.error(getApiErrorMessage(error, 'No se pudo sincronizar la sesión de despacho masivo'))
     },
   })
 }

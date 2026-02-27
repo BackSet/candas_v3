@@ -3,6 +3,7 @@ import type {
   DespachoDetalle,
   SacaDetalle,
 } from '@/types/manifiesto-consolidado'
+import type { ManifiestoPagoDetalle } from '@/types/manifiesto-pago'
 import { observacionesParaDespacho } from '@/utils/observacionesDespacho'
 
 export function imprimirManifiestoConsolidado(
@@ -318,9 +319,9 @@ export function imprimirManifiestoConsolidado(
 }
 
 // Back-compat: algunos hooks todavía importan "imprimirManifiestoPago"
-// (en realidad imprime el mismo formato consolidado).
-export function imprimirManifiestoPago(manifiesto: any, nombreAgenciaOrigen?: string) {
-  imprimirManifiestoConsolidado(manifiesto as ManifiestoConsolidadoDetalle, nombreAgenciaOrigen)
+// (en realidad imprime el mismo formato consolidado). ManifiestoPagoDetalle es compatible en estructura.
+export function imprimirManifiestoPago(manifiesto: ManifiestoPagoDetalle, nombreAgenciaOrigen?: string) {
+  imprimirManifiestoConsolidado(manifiesto as unknown as ManifiestoConsolidadoDetalle, nombreAgenciaOrigen)
 }
 
 function formatearPeriodo(manifiesto: ManifiestoConsolidadoDetalle): string {

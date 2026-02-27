@@ -36,8 +36,7 @@ import AgregarCadenitaFormDialog from '@/components/despacho/AgregarCadenitaForm
 import PaqueteRapidoFormDialog from '@/components/despacho/PaqueteRapidoFormDialog'
 import { Separator } from '@/components/ui/separator'
 import { LoadingState } from '@/components/states'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { useDraftStore } from '@/stores/draftStore'
 
 const DESPACHO_DRAFT_KEY = 'despacho-new'
@@ -824,27 +823,28 @@ export default function DespachoForm() {
   if (isEdit && loadingDespacho) return <LoadingState label="Cargando..." className="min-h-[50vh]" />
 
   return (
-    <PageContainer width="md" spacing="8" className="min-h-0 bg-background font-sans">
-      <PageHeader
-        icon={<Truck className="h-4 w-4" />}
-        title={isEdit ? 'Editar Despacho' : 'Nuevo Despacho'}
-        subtitle={isEdit ? 'Modifica la información del despacho' : 'Completa los pasos para crear el despacho'}
-        actions={
-          <div className="flex items-center gap-2">
-            {!isEdit && getDraft(DESPACHO_DRAFT_KEY) && (
-              <Button variant="ghost" size="sm" onClick={handleDiscardDraft} className="text-muted-foreground hover:text-destructive" title="Descartar borrador y empezar de cero">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Descartar borrador
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/despachos' })} className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+    <StandardPageLayout
+      width="md"
+      title={isEdit ? 'Editar Despacho' : 'Nuevo Despacho'}
+      subtitle={isEdit ? 'Modifica la información del despacho' : 'Completa los pasos para crear el despacho'}
+      icon={<Truck className="h-4 w-4" />}
+      className="min-h-0 bg-background font-sans"
+      spacing="8"
+      actions={
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          {!isEdit && getDraft(DESPACHO_DRAFT_KEY) && (
+            <Button variant="ghost" size="sm" onClick={handleDiscardDraft} className="text-muted-foreground hover:text-destructive" title="Descartar borrador y empezar de cero">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Descartar borrador
             </Button>
-          </div>
-        }
-      />
-
+          )}
+          <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/despachos' })} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+        </div>
+      }
+    >
       <div className="space-y-8">
         {/* Stepper con etiquetas */}
         <div className="space-y-3">
@@ -1658,6 +1658,6 @@ export default function DespachoForm() {
         onOpenChange={(v) => { setShowPaqueteRapidoDialog(v); if (!v) setSacaSeleccionadaParaPaquetes(null) }}
         onPaqueteCreado={handlePaqueteRapidoCreado}
       />
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

@@ -16,8 +16,9 @@ import { Edit, Trash2, ArrowLeft, Shield, Folder, Key, Calendar, FileText } from
 import AsignarPermisosDialog from './AsignarPermisosDialog'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import { LoadingState } from '@/components/states/LoadingState'
+import { EmptyState } from '@/components/states/EmptyState'
 
 export default function RolDetail() {
   const navigate = useNavigate()
@@ -54,77 +55,65 @@ export default function RolDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/20 border-t-violet-500 animate-spin" />
-        <span className="text-sm text-muted-foreground">Cargando rol...</span>
-      </div>
+      <DetailPageLayout backUrl="/roles" title="Rol">
+        <div className="p-8">
+          <LoadingState label="Cargando rol..." />
+        </div>
+      </DetailPageLayout>
     )
   }
 
   if (!rol) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center gap-4">
-        <div className="h-16 w-16 rounded-2xl bg-muted/40 flex items-center justify-center">
-          <Shield className="h-8 w-8 text-muted-foreground/30" />
-        </div>
-        <p className="text-muted-foreground text-sm">Rol no encontrado</p>
-        <Button variant="outline" onClick={() => navigate({ to: '/roles' })} className="rounded-lg">
-          Volver a la lista
-        </Button>
-      </div>
+      <DetailPageLayout backUrl="/roles" title="Rol">
+        <EmptyState
+          title="Rol no encontrado"
+          action={
+            <Button variant="outline" onClick={() => navigate({ to: '/roles' })} className="rounded-lg">
+              Volver a la lista
+            </Button>
+          }
+        />
+      </DetailPageLayout>
     )
   }
 
   return (
-    <PageContainer width="full" spacing="0" className="w-full flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border/30 bg-background/70 backdrop-blur-xl z-10 shrink-0">
-        <PageHeader
-          className="pb-0 border-b-0"
-          icon={
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center border border-violet-500/10">
-              <Shield className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-            </div>
-          }
-          title={rol.nombre}
-          subtitle={`Rol #${rol.idRol}`}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/roles' })} className="h-8 text-xs rounded-lg">
-                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                Volver
-              </Button>
-              <ProtectedByPermission permission={PERMISSIONS.ROLES.ASIGNAR_PERMISOS}>
-                <Button variant="ghost" size="sm" onClick={() => setShowAsignarPermisos(true)} className="h-8 text-xs rounded-lg">
-                  <Key className="h-3.5 w-3.5 mr-1.5" />
-                  Permisos
-                </Button>
-              </ProtectedByPermission>
-              <ProtectedByPermission permission={PERMISSIONS.ROLES.EDITAR}>
-                <Button variant="ghost" size="sm" onClick={() => navigate({ to: `/roles/${id}/edit` })} className="h-8 text-xs rounded-lg">
-                  <Edit className="h-3.5 w-3.5 mr-1.5" />
-                  Editar
-                </Button>
-              </ProtectedByPermission>
-              <ProtectedByPermission permission={PERMISSIONS.ROLES.ELIMINAR}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  Eliminar
-                </Button>
-              </ProtectedByPermission>
-            </div>
-          }
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <DetailPageLayout
+      backUrl="/roles"
+      title={rol.nombre ?? 'Rol'}
+      subtitle={`Rol #${rol.idRol}`}
+      status={{ label: rol.activo !== false ? 'Activo' : 'Inactivo', variant: rol.activo !== false ? 'active' : 'inactive' }}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <ProtectedByPermission permission={PERMISSIONS.ROLES.ASIGNAR_PERMISOS}>
+            <Button variant="ghost" size="sm" onClick={() => setShowAsignarPermisos(true)} className="h-8 text-xs rounded-lg">
+              <Key className="h-3.5 w-3.5 mr-1.5" />
+              Permisos
+            </Button>
+          </ProtectedByPermission>
+          <ProtectedByPermission permission={PERMISSIONS.ROLES.EDITAR}>
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: `/roles/${id}/edit` })} className="h-8 text-xs rounded-lg">
+              <Edit className="h-3.5 w-3.5 mr-1.5" />
+              Editar
+            </Button>
+          </ProtectedByPermission>
+          <ProtectedByPermission permission={PERMISSIONS.ROLES.ELIMINAR}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Eliminar
+            </Button>
+          </ProtectedByPermission>
+        </div>
+      }
+      maxWidth="2xl"
+    >
+      <div className="space-y-6">
 
           {/* Status Banner */}
           <div className="flex items-center gap-4">
@@ -293,7 +282,6 @@ export default function RolDetail() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Delete Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -322,6 +310,6 @@ export default function RolDetail() {
           onOpenChange={setShowAsignarPermisos}
         />
       )}
-    </PageContainer>
+    </DetailPageLayout>
   )
 }

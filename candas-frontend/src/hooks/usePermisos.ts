@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { permisoService } from '@/lib/api/permiso.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Permiso } from '@/types/permiso'
 import { toast } from 'sonner'
 
@@ -27,9 +28,8 @@ export function useCreatePermiso() {
       queryClient.invalidateQueries({ queryKey: ['permisos'] })
       toast.success('Permiso creado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al crear el permiso'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear el permiso'))
     },
   })
 }
@@ -45,9 +45,8 @@ export function useUpdatePermiso() {
       queryClient.invalidateQueries({ queryKey: ['permiso', variables.id] })
       toast.success('Permiso actualizado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al actualizar el permiso'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar el permiso'))
     },
   })
 }
@@ -61,9 +60,8 @@ export function useDeletePermiso() {
       queryClient.invalidateQueries({ queryKey: ['permisos'] })
       toast.success('Permiso eliminado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al eliminar el permiso'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar el permiso'))
     },
   })
 }

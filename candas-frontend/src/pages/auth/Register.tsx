@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { authService } from '@/lib/api/auth.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { RegisterRequest } from '@/types/user'
 
 const registerSchema = z.object({
@@ -36,18 +37,21 @@ export default function Register() {
       await authService.register(data)
       // Después de registrar, redirigir a login para que el usuario inicie sesión
       navigate({ to: '/login', state: { message: 'Registro exitoso. Por favor inicia sesión.' } })
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMessage = 'Error al registrar usuario'
-      if (err?.code === 'ERR_NETWORK' || !err?.response) {
+      const errObj = err as { code?: string; response?: { status?: number; data?: { message?: string } } }
+      if (errObj?.code === 'ERR_NETWORK' || !errObj?.response) {
         errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:8080'
-      } else if (err?.response?.data?.message) {
-        errorMessage = err.response.data.message
-      } else if (err?.response?.status === 400) {
+      } else if (errObj?.response?.status === 400) {
         errorMessage = 'Datos inválidos. Verifica que todos los campos estén correctos'
-      } else if (err?.response?.status === 409) {
+      } else if (errObj?.response?.status === 409) {
         errorMessage = 'El usuario o email ya existe'
-      } else if (err?.response?.status) {
-        errorMessage = `Error del servidor (${err.response.status})`
+      } else if (errObj?.response?.data?.message) {
+        errorMessage = errObj.response.data.message
+      } else if (errObj?.response?.status) {
+        errorMessage = `Error del servidor (${errObj.response.status})`
+      } else {
+        errorMessage = getApiErrorMessage(err, 'Error al registrar usuario')
       }
       setError(errorMessage)
     } finally {

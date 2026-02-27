@@ -48,7 +48,6 @@ import {
   PackagePlus,
   PackageMinus,
   Link2,
-  Loader2,
   Tag,
   AlertTriangle
 } from 'lucide-react'
@@ -68,13 +67,14 @@ import { Checkbox } from '@/components/ui/checkbox'
 import type { Paquete } from '@/types/paquete'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
+import { LoadingState } from '@/components/states/LoadingState'
+import { ErrorState } from '@/components/states/ErrorState'
 import { getEstadoPaqueteBadgeVariant } from '@/utils/paqueteEstado'
 
 const LIST_KEY = 'paquetes' as const
@@ -181,13 +181,11 @@ export default function PaquetesList() {
     paquetesFiltrados.every(p => paquetesSeleccionados.has(p.idPaquete!))
 
   return (
-    <PageContainer width="full" className="flex flex-col h-full min-h-0 overflow-hidden">
-      <PageHeader
-        icon={<Package className="h-4 w-4" />}
-        title="Paquetes"
-        className="shrink-0"
-        actions={
-          <div className="flex items-center gap-2">
+    <StandardPageLayout
+      title="Paquetes"
+      icon={<Package className="h-4 w-4" />}
+      actions={
+        <div className="flex items-center gap-2 flex-wrap justify-end">
             <ProtectedByPermission permissions={[PERMISSIONS.PAQUETES.CREAR, PERMISSIONS.PAQUETES.EDITAR]}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -245,10 +243,9 @@ export default function PaquetesList() {
                 Nuevo
               </Button>
             </ProtectedByPermission>
-          </div>
-        }
-      />
-
+        </div>
+      }
+    >
       <ListToolbar
         search={busquedaGuia}
         onSearchChange={setBusquedaGuia}
@@ -328,20 +325,14 @@ export default function PaquetesList() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-32 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="text-sm">Cargando paquetes...</span>
-                    </div>
+                  <TableCell colSpan={9} className="p-8">
+                    <LoadingState label="Cargando paquetes..." />
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-32 text-center text-destructive">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <AlertTriangle className="h-5 w-5" />
-                      <span className="text-sm">Error al cargar datos</span>
-                    </div>
+                  <TableCell colSpan={9} className="p-8">
+                    <ErrorState title="Error al cargar paquetes" />
                   </TableCell>
                 </TableRow>
               ) : paquetesFiltrados.length === 0 ? (
@@ -563,6 +554,6 @@ export default function PaquetesList() {
           }
         }}
       />
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

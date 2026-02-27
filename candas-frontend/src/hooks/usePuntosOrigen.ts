@@ -1,14 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { puntoOrigenService } from '@/lib/api/punto-origen.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { PuntoOrigen } from '@/types/punto-origen'
 import { toast } from 'sonner'
-
-type ApiError = { response?: { data?: { message?: string } } }
-
-function getApiErrorMessage(error: unknown, fallback: string): string {
-  const message = (error as ApiError)?.response?.data?.message
-  return typeof message === 'string' && message.trim().length > 0 ? message : fallback
-}
 
 export function usePuntosOrigen(page: number = 0, size: number = 20) {
   return useQuery({

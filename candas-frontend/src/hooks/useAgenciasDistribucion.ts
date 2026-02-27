@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { agenciaDistribucionService } from '@/lib/api/agencia-distribucion.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { AgenciaDistribucion } from '@/types/agencia-distribucion'
 import { toast } from 'sonner'
 
@@ -26,8 +27,8 @@ export function useCreateAgenciaDistribucion() {
       queryClient.invalidateQueries({ queryKey: ['agencias-distribucion'] })
       toast.success('Agencia de distribución creada exitosamente')
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al crear la agencia de distribución')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear la agencia de distribución'))
     },
   })
 }
@@ -41,8 +42,8 @@ export function useUpdateAgenciaDistribucion() {
       queryClient.invalidateQueries({ queryKey: ['agencias-distribucion'] })
       toast.success('Agencia de distribución actualizada exitosamente')
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al actualizar la agencia de distribución')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar la agencia de distribución'))
     },
   })
 }
@@ -55,8 +56,8 @@ export function useDeleteAgenciaDistribucion() {
       queryClient.invalidateQueries({ queryKey: ['agencias-distribucion'] })
       toast.success('Agencia de distribución eliminada exitosamente')
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al eliminar la agencia de distribución')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar la agencia de distribución'))
     },
   })
 }
@@ -65,8 +66,8 @@ export function useBuscarOCrearAgenciaDistribucion() {
   return useMutation({
     mutationFn: ({ nombre, codigo }: { nombre?: string; codigo?: string }) =>
       agenciaDistribucionService.buscarOCrear(nombre, codigo),
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al buscar o crear la agencia de distribución')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al buscar o crear la agencia de distribución'))
     },
   })
 }

@@ -21,8 +21,8 @@ import { useRoles } from '@/hooks/useRoles'
 import type { Usuario } from '@/types/usuario'
 import { Search, UserCog, Save, ArrowLeft, Shield, Building2, User, Mail, Lock, Hash } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { LoadingState } from '@/components/states/LoadingState'
 
 const usuarioSchema = z.object({
   username: z.string().min(1, 'El username es requerido'),
@@ -156,41 +156,36 @@ export default function UsuarioForm() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/20 border-t-primary animate-spin" />
-        <span className="text-sm text-muted-foreground">Cargando formulario...</span>
-      </div>
+      <StandardPageLayout title={isEdit ? 'Editar Usuario' : 'Nuevo Usuario'} icon={<UserCog className="h-4 w-4" />}>
+        <div className="p-8">
+          <LoadingState label="Cargando formulario..." />
+        </div>
+      </StandardPageLayout>
     )
   }
 
   return (
-    <PageContainer width="full" spacing="0" className="w-full flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border/30 bg-background/70 backdrop-blur-xl z-10 shrink-0">
-        <PageHeader
-          className="pb-0 border-b-0"
-          icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"><UserCog className="h-4 w-4 text-primary" /></div>}
-          title={isEdit ? 'Editar Usuario' : 'Nuevo Usuario'}
-          subtitle={isEdit ? 'Modificar datos y roles del usuario' : 'Crear nuevo usuario en el sistema'}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => navigate({ to: '/usuarios' })} disabled={isSaving} className="h-8 text-xs rounded-lg">
-                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                Volver
-              </Button>
-              <Button type="button" size="sm" disabled={isSaving} onClick={() => handleSubmit(onSubmit)()} className="h-8 text-xs rounded-lg shadow-sm">
-                {isSaving ? 'Guardando...' : (
-                  <>
-                    <Save className="h-3.5 w-3.5 mr-1.5" />
-                    Guardar
-                  </>
-                )}
-              </Button>
-            </div>
-          }
-        />
-      </div>
-
+    <StandardPageLayout
+      title={isEdit ? 'Editar Usuario' : 'Nuevo Usuario'}
+      subtitle={isEdit ? 'Modificar datos y roles del usuario' : 'Crear nuevo usuario en el sistema'}
+      icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"><UserCog className="h-4 w-4 text-primary" /></div>}
+      actions={
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={() => navigate({ to: '/usuarios' })} disabled={isSaving} className="h-8 text-xs rounded-lg">
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+            Volver
+          </Button>
+          <Button type="button" size="sm" disabled={isSaving} onClick={() => handleSubmit(onSubmit)()} className="h-8 text-xs rounded-lg shadow-sm">
+            {isSaving ? 'Guardando...' : (
+              <>
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                Guardar
+              </>
+            )}
+          </Button>
+        </div>
+      }
+    >
       {/* Content */}
       <div className="flex-1 overflow-auto">
         <form id="usuario-form" onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-8">
@@ -432,6 +427,6 @@ export default function UsuarioForm() {
           </div>
         </form>
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

@@ -33,9 +33,11 @@ import {
 import { Eye, Edit, Trash2, Plus, Key, MoreHorizontal, Search, Folder, Zap } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
+import { LoadingState } from '@/components/states/LoadingState'
+import { EmptyState } from '@/components/states/EmptyState'
+import { ErrorState } from '@/components/states/ErrorState'
 import { useFiltersStore } from '@/stores/filtersStore'
 
 const LIST_KEY = 'permisos' as const
@@ -79,25 +81,19 @@ export default function PermisosList() {
   const currentPage = data?.number || 0
 
   return (
-    <PageContainer width="full" spacing="0" className="w-full flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border/30 bg-background/70 backdrop-blur-xl z-10 shrink-0">
-        <PageHeader
-          className="pb-0 border-b-0"
-          icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 flex items-center justify-center"><Key className="h-4 w-4 text-blue-600 dark:text-blue-400" /></div>}
-          title="Permisos"
-          subtitle="Gestión de permisos del sistema"
-          actions={
-            <ProtectedByPermission permission={PERMISSIONS.PERMISOS.CREAR}>
-              <Button onClick={() => navigate({ to: '/permisos/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Nuevo Permiso
-              </Button>
-            </ProtectedByPermission>
-          }
-        />
-      </div>
-
+    <StandardPageLayout
+      title="Permisos"
+      subtitle="Gestión de permisos del sistema"
+      icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/5 flex items-center justify-center"><Key className="h-4 w-4 text-blue-600 dark:text-blue-400" /></div>}
+      actions={
+        <ProtectedByPermission permission={PERMISSIONS.PERMISOS.CREAR}>
+          <Button onClick={() => navigate({ to: '/permisos/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Nuevo Permiso
+          </Button>
+        </ProtectedByPermission>
+      }
+    >
       {/* Search Toolbar */}
       <div className="px-4 sm:px-6 py-3 border-b border-border/30 bg-muted/5 flex items-center justify-between gap-4 shrink-0">
         <div className="relative flex-1 max-w-md group">
@@ -130,46 +126,32 @@ export default function PermisosList() {
             <TableBody>
               {(isLoading || loadingBusqueda) ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-40 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
-                      <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/20 border-t-blue-500 animate-spin" />
-                      <span className="text-sm">Cargando permisos...</span>
-                    </div>
+                  <TableCell colSpan={5} className="p-8">
+                    <LoadingState label="Cargando permisos..." />
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-40 text-center text-destructive">
-                    <div className="flex flex-col items-center gap-2">
-                      <Key className="h-6 w-6 opacity-50" />
-                      <span className="text-sm">Error al cargar permisos</span>
-                    </div>
+                  <TableCell colSpan={5} className="p-8">
+                    <ErrorState title="Error al cargar permisos" />
                   </TableCell>
                 </TableRow>
               ) : permisosFiltrados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-64 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center gap-4 max-w-sm mx-auto p-8">
-                      <div className="h-16 w-16 rounded-2xl bg-muted/40 flex items-center justify-center">
-                        <Key className="h-8 w-8 text-muted-foreground/30" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <h3 className="font-bold text-foreground">No se encontraron permisos</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {busqueda.trim().length > 0
-                            ? `No hay resultados para "${busqueda}"`
-                            : "Aún no hay permisos registrados en el sistema."}
-                        </p>
-                      </div>
-                      {busqueda.trim().length === 0 && (
+                  <TableCell colSpan={5} className="p-8">
+                    <EmptyState
+                      title="No se encontraron permisos"
+                      description={busqueda.trim().length > 0 ? `No hay resultados para "${busqueda}"` : 'Aún no hay permisos registrados en el sistema.'}
+                      icon={<Key className="h-10 w-10 text-muted-foreground/50" />}
+                      action={busqueda.trim().length === 0 ? (
                         <ProtectedByPermission permission={PERMISSIONS.PERMISOS.CREAR}>
-                          <Button onClick={() => navigate({ to: '/permisos/new' })} variant="outline" size="sm" className="mt-1 rounded-lg">
+                          <Button onClick={() => navigate({ to: '/permisos/new' })} variant="outline" size="sm" className="rounded-lg">
                             <Plus className="h-3.5 w-3.5 mr-1.5" />
                             Crear Permiso
                           </Button>
                         </ProtectedByPermission>
-                      )}
-                    </div>
+                      ) : undefined}
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -275,6 +257,6 @@ export default function PermisosList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

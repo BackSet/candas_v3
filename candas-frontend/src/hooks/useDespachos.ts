@@ -1,14 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { despachoService, type TipoDestinoDespacho } from '@/lib/api/despacho.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Despacho } from '@/types/despacho'
 import { toast } from 'sonner'
-
-type ApiError = { response?: { data?: { message?: string } } }
-
-const getApiErrorMessage = (error: unknown, fallback: string): string => {
-  const message = (error as ApiError)?.response?.data?.message
-  return typeof message === 'string' && message.trim().length > 0 ? message : fallback
-}
 
 export function useDespachos(
   page: number = 0,

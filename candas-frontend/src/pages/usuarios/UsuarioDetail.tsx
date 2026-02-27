@@ -17,8 +17,9 @@ import { Edit, Trash2, ArrowLeft, UserCog, Mail, Calendar, Hash, Shield, User, B
 import AsignarRolesDialog from './AsignarRolesDialog'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import { LoadingState } from '@/components/states/LoadingState'
+import { EmptyState } from '@/components/states/EmptyState'
 
 export default function UsuarioDetail() {
   const navigate = useNavigate()
@@ -45,77 +46,66 @@ export default function UsuarioDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/20 border-t-primary animate-spin" />
-        <span className="text-sm text-muted-foreground">Cargando información...</span>
-      </div>
+      <DetailPageLayout backUrl="/usuarios" title="Usuario">
+        <div className="p-8">
+          <LoadingState label="Cargando información..." />
+        </div>
+      </DetailPageLayout>
     )
   }
 
   if (!usuario) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center gap-4">
-        <div className="h-16 w-16 rounded-2xl bg-muted/40 flex items-center justify-center">
-          <User className="h-8 w-8 text-muted-foreground/30" />
-        </div>
-        <p className="text-muted-foreground text-sm">Usuario no encontrado</p>
-        <Button variant="outline" onClick={() => navigate({ to: '/usuarios' })} className="rounded-lg">
-          Volver a la lista
-        </Button>
-      </div>
+      <DetailPageLayout backUrl="/usuarios" title="Usuario">
+        <EmptyState
+          title="Usuario no encontrado"
+          action={
+            <Button variant="outline" onClick={() => navigate({ to: '/usuarios' })} className="rounded-lg">
+              Volver a la lista
+            </Button>
+          }
+        />
+      </DetailPageLayout>
     )
   }
 
   return (
-    <PageContainer width="full" spacing="0" className="w-full flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border/30 bg-background/70 backdrop-blur-xl z-10 shrink-0">
-        <PageHeader
-          className="pb-0 border-b-0"
-          icon={
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary text-lg font-bold uppercase border border-primary/10">
-              {usuario.nombreCompleto?.charAt(0) || '?'}
-            </div>
-          }
-          title={usuario.nombreCompleto}
-          subtitle={`@${usuario.username}`}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/usuarios' })} className="h-8 text-xs rounded-lg">
-                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                Volver
-              </Button>
-              <ProtectedByPermission permission={PERMISSIONS.USUARIOS.ASIGNAR_ROLES}>
-                <Button variant="ghost" size="sm" onClick={() => setShowAsignarRoles(true)} className="h-8 text-xs rounded-lg">
-                  <UserCog className="h-3.5 w-3.5 mr-1.5" />
-                  Roles
-                </Button>
-              </ProtectedByPermission>
-              <ProtectedByPermission permission={PERMISSIONS.USUARIOS.EDITAR}>
-                <Button variant="ghost" size="sm" onClick={() => navigate({ to: `/usuarios/${id}/edit` })} className="h-8 text-xs rounded-lg">
-                  <Edit className="h-3.5 w-3.5 mr-1.5" />
-                  Editar
-                </Button>
-              </ProtectedByPermission>
-              <ProtectedByPermission permission={PERMISSIONS.USUARIOS.ELIMINAR}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  Eliminar
-                </Button>
-              </ProtectedByPermission>
-            </div>
-          }
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <DetailPageLayout
+      backUrl="/usuarios"
+      title={usuario.nombreCompleto ?? 'Usuario'}
+      subtitle={`@${usuario.username}`}
+      status={{ label: usuario.activo !== false ? 'Activo' : 'Inactivo', variant: usuario.activo !== false ? 'active' : 'inactive' }}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <ProtectedByPermission permission={PERMISSIONS.USUARIOS.ASIGNAR_ROLES}>
+            <Button variant="ghost" size="sm" onClick={() => setShowAsignarRoles(true)} className="h-8 text-xs rounded-lg">
+              <UserCog className="h-3.5 w-3.5 mr-1.5" />
+              Roles
+            </Button>
+          </ProtectedByPermission>
+          <ProtectedByPermission permission={PERMISSIONS.USUARIOS.EDITAR}>
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: `/usuarios/${id}/edit` })} className="h-8 text-xs rounded-lg">
+              <Edit className="h-3.5 w-3.5 mr-1.5" />
+              Editar
+            </Button>
+          </ProtectedByPermission>
+          <ProtectedByPermission permission={PERMISSIONS.USUARIOS.ELIMINAR}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Eliminar
+            </Button>
+          </ProtectedByPermission>
+        </div>
+      }
+      maxWidth="2xl"
+    >
+      <div className="contents">
+      <div className="space-y-6">
 
           {/* Status Banner */}
           <div className="flex items-center gap-4">
@@ -266,7 +256,6 @@ export default function UsuarioDetail() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Delete Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -293,6 +282,7 @@ export default function UsuarioDetail() {
         open={showAsignarRoles}
         onOpenChange={setShowAsignarRoles}
       />
-    </PageContainer>
+      </div>
+    </DetailPageLayout>
   )
 }

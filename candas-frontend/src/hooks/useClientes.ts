@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clienteService } from '@/lib/api/cliente.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Cliente } from '@/types/cliente'
 import { toast } from 'sonner'
 
@@ -32,8 +33,7 @@ export function useCreateCliente() {
       toast.success('Cliente creado exitosamente')
     },
     onError: (error: unknown) => {
-      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error al crear el cliente'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Error al crear el cliente'))
     },
   })
 }
@@ -50,8 +50,7 @@ export function useUpdateCliente() {
       toast.success('Cliente actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error al actualizar el cliente'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Error al actualizar el cliente'))
     },
   })
 }
@@ -66,8 +65,7 @@ export function useDeleteCliente() {
       toast.success('Cliente eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error al eliminar el cliente'
-      toast.error(message)
+      toast.error(getApiErrorMessage(error, 'Error al eliminar el cliente'))
     },
   })
 }

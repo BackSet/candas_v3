@@ -14,8 +14,8 @@ import {
   TrendingUp, Boxes,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { LoadingState } from '@/components/states/LoadingState'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -51,27 +51,20 @@ export default function Dashboard() {
   const isLoading = loadingPaquetes || loadingAtenciones || loadingDespachos || loadingLotes
 
   return (
-    <PageContainer width="full" spacing="0" className="w-full flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border/30 bg-background/70 backdrop-blur-xl z-10 shrink-0">
-        <PageHeader
-          className="pb-0 border-b-0"
-          icon={
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <LayoutDashboard className="h-4 w-4 text-primary" />
-            </div>
-          }
-          title="Dashboard"
-          subtitle="Resumen de operaciones en tiempo real"
-        />
-      </div>
-
+    <StandardPageLayout
+      title="Dashboard"
+      subtitle="Resumen de operaciones en tiempo real"
+      icon={
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          <LayoutDashboard className="h-4 w-4 text-primary" />
+        </div>
+      }
+    >
       {/* Content Area */}
       <div className="flex-1 overflow-auto">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/20 border-t-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">Cargando información...</span>
+          <div className="flex flex-col items-center justify-center h-64 p-8">
+            <LoadingState label="Cargando información..." />
           </div>
         ) : (
           <div className="max-w-7xl mx-auto p-6 space-y-8">
@@ -284,7 +277,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }
 

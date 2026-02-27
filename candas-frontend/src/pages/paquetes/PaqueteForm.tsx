@@ -20,8 +20,7 @@ import { EstadoPaquete, TipoPaquete, TipoDestino } from '@/types/paquete'
 import { Package, MapPin, FileText, Loader2, Building2, ArrowLeft, Save, Scale, Wand2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SectionTitle } from '@/components/ui/section-title'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ClienteSearchField } from '@/components/clientes/ClienteSearchField'
 import { CrearClienteFormDialog } from '@/components/clientes/CrearClienteFormDialog'
 import { Label } from '@/components/ui/label'
@@ -149,42 +148,41 @@ export default function PaqueteForm() {
   }
 
   return (
-    <PageContainer className="w-full flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-500">
-      <PageHeader
-        icon={<Package className="h-4 w-4" />}
-        title={isEdit ? 'Editar Paquete' : 'Nuevo Paquete'}
-        subtitle={isEdit ? `Editando paquete #${id}` : 'Registrar un nuevo paquete en el sistema'}
-        actions={
-          <>
-            {!isEdit && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={fillDatosGenericos}
-                title="Completar pesos, medidas, valor, tarifa, REF y SED"
-                className="group h-9 border-dashed border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/60 shadow-sm"
-              >
-                <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-sm bg-primary/10 transition-colors group-hover:bg-primary/20">
-                  <Wand2 className="h-3.5 w-3.5" />
-                </span>
-                Datos genéricos
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/paquetes' })} className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+    <StandardPageLayout
+      title={isEdit ? 'Editar Paquete' : 'Nuevo Paquete'}
+      subtitle={isEdit ? `Editando paquete #${id}` : 'Registrar un nuevo paquete en el sistema'}
+      icon={<Package className="h-4 w-4" />}
+      className="animate-in fade-in duration-500"
+      actions={
+        <>
+          {!isEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={fillDatosGenericos}
+              title="Completar pesos, medidas, valor, tarifa, REF y SED"
+              className="group h-9 border-dashed border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/60 shadow-sm"
+            >
+              <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-sm bg-primary/10 transition-colors group-hover:bg-primary/20">
+                <Wand2 className="h-3.5 w-3.5" />
+              </span>
+              Datos genéricos
             </Button>
-            <Button variant="outline" onClick={() => navigate({ to: '/paquetes' })}>
-              Cancelar
-            </Button>
-            <Button type="submit" form="paquete-form" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-              {isSubmitting ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear paquete'}
-            </Button>
-          </>
-        }
-      />
-
+          )}
+          <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/paquetes' })} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+          <Button variant="outline" onClick={() => navigate({ to: '/paquetes' })}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="paquete-form" disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            {isSubmitting ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear paquete'}
+          </Button>
+        </>
+      }
+    >
       <div className="flex-1 overflow-y-auto p-6 md:p-8">
         <form id="paquete-form" onSubmit={handleSubmit(onSubmit)} className="max-w-5xl mx-auto space-y-8">
           <section className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-4">
@@ -432,6 +430,6 @@ export default function PaqueteForm() {
         <CrearClienteFormDialog title="Nuevo Cliente Remitente" manager={clienteRemitenteManager} />
         <CrearClienteFormDialog title="Nuevo Cliente Destinatario" manager={clienteDestinatarioManager} />
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

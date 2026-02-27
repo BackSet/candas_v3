@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { paqueteService, type ImportResult } from '@/lib/api/paquete.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import { Tag, AlertCircle, Loader2 } from 'lucide-react'
 import { ResultStatsGrid } from '@/components/dialogs/ResultStatsGrid'
 import { toast } from 'sonner'
@@ -72,8 +73,7 @@ export default function ImportarRefDialog({
         onImportSuccess()
       }
     } catch (err: unknown) {
-      const ax = err as { response?: { data?: { message?: string } }; message?: string }
-      toast.error(ax.response?.data?.message ?? ax.message ?? 'Error al importar REF.')
+      toast.error(getApiErrorMessage(err, 'Error al importar REF.'))
     } finally {
       setIsLoading(false)
     }

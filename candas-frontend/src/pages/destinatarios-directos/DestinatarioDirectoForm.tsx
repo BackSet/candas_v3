@@ -15,8 +15,7 @@ import {
 } from '@/schemas/destinatario-directo'
 import { ArrowLeft, User, MapPin, Building2, Save, Loader2, Sparkles } from 'lucide-react'
 import { Label } from '@/components/ui/label'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
 import { FormError } from '@/components/ui/form-error'
 import { LoadingState } from '@/components/states'
@@ -69,28 +68,27 @@ export default function DestinatarioDirectoForm() {
   }
 
   return (
-    <PageContainer className="w-full flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-500">
-      <PageHeader
-        icon={<User className="h-4 w-4" />}
-        title={isEdit ? 'Editar Destinatario' : 'Nuevo Destinatario'}
-        subtitle={isEdit ? `Modificando: ${destinatario?.nombreDestinatario ?? '...'}` : 'Registrar nuevo destinatario directo'}
-        actions={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/destinatarios-directos' })} className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
-            <Button variant="outline" onClick={() => navigate({ to: '/destinatarios-directos' })}>
-              Cancelar
-            </Button>
-            <Button type="submit" form="destinatario-directo-form" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-              {isSubmitting ? 'Guardando...' : 'Guardar'}
-            </Button>
-          </>
-        }
-      />
-
+    <StandardPageLayout
+      title={isEdit ? 'Editar Destinatario' : 'Nuevo Destinatario'}
+      subtitle={isEdit ? `Modificando: ${destinatario?.nombreDestinatario ?? '...'}` : 'Registrar nuevo destinatario directo'}
+      icon={<User className="h-4 w-4" />}
+      className="animate-in fade-in duration-500"
+      actions={
+        <>
+          <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/destinatarios-directos' })} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Button>
+          <Button variant="outline" onClick={() => navigate({ to: '/destinatarios-directos' })}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="destinatario-directo-form" disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            {isSubmitting ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </>
+      }
+    >
       <div className="flex-1 overflow-y-auto p-6 md:p-8">
         <form id="destinatario-directo-form" onSubmit={handleSubmit(onSubmit)} className="max-w-5xl mx-auto space-y-8">
           <section className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-4">
@@ -166,6 +164,6 @@ export default function DestinatarioDirectoForm() {
           </section>
         </form>
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

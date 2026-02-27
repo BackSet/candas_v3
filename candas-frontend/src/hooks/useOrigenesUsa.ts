@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { origenUsaService } from '@/lib/api/origen-usa.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { OrigenUsa } from '@/types/origen-usa'
 import { toast } from 'sonner'
 
@@ -27,9 +28,8 @@ export function useCreateOrigenUsa() {
       queryClient.invalidateQueries({ queryKey: ['origenes-usa'] })
       toast.success('Origen USA creado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al crear el origen USA'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear el origen USA'))
     },
   })
 }
@@ -45,9 +45,8 @@ export function useUpdateOrigenUsa() {
       queryClient.invalidateQueries({ queryKey: ['origen-usa', variables.id] })
       toast.success('Origen USA actualizado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al actualizar el origen USA'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar el origen USA'))
     },
   })
 }
@@ -61,9 +60,8 @@ export function useDeleteOrigenUsa() {
       queryClient.invalidateQueries({ queryKey: ['origenes-usa'] })
       toast.success('Origen USA eliminado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al eliminar el origen USA'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar el origen USA'))
     },
   })
 }

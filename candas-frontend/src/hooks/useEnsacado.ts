@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ensacadoService } from '@/lib/api/ensacado.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type {
   PaqueteEnsacadoInfo,
 } from '@/types/ensacado'
@@ -35,9 +36,8 @@ export function useMarcarEnsacado() {
       queryClient.invalidateQueries({ queryKey: ['ensacado-session'] })
       toast.success('Paquete marcado como ensacado')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al marcar el paquete como ensacado'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al marcar el paquete como ensacado'))
     },
   })
 }
@@ -70,11 +70,7 @@ export function useActualizarUltimaBusqueda() {
       queryClient.invalidateQueries({ queryKey: ['ensacado-session'] })
     },
     onError: (error: unknown) => {
-      const message =
-        error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
-          : null
-      toast.error(message ?? 'No se pudo sincronizar con la vista en curso')
+      toast.error(getApiErrorMessage(error, 'No se pudo sincronizar con la vista en curso'))
     },
   })
 }

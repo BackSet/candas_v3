@@ -1,14 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { LoteRecepcion } from '@/types/lote-recepcion'
 import { toast } from 'sonner'
-
-type ApiError = { response?: { data?: { message?: string } } }
-
-function getApiErrorMessage(error: unknown, fallback: string): string {
-  const message = (error as ApiError)?.response?.data?.message
-  return typeof message === 'string' && message.trim().length > 0 ? message : fallback
-}
 
 export function useLotesRecepcion(page: number = 0, size: number = 20, tipoLote?: string) {
   return useQuery({

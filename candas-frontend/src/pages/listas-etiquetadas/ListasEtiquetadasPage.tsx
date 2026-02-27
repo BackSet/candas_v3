@@ -10,8 +10,7 @@ import GuiasEnVariasListasCard from '@/components/listas-etiquetadas/GuiasEnVari
 import { useHasPermission } from '@/hooks/useHasRole'
 import { PERMISSIONS } from '@/types/permissions'
 import { Tag, Monitor, ScanLine, Plus, List, Clock, ListFilter } from 'lucide-react'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 
 export default function ListasEtiquetadasPage() {
   const [vistaOperario, setVistaOperario] = useState(false)
@@ -23,24 +22,21 @@ export default function ListasEtiquetadasPage() {
   }
 
   return (
-    <PageContainer width="full" className="flex flex-col h-full min-h-0 overflow-hidden">
-      <PageHeader
-        icon={<Tag className="h-4 w-4" />}
-        title="Etiquetado de Guías"
-        className="shrink-0"
-        actions={
-          <Button
-            onClick={() => setVistaOperario(true)}
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs shadow-sm"
-          >
-            <Monitor className="h-3.5 w-3.5 mr-1.5" />
-            Pantalla completa
-          </Button>
-        }
-      />
-
+    <StandardPageLayout
+      title="Etiquetado de Guías"
+      icon={<Tag className="h-4 w-4" />}
+      actions={
+        <Button
+          onClick={() => setVistaOperario(true)}
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs shadow-sm"
+        >
+          <Monitor className="h-3.5 w-3.5 mr-1.5" />
+          Pantalla completa
+        </Button>
+      }
+    >
       <div className="flex-1 min-h-0 overflow-hidden">
         <Tabs defaultValue="escanear" className="space-y-0 h-full flex flex-col">
           <div className="border-b border-border/40 px-1">
@@ -130,6 +126,6 @@ export default function ListasEtiquetadasPage() {
           </div>
         </Tabs>
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

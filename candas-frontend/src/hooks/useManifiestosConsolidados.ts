@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { manifiestoConsolidadoService } from '@/lib/api/manifiesto-consolidado.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { CrearManifiestoConsolidadoDTO, ManifiestoConsolidadoResumen } from '@/types/manifiesto-consolidado'
 import { toast } from 'sonner'
 
@@ -32,9 +33,8 @@ export function useCreateManifiestoConsolidado() {
       queryClient.invalidateQueries({ queryKey: ['manifiestos-consolidados'] })
       toast.success('Manifiesto consolidado generado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al generar el manifiesto consolidado'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al generar el manifiesto consolidado'))
     },
   })
 }
@@ -50,9 +50,8 @@ export function useDeleteManifiestoConsolidado() {
       queryClient.invalidateQueries({ queryKey: ['manifiestos-consolidados'] })
       toast.success('Manifiesto consolidado eliminado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al eliminar el manifiesto consolidado'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar el manifiesto consolidado'))
     },
   })
 }

@@ -25,8 +25,7 @@ import { useLoteRecepcion, useCreateLoteRecepcion, useUpdateLoteRecepcion } from
 import { useAgencias } from '@/hooks/useSelectOptions'
 import { useAuthStore } from '@/stores/authStore'
 import { CheckCircle2, Package, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { Label } from '@/components/ui/label'
 import { FormError } from '@/components/ui/form-error'
 import { SectionTitle } from '@/components/ui/section-title'
@@ -137,24 +136,24 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
   }
 
   return (
-    <PageContainer width="lg" spacing="6">
-      <PageHeader
-        icon={<Package className="h-4 w-4" />}
-        title={title ?? (isEdit ? 'Editar Lote de Recepción' : 'Nuevo Lote de Recepción')}
-        subtitle={
-          subtitle ??
-          (isEdit
-            ? 'Modifica la información del lote de recepción'
-            : 'Crea un lote normal o especial; la gestión de paquetes (importar o tipiar) se hace desde el detalle del lote.')
-        }
-        actions={
-          <Button variant="ghost" size="sm" onClick={() => navigate(backUrl)} className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
-          </Button>
-        }
-      />
-
+    <StandardPageLayout
+      width="lg"
+      spacing="6"
+      title={title ?? (isEdit ? 'Editar Lote de Recepción' : 'Nuevo Lote de Recepción')}
+      subtitle={
+        subtitle ??
+        (isEdit
+          ? 'Modifica la información del lote de recepción'
+          : 'Crea un lote normal o especial; la gestión de paquetes (importar o tipiar) se hace desde el detalle del lote.')
+      }
+      icon={<Package className="h-4 w-4" />}
+      actions={
+        <Button variant="ghost" size="sm" onClick={() => navigate(backUrl)} className="text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver
+        </Button>
+      }
+    >
       <Card>
         <CardHeader>
           <SectionTitle
@@ -359,6 +358,6 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

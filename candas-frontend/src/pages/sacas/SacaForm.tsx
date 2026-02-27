@@ -18,8 +18,8 @@ import { Save, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
 import { FormError } from '@/components/ui/form-error'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { LoadingState } from '@/components/states/LoadingState'
 
 const sacaSchema = z.object({
   codigoQr: z.string().optional(),
@@ -83,25 +83,31 @@ export default function SacaForm() {
   const isSaving = createMutation.isPending || updateMutation.isPending
 
   if (isLoading) {
-    return <div className="p-12 text-center text-muted-foreground animate-pulse text-sm">Cargando formulario...</div>
+    return (
+      <StandardPageLayout title={isEdit ? 'Editar Saca' : 'Nueva Saca'} icon={<ShoppingBag className="h-5 w-5" />}>
+        <div className="p-8">
+          <LoadingState label="Cargando formulario..." />
+        </div>
+      </StandardPageLayout>
+    )
   }
 
   return (
-    <PageContainer width="sm" spacing="8" className="pb-20 fade-in-section">
-      <PageHeader
-        icon={<ShoppingBag className="h-5 w-5" />}
-        title={isEdit ? 'Editar Saca' : 'Nueva Saca'}
-        subtitle={isEdit ? 'Modificar datos de la saca' : 'Registrar nueva saca'}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => navigate({ to: '/sacas' })} disabled={isSaving}>Cancelar</Button>
-            <Button type="button" size="sm" disabled={isSaving} onClick={() => handleSubmit(onSubmit)()}>
-              {isSaving ? 'Guardando...' : <><Save className="h-3.5 w-3.5 mr-2" /> Guardar</>}
-            </Button>
-          </div>
-        }
-      />
-
+    <StandardPageLayout
+      width="sm"
+      title={isEdit ? 'Editar Saca' : 'Nueva Saca'}
+      subtitle={isEdit ? 'Modificar datos de la saca' : 'Registrar nueva saca'}
+      icon={<ShoppingBag className="h-5 w-5" />}
+      className="pb-20 fade-in-section"
+      actions={
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={() => navigate({ to: '/sacas' })} disabled={isSaving}>Cancelar</Button>
+          <Button type="button" size="sm" disabled={isSaving} onClick={() => handleSubmit(onSubmit)()}>
+            {isSaving ? 'Guardando...' : <><Save className="h-3.5 w-3.5 mr-2" /> Guardar</>}
+          </Button>
+        </div>
+      }
+    >
       <form id="saca-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Main Info */}
         <section className="space-y-6">
@@ -171,6 +177,6 @@ export default function SacaForm() {
           </div>
         </section>
     </form>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

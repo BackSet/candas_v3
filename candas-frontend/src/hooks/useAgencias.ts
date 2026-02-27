@@ -3,12 +3,7 @@ import { agenciaService } from '@/lib/api/agencia.service'
 import type { Agencia } from '@/types/agencia'
 import { toast } from 'sonner'
 
-type ApiError = { response?: { data?: { message?: string } } }
-
-const getApiErrorMessage = (error: unknown, fallback: string): string => {
-  const message = (error as ApiError)?.response?.data?.message
-  return typeof message === 'string' && message.trim().length > 0 ? message : fallback
-}
+import { getApiErrorMessage } from '@/lib/api/errors'
 
 export function useAgencias(
   page: number = 0,

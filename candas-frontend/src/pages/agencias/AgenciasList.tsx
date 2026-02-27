@@ -34,17 +34,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Eye, Edit, Trash2, Plus, Building2, MoreHorizontal, Loader2, MapPin, AlertCircle } from 'lucide-react'
+import { Eye, Edit, Trash2, Plus, Building2, MoreHorizontal, MapPin } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPagination } from '@/components/list/ListPagination'
 import { useFiltersStore } from '@/stores/filtersStore'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
+import { LoadingState } from '@/components/states/LoadingState'
+import { ErrorState } from '@/components/states/ErrorState'
 import { Label } from '@/components/ui/label'
 
 const LIST_KEY = 'agencias' as const
@@ -95,20 +96,18 @@ export default function AgenciasList() {
   }
 
   return (
-    <PageContainer width="full" className="flex flex-col h-full min-h-0 overflow-hidden">
-      <PageHeader
-        icon={<Building2 className="h-4 w-4" />}
-        title="Agencias"
-        className="shrink-0"
-        actions={
-          <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.CREAR}>
-            <Button onClick={() => navigate({ to: '/agencias/new' })} size="sm" className="h-8 shadow-sm text-xs">
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Nueva Agencia
-            </Button>
-          </ProtectedByPermission>
-        }
-      />
+    <StandardPageLayout
+      title="Agencias"
+      icon={<Building2 className="h-4 w-4" />}
+      actions={
+        <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.CREAR}>
+          <Button onClick={() => navigate({ to: '/agencias/new' })} size="sm" className="h-8 shadow-sm text-xs">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Nueva Agencia
+          </Button>
+        </ProtectedByPermission>
+      }
+    >
 
       <ListToolbar
         search={busqueda}
@@ -181,20 +180,14 @@ export default function AgenciasList() {
               <TableBody>
                 {(isLoading) ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
-                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span className="text-sm">Cargando agencias...</span>
-                      </div>
+                    <TableCell colSpan={6} className="p-8">
+                      <LoadingState label="Cargando agencias..." />
                     </TableCell>
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-destructive">
-                      <div className="flex flex-col items-center gap-1">
-                        <AlertCircle className="h-5 w-5" />
-                        <span>Error al cargar agencias</span>
-                      </div>
+                    <TableCell colSpan={6} className="p-8">
+                      <ErrorState title="Error al cargar agencias" />
                     </TableCell>
                   </TableRow>
                 ) : agenciasFiltradas.length === 0 ? (
@@ -329,6 +322,6 @@ export default function AgenciasList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }

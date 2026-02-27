@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { paqueteService } from '@/lib/api/paquete.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { PaqueteSimplificado } from '@/types/paquete'
 import type { Paquete } from '@/types/paquete'
 import { toast } from 'sonner'
@@ -169,8 +170,8 @@ export default function AgregarPaqueteSimplificadoDialog({
       
       // Cerrar el diálogo
       onOpenChange(false)
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || error.message || 'Error al crear los paquetes')
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, 'Error al crear los paquetes'))
     } finally {
       setCreando(false)
     }

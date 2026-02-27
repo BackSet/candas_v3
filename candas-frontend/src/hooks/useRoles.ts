@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { rolService } from '@/lib/api/rol.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Rol } from '@/types/rol'
 import { toast } from 'sonner'
 
@@ -35,9 +36,8 @@ export function useCreateRol() {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       toast.success('Rol creado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al crear el rol'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear el rol'))
     },
   })
 }
@@ -53,9 +53,8 @@ export function useUpdateRol() {
       queryClient.invalidateQueries({ queryKey: ['rol', variables.id] })
       toast.success('Rol actualizado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al actualizar el rol'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar el rol'))
     },
   })
 }
@@ -69,9 +68,8 @@ export function useDeleteRol() {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       toast.success('Rol eliminado exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al eliminar el rol'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar el rol'))
     },
   })
 }
@@ -88,9 +86,8 @@ export function useAsignarPermisosRol() {
       queryClient.invalidateQueries({ queryKey: ['rol-permisos', variables.id] })
       toast.success('Permisos asignados exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al asignar los permisos'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al asignar los permisos'))
     },
   })
 }

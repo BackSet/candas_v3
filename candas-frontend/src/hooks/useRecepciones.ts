@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { recepcionService } from '@/lib/api/recepcion.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Recepcion } from '@/types/recepcion'
 import { toast } from 'sonner'
 
@@ -36,9 +37,8 @@ export function useCreateRecepcion() {
       // El toast se muestra en el componente que maneja el flujo
       return data
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al crear la recepción'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear la recepción'))
     },
   })
 }
@@ -54,9 +54,8 @@ export function useUpdateRecepcion() {
       queryClient.invalidateQueries({ queryKey: ['recepcion', variables.id] })
       toast.success('Recepción actualizada exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al actualizar la recepción'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar la recepción'))
     },
   })
 }
@@ -70,9 +69,8 @@ export function useDeleteRecepcion() {
       queryClient.invalidateQueries({ queryKey: ['recepciones'] })
       toast.success('Recepción eliminada exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al eliminar la recepción'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar la recepción'))
     },
   })
 }
@@ -89,9 +87,8 @@ export function useAgregarPaquetesRecepcion() {
       queryClient.invalidateQueries({ queryKey: ['recepcion-paquetes', variables.id] })
       toast.success('Paquetes agregados exitosamente')
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Error al agregar los paquetes'
-      toast.error(message)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al agregar los paquetes'))
     },
   })
 }

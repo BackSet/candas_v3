@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { paqueteService, type ImportResult } from '@/lib/api/paquete.service'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import { Upload, FileSpreadsheet, AlertCircle, Loader2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -81,7 +82,7 @@ export default function ImportarActualizarPaquetesDialog({
         onImportSuccess()
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error al importar el archivo.')
+      toast.error(getApiErrorMessage(error, 'Error al importar el archivo.'))
     } finally {
       setIsLoading(false)
     }

@@ -15,8 +15,7 @@ import { usePuntoOrigen, useCreatePuntoOrigen, useUpdatePuntoOrigen } from '@/ho
 import { puntoOrigenSchema, puntoOrigenFormDataToDto, puntoOrigenToFormData, type PuntoOrigenFormData } from '@/schemas/punto-origen'
 import { Save, MapPin, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PageContainer } from '@/app/layout/PageContainer'
-import { PageHeader } from '@/app/layout/PageHeader'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { Label } from '@/components/ui/label'
 import { FormError } from '@/components/ui/form-error'
 import { SectionTitle } from '@/components/ui/section-title'
@@ -74,25 +73,25 @@ export default function PuntoOrigenForm() {
   }
 
   return (
-    <PageContainer className="w-full flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-500">
-      <PageHeader
-        icon={<MapPin className="h-4 w-4" />}
-        title={isEdit ? 'Editar Punto de Origen' : 'Nuevo Punto de Origen'}
-        subtitle={isEdit ? `Editando punto de origen #${id}` : 'Registrar un nuevo punto de origen'}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate({ to: '/puntos-origen' })}
-              disabled={isSaving}
-              className="h-8"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
+    <StandardPageLayout
+      title={isEdit ? 'Editar Punto de Origen' : 'Nuevo Punto de Origen'}
+      subtitle={isEdit ? `Editando punto de origen #${id}` : 'Registrar un nuevo punto de origen'}
+      icon={<MapPin className="h-4 w-4" />}
+      className="animate-in fade-in duration-500"
+      actions={
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ to: '/puntos-origen' })}
+            disabled={isSaving}
+            className="h-8"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
               form="punto-origen-form"
               size="sm"
               disabled={isSaving}
@@ -110,10 +109,9 @@ export default function PuntoOrigenForm() {
                 </>
               )}
             </Button>
-          </div>
-        }
-      />
-
+        </div>
+      }
+    >
       <div className="flex-1 overflow-y-auto p-6 md:p-8">
         <form id="punto-origen-form" onSubmit={handleSubmit(onSubmit)} className="max-w-5xl mx-auto space-y-8">
           <section className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-4">
@@ -152,6 +150,6 @@ export default function PuntoOrigenForm() {
           </section>
         </form>
       </div>
-    </PageContainer>
+    </StandardPageLayout>
   )
 }
