@@ -179,8 +179,8 @@
 #### Stack Tecnológico
 
 **Lenguaje y Framework:**
-- Java 17 o superior
-- Spring Boot 3.x
+- Java 25 (recomendado)
+- Spring Boot 4.x
 - Spring Security
 - Spring Data JPA
 
@@ -211,13 +211,13 @@
 #### Stack Tecnológico
 
 **Framework:**
-- React 18+
+- React 19
 - TypeScript 5+
-- Vite como build tool
+- Vite 7 como build tool
 
 **Librerías Principales:**
-- React Router para navegación
-- React Query para gestión de estado del servidor
+- TanStack Router para navegación type-safe
+- TanStack Query para gestión de estado del servidor
 - React Hook Form para formularios
 - Zod para validación
 
@@ -776,15 +776,15 @@ public ResponseEntity<String> generarZPL(@PathVariable Long id) {
 ## Resumen de Tecnologías
 
 ### Backend
-- Java 17+
-- Spring Boot 3.x
+- Java 25+
+- Spring Boot 4.x
 - PostgreSQL 12+
 - JWT
 - Apache POI / iText
 - ZPL Builder
 
 ### Frontend
-- React 18+
+- React 19+
 - TypeScript 5+
 - ZXing-js / QuaggaJS
 - jsPDF
@@ -799,5 +799,5 @@ public ResponseEntity<String> generarZPL(@PathVariable Long id) {
 
 ## Documentos Relacionados
 
-- [ESTIMACION_SISTEMA_SIMPLIFICADO.md](ESTIMACION_SISTEMA_SIMPLIFICADO.md) - Estimación de precios
-- [HISTORIAS_USUARIO_SIMPLIFICADO.md](HISTORIAS_USUARIO_SIMPLIFICADO.md) - Historias de usuario
+- [ESTIMACION_COSTOS.md](ESTIMACION_COSTOS.md) - Estimación de costos (sistema completo y simplificado)
+- [HISTORIAS_USUARIO_SIMPLIFICADO.md](HISTORIAS_USUARIO_SIMPLIFICADO.md) - Historias de usuario sistema simplificado

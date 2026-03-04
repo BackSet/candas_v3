@@ -290,4 +290,4 @@ Revisión realizada para verificar que todas las funcionalidades del sistema est
 
 **Resultado Final:** ✅ **APROBADO**
 
-El sistema está completamente documentado en historias de usuario y la estimación de precios es coherente, justificada y apropiada para el mercado objetivo.
+El sistema está completamente documentado en historias de usuario y la estimación de precios es coherente, justificada y apropiada para el mercado objetivo. La estimación de costos detallada está en [ESTIMACION_COSTOS.md](ESTIMACION_COSTOS.md).

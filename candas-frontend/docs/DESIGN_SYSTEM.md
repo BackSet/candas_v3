@@ -1,5 +1,7 @@
 # Línea gráfica – Candas Frontend
 
+Documento de referencia para desarrolladores del frontend. Para la visión de producto y diseño UX/UI del sistema, ver **[UX-UI-DESIGN.md](../../docs/UX-UI-DESIGN.md)** en la carpeta docs del proyecto.
+
 Referencia para mantener una apariencia y estructura coherente en toda la aplicación. Los tokens de color y utilidades base están en `src/index.css` (paleta tipo Notion, light/dark).
 
 ---

@@ -82,6 +82,8 @@ public class PaqueteImportService {
 
             cargarEntidadesEnMemoria();
 
+            boolean conReferenciaB2 = detectarFormatoConReferenciaB2(sheet);
+
             ExcelDuplicateDetector.DuplicateDetectionResult duplicateResult = detectarDuplicadosEnArchivo(sheet);
 
             Map<String, List<Integer>> numerosGuiaPorFila = duplicateResult.getNumerosGuiaPorFila();
@@ -89,7 +91,7 @@ public class PaqueteImportService {
             paquetesNoImportados.addAll(duplicateResult.getPaquetesNoImportados());
 
             procesarFilas(sheet, numeroMaster, numerosGuiaPorFila, numerosGuiaDuplicados,
-                    errores, paquetesCreados, paquetesNoImportados, contadores);
+                    errores, paquetesCreados, paquetesNoImportados, contadores, conReferenciaB2);
 
         } catch (Exception e) {
             manejarErrorImportacion(e, errores);
@@ -124,6 +126,8 @@ public class PaqueteImportService {
 
             cargarEntidadesEnMemoria();
 
+            boolean conReferenciaB2 = detectarFormatoConReferenciaB2(sheet);
+
             // Procesar filas (empezar desde fila 2, después de headers)
             for (int i = 2; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
@@ -133,7 +137,7 @@ public class PaqueteImportService {
 
                 contadores.totalRegistros++;
                 procesarFilaActualizarPaquete(row, numeroMaster, i + 1, errores,
-                        paquetesCreados, paquetesNoImportados, contadores);
+                        paquetesCreados, paquetesNoImportados, contadores, conReferenciaB2);
             }
 
         } catch (Exception e) {
@@ -149,7 +153,7 @@ public class PaqueteImportService {
     private void procesarFilaActualizarPaquete(Row row, String numeroMaster, int numeroFila,
             List<String> errores, List<PaqueteDTO> paquetesActualizados,
             List<PaqueteNoImportadoDTO> paquetesNoImportados,
-            ContadoresImportacion contadores) {
+            ContadoresImportacion contadores, boolean conReferenciaB2) {
         try {
             String numeroGuia = extraerNumeroGuia(row);
             if (numeroGuia == null || numeroGuia.trim().isEmpty()) {
@@ -171,7 +175,7 @@ public class PaqueteImportService {
 
             // Procesar fila para obtener DTO con datos del Excel (esto crea los nuevos
             // clientes)
-            PaqueteDTO paqueteDTO = procesarFila(row, numeroMaster, errores);
+            PaqueteDTO paqueteDTO = procesarFila(row, numeroMaster, errores, conReferenciaB2);
             if (paqueteDTO == null) {
                 contadores.registrosFallidos++;
                 agregarPaqueteNoImportado(numeroGuia, "Error al procesar datos de la fila", numeroFila,
@@ -238,6 +242,22 @@ public class PaqueteImportService {
         int registrosFallidos = 0;
     }
 
+    /**
+     * Detecta si el Excel usa el formato con columna REFERENCIA B2 en columna B (índice 1).
+     * Lee la fila de encabezados (fila índice 1) y comprueba si la celda B1 contiene "REFERENCIA".
+     */
+    private boolean detectarFormatoConReferenciaB2(Sheet sheet) {
+        Row headerRow = sheet.getRow(1);
+        if (headerRow == null) {
+            return false;
+        }
+        String cellB1 = ExcelHelper.getCellValueAsStringSafe(headerRow, 1);
+        if (cellB1 == null || cellB1.trim().isEmpty()) {
+            return false;
+        }
+        return cellB1.trim().toUpperCase().contains("REFERENCIA");
+    }
+
     private String leerNumeroMaster(Sheet sheet, List<String> errores) {
         try {
             Row masterRow = sheet.getRow(0);
@@ -281,7 +301,7 @@ public class PaqueteImportService {
     private void procesarFilas(Sheet sheet, String numeroMaster, Map<String, List<Integer>> numerosGuiaPorFila,
             List<String> numerosGuiaDuplicados, List<String> errores,
             List<PaqueteDTO> paquetesCreados, List<PaqueteNoImportadoDTO> paquetesNoImportados,
-            ContadoresImportacion contadores) {
+            ContadoresImportacion contadores, boolean conReferenciaB2) {
         for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null || ExcelHelper.isRowEmpty(row)) {
@@ -295,7 +315,7 @@ public class PaqueteImportService {
 
             contadores.totalRegistros++;
             procesarFilaPaquete(row, numeroMaster, numeroGuia, i + 1, errores,
-                    paquetesCreados, paquetesNoImportados, contadores);
+                    paquetesCreados, paquetesNoImportados, contadores, conReferenciaB2);
         }
     }
 
@@ -317,13 +337,13 @@ public class PaqueteImportService {
     private void procesarFilaPaquete(Row row, String numeroMaster, String numeroGuia, int numeroFila,
             List<String> errores, List<PaqueteDTO> paquetesCreados,
             List<PaqueteNoImportadoDTO> paquetesNoImportados,
-            ContadoresImportacion contadores) {
+            ContadoresImportacion contadores, boolean conReferenciaB2) {
         try {
             if (paqueteYaExiste(numeroGuia, numeroFila, paquetesNoImportados, contadores)) {
                 return;
             }
 
-            PaqueteDTO paqueteDTO = procesarFila(row, numeroMaster, errores);
+            PaqueteDTO paqueteDTO = procesarFila(row, numeroMaster, errores, conReferenciaB2);
             if (paqueteDTO != null) {
                 crearPaqueteConManejoErrores(paqueteDTO, numeroFila, paquetesCreados,
                         paquetesNoImportados, contadores);
@@ -476,39 +496,68 @@ public class PaqueteImportService {
         }
     }
 
-    private PaqueteDTO procesarFila(Row row, String numeroMaster, List<String> errores) {
+    private PaqueteDTO procesarFila(Row row, String numeroMaster, List<String> errores, boolean conReferenciaB2) {
+        // Soporta dos formatos automáticamente: con REFERENCIA B2 en columna B (índice 1) o sin ella.
+        // Detección del formato se hace por encabezado en detectarFormatoConReferenciaB2.
         int numeroFila = row.getRowNum() + 1;
         try {
+            // Índices de columna según formato (con o sin REFERENCIA B2)
+            int colRef = conReferenciaB2 ? 1 : -1; // -1 = no leer ref
+            int colService = conReferenciaB2 ? 4 : 3;
+            int colShipper = conReferenciaB2 ? 5 : 4;
+            int colIdNumberShipper = conReferenciaB2 ? 7 : 6;
+            int colCountryRemitente = conReferenciaB2 ? 8 : 7;
+            int colStateRemitente = conReferenciaB2 ? 9 : 8;
+            int colCityRemitente = conReferenciaB2 ? 10 : 9;
+            int colAddressRemitente = conReferenciaB2 ? 12 : 11;
+            int colConsignne = conReferenciaB2 ? 14 : 13;
+            int colIdNumberConsignne = conReferenciaB2 ? 16 : 15;
+            int colCountryDestinatario = conReferenciaB2 ? 17 : 16;
+            int colStateDestinatario = conReferenciaB2 ? 18 : 17;
+            int colCityDestinatario = conReferenciaB2 ? 19 : 18;
+            int colAddressDestinatario = conReferenciaB2 ? 20 : 19;
+            int colCellPhone = conReferenciaB2 ? 22 : 21;
+            int colSed = conReferenciaB2 ? 24 : 23;
+            int colMedidas = conReferenciaB2 ? 27 : 26;
+            int colLbs = conReferenciaB2 ? 28 : 27;
+            int colKgs = conReferenciaB2 ? 29 : 28;
+            int colDescription = conReferenciaB2 ? 33 : 32;
+            int colNote = conReferenciaB2 ? 34 : 33;
+            int colValue = conReferenciaB2 ? 35 : 34;
+            int colTariffPosition = conReferenciaB2 ? 36 : 35;
+            int colAgenciaOficina = conReferenciaB2 ? 37 : 36;
+
             // Leer valores de las celdas usando ExcelHelper
             String hawb = ExcelHelper.getCellValueAsStringSafe(row, 0);
-            String service = ExcelHelper.getCellValueAsStringSafe(row, 3);
+            String refB2 = colRef >= 0 ? ExcelHelper.getCellValueAsStringSafe(row, colRef) : null;
+            String service = ExcelHelper.getCellValueAsStringSafe(row, colService);
 
             // Cliente REMITENTE
-            String shipper = ExcelHelper.getCellValueAsStringSafe(row, 4);
-            String idNumberShipper = ExcelHelper.getCellValueAsStringSafe(row, 6);
-            String countryRemitente = ExcelHelper.getCellValueAsStringSafe(row, 7);
-            String stateRemitente = ExcelHelper.getCellValueAsStringSafe(row, 8);
-            String cityRemitente = ExcelHelper.getCellValueAsStringSafe(row, 9);
-            String addressRemitente = ExcelHelper.getCellValueAsStringSafe(row, 11);
+            String shipper = ExcelHelper.getCellValueAsStringSafe(row, colShipper);
+            String idNumberShipper = ExcelHelper.getCellValueAsStringSafe(row, colIdNumberShipper);
+            String countryRemitente = ExcelHelper.getCellValueAsStringSafe(row, colCountryRemitente);
+            String stateRemitente = ExcelHelper.getCellValueAsStringSafe(row, colStateRemitente);
+            String cityRemitente = ExcelHelper.getCellValueAsStringSafe(row, colCityRemitente);
+            String addressRemitente = ExcelHelper.getCellValueAsStringSafe(row, colAddressRemitente);
 
             // Cliente DESTINATARIO
-            String consignne = ExcelHelper.getCellValueAsStringSafe(row, 13);
-            String idNumberConsignne = ExcelHelper.getCellValueAsStringSafe(row, 15);
-            String countryDestinatario = ExcelHelper.getCellValueAsStringSafe(row, 16);
-            String stateDestinatario = ExcelHelper.getCellValueAsStringSafe(row, 17);
-            String cityDestinatario = ExcelHelper.getCellValueAsStringSafe(row, 18);
-            String addressDestinatario = ExcelHelper.getCellValueAsStringSafe(row, 19);
-            String cellPhone = ExcelHelper.getCellValueAsStringSafe(row, 21);
+            String consignne = ExcelHelper.getCellValueAsStringSafe(row, colConsignne);
+            String idNumberConsignne = ExcelHelper.getCellValueAsStringSafe(row, colIdNumberConsignne);
+            String countryDestinatario = ExcelHelper.getCellValueAsStringSafe(row, colCountryDestinatario);
+            String stateDestinatario = ExcelHelper.getCellValueAsStringSafe(row, colStateDestinatario);
+            String cityDestinatario = ExcelHelper.getCellValueAsStringSafe(row, colCityDestinatario);
+            String addressDestinatario = ExcelHelper.getCellValueAsStringSafe(row, colAddressDestinatario);
+            String cellPhone = ExcelHelper.getCellValueAsStringSafe(row, colCellPhone);
 
-            String sed = ExcelHelper.getCellValueAsStringSafe(row, 23);
-            String medidas = ExcelHelper.getCellValueAsStringSafe(row, 26);
-            String lbs = ExcelHelper.getCellValueAsStringSafe(row, 27);
-            String kgs = ExcelHelper.getCellValueAsStringSafe(row, 28);
-            String description = ExcelHelper.getCellValueAsStringSafe(row, 32);
-            String note = ExcelHelper.getCellValueAsStringSafe(row, 33);
-            String value = ExcelHelper.getCellValueAsStringSafe(row, 34);
-            String tariffPosition = ExcelHelper.getCellValueAsStringSafe(row, 35);
-            String agenciaOficina = ExcelHelper.getCellValueAsStringSafe(row, 36);
+            String sed = ExcelHelper.getCellValueAsStringSafe(row, colSed);
+            String medidas = ExcelHelper.getCellValueAsStringSafe(row, colMedidas);
+            String lbs = ExcelHelper.getCellValueAsStringSafe(row, colLbs);
+            String kgs = ExcelHelper.getCellValueAsStringSafe(row, colKgs);
+            String description = ExcelHelper.getCellValueAsStringSafe(row, colDescription);
+            String note = ExcelHelper.getCellValueAsStringSafe(row, colNote);
+            String value = ExcelHelper.getCellValueAsStringSafe(row, colValue);
+            String tariffPosition = ExcelHelper.getCellValueAsStringSafe(row, colTariffPosition);
+            String agenciaOficina = ExcelHelper.getCellValueAsStringSafe(row, colAgenciaOficina);
 
             // Validar campos obligatorios
             if (hawb == null || hawb.trim().isEmpty()) {
@@ -552,6 +601,7 @@ public class PaqueteImportService {
             PaqueteDTO paqueteDTO = new PaqueteDTO();
             paqueteDTO.setNumeroGuia(hawb.trim());
             paqueteDTO.setNumeroMaster(numeroMaster);
+            paqueteDTO.setRef((refB2 != null && !refB2.trim().isEmpty()) ? refB2.trim() : null);
             paqueteDTO.setTipoPaquete(tipoPaquete);
             paqueteDTO.setTipoDestino(tipoDestino);
             paqueteDTO.setEstado(EstadoPaquete.REGISTRADO);

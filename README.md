@@ -18,9 +18,8 @@ candas v3/
 - **Spring Boot 4.0.1** — Spring Web MVC, Spring Security, Spring Data JPA
 - **PostgreSQL** — Base de datos principal
 - **Flyway** — Migraciones de base de datos
-- **MapStruct 1.5.5** — Mapeo entidad ↔ DTO
+- **Lombok** — Reducción de boilerplate; mapeo Entity↔DTO en service y PaqueteMapper (Paquete)
 - **jjwt 0.12.5** — Autenticación JWT stateless
-- **JasperReports 7.0.3** — Generación de reportes
 - **Apache POI 5.5.1** — Exportación a Excel
 
 ### Frontend
@@ -64,11 +63,18 @@ La aplicación estará disponible en `http://localhost:5173`.
 |--------|-------------|
 | Paquetes | Registro y seguimiento de paquetes |
 | Clientes | Gestión de clientes |
-| Destinatarios | Gestión de destinatarios directos |
-| Lotes Recepción | Recepción de paquetes por lotes |
+| Agencias | Gestión de agencias de distribución |
+| Destinatarios directos | Gestión de destinatarios directos |
+| Puntos de origen | Gestión de puntos de origen |
+| Lotes Recepción | Recepción de paquetes por lotes (incl. tipeo / lotes especiales) |
 | Ensacado | Proceso de ensacado con scanner |
 | Sacas | Gestión de sacas |
 | Despachos | Despachos a agencias/distribuidores |
 | Manifiestos | Manifiestos consolidados |
 | Atención Paquetes | Resolución de incidencias |
+| Distribuidores | Gestión de distribuidores |
 | Usuarios/Roles/Permisos | Control de acceso (RBAC) |
+
+## Documentación
+
+Toda la documentación del proyecto (requisitos, estimación de costos, diseño UX/UI, despliegue) está ordenada en **[docs/README.md](docs/README.md)**.
