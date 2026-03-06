@@ -124,6 +124,13 @@ export const API_ENDPOINTS = {
     SESSION_ULTIMA_BUSQUEDA: '/api/v1/ensacado/session/ultima-busqueda',
   },
 
+  // Parámetros del sistema
+  PARAMETROS_SISTEMA: {
+    BASE: '/api/v1/parametros-sistema',
+    WHATSAPP_DESPACHO: '/api/v1/parametros-sistema/whatsapp-despacho',
+    WHATSAPP_DESPACHO_VARIABLES: '/api/v1/parametros-sistema/whatsapp-despacho/variables',
+  },
+
   // Listas etiquetadas (GEO, MIA) - flujo basado en Paquete
   LISTAS_ETIQUETADAS: {
     BASE: '/api/v1/paquetes/listas-etiquetadas',

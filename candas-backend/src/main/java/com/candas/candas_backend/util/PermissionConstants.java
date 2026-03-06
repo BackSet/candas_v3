@@ -104,4 +104,8 @@ public class PermissionConstants {
 
     // Ensacado
     public static final String ENSACADO_OPERAR = "ensacado:operar";
+
+    // Parámetros del sistema
+    public static final String PARAMETROS_SISTEMA_VER = "parametros_sistema:ver";
+    public static final String PARAMETROS_SISTEMA_EDITAR = "parametros_sistema:editar";
 }

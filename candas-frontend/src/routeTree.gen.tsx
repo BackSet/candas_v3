@@ -53,6 +53,8 @@ const DestinatariosDirectosList = lazyRouteComponent(() => import('@/pages/desti
 const DestinatarioDirectoForm = lazyRouteComponent(() => import('@/pages/destinatarios-directos/DestinatarioDirectoForm'))
 const DestinatarioDirectoDetail = lazyRouteComponent(() => import('@/pages/destinatarios-directos/DestinatarioDirectoDetail'))
 const EnsacadoPage = lazyRouteComponent(() => import('@/pages/ensacado/EnsacadoPage'))
+const ParametrosSistemaLayout = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosSistemaLayout'))
+const ParametrosWhatsAppDespachoPage = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosWhatsAppDespachoPage'))
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -555,6 +557,30 @@ const ensacadoRoute = createRoute({
   ),
 })
 
+const parametrosSistemaLayoutRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: 'parametros-sistema',
+  component: () => (
+    <ProtectedRouteByPermission permission={PERMISSIONS.PARAMETROS_SISTEMA.VER}>
+      <ParametrosSistemaLayout />
+    </ProtectedRouteByPermission>
+  ),
+})
+
+const parametrosSistemaIndexRoute = createRoute({
+  getParentRoute: () => parametrosSistemaLayoutRoute,
+  path: '/',
+  component: () => <Navigate to="/parametros-sistema/whatsapp-despacho" replace />,
+})
+
+const parametrosSistemaWhatsappDespachoRoute = createRoute({
+  getParentRoute: () => parametrosSistemaLayoutRoute,
+  path: 'whatsapp-despacho',
+  component: ParametrosWhatsAppDespachoPage,
+})
+
+parametrosSistemaLayoutRoute.addChildren([parametrosSistemaIndexRoute, parametrosSistemaWhatsappDespachoRoute])
+
 const destinatariosDirectosIndexRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: 'destinatarios-directos',
@@ -686,6 +712,7 @@ const routeTree = rootRoute.addChildren([
     distribuidoresIdEditRoute,
     manifiestosConsolidadosRoute,
     ensacadoRoute,
+    parametrosSistemaLayoutRoute,
     destinatariosDirectosIndexRoute,
     destinatariosDirectosNewRoute,
     destinatariosDirectosIdRoute,

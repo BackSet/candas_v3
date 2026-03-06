@@ -134,4 +134,10 @@ export const PERMISSIONS = {
     ENSACADO: {
         OPERAR: 'ensacado:operar',
     },
+
+    // Parámetros del sistema
+    PARAMETROS_SISTEMA: {
+        VER: 'parametros_sistema:ver',
+        EDITAR: 'parametros_sistema:editar',
+    },
 } as const

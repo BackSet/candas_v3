@@ -78,6 +78,8 @@ import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
+import { usePlantillaWhatsAppDespacho } from '@/hooks/usePlantillaWhatsAppDespacho'
+import { reemplazarVariables, construirVariablesDesdeDespacho } from '@/utils/plantillaWhatsApp'
 
 const LIST_KEY = 'despachos' as const
 
@@ -198,6 +200,7 @@ export default function DespachosList() {
   const sacas = despachoCompleto?.sacas || []
   const { data: agencia } = useAgencia(despachoCompleto?.idAgencia)
   const { data: distribuidor } = useDistribuidor(despachoCompleto?.idDistribuidor)
+  const { data: plantillaData } = usePlantillaWhatsAppDespacho()
 
   const handleDelete = async () => {
     if (despachoAEliminar) {
@@ -508,7 +511,7 @@ export default function DespachosList() {
   const todosSeleccionados = despachosFiltrados.length > 0 &&
     despachosFiltrados.every(d => despachosSeleccionados.has(d.idDespacho!))
 
-  // Función para generar el mensaje del despacho
+  // Función para generar el mensaje del despacho usando la plantilla configurada en parámetros del sistema
   const generarMensajeDespacho = async (idDespacho: number) => {
     try {
       const despacho = await despachoService.findById(idDespacho)
@@ -523,65 +526,53 @@ export default function DespachosList() {
         distribuidor = await distribuidorService.findById(despacho.idDistribuidor)
       }
 
+      const plantilla = plantillaData?.plantilla?.trim()
+      const variables = construirVariablesDesdeDespacho(despacho, agencia, distribuidor)
+
+      if (plantilla) {
+        return reemplazarVariables(plantilla, variables)
+      }
+
+      // Fallback si no hay plantilla configurada
       const sacas = despacho.sacas || []
       const totalSacas = sacas.length
-      const totalPaquetes = sacas.reduce((sum, saca) => {
-        return sum + (saca.idPaquetes?.length || 0)
-      }, 0)
-
+      const totalPaquetes = sacas.reduce((sum, saca) => sum + (saca.idPaquetes?.length || 0), 0)
       let mensaje = ''
       mensaje += '*DESPACHO ENVIADO*\n'
       mensaje += '━━━━━━━━━━━━━━━━━━━━\n\n'
-
       mensaje += `*Manifiesto:* ${despacho.numeroManifiesto || `ID: ${despacho.idDespacho}`}\n`
       if (despacho.fechaDespacho) {
         mensaje += `*Fecha:* ${new Date(despacho.fechaDespacho).toLocaleDateString('es-ES')}\n`
       }
       mensaje += '\n'
-
       if (despacho.idAgencia && agencia) {
         mensaje += `*Destino:* ${agencia.nombre}${agencia.canton ? ` - ${agencia.canton}` : ''}\n`
-        if (agencia.nombrePersonal) {
-          mensaje += `*Encargado:* ${agencia.nombrePersonal}\n`
-        }
+        if (agencia.nombrePersonal) mensaje += `*Encargado:* ${agencia.nombrePersonal}\n`
       } else if (despacho.despachoDirecto?.destinatarioDirecto) {
-        const destinatario = despacho.despachoDirecto.destinatarioDirecto
-        mensaje += `*Destinatario:* ${destinatario.nombreDestinatario}\n`
+        mensaje += `*Destinatario:* ${despacho.despachoDirecto.destinatarioDirecto.nombreDestinatario}\n`
       }
-
       if (distribuidor?.nombre || despacho.numeroGuiaAgenciaDistribucion) {
         mensaje += '\n'
-        if (distribuidor?.nombre) {
-          mensaje += `*Distribuidor:* ${distribuidor.nombre}\n`
-        }
-        if (despacho.numeroGuiaAgenciaDistribucion) {
-          mensaje += `*Guía:* ${despacho.numeroGuiaAgenciaDistribucion}\n`
-        }
+        if (distribuidor?.nombre) mensaje += `*Distribuidor:* ${distribuidor.nombre}\n`
+        if (despacho.numeroGuiaAgenciaDistribucion) mensaje += `*Guía:* ${despacho.numeroGuiaAgenciaDistribucion}\n`
       }
-
-      mensaje += '\n'
-      mensaje += '*RESUMEN*\n'
+      mensaje += '\n*RESUMEN*\n'
       mensaje += `• ${totalSacas} ${totalSacas === 1 ? 'Saca' : 'Sacas'}\n`
       mensaje += `• ${totalPaquetes} ${totalPaquetes === 1 ? 'Paquete' : 'Paquetes'}\n\n`
-
       if (sacas.length > 0) {
         mensaje += '*DETALLE*\n'
-        const sacasOrdenadas = [...sacas].sort((a, b) => (a.numeroOrden || 0) - (b.numeroOrden || 0))
+        const sacasOrdenadas = [...sacas].sort((a, b) => (a.numeroOrden ?? 0) - (b.numeroOrden ?? 0))
         sacasOrdenadas.forEach((saca, index) => {
-          const numPaquetes = saca.idPaquetes?.length || 0
-          mensaje += `${index + 1}. Saca #${saca.numeroOrden || 'N/A'} (${numPaquetes} paq)\n`
+          mensaje += `${index + 1}. Saca #${saca.numeroOrden ?? 'N/A'} (${saca.idPaquetes?.length ?? 0} paq)\n`
         })
         mensaje += '\n'
       }
-
       mensaje += '*IMPORTANTE:*\n'
       mensaje += `Al recibir la carga, por favor verifique que el número de paquetes recibidos corresponda con los ${totalPaquetes} paquetes enviados según este manifiesto.\n\n`
-
       mensaje += '*NOTA:* El documento PDF del despacho está disponible para descarga.\n\n'
-
       mensaje += '*¡Gracias por su confianza!*'
       return mensaje
-    } catch (error) {
+    } catch {
       return 'Error al generar el mensaje del despacho.'
     }
   }

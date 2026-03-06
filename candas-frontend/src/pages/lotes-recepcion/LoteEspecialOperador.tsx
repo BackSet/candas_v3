@@ -909,10 +909,9 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
                       )}
                       {lastScannedDespacho.clienteDestino && (
                         <div className="space-y-2">
-                          <span className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Cliente Destino</span>
-                          <p className="text-xl font-bold text-foreground">{lastScannedDespacho.clienteDestino.nombre || '—'}</p>
+                          <span className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Dirección</span>
                           {lastScannedDespacho.clienteDestino.direccion && (
-                            <p className="text-sm text-muted-foreground leading-snug">{lastScannedDespacho.clienteDestino.direccion}</p>
+                            <p className="text-lg font-medium text-foreground leading-relaxed break-words">{lastScannedDespacho.clienteDestino.direccion}</p>
                           )}
                           {(lastScannedDespacho.clienteDestino.pais ?? lastScannedDespacho.clienteDestino.ciudad ?? lastScannedDespacho.clienteDestino.canton) && (
                             <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm pt-1 border-t border-border/50">

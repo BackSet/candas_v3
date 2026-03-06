@@ -16,6 +16,7 @@ import {
   Home,
   Shield,
   Key,
+  Settings,
   Scan,
   ChevronsLeft,
   Search,
@@ -80,6 +81,7 @@ const navigationSections: NavigationSection[] = [
       { name: 'Usuarios', href: '/usuarios', icon: Users, permissions: [PERMISSIONS.USUARIOS.LISTAR, PERMISSIONS.USUARIOS.VER] },
       { name: 'Roles', href: '/roles', icon: Shield, permissions: [PERMISSIONS.ROLES.LISTAR, PERMISSIONS.ROLES.VER] },
       { name: 'Permisos', href: '/permisos', icon: Key, permissions: [PERMISSIONS.PERMISOS.LISTAR, PERMISSIONS.PERMISOS.VER] },
+      { name: 'Parámetros', href: '/parametros-sistema', icon: Settings, permissions: [PERMISSIONS.PARAMETROS_SISTEMA.VER] },
     ],
   },
 ]
