@@ -22,6 +22,7 @@ debug_history.log
 
 # ─── Test files ──────────────────────────────────────────────
 archivos de prueba/
+CONFIGURACION_RED_LOCAL.md
 
 # ─── Dependencies ─────────────────────────────────────────────
 node_modules/

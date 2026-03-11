@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/lib/api/auth.service'
+import { API_BASE_URL } from '@/lib/api/client'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { LoginRequest } from '@/types/user'
 import { AlertCircle, ArrowRight, Loader2, Lock, User } from 'lucide-react'
@@ -38,7 +39,7 @@ export default function Login() {
       let errorMessage = 'Error al iniciar sesión'
       const errObj = err as { code?: string; response?: { status?: number; data?: { message?: string } } }
       if (errObj?.code === 'ERR_NETWORK' || !errObj?.response) {
-        errorMessage = 'No se pudo conectar con el servidor.'
+        errorMessage = `No se pudo conectar con el servidor. Verifique que el backend esté en ejecución en ${API_BASE_URL}`
       } else if (errObj?.response?.status === 401) {
         errorMessage = 'Credenciales incorrectas'
       } else if (errObj?.response?.data?.message) {

@@ -41,7 +41,7 @@ export default function Register() {
       let errorMessage = 'Error al registrar usuario'
       const errObj = err as { code?: string; response?: { status?: number; data?: { message?: string } } }
       if (errObj?.code === 'ERR_NETWORK' || !errObj?.response) {
-        errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:8080'
+        errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté en ejecución y que la URL de la API sea correcta.'
       } else if (errObj?.response?.status === 400) {
         errorMessage = 'Datos inválidos. Verifica que todos los campos estén correctos'
       } else if (errObj?.response?.status === 409) {

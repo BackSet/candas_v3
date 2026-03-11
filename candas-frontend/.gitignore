@@ -11,6 +11,8 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.lan.local
+.env.work.local
 
 # ─── IDE / Editors ────────────────────────────────────────────
 .idea/

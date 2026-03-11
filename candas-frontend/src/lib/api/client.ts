@@ -1,7 +1,15 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
 
-const API_BASE_URL = 'http://localhost:8080'
+const isLanMode = import.meta.env.VITE_NETWORK_MODE === 'lan'
+const defaultApiUrl =
+  typeof window !== 'undefined' && isLanMode
+    ? `http://${window.location.hostname}:9080`
+    : 'http://localhost:9080'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultApiUrl
+
+export { API_BASE_URL }
 
 // Crear instancia de Axios
 export const apiClient = axios.create({

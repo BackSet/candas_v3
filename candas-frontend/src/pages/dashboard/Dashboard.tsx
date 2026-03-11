@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { usePaquetes } from '@/hooks/usePaquetes'
 import { useAtencionPaquetesPendientes } from '@/hooks/useAtencionPaquetes'
@@ -20,15 +20,24 @@ import { LoadingState } from '@/components/states/LoadingState'
 export default function Dashboard() {
   const navigate = useNavigate()
 
-  const { data: paquetesData, isLoading: loadingPaquetes } = usePaquetes(0, 1000)
-  const { data: atencionesPendientes, isLoading: loadingAtenciones } = useAtencionPaquetesPendientes()
-  const { data: despachosData, isLoading: loadingDespachos } = useDespachos(0, 10)
-  const { data: lotesRecepcionData, isLoading: loadingLotes } = useLotesRecepcion(0, 10)
+  const { data: paquetesData, isLoading: loadingPaquetes, refetch: refetchPaquetes } = usePaquetes(0, 1000)
+  const { data: atencionesPendientes, isLoading: loadingAtenciones, refetch: refetchAtenciones } = useAtencionPaquetesPendientes()
+  const { data: despachosData, isLoading: loadingDespachos, refetch: refetchDespachos } = useDespachos(0, 10)
+  const { data: lotesRecepcionData, isLoading: loadingLotes, refetch: refetchLotes } = useLotesRecepcion(0, 10)
+
+  // Refrescar datos al montar el dashboard para mostrar información actualizada
+  useEffect(() => {
+    refetchPaquetes()
+    refetchAtenciones()
+    refetchDespachos()
+    refetchLotes()
+  }, [refetchPaquetes, refetchAtenciones, refetchDespachos, refetchLotes])
 
   const estadisticasPaquetes = useMemo(() => {
-    const paquetes = paquetesData?.content || []
+    const paquetes = paquetesData?.content ?? []
+    const total = paquetesData?.totalElements ?? 0
     return {
-      total: paquetes.length,
+      total,
       registrados: paquetes.filter(p => p.estado === EstadoPaquete.REGISTRADO).length,
       recibidos: paquetes.filter(p => p.estado === EstadoPaquete.RECIBIDO).length,
       ensacados: paquetes.filter(p => p.estado === EstadoPaquete.ENSACADO).length,
