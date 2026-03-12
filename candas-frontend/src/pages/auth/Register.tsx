@@ -36,7 +36,7 @@ export default function Register() {
     try {
       await authService.register(data)
       // Después de registrar, redirigir a login para que el usuario inicie sesión
-      navigate({ to: '/login', state: { message: 'Registro exitoso. Por favor inicia sesión.' } })
+      navigate({ to: '/login' })
     } catch (err: unknown) {
       let errorMessage = 'Error al registrar usuario'
       const errObj = err as { code?: string; response?: { status?: number; data?: { message?: string } } }

@@ -48,29 +48,29 @@ export default function CambiarTipoDestinoDialog({
     return (agenciasPage?.content || []).filter((a) => a.activa !== false && !!a.idAgencia)
   }, [agenciasPage])
 
-  const ciudadObjetivo = useMemo(() => {
-    const ciudad = (paquete.ciudadDestinatario || '').trim()
-    return ciudad ? ciudad.toLowerCase() : null
-  }, [paquete.ciudadDestinatario])
+  const provinciaObjetivo = useMemo(() => {
+    const provincia = (paquete.provinciaDestinatario || '').trim()
+    return provincia ? provincia.toLowerCase() : null
+  }, [paquete.provinciaDestinatario])
 
   const agenciaRecomendadaId = useMemo(() => {
-    if (!ciudadObjetivo) return null
+    if (!provinciaObjetivo) return null
     const match = agencias
       .slice()
       .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
-      .find((a) => (a.ciudad || '').trim().toLowerCase() === ciudadObjetivo)
+      .find((a) => (a.provincia || '').trim().toLowerCase() === provinciaObjetivo)
     return match?.idAgencia ?? null
-  }, [agencias, ciudadObjetivo])
+  }, [agencias, provinciaObjetivo])
 
   const destinatarioRecomendadoId = useMemo(() => {
-    if (!ciudadObjetivo) return null
+    if (!provinciaObjetivo) return null
     const match = (destinatarios || [])
       .filter((d) => d.activo !== false && !!d.idDestinatarioDirecto)
       .slice()
       .sort((a, b) => (a.nombreDestinatario || '').localeCompare(b.nombreDestinatario || ''))
-      .find((d) => (d.ciudad || '').trim().toLowerCase() === ciudadObjetivo)
+      .find((d) => (d.provincia || '').trim().toLowerCase() === provinciaObjetivo)
     return match?.idDestinatarioDirecto ?? null
-  }, [destinatarios, ciudadObjetivo])
+  }, [destinatarios, provinciaObjetivo])
 
   // Resetear estado cuando se abre el diálogo
   useEffect(() => {
@@ -288,9 +288,9 @@ export default function CambiarTipoDestinoDialog({
                       return (
                         <SelectItem key={id} value={id.toString()}>
                           <div className="flex items-center gap-2 max-w-[320px]">
-                            <span className="text-sm truncate block" title={`${d.nombreDestinatario}${d.ciudad ? ` — ${d.ciudad}` : ''}`}>
+                            <span className="text-sm truncate block" title={`${d.nombreDestinatario}${d.provincia ? ` — ${d.provincia}` : ''}`}>
                               {d.nombreDestinatario}
-                              {d.ciudad ? ` — ${d.ciudad}` : ''}
+                              {d.provincia ? ` — ${d.provincia}` : ''}
                             </span>
                             {esRecomendado && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">

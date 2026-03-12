@@ -214,7 +214,7 @@ export async function generarManifiestoHTML(
             <td class="col-guia">${paquete.numeroGuia || '-'}</td>
             <td class="col-dest">${paquete.nombreClienteDestinatario || '-'}</td>
             <td class="col-dir">${paquete.direccionDestinatario || '-'}</td>
-            <td class="col-city">${paquete.ciudadDestinatario || '-'}</td>
+            <td class="col-city">${paquete.provinciaDestinatario || '-'}</td>
             <td class="col-cant">${paquete.cantonDestinatario || '-'}</td>
             <td class="col-tel">${paquete.telefonoDestinatario || '-'}</td>
             <td class="col-obs">${observacionesParaDespacho(paquete.observaciones)}</td>
@@ -238,11 +238,11 @@ export async function generarManifiestoHTML(
                 <th class="col-guia">Guía</th>
                 <th class="col-dest">Destinatario</th>
                 <th class="col-dir">Dirección</th>
-                <th class="col-city">Ciudad</th>
+                <th class="col-city">Provincia</th>
                 <th class="col-cant">Cantón</th>
                 <th class="col-tel">Teléfono</th>
                 <th class="col-obs">Observaciones</th>
-                <th class="col-firma">Firma</th>
+                <th class="col-firma">FIRMA CONFORME</th>
               </tr>
             </thead>
             <tbody>
@@ -581,7 +581,7 @@ export async function generarPDFDespacho(
       { t: 'CANTÓN', w: colCant },
       { t: 'TELÉFONO', w: colTel },
       { t: 'OBSERVACIONES', w: colObs },
-      { t: 'FIRMA', w: colFirma }
+      { t: 'FIRMA CONFORME', w: colFirma }
     ]
 
     let x = MARGIN_X + 2
@@ -623,7 +623,7 @@ export async function generarPDFDespacho(
         paq.numeroGuia || '-',
         paq.nombreClienteDestinatario || '-',
         paq.direccionDestinatario || '-',
-        paq.ciudadDestinatario || '-',
+        paq.provinciaDestinatario || '-',
         paq.cantonDestinatario || '-',
         paq.telefonoDestinatario || '-',
         observacionesParaDespacho(paq.observaciones)

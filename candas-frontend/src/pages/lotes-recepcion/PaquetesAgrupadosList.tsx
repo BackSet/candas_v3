@@ -32,8 +32,9 @@ import CambiarTipoMasivoDialog from '@/components/lotes-recepcion/CambiarTipoMas
 import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
 import { PaqueteTableRow } from '@/components/lotes-recepcion/PaqueteTableRow'
 import { clasificarEtiquetaDestino } from '@/utils/clasificarEtiquetaDestino'
-import { derivarCiudadCantonDeDireccion } from '@/utils/derivarCiudadCanton'
+import { derivarProvinciaCantonDeDireccion } from '@/utils/derivarProvinciaCanton'
 import { cn } from '@/lib/utils'
+import { copyTextToClipboard } from '@/utils/clipboard'
 
 /** Calcula el máximo de grupos que se pueden formar con la secuencia para N ítems (guías). */
 function maxGruposFromSecuencia(secuencia: string, totalItems: number): number {
@@ -121,7 +122,7 @@ function normalizarTipoDestinoKey(tipoDestino: TipoDestino | string | undefined)
   return 'Sin destino'
 }
 
-/** Nivel Ciudad → Cantón → (Sin clasificar | Agencia | Domicilio). */
+/** Nivel Provincia → Cantón → (Sin clasificar | Agencia | Domicilio). */
 function clasificacionDestinoLabel(tipoDestinoKey: string): string {
   if (tipoDestinoKey === TipoDestino.AGENCIA) return CLASIF_AGENCIA
   if (tipoDestinoKey === TipoDestino.DOMICILIO) return CLASIF_DOMICILIO
@@ -177,19 +178,19 @@ interface PaquetesPorCanton {
   [canton: string]: PaquetesPorClasificacionDestino
 }
 
-interface PaquetesPorCiudad {
-  [ciudad: string]: PaquetesPorCanton
+interface PaquetesPorProvincia {
+  [provincia: string]: PaquetesPorCanton
 }
 
-/** Estructura simple: Ciudad → Cantón → REF (si tiene) → paquetes */
+/** Estructura simple: Provincia → Cantón → REF (si tiene) → paquetes */
 interface PaquetesPorRefSimple {
   [refKey: string]: Paquete[]
 }
 interface PaquetesPorCantonSimple {
   [canton: string]: PaquetesPorRefSimple
 }
-interface PaquetesPorCiudadSimple {
-  [ciudad: string]: PaquetesPorCantonSimple
+interface PaquetesPorProvinciaSimple {
+  [provincia: string]: PaquetesPorCantonSimple
 }
 
 const REF_SIN_REF = 'Sin REF'
@@ -214,7 +215,7 @@ export default function PaquetesAgrupadosList({
   const [paqueteClementinaSeleccionado, setPaqueteClementinaSeleccionado] = useState<number | null>(null)
 
   // Estado para grupos personalizados
-  const [ciudadCantonParaGrupo, setCiudadCantonParaGrupo] = useState<{ ciudad: string; canton: string } | null>(null)
+  const [provinciaCantonParaGrupo, setProvinciaCantonParaGrupo] = useState<{ provincia: string; canton: string } | null>(null)
 
   // Estado para selección de paquetes
   const [paquetesSeleccionados, setPaquetesSeleccionados] = useState<Set<number>>(new Set())
@@ -291,40 +292,40 @@ export default function PaquetesAgrupadosList({
     return mapa
   }, [gruposPersonalizados, gruposVersion])
 
-  // Agrupar: Ciudad (Guayas) → Cantón (Guayaquil) → Sin clasificar | Agencia | Domicilio → Referencia (si tiene) → tipo (CLEMENTINA/SEPARAR/CADENITA/NORMAL). Clementina con datos del hijo.
+  // Agrupar: Provincia (Guayas) → Cantón (Guayaquil) → Sin clasificar | Agencia | Domicilio → Referencia (si tiene) → tipo (CLEMENTINA/SEPARAR/CADENITA/NORMAL). Clementina con datos del hijo.
   const paquetesAgrupados = useMemo(() => {
-    const estructura: PaquetesPorCiudad = {}
+    const estructura: PaquetesPorProvincia = {}
 
     paquetesFiltrados.forEach((paquete) => {
-      const { ciudad, canton } = derivarCiudadCantonDeDireccion(paquete)
+      const { provincia, canton } = derivarProvinciaCantonDeDireccion(paquete)
       const tipoDestinoKey = normalizarTipoDestinoKey(paquete.tipoDestino)
       const clasificacionKey = clasificacionDestinoLabel(tipoDestinoKey)
       const refKey = paquete.ref && paquete.ref.trim() !== '' ? paquete.ref.trim() : REF_SIN_REF
       const tipoClasificacion = getTipoClasificacion(paquete)
 
-      if (!estructura[ciudad]) estructura[ciudad] = {}
-      if (!estructura[ciudad][canton]) estructura[ciudad][canton] = {}
-      if (!estructura[ciudad][canton][clasificacionKey]) estructura[ciudad][canton][clasificacionKey] = {}
-      if (!estructura[ciudad][canton][clasificacionKey][refKey]) estructura[ciudad][canton][clasificacionKey][refKey] = {}
-      if (!estructura[ciudad][canton][clasificacionKey][refKey][tipoClasificacion]) {
-        estructura[ciudad][canton][clasificacionKey][refKey][tipoClasificacion] = []
+      if (!estructura[provincia]) estructura[provincia] = {}
+      if (!estructura[provincia][canton]) estructura[provincia][canton] = {}
+      if (!estructura[provincia][canton][clasificacionKey]) estructura[provincia][canton][clasificacionKey] = {}
+      if (!estructura[provincia][canton][clasificacionKey][refKey]) estructura[provincia][canton][clasificacionKey][refKey] = {}
+      if (!estructura[provincia][canton][clasificacionKey][refKey][tipoClasificacion]) {
+        estructura[provincia][canton][clasificacionKey][refKey][tipoClasificacion] = []
       }
-      estructura[ciudad][canton][clasificacionKey][refKey][tipoClasificacion].push(paquete)
+      estructura[provincia][canton][clasificacionKey][refKey][tipoClasificacion].push(paquete)
     })
 
     return estructura
   }, [paquetesFiltrados])
 
-  // Agrupación simple: Ciudad → Cantón → REF (si tiene) → paquetes (para la vista principal)
-  const paquetesAgrupadosPorCiudadCantonRef = useMemo(() => {
-    const estructura: PaquetesPorCiudadSimple = {}
+  // Agrupación simple: Provincia → Cantón → REF (si tiene) → paquetes (para la vista principal)
+  const paquetesAgrupadosPorProvinciaCantonRef = useMemo(() => {
+    const estructura: PaquetesPorProvinciaSimple = {}
     paquetesFiltrados.forEach((paquete) => {
-      const { ciudad, canton } = derivarCiudadCantonDeDireccion(paquete)
+      const { provincia, canton } = derivarProvinciaCantonDeDireccion(paquete)
       const refKey = paquete.ref && paquete.ref.trim() !== '' ? paquete.ref.trim() : REF_SIN_REF
-      if (!estructura[ciudad]) estructura[ciudad] = {}
-      if (!estructura[ciudad][canton]) estructura[ciudad][canton] = {}
-      if (!estructura[ciudad][canton][refKey]) estructura[ciudad][canton][refKey] = []
-      estructura[ciudad][canton][refKey].push(paquete)
+      if (!estructura[provincia]) estructura[provincia] = {}
+      if (!estructura[provincia][canton]) estructura[provincia][canton] = {}
+      if (!estructura[provincia][canton][refKey]) estructura[provincia][canton][refKey] = []
+      estructura[provincia][canton][refKey].push(paquete)
     })
     return estructura
   }, [paquetesFiltrados])
@@ -350,7 +351,7 @@ export default function PaquetesAgrupadosList({
     const partes = [
       paquete.direccionDestinatario,
       paquete.cantonDestinatario,
-      paquete.ciudadDestinatario,
+      paquete.provinciaDestinatario,
       paquete.paisDestinatario
     ].filter(Boolean)
     return partes.length > 0 ? partes.join(', ') : '-'
@@ -554,11 +555,11 @@ export default function PaquetesAgrupadosList({
     const texto = lista.join('\n')
     // const grupoKey = `${tipoKey}-${grupoIndex}` // unused
 
-    try {
-      await navigator.clipboard.writeText(texto)
+    const ok = await copyTextToClipboard(texto)
+    if (ok) {
       toast.success(`Lista de ${lista.length} paquete(s) copiada al portapapeles`)
       // check state removed
-    } catch (error) {
+    } else {
       toast.error('Error al copiar la lista')
     }
   }
@@ -639,13 +640,13 @@ export default function PaquetesAgrupadosList({
     return Object.values(cantones).reduce((total, canton) => total + contarPaquetesEnCanton(canton), 0)
   }
 
-  // Conteo para estructura simple Ciudad → Cantón → REF
+  // Conteo para estructura simple Provincia → Cantón → REF
   const contarPaquetesEnRef = (porRef: PaquetesPorRefSimple): number =>
     Object.values(porRef).reduce((sum, list) => sum + list.length, 0)
   const contarPaquetesEnCantonSimple = (canton: PaquetesPorCantonSimple): number =>
     Object.values(canton).reduce((total, porRef) => total + contarPaquetesEnRef(porRef), 0)
-  const contarPaquetesCiudadSimple = (ciudad: PaquetesPorCiudadSimple[string]): number =>
-    Object.values(ciudad).reduce((total, canton) => total + contarPaquetesEnCantonSimple(canton), 0)
+  const contarPaquetesProvinciaSimple = (provincia: PaquetesPorProvinciaSimple[string]): number =>
+    Object.values(provincia).reduce((total, porRef) => total + contarPaquetesEnRef(porRef), 0)
 
   const ORDER_CLASIFICACION = [CLASIF_SIN_CLASIFICAR, CLASIF_AGENCIA, CLASIF_DOMICILIO]
 
@@ -654,7 +655,7 @@ export default function PaquetesAgrupadosList({
 
       {/* Floating Toolbar for selection */}
       {paquetesSeleccionados.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-background/90 backdrop-blur-md border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in duration-200 ring-1 ring-black/5 dark:ring-white/10">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-background/90 backdrop-blur-md border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 animate-in fade-in duration-200 ring-1 ring-black/5 dark:ring-white/10">
           <div className="flex items-center gap-2 mr-2">
             <div className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
               {paquetesSeleccionados.size}
@@ -727,19 +728,19 @@ export default function PaquetesAgrupadosList({
         </div>
       )}
 
-      {/* Lista principal: Ciudad → Cantón → Tipo de destino → REF */}
+      {/* Lista principal: Provincia → Cantón → Tipo de destino → REF */}
       <div className="space-y-4">
-        {ordenarClaves(Object.keys(paquetesAgrupados)).map((ciudad) => {
-          const cantones = paquetesAgrupados[ciudad]
-          const totalPaquetesCiudad = contarPaquetesCantones(cantones)
+        {ordenarClaves(Object.keys(paquetesAgrupados)).map((provincia) => {
+          const cantones = paquetesAgrupados[provincia]
+          const totalPaquetesProvincia = contarPaquetesCantones(cantones)
 
           return (
-            <div key={ciudad} className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+            <div key={provincia} className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
               <div className="bg-muted/30 px-4 py-3 border-b border-border/50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-semibold text-sm">{ciudad}</h3>
-                  <Badge variant="secondary" className="ml-2 text-[10px] h-5">{totalPaquetesCiudad}</Badge>
+                  <h3 className="font-semibold text-sm">{provincia}</h3>
+                  <Badge variant="secondary" className="ml-2 text-[10px] h-5">{totalPaquetesProvincia}</Badge>
                 </div>
               </div>
 
@@ -760,7 +761,7 @@ export default function PaquetesAgrupadosList({
                         {ORDER_CLASIFICACION.filter((clasifKey) => porClasificacionDestino[clasifKey]).map((clasifKey) => {
                           const porRef = porClasificacionDestino[clasifKey]
                           const totalClasif = contarPaquetesEnClasificacion(porRef)
-                          const uniqueKeyListas = `${ciudad}|${canton}|${clasifKey}`
+                          const uniqueKeyListas = `${provincia}|${canton}|${clasifKey}`
                           const secuencia = secuenciasPorTipo.get(uniqueKeyListas) || ''
                           const paquetesDelBloque = Object.values(porRef).flatMap((porTipo) => Object.values(porTipo).flat())
                           const totalAgrupable = getCantidadParaSecuencia(paquetesDelBloque)
@@ -800,7 +801,7 @@ export default function PaquetesAgrupadosList({
 
                             return (
                               <div className={cn(
-                                "flex items-center gap-2 px-3 py-2 rounded-md border text-[11px] font-medium animate-in fade-in slide-in-from-top-1 duration-200",
+                                "flex items-center gap-2 px-3 py-2 rounded-md border text-[11px] font-medium animate-in fade-in duration-200",
                                 colors[statusSuma]
                               )}>
                                 {icons[statusSuma]}
@@ -978,14 +979,14 @@ export default function PaquetesAgrupadosList({
       />
 
       {/* Diálogos adicionales */}
-      {showAsignarGrupoDialog && ciudadCantonParaGrupo && (
+      {showAsignarGrupoDialog && provinciaCantonParaGrupo && (
         <CrearGrupoDialog
           open={showAsignarGrupoDialog}
           onOpenChange={setShowAsignarGrupoDialog}
           paquetesSeleccionados={paquetesParaAsignar}
           // Si el diálogo necesita IDs, los extraerá internamente, pero según la definición usa paquetesSeleccionados
-          ciudad={ciudadCantonParaGrupo.ciudad}
-          canton={ciudadCantonParaGrupo.canton}
+          provincia={provinciaCantonParaGrupo.provincia}
+          canton={provinciaCantonParaGrupo.canton}
           loteRecepcionId={loteRecepcionId || 0}
           onSuccess={() => {
             handleDeseleccionarTodos()

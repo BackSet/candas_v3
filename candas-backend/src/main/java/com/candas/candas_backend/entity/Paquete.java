@@ -54,7 +54,7 @@ public class Paquete {
     private PuntoOrigen puntoOrigen;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cliente_remitente", nullable = false)
+    @JoinColumn(name = "id_cliente_remitente")
     private Cliente clienteRemitente;
 
     @ManyToOne(fetch = FetchType.LAZY)

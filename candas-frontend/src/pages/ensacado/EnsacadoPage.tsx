@@ -159,12 +159,12 @@ function EnsacadoPage() {
             <button
               type="button"
               onClick={() => setModo('escanear')}
-              className="group relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-7 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background"
+              className="group relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-7 text-left transition-colors transition-shadow duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background"
             >
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
                     <Scan className="h-6 w-6 text-primary" />
                   </div>
                   <h2 className="font-bold text-foreground text-lg">Escanear paquetes</h2>
@@ -177,12 +177,12 @@ function EnsacadoPage() {
             <button
               type="button"
               onClick={() => setModo('soloLectura')}
-              className="group relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-7 text-left transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background"
+              className="group relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-7 text-left transition-colors transition-shadow duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background"
             >
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
                     <Smartphone className="h-6 w-6 text-primary" />
                   </div>
                   <h2 className="font-bold text-foreground text-lg">Ver en curso</h2>
@@ -222,7 +222,7 @@ function EnsacadoPage() {
           <div className="relative">
             <Label htmlFor="scanGuiaEnsacado" className="sr-only">Número de Guía</Label>
             <div className={cn(
-              "relative rounded-2xl overflow-hidden transition-all duration-500 border-2 shadow-sm",
+              "relative rounded-2xl overflow-hidden transition-colors transition-shadow duration-200 border-2 shadow-sm",
               errorPaquete
                 ? "border-red-400/60 shadow-red-500/10 shadow-lg"
                 : isLoadingPaquete
@@ -263,7 +263,7 @@ function EnsacadoPage() {
 
           {/* Error */}
           {errorPaquete && numeroGuiaDebounced && (
-            <div className="animate-in fade-in slide-in-from-top-3 duration-300">
+            <div className="animate-in fade-in duration-200">
               <div className="rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 p-4 flex items-center gap-4">
                 <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
                   <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -282,7 +282,7 @@ function EnsacadoPage() {
 
           {/* Resultado del paquete */}
           {paqueteActivo && (
-            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="animate-in fade-in duration-200">
               <PaqueteInfoCard info={paqueteActivo} />
             </div>
           )}
@@ -290,7 +290,7 @@ function EnsacadoPage() {
 
         {/* Listas de guías ensacadas y pendientes */}
         {paqueteActivo && (
-          <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="max-w-3xl mx-auto animate-in fade-in duration-200">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Guías ensacadas */}
               <Card className="border-border/40 bg-card/80 backdrop-blur-sm shadow-sm rounded-2xl">

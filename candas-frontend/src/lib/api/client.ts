@@ -4,8 +4,8 @@ import { useAuthStore } from '@/stores/authStore'
 const isLanMode = import.meta.env.VITE_NETWORK_MODE === 'lan'
 const defaultApiUrl =
   typeof window !== 'undefined' && isLanMode
-    ? `http://${window.location.hostname}:9080`
-    : 'http://localhost:9080'
+    ? `http://${window.location.hostname}:8080`
+    : 'http://localhost:8080'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultApiUrl
 

@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useFiltersStore } from '@/stores/filtersStore'
 import { usePaquetes, useDeletePaquete } from '@/hooks/usePaquetes'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +24,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  dialogContentPresets,
 } from '@/components/ui/dialog'
 import {
   DropdownMenu,
@@ -76,21 +76,27 @@ import { EmptyState } from '@/components/states/EmptyState'
 import { LoadingState } from '@/components/states/LoadingState'
 import { ErrorState } from '@/components/states/ErrorState'
 import { getEstadoPaqueteBadgeVariant } from '@/utils/paqueteEstado'
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters'
+import { formatearFechaCorta } from '@/utils/fechas'
 
 const LIST_KEY = 'paquetes' as const
 
 export default function PaquetesList() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const stored = useFiltersStore((state) => state.filters[LIST_KEY])
-  const setFiltersAction = useFiltersStore((state) => state.setFilters)
+  const { stored, setFilters, setPage, setSearch } = usePersistedListFilters<{
+    page?: number
+    size?: number
+    filtroEstado?: string
+    filtroTipo?: string
+    search?: string
+  }>(LIST_KEY)
   const { page = 0, size = 20, filtroEstado = 'all', filtroTipo = 'all', search: busquedaGuia = '' } = { ...stored }
   
   // ListToolbar ya maneja el debounce, así que usamos busquedaGuia directamente
-  const setPage = (p: number) => setFiltersAction(LIST_KEY, { page: p })
-  const setFiltroEstado = (v: string) => setFiltersAction(LIST_KEY, { filtroEstado: v, page: 0 })
-  const setFiltroTipo = (v: string) => setFiltersAction(LIST_KEY, { filtroTipo: v, page: 0 })
-  const setBusquedaGuia = (v: string) => setFiltersAction(LIST_KEY, { search: v, page: 0 })
+  const setFiltroEstado = (v: string) => setFilters({ filtroEstado: v, page: 0 })
+  const setFiltroTipo = (v: string) => setFilters({ filtroTipo: v, page: 0 })
+  const setBusquedaGuia = (v: string) => setSearch(v)
 
   const [paqueteAEliminar, setPaqueteAEliminar] = useState<number | null>(null)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
@@ -133,8 +139,6 @@ export default function PaquetesList() {
 
   const totalPages = data?.totalPages || 0
   const currentPage = data?.number || 0
-  const totalElements = data?.totalElements ?? 0
-  const filtrosActivos = Number(busquedaGuia.trim().length > 0) + Number(filtroEstado !== 'all') + Number(filtroTipo !== 'all')
 
   // Funciones para manejar selección múltiple
   const handleSelectAll = (checked: boolean) => {
@@ -186,6 +190,24 @@ export default function PaquetesList() {
       icon={<Package className="h-4 w-4" />}
       actions={
         <div className="flex items-center gap-2 flex-wrap justify-end">
+            {paquetesSeleccionados.size > 0 && (
+              <ProtectedByPermission permission={PERMISSIONS.PAQUETES.IMPRIMIR}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setImprimirPaqueteDialogMode('multi')
+                    setPaqueteParaImprimir(null)
+                    setImprimirPaqueteDialogOpen(true)
+                  }}
+                  className="h-8 text-xs shadow-sm"
+                >
+                  <Printer className="h-3.5 w-3.5 mr-1.5" />
+                  Imprimir ({paquetesSeleccionados.size})
+                </Button>
+              </ProtectedByPermission>
+            )}
+
             <ProtectedByPermission permissions={[PERMISSIONS.PAQUETES.CREAR, PERMISSIONS.PAQUETES.EDITAR]}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -195,9 +217,19 @@ export default function PaquetesList() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Importaciones</DropdownMenuLabel>
                 <ProtectedByPermission permission={PERMISSIONS.PAQUETES.CREAR}>
                   <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
                     <Upload className="h-3.5 w-3.5 mr-2" /> Importar Excel
+                  </DropdownMenuItem>
+                </ProtectedByPermission>
+
+                <ProtectedByPermission permission={PERMISSIONS.PAQUETES.EDITAR}>
+                  <DropdownMenuItem
+                    onClick={() => setImportActualizarDialogOpen(true)}
+                    className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300 data-[highlighted]:bg-red-500/10 data-[highlighted]:text-red-700 dark:data-[highlighted]:text-red-300"
+                  >
+                    <AlertTriangle className="h-3.5 w-3.5 mr-2 text-red-600 dark:text-red-400" /> Importar y Actualizar Excel
                   </DropdownMenuItem>
                 </ProtectedByPermission>
 
@@ -207,30 +239,23 @@ export default function PaquetesList() {
                   </DropdownMenuItem>
                 </ProtectedByPermission>
 
-                <ProtectedByPermission permission={PERMISSIONS.PAQUETES.EDITAR}>
-                  <DropdownMenuItem
-                    onClick={() => setImportActualizarDialogOpen(true)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <AlertTriangle className="h-3.5 w-3.5 mr-2" /> Importar y Actualizar Excel
-                  </DropdownMenuItem>
-                </ProtectedByPermission>
-
                 <ProtectedByPermission permission={PERMISSIONS.PAQUETES.CREAR}>
                   <DropdownMenuItem onClick={() => setImportEspecialesMiamiDialogOpen(true)}>
                     <Tag className="h-3.5 w-3.5 mr-2" /> Importar paquetes especiales (MIAMI)
                   </DropdownMenuItem>
                 </ProtectedByPermission>
 
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Asociaciones</DropdownMenuLabel>
                 <ProtectedByPermission permission={PERMISSIONS.PAQUETES.EDITAR}>
                   <DropdownMenuItem onClick={() => setAsociarClementinaDialogOpen(true)}>
                     <PackagePlus className="h-3.5 w-3.5 mr-2" /> Asociar Clementina
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setAsociarSepararDialogOpen(true)}>
-                    <PackageMinus className="h-3.5 w-3.5 mr-2" /> Marcar como Separar
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setAsociarCadenitaDialogOpen(true)}>
                     <Link2 className="h-3.5 w-3.5 mr-2" /> Asociar Cadenita
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setAsociarSepararDialogOpen(true)}>
+                    <PackageMinus className="h-3.5 w-3.5 mr-2" /> Marcar como Separar
                   </DropdownMenuItem>
                 </ProtectedByPermission>
               </DropdownMenuContent>
@@ -250,6 +275,7 @@ export default function PaquetesList() {
         search={busquedaGuia}
         onSearchChange={setBusquedaGuia}
         searchPlaceholder="Buscar por guía, REF o master..."
+        withBottomBorder={false}
         filters={
           <>
             <Select value={filtroEstado} onValueChange={setFiltroEstado}>
@@ -283,25 +309,11 @@ export default function PaquetesList() {
         }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        <div className="rounded-md border border-border bg-card px-3 py-2">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Resultados</p>
-          <p className="text-sm font-semibold">{paquetesFiltrados.length} en página</p>
-        </div>
-        <div className="rounded-md border border-border bg-card px-3 py-2">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Total</p>
-          <p className="text-sm font-semibold">{totalElements} registros</p>
-        </div>
-        <div className="rounded-md border border-border bg-card px-3 py-2">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Filtros activos</p>
-          <p className="text-sm font-semibold">{filtrosActivos}</p>
-        </div>
-      </div>
-
       {/* Notion Table */}
-      <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
-        <div className="flex-1 min-h-0 relative w-full overflow-auto">
-          <Table className="notion-table">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
+        <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 relative w-full overflow-auto">
+            <Table className="notion-table">
             <TableHeader className="bg-muted/40 border-b border-border sticky top-0 z-10 backdrop-blur-sm">
               <TableRow className="hover:bg-transparent border-none">
                 <TableHead className="w-10 pl-3 h-9">
@@ -391,26 +403,32 @@ export default function PaquetesList() {
                     </TableCell>
                     <TableCell className="py-1.5 hidden sm:table-cell">
                       {paquete.numeroManifiesto ? (
-                        <button
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
                           onClick={(e) => { e.stopPropagation(); navigate({ to: `/despachos/${paquete.idDespacho}` }) }}
-                          className="text-[10px] font-mono hover:underline text-primary truncate max-w-[100px]"
+                          className="h-auto max-w-[110px] truncate px-0 text-xs font-mono"
                         >
                           {paquete.numeroManifiesto}
-                        </button>
+                        </Button>
                       ) : (
-                        <span className="text-[10px] text-muted-foreground">-</span>
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="py-1.5 text-xs text-muted-foreground tabular-nums hidden xl:table-cell">
-                      {paquete.fechaRegistro
-                        ? new Date(paquete.fechaRegistro).toLocaleDateString('es-ES')
-                        : '-'}
+                      {formatearFechaCorta(paquete.fechaRegistro)}
                     </TableCell>
                     <TableCell className="text-right py-1.5 pr-3">
                       <ProtectedByPermission permissions={[PERMISSIONS.PAQUETES.VER, PERMISSIONS.PAQUETES.IMPRIMIR, PERMISSIONS.PAQUETES.EDITAR, PERMISSIONS.PAQUETES.ELIMINAR]}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Acciones de fila"
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground opacity-100 transition-opacity"
+                          >
                             <MoreHorizontal className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -452,7 +470,8 @@ export default function PaquetesList() {
                 ))
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
 
         <ListPagination
@@ -465,37 +484,9 @@ export default function PaquetesList() {
         />
       </div>
 
-      {/* Barra flotante de selección */}
-      {paquetesSeleccionados.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-foreground text-background rounded-full shadow-2xl px-5 py-2.5 flex items-center gap-4 animate-in slide-in-from-bottom-4 fade-in duration-200">
-          <span className="text-sm font-medium tabular-nums">
-            {paquetesSeleccionados.size} seleccionado{paquetesSeleccionados.size !== 1 && 's'}
-          </span>
-          <div className="h-4 w-px bg-background/20" />
-          <ProtectedByPermission permission={PERMISSIONS.PAQUETES.IMPRIMIR}>
-            <button
-              onClick={() => {
-                setImprimirPaqueteDialogMode('multi')
-                setPaqueteParaImprimir(null)
-                setImprimirPaqueteDialogOpen(true)
-              }}
-              className="flex items-center gap-1.5 text-sm font-medium hover:text-background/70 transition-colors"
-            >
-              <Printer className="h-3.5 w-3.5" /> Imprimir
-            </button>
-          </ProtectedByPermission>
-          <button
-            onClick={() => setPaquetesSeleccionados(new Set())}
-            className="flex items-center gap-1.5 text-sm text-background/60 hover:text-background transition-colors"
-          >
-            Deseleccionar
-          </button>
-        </div>
-      )}
-
       {/* Dialogs */}
       <Dialog open={!!paqueteAEliminar} onOpenChange={(open) => !open && setPaqueteAEliminar(null)}>
-        <DialogContent className="p-0 gap-0 overflow-hidden">
+        <DialogContent className={cn(dialogContentPresets.compact, "p-0 gap-0 overflow-hidden")}>
           <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40 bg-destructive/5">
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <div className="h-8 w-8 rounded-md bg-destructive/10 border border-destructive/20 flex items-center justify-center">

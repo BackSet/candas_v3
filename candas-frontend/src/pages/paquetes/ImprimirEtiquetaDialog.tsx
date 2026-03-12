@@ -32,7 +32,7 @@ export default function ImprimirEtiquetaDialog({
 
   // Datos para vista previa simplified (mock data logic from util)
   const direccionDestinatario = [
-    paquete.ciudadDestinatario,
+    paquete.provinciaDestinatario,
     paquete.paisDestinatario,
     paquete.cantonDestinatario
   ].filter(Boolean).join(' - ')

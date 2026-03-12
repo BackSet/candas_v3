@@ -27,7 +27,7 @@ public final class ClienteSpecs {
                     cb.like(cb.lower(root.get("email")), pattern),
                     cb.like(cb.lower(root.get("telefono")), pattern),
                     cb.like(cb.lower(root.get("direccion")), pattern),
-                    cb.like(cb.lower(root.get("ciudad")), pattern),
+                    cb.like(cb.lower(root.get("provincia")), pattern),
                     cb.like(cb.lower(root.get("canton")), pattern),
                     cb.like(cb.lower(root.get("pais")), pattern)
                 ));

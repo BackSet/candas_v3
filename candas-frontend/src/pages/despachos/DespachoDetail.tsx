@@ -210,9 +210,9 @@ export default function DespachoDetail() {
                       {despacho.despachoDirecto.destinatarioDirecto.telefonoDestinatario}
                     </p>
                   )}
-                  {despacho.despachoDirecto?.destinatarioDirecto?.ciudad && (
+                  {despacho.despachoDirecto?.destinatarioDirecto?.provincia && (
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {despacho.despachoDirecto.destinatarioDirecto.ciudad}
+                      {despacho.despachoDirecto.destinatarioDirecto.provincia}
                     </p>
                   )}
                 </div>

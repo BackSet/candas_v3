@@ -49,7 +49,7 @@ export default function ClienteForm() {
       setValue('documentoIdentidad', cliente.documentoIdentidad || '')
       setValue('email', cliente.email || '')
       setValue('pais', cliente.pais || '')
-      setValue('ciudad', cliente.ciudad || '')
+      setValue('provincia', cliente.provincia || '')
       setValue('canton', cliente.canton || '')
       setValue('direccion', cliente.direccion || '')
       setValue('telefono', cliente.telefono || '')
@@ -153,8 +153,8 @@ export default function ClienteForm() {
                 <Input id="pais" {...register('pais')} placeholder="País" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ciudad">Ciudad</Label>
-                <Input id="ciudad" {...register('ciudad')} placeholder="Ciudad" />
+                <Label htmlFor="provincia">Provincia</Label>
+                <Input id="provincia" {...register('provincia')} placeholder="Provincia" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="canton">Cantón</Label>

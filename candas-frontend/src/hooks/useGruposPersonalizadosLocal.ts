@@ -6,12 +6,12 @@ export interface GrupoPersonalizadoLocal {
   nombre: string
   descripcion?: string
   idPaquetes: number[]
-  ciudad: string
+  provincia: string
   canton: string
 }
 
-interface GruposPorCiudadCanton {
-  [ciudad: string]: {
+interface GruposPorProvinciaCanton {
+  [provincia: string]: {
     [canton: string]: {
       [grupoId: string]: GrupoPersonalizadoLocal
     }
@@ -19,7 +19,7 @@ interface GruposPorCiudadCanton {
 }
 
 interface GruposPorLote {
-  [loteRecepcionId: number]: GruposPorCiudadCanton
+  [loteRecepcionId: number]: GruposPorProvinciaCanton
 }
 
 const STORAGE_KEY = 'grupos-personalizados-local'
@@ -51,9 +51,9 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
 
       // Convertir estructura anidada a array plano
       const gruposArray: GrupoPersonalizadoLocal[] = []
-      Object.keys(gruposLote).forEach(ciudad => {
-        Object.keys(gruposLote[ciudad]).forEach(canton => {
-          Object.values(gruposLote[ciudad][canton]).forEach(grupo => {
+      Object.keys(gruposLote).forEach(provincia => {
+        Object.keys(gruposLote[provincia]).forEach(canton => {
+          Object.values(gruposLote[provincia][canton]).forEach(grupo => {
             gruposArray.push(grupo)
           })
         })
@@ -89,9 +89,9 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
       }
 
       const gruposArray: GrupoPersonalizadoLocal[] = []
-      Object.keys(gruposLote).forEach(ciudad => {
-        Object.keys(gruposLote[ciudad]).forEach(canton => {
-          Object.values(gruposLote[ciudad][canton]).forEach(grupo => {
+      Object.keys(gruposLote).forEach(provincia => {
+        Object.keys(gruposLote[provincia]).forEach(canton => {
+          Object.values(gruposLote[provincia][canton]).forEach(grupo => {
             gruposArray.push(grupo)
           })
         })
@@ -105,7 +105,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
   }, [loteRecepcionId])
 
   // Guardar grupos en localStorage
-  const guardarGrupos = useCallback((nuevosGrupos: GruposPorCiudadCanton) => {
+  const guardarGrupos = useCallback((nuevosGrupos: GruposPorProvinciaCanton) => {
     if (!loteRecepcionId) return
 
     try {
@@ -120,7 +120,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
   }, [loteRecepcionId])
 
   // Obtener estructura completa de grupos
-  const obtenerEstructura = useCallback((): GruposPorCiudadCanton => {
+  const obtenerEstructura = useCallback((): GruposPorProvinciaCanton => {
     if (!loteRecepcionId) return {}
 
     try {
@@ -145,11 +145,11 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     const estructura = obtenerEstructura()
     
     // Inicializar estructura si no existe
-    if (!estructura[grupo.ciudad]) {
-      estructura[grupo.ciudad] = {}
+    if (!estructura[grupo.provincia]) {
+      estructura[grupo.provincia] = {}
     }
-    if (!estructura[grupo.ciudad][grupo.canton]) {
-      estructura[grupo.ciudad][grupo.canton] = {}
+    if (!estructura[grupo.provincia][grupo.canton]) {
+      estructura[grupo.provincia][grupo.canton] = {}
     }
 
     // Generar ID único
@@ -159,7 +159,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
       id,
     }
 
-    estructura[grupo.ciudad][grupo.canton][id] = nuevoGrupo
+    estructura[grupo.provincia][grupo.canton][id] = nuevoGrupo
     guardarGrupos(estructura)
 
     // Refrescar grupos
@@ -180,18 +180,18 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     
     // Buscar y eliminar el grupo
     let encontrado = false
-    Object.keys(estructura).forEach(ciudad => {
-      Object.keys(estructura[ciudad]).forEach(canton => {
-        if (estructura[ciudad][canton][id]) {
-          delete estructura[ciudad][canton][id]
+    Object.keys(estructura).forEach(provincia => {
+      Object.keys(estructura[provincia]).forEach(canton => {
+        if (estructura[provincia][canton][id]) {
+          delete estructura[provincia][canton][id]
           encontrado = true
           
           // Limpiar estructura vacía
-          if (Object.keys(estructura[ciudad][canton]).length === 0) {
-            delete estructura[ciudad][canton]
+          if (Object.keys(estructura[provincia][canton]).length === 0) {
+            delete estructura[provincia][canton]
           }
-          if (Object.keys(estructura[ciudad]).length === 0) {
-            delete estructura[ciudad]
+          if (Object.keys(estructura[provincia]).length === 0) {
+            delete estructura[provincia]
           }
         }
       })
@@ -206,10 +206,10 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     }
   }, [loteRecepcionId, obtenerEstructura, guardarGrupos])
 
-  // Obtener grupos por ciudad y cantón
-  const obtenerGruposPorCiudadCanton = useCallback((ciudad: string, canton: string): GrupoPersonalizadoLocal[] => {
+  // Obtener grupos por provincia y cantón
+  const obtenerGruposPorProvinciaCanton = useCallback((provincia: string, canton: string): GrupoPersonalizadoLocal[] => {
     const estructura = obtenerEstructura()
-    return Object.values(estructura[ciudad]?.[canton] || {})
+    return Object.values(estructura[provincia]?.[canton] || {})
   }, [obtenerEstructura])
 
   // Agregar paquetes a un grupo existente
@@ -223,15 +223,15 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     
     // Buscar el grupo
     let grupoEncontrado: GrupoPersonalizadoLocal | null = null
-    let ciudadGrupo = ''
+    let provinciaGrupo = ''
     let cantonGrupo = ''
 
-    for (const ciudad of Object.keys(estructura)) {
-      for (const canton of Object.keys(estructura[ciudad])) {
-        const grupo = estructura[ciudad][canton][grupoId]
+    for (const provincia of Object.keys(estructura)) {
+      for (const canton of Object.keys(estructura[provincia])) {
+        const grupo = estructura[provincia][canton][grupoId]
         if (grupo) {
           grupoEncontrado = grupo
-          ciudadGrupo = ciudad
+          provinciaGrupo = provincia
           cantonGrupo = canton
           break
         }
@@ -254,7 +254,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     }
 
     grupoEncontrado.idPaquetes = [...grupoEncontrado.idPaquetes, ...nuevosIds]
-    estructura[ciudadGrupo][cantonGrupo][grupoId] = grupoEncontrado
+    estructura[provinciaGrupo][cantonGrupo][grupoId] = grupoEncontrado
     
     guardarGrupos(estructura)
     refrescarGrupos()
@@ -262,7 +262,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
   }, [loteRecepcionId, obtenerEstructura, guardarGrupos, refrescarGrupos])
 
   // Mover un paquete de un grupo a otro
-  const moverPaqueteAGrupo = useCallback((paqueteId: number, grupoIdDestino: string, ciudad: string, canton: string) => {
+  const moverPaqueteAGrupo = useCallback((paqueteId: number, grupoIdDestino: string, provincia: string, canton: string) => {
     if (!loteRecepcionId) {
       toast.error('No se puede mover paquete sin lote de recepción')
       return
@@ -272,10 +272,10 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     
     // Buscar y remover el paquete de su grupo actual
     let grupoOrigenEncontrado = false
-    Object.keys(estructura).forEach(ciudadKey => {
-      Object.keys(estructura[ciudadKey]).forEach(cantonKey => {
-        Object.keys(estructura[ciudadKey][cantonKey]).forEach(grupoId => {
-          const grupo = estructura[ciudadKey][cantonKey][grupoId]
+    Object.keys(estructura).forEach(provinciaKey => {
+      Object.keys(estructura[provinciaKey]).forEach(cantonKey => {
+        Object.keys(estructura[provinciaKey][cantonKey]).forEach(grupoId => {
+          const grupo = estructura[provinciaKey][cantonKey][grupoId]
           const index = grupo.idPaquetes.indexOf(paqueteId)
           if (index !== -1) {
             grupo.idPaquetes = grupo.idPaquetes.filter(id => id !== paqueteId)
@@ -283,12 +283,12 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
             
             // Limpiar grupo vacío
             if (grupo.idPaquetes.length === 0) {
-              delete estructura[ciudadKey][cantonKey][grupoId]
-              if (Object.keys(estructura[ciudadKey][cantonKey]).length === 0) {
-                delete estructura[ciudadKey][cantonKey]
+              delete estructura[provinciaKey][cantonKey][grupoId]
+              if (Object.keys(estructura[provinciaKey][cantonKey]).length === 0) {
+                delete estructura[provinciaKey][cantonKey]
               }
-              if (Object.keys(estructura[ciudadKey]).length === 0) {
-                delete estructura[ciudadKey]
+              if (Object.keys(estructura[provinciaKey]).length === 0) {
+                delete estructura[provinciaKey]
               }
             }
           }
@@ -297,15 +297,15 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     })
 
     // Inicializar estructura si no existe
-    if (!estructura[ciudad]) {
-      estructura[ciudad] = {}
+    if (!estructura[provincia]) {
+      estructura[provincia] = {}
     }
-    if (!estructura[ciudad][canton]) {
-      estructura[ciudad][canton] = {}
+    if (!estructura[provincia][canton]) {
+      estructura[provincia][canton] = {}
     }
 
     // Buscar grupo destino
-    const grupoDestino = estructura[ciudad][canton][grupoIdDestino]
+    const grupoDestino = estructura[provincia][canton][grupoIdDestino]
     if (!grupoDestino) {
       toast.error('Grupo destino no encontrado')
       return
@@ -325,7 +325,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     grupos,
     crearGrupo,
     eliminarGrupo,
-    obtenerGruposPorCiudadCanton,
+    obtenerGruposPorProvinciaCanton,
     obtenerEstructura,
     refrescarGrupos,
     agregarPaquetesAGrupo,

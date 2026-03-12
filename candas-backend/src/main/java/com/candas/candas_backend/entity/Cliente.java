@@ -32,8 +32,8 @@ public class Cliente {
     @Column(name = "pais")
     private String pais;
 
-    @Column(name = "ciudad")
-    private String ciudad;
+    @Column(name = "provincia")
+    private String provincia;
 
     @Column(name = "canton")
     private String canton;

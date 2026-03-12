@@ -9,7 +9,7 @@ import { toast } from 'sonner'
  * La API devuelve siempre la sesión del usuario actual; varios operarios pueden usar la vista
  * a la vez sin compartir cola ni datos.
  */
-export function useDespachoMasivoSession(options?: { refetchInterval?: number; refetchOnMount?: true | 'always' }) {
+export function useDespachoMasivoSession(options?: { refetchInterval?: number | false; refetchOnMount?: true | 'always' }) {
   return useQuery({
     queryKey: ['despacho-masivo-session'],
     queryFn: () => despachoMasivoSessionService.getSession(),

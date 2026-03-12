@@ -56,13 +56,13 @@ export default function CambiarTipoDestinoMasivoDialog({
     return (agenciasPage?.content || []).filter((a) => a.activa !== false && !!a.idAgencia)
   }, [agenciasPage])
 
-  // Ciudad recomendada: la más frecuente en los paquetes seleccionados
-  const ciudadRecomendada = useMemo(() => {
+  // Provincia recomendada: la más frecuente en los paquetes seleccionados
+  const provinciaRecomendada = useMemo(() => {
     const conteo = new Map<string, number>()
     for (const p of paquetes) {
-      const ciudad = (p.ciudadDestinatario || '').trim()
-      if (!ciudad) continue
-      const key = ciudad.toLowerCase()
+      const provincia = (p.provinciaDestinatario || '').trim()
+      if (!provincia) continue
+      const key = provincia.toLowerCase()
       conteo.set(key, (conteo.get(key) || 0) + 1)
     }
     let bestKey: string | null = null
@@ -77,23 +77,23 @@ export default function CambiarTipoDestinoMasivoDialog({
   }, [paquetes])
 
   const agenciaRecomendadaId = useMemo(() => {
-    if (!ciudadRecomendada) return null
+    if (!provinciaRecomendada) return null
     const match = agencias
       .slice()
       .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
-      .find((a) => (a.ciudad || '').trim().toLowerCase() === ciudadRecomendada)
+      .find((a) => (a.provincia || '').trim().toLowerCase() === provinciaRecomendada)
     return match?.idAgencia ?? null
-  }, [agencias, ciudadRecomendada])
+  }, [agencias, provinciaRecomendada])
 
   const destinatarioRecomendadoId = useMemo(() => {
-    if (!ciudadRecomendada) return null
+    if (!provinciaRecomendada) return null
     const match = (destinatarios || [])
       .filter((d) => d.activo !== false && !!d.idDestinatarioDirecto)
       .slice()
       .sort((a, b) => (a.nombreDestinatario || '').localeCompare(b.nombreDestinatario || ''))
-      .find((d) => (d.ciudad || '').trim().toLowerCase() === ciudadRecomendada)
+      .find((d) => (d.provincia || '').trim().toLowerCase() === provinciaRecomendada)
     return match?.idDestinatarioDirecto ?? null
-  }, [destinatarios, ciudadRecomendada])
+  }, [destinatarios, provinciaRecomendada])
 
   // Auto-seleccionar agencia recomendada al pasar a AGENCIA (si el usuario no eligió una)
   useEffect(() => {
@@ -307,9 +307,9 @@ export default function CambiarTipoDestinoMasivoDialog({
                       return (
                         <SelectItem key={id} value={id.toString()}>
                           <div className="flex items-center gap-2 max-w-[320px]">
-                            <span className="text-sm truncate block" title={`${d.nombreDestinatario}${d.ciudad ? ` — ${d.ciudad}` : ''}`}>
+                            <span className="text-sm truncate block" title={`${d.nombreDestinatario}${d.provincia ? ` — ${d.provincia}` : ''}`}>
                               {d.nombreDestinatario}
-                              {d.ciudad ? ` — ${d.ciudad}` : ''}
+                              {d.provincia ? ` — ${d.provincia}` : ''}
                             </span>
                             {esRecomendado && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 shrink-0">

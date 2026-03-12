@@ -8,6 +8,7 @@ interface DetailHeaderProps {
   title: string
   subtitle?: string
   backUrl: string
+  onBack?: () => void
   status?: {
     label: string
     variant: StatusVariant
@@ -20,6 +21,7 @@ export function DetailHeader({
   title,
   subtitle,
   backUrl,
+  onBack,
   status,
   actions,
   className,
@@ -33,7 +35,13 @@ export function DetailHeader({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(backUrl)}
+            onClick={() => {
+              if (onBack) {
+                onBack()
+                return
+              }
+              navigate({ to: backUrl as never })
+            }}
             className="shrink-0 min-h-10 min-w-10"
             title="Volver"
           >

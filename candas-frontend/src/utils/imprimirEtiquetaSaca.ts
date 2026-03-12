@@ -133,7 +133,7 @@ export function generarEtiquetaZebraHTML(
   const esDestinatarioDirecto = despacho.despachoDirecto?.destinatarioDirecto !== undefined
 
   let destinoNombre: string
-  let destinoCiudad: string = ''
+  let destinoProvincia: string = ''
   let destinoTelefono: string
   let destinoEncargado: string = ''
   let destinoEmpresa: string = ''
@@ -145,10 +145,10 @@ export function generarEtiquetaZebraHTML(
     destinoTelefono = dd.telefonoDestinatario || 'N/A'
     destinoEmpresa = dd.nombreEmpresa || ''
     destinoDireccion = dd.direccionDestinatario || ''
-    destinoCiudad = dd.ciudad || ''
+    destinoProvincia = dd.provincia || ''
   } else {
     destinoNombre = agencia?.nombre || 'N/A'
-    destinoCiudad = agencia?.ciudad || ''
+    destinoProvincia = agencia?.provincia || ''
     destinoTelefono = agencia?.telefonos?.find(t => t.principal)?.numero || agencia?.telefonos?.[0]?.numero || 'N/A'
     destinoEncargado = agencia?.nombrePersonal || ''
   }
@@ -184,7 +184,7 @@ export function generarEtiquetaZebraHTML(
             </div>
 
             <div class="zebra-dest-footer">
-              ${destinoCiudad ? `<div class="zebra-dest-city-badge">${destinoCiudad}</div>` : ''}
+              ${destinoProvincia ? `<div class="zebra-dest-city-badge">${destinoProvincia}</div>` : ''}
             </div>
           </div>
 

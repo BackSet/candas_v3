@@ -115,10 +115,10 @@ export default function ClienteDetail() {
                         {cliente.direccion || 'Sin dirección detallada'}
                       </div>
                       <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-                        {cliente.ciudad && <span>{cliente.ciudad}</span>}
-                        {cliente.ciudad && cliente.canton && <span className="opacity-30">•</span>}
+                        {cliente.provincia && <span>{cliente.provincia}</span>}
+                        {cliente.provincia && cliente.canton && <span className="opacity-30">•</span>}
                         {cliente.canton && <span>{cliente.canton}</span>}
-                        {(cliente.ciudad || cliente.canton) && cliente.pais && <span className="opacity-30">•</span>}
+                        {(cliente.provincia || cliente.canton) && cliente.pais && <span className="opacity-30">•</span>}
                         {cliente.pais && <span className="text-foreground/80">{cliente.pais}</span>}
                       </div>
                     </div>

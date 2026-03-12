@@ -78,7 +78,7 @@ export default function DestinatariosDirectosList() {
         <ProtectedByPermission permission={PERMISSIONS.DESTINATARIOS_DIRECTOS.CREAR}>
           <Button onClick={() => navigate({ to: '/destinatarios-directos/new' })} size="sm" className="h-8 shadow-sm text-xs">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nuevo Destinatario
+            Nuevo
           </Button>
         </ProtectedByPermission>
       }
@@ -88,10 +88,11 @@ export default function DestinatariosDirectosList() {
         search={busqueda}
         onSearchChange={setBusqueda}
         searchPlaceholder="Buscar por nombre, dirección..."
+        withBottomBorder={false}
       />
 
       {/* Content + pagination wrapper */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
         {/* Main Content - Notion Table View */}
         <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0 relative w-full overflow-auto">
@@ -200,13 +201,6 @@ export default function DestinatariosDirectosList() {
             </Table>
           </div>
 
-          {destinatariosFiltrados.length > 0 && (
-            <div className="flex items-center justify-between pt-4 border-t border-border/40 px-4 pb-2">
-              <div className="text-xs text-muted-foreground tabular-nums">
-                Total: {destinatariosFiltrados.length} destinatario{destinatariosFiltrados.length !== 1 ? 's' : ''}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

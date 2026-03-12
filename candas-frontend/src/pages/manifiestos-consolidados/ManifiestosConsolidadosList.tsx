@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { manifiestoConsolidadoService } from '@/lib/api/manifiesto-consolidado.service'
 import type { ManifiestoConsolidadoDetalle } from '@/types/manifiesto-consolidado'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -29,7 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, Search, Printer, Eye, Trash2, FileSpreadsheet, FileText, MoreHorizontal, Calendar, ArrowRight, User, Clock, Package, Mail, Briefcase } from 'lucide-react'
+import { Plus, Printer, Eye, Trash2, FileSpreadsheet, FileText, MoreHorizontal, Calendar, ArrowRight, User, Clock, Package, Mail, Briefcase } from 'lucide-react'
 import GenerarManifiestoConsolidadoDialog from './GenerarManifiestoConsolidadoDialog'
 import ExportarExcelDialog from './ExportarExcelDialog'
 import SeleccionarTipoImpresionDialog from '@/components/manifiestos-consolidados/SeleccionarTipoImpresionDialog'
@@ -38,6 +37,7 @@ import { PERMISSIONS } from '@/types/permissions'
 import { toast } from 'sonner'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
+import { ListToolbar } from '@/components/list/ListToolbar'
 import { Badge } from '@/components/ui/badge'
 import { LoadingState } from '@/components/states/LoadingState'
 import { EmptyState } from '@/components/states/EmptyState'
@@ -177,26 +177,23 @@ export default function ManifiestosConsolidadosList() {
         </ProtectedByPermission>
       }
     >
-      {/* Toolbar */}
-      <div className="px-4 sm:px-6 py-3 border-b border-border/30 bg-muted/5 flex items-center justify-between gap-4 shrink-0">
-        <div className="relative flex-1 max-w-md group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-          <Input
-            placeholder="Buscar por número de manifiesto, agencia..."
-            className="h-9 w-full pl-9 pr-4 text-sm bg-background border-border/40 rounded-lg focus-visible:ring-primary/20 shadow-sm"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-        </div>
-        <span className="text-xs text-muted-foreground hidden sm:inline-block">
-          <span className="font-medium text-foreground">{manifiestosFiltrados.length}</span> resultados
-        </span>
-      </div>
+      <ListToolbar
+        search={busqueda}
+        onSearchChange={setBusqueda}
+        searchPlaceholder="Buscar por número de manifiesto, agencia..."
+        withBottomBorder={false}
+        actions={
+          <span className="text-xs text-muted-foreground hidden sm:inline-block">
+            <span className="font-medium text-foreground">{manifiestosFiltrados.length}</span> resultados
+          </span>
+        }
+      />
 
       {/* Table */}
-      <div className="flex-1 overflow-hidden relative">
-        <div className="absolute inset-0 overflow-auto">
-          <Table className="notion-table w-full relative">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
+        <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 relative w-full overflow-auto">
+            <Table className="notion-table w-full relative">
             <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/40">
               <TableRow className="hover:bg-transparent border-none">
                 <TableHead className="h-10 text-[11px] font-bold text-muted-foreground uppercase tracking-wider pl-4 w-40">Manifiesto</TableHead>
@@ -337,20 +334,21 @@ export default function ManifiestosConsolidadosList() {
                 ))
               )}
             </TableBody>
-          </Table>
-        </div>
-      </div>
+            </Table>
+          </div>
 
-      {busqueda.trim().length === 0 && (
-        <ListPagination
-          page={currentPage}
-          totalPages={totalPages}
-          totalItems={data?.totalElements}
-          size={size}
-          onPageChange={setPage}
-          className="px-4 pb-2"
-        />
-      )}
+        </div>
+        {busqueda.trim().length === 0 && (
+          <ListPagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={data?.totalElements}
+            size={size}
+            onPageChange={setPage}
+            className="shrink-0"
+          />
+        )}
+      </div>
 
       {/* Dialogs */}
       <GenerarManifiestoConsolidadoDialog

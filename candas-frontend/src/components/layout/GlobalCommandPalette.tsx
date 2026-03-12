@@ -95,7 +95,7 @@ export function GlobalCommandPalette() {
                         Nuevo Paquete
                     </CommandItem>
                     {/* Note: Import dialogs are page-specific, so we might need a way to trigger them globally or navigate to the page with a query param */}
-                    <CommandItem onSelect={() => runCommand(() => navigate({ to: '/paquetes?action=import' }))}>
+                    <CommandItem onSelect={() => runCommand(() => navigate({ to: '/paquetes' }))}>
                         <Upload className="mr-2 h-4 w-4" />
                         Importar Excel (Ir a Paquetes)
                     </CommandItem>

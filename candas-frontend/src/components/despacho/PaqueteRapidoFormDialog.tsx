@@ -19,7 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 const schema = z.object({
-  peso: z.coerce.number().min(0.01, 'El peso debe ser mayor a 0'),
+  peso: z.number().min(0.01, 'El peso debe ser mayor a 0'),
   descripcion: z.string().min(1, 'La descripción es requerida'),
   nombreDestinatario: z.string().min(1, 'El nombre del destinatario es requerido'),
 })
@@ -86,7 +86,7 @@ export default function PaqueteRapidoFormDialog({
               type="number"
               step="0.01"
               placeholder="0.00"
-              {...register('peso')}
+              {...register('peso', { valueAsNumber: true })}
               autoFocus
             />
             {errors.peso && <p className="text-xs text-error">{errors.peso.message}</p>}

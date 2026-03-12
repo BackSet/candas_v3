@@ -19,14 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Box, FileText, MapPin, Truck, Copy, Package, SplitSquareVertical, Sparkles } from 'lucide-react'
+import { Box, FileText, MapPin, Truck, Package, SplitSquareVertical, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
 import { TamanoSaca } from '@/types/saca'
 import { formatearTamanoSaca } from '@/utils/ensacado'
 import type { Paquete } from '@/types/paquete'
+import { CopyActionButton } from '@/components/ui/copy-action-button'
 
 export interface AgenciaOption {
   idAgencia: number
@@ -204,44 +204,49 @@ export default function CrearDespachoMasivoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent ref={dialogContentRef} className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b border-border">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Truck className="h-5 w-5 text-emerald-600" />
+      <DialogContent ref={dialogContentRef} className="max-w-4xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-8 pt-8 pb-5 shrink-0 border-b border-border bg-muted/30">
+          <DialogTitle className="flex items-center gap-3 text-xl font-semibold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600">
+              <Truck className="h-6 w-6" />
+            </div>
             Crear Despacho Masivo
           </DialogTitle>
-          <DialogDescription>
-            Configura el despacho para los {packageCount} paquetes seleccionados.
+          <DialogDescription className="text-base mt-1">
+            Configura el despacho para los <strong>{packageCount} paquetes</strong> seleccionados.
           </DialogDescription>
         </DialogHeader>
 
         {/* Resumen operativo */}
-        <div className="px-6 py-3 bg-muted/50 border-b border-border shrink-0 flex flex-wrap items-center gap-4 text-sm">
-          <span className="font-medium text-foreground">{packageCount} paquetes</span>
-          <Separator orientation="vertical" className="h-4" />
-          <span className="font-mono font-semibold text-foreground">{pesoTotalBulk.toFixed(2)} kg</span>
-          <Separator orientation="vertical" className="h-4" />
-          <span className={cn("text-muted-foreground", destinoResumen && "text-foreground font-medium")}>
+        <div className="px-8 py-4 bg-muted/50 border-b border-border shrink-0 flex flex-wrap items-center gap-6 text-sm">
+          <span className="inline-flex items-center gap-2 font-semibold text-foreground">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            {packageCount} paquetes
+          </span>
+          <Separator orientation="vertical" className="h-5" />
+          <span className="font-mono text-base font-bold text-foreground">{pesoTotalBulk.toFixed(2)} kg</span>
+          <Separator orientation="vertical" className="h-5" />
+          <span className={cn("text-muted-foreground", destinoResumen && "text-foreground font-semibold")}>
             {destinoResumen || 'Seleccione destino'}
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-w-0">
+        <div className="flex-1 overflow-y-auto min-h-0 px-8 py-6 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-w-0">
             {/* Card: Destino */}
-            <div className="rounded-lg border border-border bg-card p-4 space-y-4 shadow-sm min-w-0">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 border-b border-border pb-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-sm min-w-0">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
+                <MapPin className="h-5 w-5 text-muted-foreground" />
                 Destino
               </h3>
               {sugerenciaDestino && (
-                <div className="rounded-md bg-primary/5 border border-primary/20 p-2.5 text-sm text-primary">
+                <div className="rounded-lg bg-primary/10 border border-primary/30 p-4 text-sm text-primary">
                   Sugerencia: La mayoría de paquetes van a <strong>{sugerenciaDestino}</strong>.
                 </div>
               )}
-              <div className="space-y-3">
-                <div className="grid gap-1.5">
-                  <Label className="text-sm">Tipo destino</Label>
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Tipo destino</Label>
                   <Select
                     value={bulkTipoDestino}
                     onValueChange={(v) => {
@@ -253,7 +258,7 @@ export default function CrearDespachoMasivoDialog({
                       }
                     }}
                   >
-                    <SelectTrigger className="h-9 min-w-0">
+                    <SelectTrigger className="h-11 min-w-0 text-base">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -264,8 +269,8 @@ export default function CrearDespachoMasivoDialog({
                 </div>
 
                 {bulkTipoDestino === 'AGENCIA' && (
-                  <div className="grid gap-1.5 min-w-0">
-                    <Label className="text-sm">Agencia</Label>
+                  <div className="grid gap-2 min-w-0">
+                    <Label className="text-sm font-medium">Agencia</Label>
                     <Combobox<AgenciaOption>
                       options={agenciasOpciones}
                       value={bulkIdDestino ? Number(bulkIdDestino) : null}
@@ -273,7 +278,7 @@ export default function CrearDespachoMasivoDialog({
                       placeholder="Buscar agencia..."
                       searchPlaceholder="Buscar por nombre o cantón..."
                       emptyMessage="Sin resultados"
-                      className="h-9 text-sm"
+                      className="h-11 text-base"
                       onSearchChange={setBusquedaAgencia}
                       searchValue={busquedaAgencia}
                       usePortal
@@ -284,8 +289,8 @@ export default function CrearDespachoMasivoDialog({
 
                 {bulkTipoDestino === 'DIRECTO' && (
                   <>
-                    <div className="grid gap-1.5">
-                      <Label className="text-sm">Origen del destinatario</Label>
+                    <div className="grid gap-2">
+                      <Label className="text-sm font-medium">Origen del destinatario</Label>
                       <Select
                         value={bulkDestinatarioOrigen}
                         onValueChange={(v) => {
@@ -294,7 +299,7 @@ export default function CrearDespachoMasivoDialog({
                           setBulkIdPaqueteOrigenDestinatario('')
                         }}
                       >
-                        <SelectTrigger className="h-9">
+                        <SelectTrigger className="h-11">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -305,8 +310,8 @@ export default function CrearDespachoMasivoDialog({
                     </div>
 
                     {bulkDestinatarioOrigen === 'EXISTENTE' && (
-                      <div className="grid gap-1.5 relative z-[60] min-w-0">
-                        <Label className="text-sm">Destinatario directo</Label>
+                      <div className="grid gap-2 relative z-[60] min-w-0">
+                        <Label className="text-sm font-medium">Destinatario directo</Label>
                         <Combobox<DestinatarioDirectoOption>
                           options={destinatariosOpciones}
                           value={bulkIdDestino?.trim() ? Number(bulkIdDestino) : null}
@@ -314,7 +319,7 @@ export default function CrearDespachoMasivoDialog({
                           placeholder="Buscar destinatario directo..."
                           searchPlaceholder="Buscar por nombre o cantón..."
                           emptyMessage="Sin destinatarios. Asegúrese de tener destinatarios directos dados de alta."
-                          className="h-9 text-sm"
+                          className="h-11 text-base"
                           onSearchChange={setBusquedaDestinatario}
                           searchValue={busquedaDestinatario}
                           usePortal
@@ -324,8 +329,8 @@ export default function CrearDespachoMasivoDialog({
                     )}
 
                     {bulkDestinatarioOrigen === 'DESDE_PAQUETE' && (
-                      <div className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-3 space-y-3">
-                        <Label className="text-sm font-medium text-primary block">Paquete de referencia</Label>
+                      <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-5 space-y-4">
+                        <Label className="text-sm font-semibold text-primary block">Paquete de referencia</Label>
                         <Combobox
                           options={paquetesRefOpciones}
                           value={bulkIdPaqueteOrigenDestinatario ? Number(bulkIdPaqueteOrigenDestinatario) : null}
@@ -333,48 +338,48 @@ export default function CrearDespachoMasivoDialog({
                           placeholder="Buscar por nombre, teléfono o dirección..."
                           searchPlaceholder="Buscar por teléfono, nombre..."
                           emptyMessage="Sin resultados"
-                          className="h-9 text-sm"
+                          className="h-11 text-base"
                           usePortal
                           portalContainerRef={dialogContentRef}
                         />
-                        <div className="space-y-3 pt-2 border-t border-primary/20">
-                          <p className="text-xs font-medium text-muted-foreground">Datos del destinatario (editable)</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div className="grid gap-1">
-                              <Label className="text-xs">Nombre</Label>
+                        <div className="space-y-4 pt-4 border-t border-primary/20">
+                          <p className="text-sm font-medium text-muted-foreground">Datos del destinatario (editable)</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label className="text-sm">Nombre</Label>
                               <Input
                                 value={bulkDesdePaqueteNombre}
                                 onChange={(e) => setBulkDesdePaqueteNombre(e.target.value)}
                                 placeholder="Nombre del destinatario"
-                                className="h-9 text-sm"
+                                className="h-11 text-base"
                               />
                             </div>
-                            <div className="grid gap-1">
-                              <Label className="text-xs">Teléfono</Label>
+                            <div className="grid gap-2">
+                              <Label className="text-sm">Teléfono</Label>
                               <Input
                                 value={bulkDesdePaqueteTelefono}
                                 onChange={(e) => setBulkDesdePaqueteTelefono(e.target.value)}
                                 placeholder="Teléfono"
-                                className="h-9 text-sm"
+                                className="h-11 text-base"
                               />
                             </div>
                           </div>
-                          <div className="grid gap-1">
-                            <Label className="text-xs">Dirección</Label>
+                          <div className="grid gap-2">
+                            <Label className="text-sm">Dirección</Label>
                             <Input
                               value={bulkDesdePaqueteDireccion}
                               onChange={(e) => setBulkDesdePaqueteDireccion(e.target.value)}
                               placeholder="Dirección"
-                              className="h-9 text-sm"
+                              className="h-11 text-base"
                             />
                           </div>
-                          <div className="grid gap-1">
-                            <Label className="text-xs">Cantón</Label>
+                          <div className="grid gap-2">
+                            <Label className="text-sm">Cantón</Label>
                             <Input
                               value={bulkDesdePaqueteCanton}
                               onChange={(e) => setBulkDesdePaqueteCanton(e.target.value)}
                               placeholder="Cantón"
-                              className="h-9 text-sm"
+                              className="h-11 text-base"
                             />
                           </div>
                         </div>
@@ -386,132 +391,121 @@ export default function CrearDespachoMasivoDialog({
             </div>
 
             {/* Card: Datos del despacho */}
-            <div className="rounded-lg border border-border bg-card p-4 space-y-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 border-b border-border pb-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-sm min-w-0">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
+                <FileText className="h-5 w-5 text-muted-foreground" />
                 Datos del despacho
               </h3>
-              <div className="space-y-3">
-                <div className="grid gap-1.5">
-                  <Label className="text-sm">Fecha y hora</Label>
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Fecha y hora</Label>
                   <DateTimePickerForm
                     value={bulkFechaDespacho}
                     onChange={setBulkFechaDespacho}
                     placeholder="dd/mm/aaaa hh:mm"
-                    className="w-full"
+                    className="w-full h-11"
                   />
                 </div>
-                <div className="grid gap-1.5">
-                  <Label className="text-sm">Usuario registro</Label>
-                  <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-foreground flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Usuario registro</Label>
+                  <div className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-base text-foreground flex items-center gap-2.5 min-h-11">
+                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
                     {userNombreCompleto ?? '—'}
                   </div>
                 </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="bulk-codigo-presinto" className="text-sm">Código de presinto de seguridad</Label>
-                  <div className="flex flex-wrap gap-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="bulk-codigo-presinto" className="text-sm font-medium">Código de presinto de seguridad</Label>
+                  <div className="flex flex-wrap gap-3">
                     <Input
                       id="bulk-codigo-presinto"
                       placeholder="Escribir o generar"
                       value={bulkCodigoPresinto}
                       onChange={(e) => setBulkCodigoPresinto(e.target.value)}
-                      className="font-mono h-9 flex-1 min-w-[200px]"
+                      className="font-mono h-11 flex-1 min-w-[220px] text-base"
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-9 shrink-0"
+                      className="h-11 px-4 shrink-0"
                       onClick={handleGenerarPresinto}
                     >
-                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      <Sparkles className="h-4 w-4 mr-1.5" />
                       Generar
                     </Button>
                   </div>
                 </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="bulk-observaciones" className="text-sm">Observaciones</Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="bulk-observaciones" className="text-sm font-medium">Observaciones</Label>
                   <Textarea
                     id="bulk-observaciones"
                     placeholder="Notas adicionales..."
                     value={bulkObservaciones}
                     onChange={(e) => setBulkObservaciones(e.target.value)}
                     rows={3}
-                    className="resize-none text-sm"
+                    className="resize-none text-base min-h-[80px]"
                   />
                 </div>
-                <div className="grid gap-1.5">
-                  <Label className="text-sm">Distribuidor</Label>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-medium">Distribuidor</Label>
                   <Select value={bulkIdDistribuidor} onValueChange={setBulkIdDistribuidor}>
-                    <SelectTrigger className="h-9 min-w-0">
+                    <SelectTrigger className="h-11 min-w-0 text-base">
                       <SelectValue placeholder="Responsable del traslado" />
                     </SelectTrigger>
                     <SelectContent>
                       {distribuidores.map((d) => (
                         <SelectItem key={d.idDistribuidor} value={String(d.idDistribuidor)}>
-                          <span className="truncate block max-w-[200px]">{d.nombre}</span>
+                          <span className="truncate block max-w-[240px]">{d.nombre}</span>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="bulk-numero-guia" className="text-sm">Número de guía (opcional)</Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="bulk-numero-guia" className="text-sm font-medium">Número de guía (opcional)</Label>
                   <Input
                     id="bulk-numero-guia"
                     placeholder="Ej: GUIA-001"
                     value={bulkNumeroGuia}
                     onChange={(e) => setBulkNumeroGuia(e.target.value)}
-                    className="font-mono h-9"
+                    className="font-mono h-11 text-base"
                   />
                 </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-3 shadow-sm">
+                <div className="rounded-xl border border-border bg-muted/40 p-5 space-y-4 shadow-sm">
                   {codigoDestinoBulk != null && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Código destino</span>
-                      <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/80 px-3 py-2 shadow-sm">
-                        <span className="font-mono text-base font-semibold text-foreground select-all tabular-nums">
+                    <div className="space-y-2">
+                      <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Código destino</span>
+                      <div className="inline-flex items-center gap-3 rounded-lg border border-border bg-background/80 px-4 py-3 shadow-sm">
+                        <span className="font-mono text-lg font-semibold text-foreground select-all tabular-nums">
                           {codigoDestinoBulk}
                         </span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 shrink-0 gap-1.5"
-                          onClick={() => {
-                            void navigator.clipboard.writeText(codigoDestinoBulk ?? '')
-                            toast.success('Código copiado')
-                          }}
+                        <CopyActionButton
+                          textToCopy={codigoDestinoBulk ?? ''}
+                          successMessage="Código copiado"
+                          errorMessage="No se pudo copiar el código"
                           title="Copiar código"
+                          className="h-9 shrink-0 gap-2"
                         >
-                          <Copy className="h-3.5 w-3.5" />
                           Copiar
-                        </Button>
+                        </CopyActionButton>
                       </div>
                     </div>
                   )}
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Peso total</span>
-                    <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/80 px-3 py-2 shadow-sm">
-                      <span className="font-mono text-xl font-bold text-foreground select-all tabular-nums">
+                  <div className="space-y-2">
+                    <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Peso total</span>
+                    <div className="inline-flex items-center gap-3 rounded-lg border border-border bg-background/80 px-4 py-3 shadow-sm">
+                      <span className="font-mono text-2xl font-bold text-foreground select-all tabular-nums">
                         {pesoTotalBulk.toFixed(2)} kg
                       </span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 shrink-0 gap-1.5"
-                        onClick={() => {
-                          const texto = `${pesoTotalBulk.toFixed(2)} kg`
-                          void navigator.clipboard.writeText(texto)
-                          toast.success('Peso copiado')
-                        }}
+                      <CopyActionButton
+                        textToCopy={`${pesoTotalBulk.toFixed(2)} kg`}
+                        successMessage="Peso copiado"
+                        errorMessage="No se pudo copiar el peso"
                         title="Copiar peso"
+                        className="h-9 shrink-0 gap-2"
                       >
-                        <Copy className="h-3.5 w-3.5" />
                         Copiar
-                      </Button>
+                      </CopyActionButton>
                     </div>
                   </div>
                 </div>
@@ -520,14 +514,17 @@ export default function CrearDespachoMasivoDialog({
           </div>
 
           {/* Card: Distribución de Sacas (ancho completo) */}
-          <div className="rounded-lg border border-border bg-card p-4 space-y-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 border-b border-border pb-2">
-              <Box className="h-4 w-4 text-muted-foreground" />
+          <div className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-sm">
+            <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
+              <Box className="h-5 w-5 text-muted-foreground" />
               Distribución de Sacas
             </h3>
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-              <div className="flex-1 grid gap-3">
-                <div className="grid gap-1.5">
+            <p className="text-sm text-muted-foreground">
+              Indique cuántos paquetes va en cada saca, separado por comas. El total debe ser <strong>{packageCount}</strong>.
+            </p>
+            <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+              <div className="flex-1 grid gap-4">
+                <div className="grid gap-2">
                   <Label htmlFor="distribution" className="text-sm font-medium">Cantidades por saca</Label>
                   <Input
                     id="distribution"
@@ -535,27 +532,27 @@ export default function CrearDespachoMasivoDialog({
                     value={sacaDistribution}
                     onChange={(e) => setSacaDistribution(e.target.value)}
                     className={cn(
-                      'font-mono text-lg h-12 tracking-wide',
+                      'font-mono text-xl h-14 tracking-wide px-4',
                       !isValidDist
                         ? 'border-destructive focus-visible:ring-destructive'
                         : 'border-emerald-500 focus-visible:ring-emerald-500'
                     )}
                   />
                 </div>
-                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Acciones rápidas</p>
-                  <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-xl border border-border bg-muted/30 p-5 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Acciones rápidas</p>
+                  <div className="flex flex-wrap items-center gap-4">
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="default"
                       onClick={handleTodoEnUnaSaca}
-                      className="h-9 gap-1.5 font-medium"
+                      className="h-11 gap-2 font-medium px-5"
                     >
-                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <Package className="h-5 w-5 text-muted-foreground" />
                       Todo en 1 saca
                     </Button>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <span className="text-sm text-muted-foreground whitespace-nowrap">Repartir en</span>
                       <Input
                         type="number"
@@ -564,40 +561,37 @@ export default function CrearDespachoMasivoDialog({
                         placeholder="N"
                         value={repartirNSacas}
                         onChange={(e) => setRepartirNSacas(e.target.value)}
-                        className="w-16 h-9 font-mono text-center"
+                        className="w-20 h-11 font-mono text-center text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         aria-label="Número de sacas"
                       />
                       <span className="text-sm text-muted-foreground whitespace-nowrap">sacas</span>
                       <Button
                         type="button"
                         variant="outline"
-                        size="sm"
+                        size="default"
                         onClick={handleRepartirEnNSacas}
-                        className="h-9 font-medium gap-1.5"
+                        className="h-11 font-medium gap-2 px-5"
                       >
-                        <SplitSquareVertical className="h-4 w-4 text-muted-foreground" />
+                        <SplitSquareVertical className="h-5 w-5 text-muted-foreground" />
                         Repartir
                       </Button>
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Separa las cantidades por comas. Total debe ser <strong>{packageCount}</strong>.
-                </p>
                 {!isValidDist && totalDist > 0 && (
                   <p className="text-sm text-destructive font-medium">
                     El total debe ser {packageCount}. Actual: {totalDist}.
                   </p>
                 )}
                 {isValidDist && (
-                  <p className="text-sm text-emerald-600 font-medium">Total correcto.</p>
+                  <p className="text-sm text-emerald-600 font-semibold">Total correcto.</p>
                 )}
               </div>
-              <div className="shrink-0 flex flex-col items-end min-w-[80px]">
+              <div className="shrink-0 flex flex-col items-center justify-center rounded-xl border-2 border-border bg-muted/30 px-8 py-6 min-w-[120px]">
                 <span className="text-xs font-semibold uppercase text-muted-foreground">Total</span>
                 <span
                   className={cn(
-                    'text-3xl font-bold font-mono',
+                    'text-4xl font-bold font-mono mt-1',
                     isValidDist ? 'text-emerald-600' : 'text-destructive'
                   )}
                 >
@@ -607,7 +601,7 @@ export default function CrearDespachoMasivoDialog({
             </div>
 
             {sacaDistribution.split(',').filter((n) => parseInt(n.trim(), 10) > 0).length > 0 && (
-              <div className="flex flex-wrap gap-3 mt-3 bg-muted/50 p-4 rounded-lg border border-border">
+              <div className="flex flex-wrap gap-4 mt-4 bg-muted/50 p-5 rounded-xl border border-border">
                 {sacaDistribution.split(',').map((n, i) => {
                   const count = parseInt(n.trim(), 10) || 0
                   if (count <= 0) return null
@@ -615,13 +609,13 @@ export default function CrearDespachoMasivoDialog({
                   return (
                     <div
                       key={i}
-                      className="flex items-center gap-3 bg-background border border-border px-4 py-2.5 rounded-lg shadow-sm min-w-[200px]"
+                      className="flex items-center gap-4 bg-background border border-border px-5 py-3.5 rounded-xl shadow-sm min-w-[220px]"
                     >
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider shrink-0">
                         Saca {i + 1}
                       </span>
-                      <Separator orientation="vertical" className="h-5" />
-                      <span className="text-sm font-mono font-bold text-foreground shrink-0">{count} pqts</span>
+                      <Separator orientation="vertical" className="h-6" />
+                      <span className="text-base font-mono font-bold text-foreground shrink-0">{count} pqts</span>
                       <Select
                         value={tamano}
                         onValueChange={(v) => {
@@ -633,7 +627,7 @@ export default function CrearDespachoMasivoDialog({
                           })
                         }}
                       >
-                        <SelectTrigger className="h-8 w-[130px] text-xs">
+                        <SelectTrigger className="h-10 w-[140px] text-sm">
                           <SelectValue>{formatearTamanoSaca(tamano)}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
@@ -651,17 +645,17 @@ export default function CrearDespachoMasivoDialog({
           </div>
         </div>
 
-        <DialogFooter className="sm:justify-between px-6 py-4 border-t border-border shrink-0">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="sm:justify-between px-8 py-5 border-t border-border shrink-0 bg-muted/30">
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-11 px-5">
             Cancelar
           </Button>
           <Button
             type="button"
             onClick={onConfirm}
             disabled={confirmDisabled}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[150px]"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[180px] h-11 text-base font-medium"
           >
-            <Truck className="w-4 h-4 mr-2" />
+            <Truck className="w-5 h-5 mr-2" />
             Confirmar Despacho
           </Button>
         </DialogFooter>

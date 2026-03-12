@@ -177,7 +177,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     draftRestored.current = true
     const draft = getDraft(draftKey)
     if (!draft) return
-    const d = draft.data as LoteEspecialDraftData
+    const d = draft.data as unknown as LoteEspecialDraftData
     if (d.operacionModo) setOperacionModo(d.operacionModo)
     if (d.colaEspecial?.length) {
       setColaEspecial(d.colaEspecial)
@@ -319,7 +319,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       const nombre = (p.nombreClienteDestinatario ?? 'Sin nombre').trim()
       const telefono = (p.telefonoDestinatario ?? '').trim()
       const telefonoSoloDigitos = telefono.replace(/\D/g, '')
-      const direccion = [p.direccionDestinatarioCompleta, p.ciudadDestinatario].filter(Boolean).join(' · ')
+      const direccion = [p.direccionDestinatarioCompleta, p.provinciaDestinatario].filter(Boolean).join(' · ')
       return {
         value: p.idPaquete!,
         label: `${nombre} | ${telefono}`.trim() || 'Sin datos',
@@ -346,7 +346,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     setBulkDesdePaqueteNombre((p.nombreClienteDestinatario ?? '').trim())
     setBulkDesdePaqueteTelefono((p.telefonoDestinatario ?? '').trim())
     setBulkDesdePaqueteDireccion((p.direccionDestinatarioCompleta ?? p.direccionDestinatario ?? '').trim())
-    setBulkDesdePaqueteCanton((p.cantonDestinatario ?? p.ciudadDestinatario ?? '').trim())
+    setBulkDesdePaqueteCanton((p.cantonDestinatario ?? p.provinciaDestinatario ?? '').trim())
   }, [paqueteOrigenDestinatario])
 
   const pesoTotalBulk = useMemo(() => {
@@ -492,7 +492,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         (bulkDesdePaqueteDireccion.trim() || '') ===
         (paq?.direccionDestinatarioCompleta ?? paq?.direccionDestinatario ?? '').trim()
       const cantonOk =
-        (bulkDesdePaqueteCanton.trim() || '') === (paq?.cantonDestinatario ?? paq?.ciudadDestinatario ?? '').trim()
+        (bulkDesdePaqueteCanton.trim() || '') === (paq?.cantonDestinatario ?? paq?.provinciaDestinatario ?? '').trim()
       const datosEditados = !nombreOk || !telefonoOk || !direccionOk || !cantonOk
       if (datosEditados && bulkDesdePaqueteNombre.trim()) {
         const nuevoDest = await destinatarioDirectoService.create({
@@ -525,7 +525,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         : new Date().toISOString().slice(0, 19).replace('Z', '')
       const createPayload = {
         fechaDespacho: fechaDespachoValue,
-        usuarioRegistro: user?.nombreCompleto ?? 'OPERADOR',
+        usuarioRegistro: user?.nombreCompleto ?? 'OPERARIO',
         observaciones: bulkObservaciones.trim() || undefined,
         codigoPresinto: bulkCodigoPresinto.trim() || undefined,
         idAgencia: bulkTipoDestino === 'AGENCIA' ? Number(bulkIdDestino) : undefined,
@@ -883,7 +883,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
             {/* Área de feedback */}
             <div className="flex-1 min-h-0">
               {operacionModo === 'DESPACHO' && showFeedbackDespacho && lastScannedDespacho ? (
-                <Card className="h-full border-l-[8px] border-l-emerald-500 bg-emerald-500/5 border border-border shadow-sm flex flex-col justify-center animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <Card className="h-full border-l-[8px] border-l-emerald-500 bg-emerald-500/5 border border-border shadow-sm flex flex-col justify-center animate-in fade-in duration-200">
                   <CardContent className="p-8 space-y-6">
                     <div className="flex items-center gap-6 border-b border-border/50 pb-6">
                       <div className="p-4 bg-background rounded-full shadow-sm border border-border shrink-0">
@@ -913,10 +913,10 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
                           {lastScannedDespacho.clienteDestino.direccion && (
                             <p className="text-lg font-medium text-foreground leading-relaxed break-words">{lastScannedDespacho.clienteDestino.direccion}</p>
                           )}
-                          {(lastScannedDespacho.clienteDestino.pais ?? lastScannedDespacho.clienteDestino.ciudad ?? lastScannedDespacho.clienteDestino.canton) && (
+                          {(lastScannedDespacho.clienteDestino.pais ?? lastScannedDespacho.clienteDestino.provincia ?? lastScannedDespacho.clienteDestino.canton) && (
                             <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm pt-1 border-t border-border/50">
                               {lastScannedDespacho.clienteDestino.pais && <span><span className="text-muted-foreground font-medium">País:</span> {lastScannedDespacho.clienteDestino.pais}</span>}
-                              {lastScannedDespacho.clienteDestino.ciudad && <span><span className="text-muted-foreground font-medium">Ciudad:</span> {lastScannedDespacho.clienteDestino.ciudad}</span>}
+                              {lastScannedDespacho.clienteDestino.provincia && <span><span className="text-muted-foreground font-medium">Provincia:</span> {lastScannedDespacho.clienteDestino.provincia}</span>}
                               {lastScannedDespacho.clienteDestino.canton && <span><span className="text-muted-foreground font-medium">Cantón:</span> {lastScannedDespacho.clienteDestino.canton}</span>}
                             </div>
                           )}
@@ -932,7 +932,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
                   </CardContent>
                 </Card>
               ) : operacionModo === 'TIPEO' && showFeedbackTipeo && lastScannedGuia ? (
-                <Card className="rounded-xl border border-border bg-card overflow-hidden animate-in fade-in duration-300">
+                <Card className="rounded-xl border border-border bg-card overflow-hidden animate-in fade-in duration-200">
                   <div className="bg-primary/5 border-b border-primary/10 px-6 py-3 flex items-center justify-between">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-primary/80">Resultado — {lastScannedGuia}</span>
                     <span className="text-xs text-muted-foreground font-mono">{new Date().toLocaleTimeString()}</span>
@@ -1141,7 +1141,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
               type="button"
               onClick={() => setListFilter('PENDIENTES')}
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-sm transition-all',
+                'px-3 py-1.5 text-xs font-medium rounded-sm transition-colors duration-150',
                 listFilter === 'PENDIENTES'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -1153,7 +1153,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
               type="button"
               onClick={() => setListFilter('DESPACHADOS')}
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-sm transition-all',
+                'px-3 py-1.5 text-xs font-medium rounded-sm transition-colors duration-150',
                 listFilter === 'DESPACHADOS'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -1293,7 +1293,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
           </CardContent>
         </Card>
         {listFilter === 'PENDIENTES' && selectedPackageIds.size > 0 && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-popover border border-border text-popover-foreground px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-4 z-50 ring-1 ring-border/50">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-popover border border-border text-popover-foreground px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-in fade-in duration-200 z-50 ring-1 ring-border/50">
             <span className="font-medium text-sm">{selectedPackageIds.size} seleccionados</span>
             <Button size="sm" variant="secondary" onClick={handleBulkCreateDespacho} className="h-8 text-xs font-bold hover:bg-emerald-600 hover:text-white transition-colors shadow-sm">
               <Truck className="h-3 w-3 mr-2" />
@@ -1346,9 +1346,21 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         setSacaDistribution={setSacaDistribution}
         tamanosSacasBulk={tamanosSacasBulk}
         setTamanosSacasBulk={setTamanosSacasBulk}
-        agencias={agencias}
-        destinatariosDirectos={destinatariosDirectos}
-        distribuidores={distribuidores}
+        agencias={agencias
+          .filter((a): a is typeof a & { idAgencia: number } => a.idAgencia != null)
+          .map((a) => ({ idAgencia: a.idAgencia, nombre: a.nombre, canton: a.canton }))}
+        destinatariosDirectos={destinatariosDirectos
+          .filter((d): d is typeof d & { idDestinatarioDirecto: number } => d.idDestinatarioDirecto != null)
+          .map((d) => ({
+            idDestinatarioDirecto: d.idDestinatarioDirecto,
+            nombreDestinatario: d.nombreDestinatario,
+            nombreEmpresa: d.nombreEmpresa,
+            canton: d.canton,
+            activo: d.activo,
+          }))}
+        distribuidores={distribuidores
+          .filter((d): d is typeof d & { idDistribuidor: number } => d.idDistribuidor != null)
+          .map((d) => ({ idDistribuidor: d.idDistribuidor, nombre: d.nombre }))}
         paquetesRefOpciones={paquetesRefOpciones}
         onOpenCrearDestinatario={() => setShowCrearClienteDialog(true)}
         onConfirm={executeBulkDespacho}
@@ -1415,7 +1427,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
             <Button variant="outline" onClick={() => setShowDialogImprimir(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleImprimir} disabled={imprimiendo} className="gap-2">
+            <Button onClick={() => void handleImprimir()} disabled={imprimiendo} className="gap-2">
               {imprimiendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
               Imprimir PDF
             </Button>

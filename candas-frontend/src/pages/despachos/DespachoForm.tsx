@@ -15,7 +15,7 @@ import { useDestinatarioDirecto, useDestinatariosDirectos } from '@/hooks/useDes
 import type { Despacho } from '@/types/despacho'
 import { TamanoSaca } from '@/types/saca'
 import { calcularTamanoSugerido } from '@/utils/saca'
-import { calcularCiudadOCantonMasComun } from '@/utils/ciudadCanton'
+import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
 import { formatearTamanoSaca } from '@/utils/ensacado'
 import type { Paquete } from '@/types/paquete'
 import { Trash2, Plus, Copy, Loader2, Sparkles, Truck, ArrowLeft, Check, User, ArrowRight, Save, List as ListIcon, Package, SplitSquareVertical, Zap, Link2, RotateCcw } from 'lucide-react'
@@ -38,6 +38,7 @@ import { Separator } from '@/components/ui/separator'
 import { LoadingState } from '@/components/states'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { useDraftStore } from '@/stores/draftStore'
+import { CopyActionButton } from '@/components/ui/copy-action-button'
 
 const DESPACHO_DRAFT_KEY = 'despacho-new'
 
@@ -242,7 +243,7 @@ export default function DespachoForm() {
     draftRestored.current = true
     const draft = getDraft(DESPACHO_DRAFT_KEY)
     if (!draft) return
-    const d = draft.data as DespachoDraftData
+    const d = draft.data as unknown as DespachoDraftData
     const minutesAgo = Math.round((Date.now() - draft.savedAt) / 60000)
     if (d.pasoActual) setPasoActual(d.pasoActual)
     if (d.tipoEnvio) setTipoEnvio(d.tipoEnvio)
@@ -453,14 +454,14 @@ export default function DespachoForm() {
     return p ?? null
   }
 
-  const ciudadOCantonPredominante = useMemo(() => {
-    if (pasoActual !== 3 || paquetesEnSacas.length === 0) return { ciudad: null, canton: null }
-    return calcularCiudadOCantonMasComun(paquetesEnSacas)
+  const provinciaOCantonPredominante = useMemo(() => {
+    if (pasoActual !== 3 || paquetesEnSacas.length === 0) return { provincia: null, canton: null }
+    return calcularProvinciaOCantonMasComun(paquetesEnSacas)
   }, [pasoActual, paquetesEnSacas])
 
   // Efecto para auto-seleccionar agencia o destinatario basado en el cantón predominante de los paquetes
   useEffect(() => {
-    const cantonPredominante = ciudadOCantonPredominante.canton ?? ciudadOCantonPredominante.ciudad
+    const cantonPredominante = provinciaOCantonPredominante.canton ?? provinciaOCantonPredominante.provincia
     if (pasoActual === 3 && cantonPredominante) {
       const valorBuscar = cantonPredominante.toUpperCase()
 
@@ -488,13 +489,13 @@ export default function DespachoForm() {
         }
       }
     }
-  }, [pasoActual, ciudadOCantonPredominante, tipoEnvio, idAgencia, idDestinatarioDirecto, agenciasData, todosDestinatariosDirectos, setValue])
+  }, [pasoActual, provinciaOCantonPredominante, tipoEnvio, idAgencia, idDestinatarioDirecto, agenciasData, todosDestinatariosDirectos, setValue])
 
   const agenciasOpciones = useMemo<ComboboxOption[]>(() => {
     const agencias = busquedaAgencia.length > 0 ? (agenciasResultados || []) : (agenciasData?.content || [])
     return agencias.filter(a => a.activa).map(agencia => {
-      const match = (ciudadOCantonPredominante.ciudad && agencia.canton?.toUpperCase() === ciudadOCantonPredominante.ciudad.toUpperCase()) ||
-        (ciudadOCantonPredominante.canton && agencia.canton?.toUpperCase() === ciudadOCantonPredominante.canton.toUpperCase())
+      const match = (provinciaOCantonPredominante.provincia && agencia.canton?.toUpperCase() === provinciaOCantonPredominante.provincia.toUpperCase()) ||
+        (provinciaOCantonPredominante.canton && agencia.canton?.toUpperCase() === provinciaOCantonPredominante.canton.toUpperCase())
       return {
         value: agencia.idAgencia!,
         label: `${agencia.nombre}${agencia.codigo ? ` (${agencia.codigo})` : ''}`,
@@ -503,14 +504,14 @@ export default function DespachoForm() {
         data: agencia,
       }
     })
-  }, [busquedaAgencia, agenciasResultados, agenciasData, ciudadOCantonPredominante])
+  }, [busquedaAgencia, agenciasResultados, agenciasData, provinciaOCantonPredominante])
 
   const destinatariosOpciones = useMemo<ComboboxOption[]>(() => {
     const destinatarios = busquedaDestinatarioDirecto.length > 0 ? (destinatariosDirectosResultados || []) : (todosDestinatariosDirectos || [])
     return destinatarios.filter(d => d.activo !== false).map(d => {
       const match =
-        (ciudadOCantonPredominante.canton && d.canton?.toUpperCase() === ciudadOCantonPredominante.canton.toUpperCase()) ||
-        (ciudadOCantonPredominante.ciudad && d.canton?.toUpperCase() === ciudadOCantonPredominante.ciudad.toUpperCase())
+        (provinciaOCantonPredominante.canton && d.canton?.toUpperCase() === provinciaOCantonPredominante.canton.toUpperCase()) ||
+        (provinciaOCantonPredominante.provincia && d.canton?.toUpperCase() === provinciaOCantonPredominante.provincia.toUpperCase())
       return {
         value: d.idDestinatarioDirecto!,
         label: d.nombreDestinatario,
@@ -519,7 +520,7 @@ export default function DespachoForm() {
         data: d
       }
     })
-  }, [busquedaDestinatarioDirecto, destinatariosDirectosResultados, todosDestinatariosDirectos, ciudadOCantonPredominante])
+  }, [busquedaDestinatarioDirecto, destinatariosDirectosResultados, todosDestinatariosDirectos, provinciaOCantonPredominante])
 
   const { data: destinatarioDirectoData } = useDestinatarioDirecto(idDestinatarioDirecto)
 
@@ -897,7 +898,7 @@ export default function DespachoForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* PASO 1: INFO BÁSICA */}
           {pasoActual === 1 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 animate-in fade-in duration-200">
               <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-6">
                 <SectionTitle title="Información del Despacho" variant="form" />
                 <div className="space-y-4">
@@ -966,7 +967,7 @@ export default function DespachoForm() {
 
           {/* PASO 2: SACAS */}
           {pasoActual === 2 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 animate-in fade-in duration-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4">
                 <SectionTitle title="Gestionar Sacas" variant="form" className="border-0 pb-0 mb-0" />
                 {sacas.length > 0 && (
@@ -991,7 +992,7 @@ export default function DespachoForm() {
                     <button
                       type="button"
                       onClick={() => setShowListadoAgrupacionDialog(true)}
-                      className="group rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 p-5 flex flex-col items-center text-center gap-3 transition-all hover:border-primary/50 hover:shadow-md"
+                      className="group rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 p-5 flex flex-col items-center text-center gap-3 transition-colors transition-shadow duration-150 hover:border-primary/50 hover:shadow-md"
                     >
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                         <ListIcon className="h-6 w-6 text-primary" />
@@ -1002,7 +1003,7 @@ export default function DespachoForm() {
                     <button
                       type="button"
                       onClick={handleAgregarSaca}
-                      className="group rounded-xl border-2 border-border hover:border-primary/30 bg-card hover:bg-muted/30 p-5 flex flex-col items-center text-center gap-3 transition-all hover:shadow-md"
+                      className="group rounded-xl border-2 border-border hover:border-primary/30 bg-card hover:bg-muted/30 p-5 flex flex-col items-center text-center gap-3 transition-colors transition-shadow duration-150 hover:shadow-md"
                     >
                       <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                         <Package className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -1013,7 +1014,7 @@ export default function DespachoForm() {
                     <button
                       type="button"
                       onClick={() => setShowAgregarCadenitaDialog(true)}
-                      className="group rounded-xl border-2 border-border hover:border-primary/30 bg-card hover:bg-muted/30 p-5 flex flex-col items-center text-center gap-3 transition-all hover:shadow-md"
+                      className="group rounded-xl border-2 border-border hover:border-primary/30 bg-card hover:bg-muted/30 p-5 flex flex-col items-center text-center gap-3 transition-colors transition-shadow duration-150 hover:shadow-md"
                     >
                       <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                         <Link2 className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -1094,21 +1095,21 @@ export default function DespachoForm() {
 
           {/* PASO 3: DESTINO */}
           {pasoActual === 3 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 animate-in fade-in duration-200">
               <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-6">
                 <SectionTitle title="Destino del Despacho" variant="form" />
 
-                {(ciudadOCantonPredominante.canton || ciudadOCantonPredominante.ciudad) && (
+                {(provinciaOCantonPredominante.canton || provinciaOCantonPredominante.provincia) && (
                   <div className="bg-primary/5 border border-primary/20 rounded-md p-3 text-sm flex items-start gap-2 text-primary">
                     <Sparkles className="h-4 w-4 mt-0.5 shrink-0" />
-                    <p>Sugerencia: La mayoría de paquetes van a <strong>{ciudadOCantonPredominante.canton ?? ciudadOCantonPredominante.ciudad}</strong>.</p>
+                    <p>Sugerencia: La mayoría de paquetes van a <strong>{provinciaOCantonPredominante.canton ?? provinciaOCantonPredominante.provincia}</strong>.</p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button type="button"
                     onClick={() => { setTipoEnvio('agencia'); setValue('idDestinatarioDirecto', undefined); setDestinatarioSeleccionado(null) }}
-                    className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col items-center justify-center gap-2 ${tipoEnvio === 'agencia' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+                    className={`p-4 rounded-xl border-2 text-left transition-colors duration-150 flex flex-col items-center justify-center gap-2 ${tipoEnvio === 'agencia' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
                   >
                     <Truck className={`h-8 w-8 ${tipoEnvio === 'agencia' ? 'text-primary' : 'text-muted-foreground'}`} />
                     <span className="font-semibold">Agencia</span>
@@ -1116,7 +1117,7 @@ export default function DespachoForm() {
                   </button>
                   <button type="button"
                     onClick={() => { setTipoEnvio('directo'); setValue('idAgencia', undefined) }}
-                    className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col items-center justify-center gap-2 ${tipoEnvio === 'directo' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+                    className={`p-4 rounded-xl border-2 text-left transition-colors duration-150 flex flex-col items-center justify-center gap-2 ${tipoEnvio === 'directo' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
                   >
                     <User className={`h-8 w-8 ${tipoEnvio === 'directo' ? 'text-primary' : 'text-muted-foreground'}`} />
                     <span className="font-semibold">Cliente Directo</span>
@@ -1190,7 +1191,7 @@ export default function DespachoForm() {
 
           {/* PASO 4: CONFIRMACIÓN Y DISTRIBUIDOR */}
           {pasoActual === 4 && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 animate-in fade-in duration-200">
               <section className="space-y-6">
                 <SectionTitle title="Distribución y Finalización" variant="form" />
 
@@ -1242,23 +1243,20 @@ export default function DespachoForm() {
                             return sum + (p?.pesoKilos || 0)
                           }, 0), 0).toFixed(2)} kg
                         </p>
-                        <Button
-                          type="button"
+                        <CopyActionButton
+                          textToCopy={`${sacas.reduce((acc, s) => acc + s.idPaquetes.reduce((sum, pid) => {
+                            const p = paquetesAgregados.get(pid) || todosLosPaquetes.find(x => x.idPaquete === pid);
+                            return sum + (p?.pesoKilos || 0)
+                          }, 0), 0).toFixed(2)} kg`}
+                          successMessage="Peso copiado"
+                          errorMessage="No se pudo copiar el peso"
+                          title="Copiar peso"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 shrink-0"
-                          onClick={() => {
-                            const peso = sacas.reduce((acc, s) => acc + s.idPaquetes.reduce((sum, pid) => {
-                              const p = paquetesAgregados.get(pid) || todosLosPaquetes.find(x => x.idPaquete === pid);
-                              return sum + (p?.pesoKilos || 0)
-                            }, 0), 0);
-                            void navigator.clipboard.writeText(`${peso.toFixed(2)} kg`);
-                            toast.success('Peso copiado');
-                          }}
-                          title="Copiar peso"
                         >
                           <Copy className="h-4 w-4 text-muted-foreground" />
-                        </Button>
+                        </CopyActionButton>
                       </div>
                     </div>
                   </div>
@@ -1307,22 +1305,16 @@ export default function DespachoForm() {
                                 <span className="font-mono text-base font-semibold text-foreground select-all tabular-nums">
                                   {agenciaSeleccionada.codigo}
                                 </span>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 shrink-0 gap-1.5"
-                                  onClick={() => {
-                                    if (agenciaSeleccionada?.codigo) {
-                                      void navigator.clipboard.writeText(agenciaSeleccionada.codigo);
-                                      toast.success('Código copiado');
-                                    }
-                                  }}
+                                <CopyActionButton
+                                  textToCopy={agenciaSeleccionada.codigo}
+                                  successMessage="Código copiado"
+                                  errorMessage="No se pudo copiar el código"
                                   title="Copiar código"
+                                  className="h-8 shrink-0 gap-1.5"
                                 >
                                   <Copy className="h-3.5 w-3.5" />
                                   Copiar
-                                </Button>
+                                </CopyActionButton>
                               </div>
                             </div>
                           )}
@@ -1344,23 +1336,16 @@ export default function DespachoForm() {
                                   <span className="font-mono text-base font-semibold text-foreground select-all tabular-nums">
                                     {(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.codigo}
                                   </span>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 shrink-0 gap-1.5"
-                                    onClick={() => {
-                                      const cod = (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.codigo;
-                                      if (cod) {
-                                        void navigator.clipboard.writeText(cod);
-                                        toast.success('Código copiado');
-                                      }
-                                    }}
+                                  <CopyActionButton
+                                    textToCopy={(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.codigo ?? ''}
+                                    successMessage="Código copiado"
+                                    errorMessage="No se pudo copiar el código"
                                     title="Copiar código"
+                                    className="h-8 shrink-0 gap-1.5"
                                   >
                                     <Copy className="h-3.5 w-3.5" />
                                     Copiar
-                                  </Button>
+                                  </CopyActionButton>
                                 </div>
                               </div>
                             )}
@@ -1590,7 +1575,7 @@ export default function DespachoForm() {
                       </div>
                     )}
                     {scanHistory.map((item, idx) => (
-                      <div key={idx} className={`p-2 rounded text-sm flex items-center justify-between animate-in slide-in-from-top-2 duration-300 ${item.status === 'success' ? 'bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50' :
+                      <div key={idx} className={`p-2 rounded text-sm flex items-center justify-between animate-in fade-in duration-200 ${item.status === 'success' ? 'bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50' :
                         item.status === 'error' ? 'bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50' :
                           'bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50'
                         }`}>

@@ -14,6 +14,7 @@ export interface Agencia {
   codigo?: string
   direccion?: string
   email?: string
+  provincia?: string
   canton?: string
   nombrePersonal?: string
   horarioAtencion?: string

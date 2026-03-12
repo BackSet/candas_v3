@@ -206,7 +206,7 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
   }
 
   if (lote.tipoLote !== 'ESPECIAL') {
-    navigate(backUrl, { replace: true })
+    navigate({ to: backUrl as never, replace: true })
     return null
   }
 

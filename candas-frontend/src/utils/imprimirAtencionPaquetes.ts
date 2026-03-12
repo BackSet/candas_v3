@@ -69,7 +69,7 @@ export function imprimirAtencionPaquetes(
          [
             paquete?.direccionDestinatario,
             paquete?.cantonDestinatario,
-            paquete?.ciudadDestinatario
+            paquete?.provinciaDestinatario
          ].filter(Boolean).join(', ') || ''
 
       const observacionesPaquete = paquete?.observaciones?.trim() || ''

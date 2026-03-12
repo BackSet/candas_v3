@@ -40,7 +40,7 @@ public class PaqueteDTO {
 
     private String direccionRemitenteCompleta; // Dirección completa formateada
     private String paisRemitente;
-    private String ciudadRemitente;
+    private String provinciaRemitente;
     private String cantonRemitente;
     private String direccionRemitente;
 
@@ -52,7 +52,7 @@ public class PaqueteDTO {
     // Dirección del destinatario
     private String direccionDestinatarioCompleta; // Dirección completa formateada
     private String paisDestinatario;
-    private String ciudadDestinatario;
+    private String provinciaDestinatario;
     private String cantonDestinatario;
     private String direccionDestinatario;
 

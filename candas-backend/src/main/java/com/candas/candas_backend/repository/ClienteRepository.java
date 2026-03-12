@@ -27,7 +27,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long>, JpaSpec
            "OR LOWER(COALESCE(c.email, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(COALESCE(c.telefono, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(COALESCE(c.direccion, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "OR LOWER(COALESCE(c.ciudad, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(COALESCE(c.provincia, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(COALESCE(c.canton, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(COALESCE(c.pais, '')) LIKE LOWER(CONCAT('%', :query, '%')))",
            nativeQuery = true)

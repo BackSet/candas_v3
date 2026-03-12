@@ -54,8 +54,8 @@ export function CrearClienteFormDialog({ title, manager }: CrearClienteFormDialo
               <Input value={manager.nuevoClientePais} onChange={(e) => manager.setNuevoClientePais(e.target.value)} placeholder="País" />
             </div>
             <div className="space-y-2">
-              <FieldLabel>Ciudad</FieldLabel>
-              <Input value={manager.nuevoClienteCiudad} onChange={(e) => manager.setNuevoClienteCiudad(e.target.value)} placeholder="Ciudad" />
+              <FieldLabel>Provincia</FieldLabel>
+              <Input value={manager.nuevoClienteProvincia} onChange={(e) => manager.setNuevoClienteProvincia(e.target.value)} placeholder="Provincia" />
             </div>
             <div className="space-y-2">
               <FieldLabel>Cantón</FieldLabel>

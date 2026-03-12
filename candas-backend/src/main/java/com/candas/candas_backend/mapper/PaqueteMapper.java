@@ -263,13 +263,13 @@ public class PaqueteMapper {
             dto.setNombreClienteRemitente(paquete.getClienteRemitente().getNombreCompleto());
 
             dto.setPaisRemitente(paquete.getClienteRemitente().getPais());
-            dto.setCiudadRemitente(paquete.getClienteRemitente().getCiudad());
+            dto.setProvinciaRemitente(paquete.getClienteRemitente().getProvincia());
             dto.setCantonRemitente(paquete.getClienteRemitente().getCanton());
             dto.setDireccionRemitente(paquete.getClienteRemitente().getDireccion());
             dto.setDireccionRemitenteCompleta(construirDireccionCompleta(
                     paquete.getClienteRemitente().getDireccion(),
                     paquete.getClienteRemitente().getCanton(),
-                    paquete.getClienteRemitente().getCiudad(),
+                    paquete.getClienteRemitente().getProvincia(),
                     paquete.getClienteRemitente().getPais()));
         }
         if (paquete.getClienteDestinatario() != null) {
@@ -278,14 +278,14 @@ public class PaqueteMapper {
             dto.setDocumentoDestinatario(paquete.getClienteDestinatario().getDocumentoIdentidad());
 
             dto.setPaisDestinatario(paquete.getClienteDestinatario().getPais());
-            dto.setCiudadDestinatario(paquete.getClienteDestinatario().getCiudad());
+            dto.setProvinciaDestinatario(paquete.getClienteDestinatario().getProvincia());
             dto.setCantonDestinatario(paquete.getClienteDestinatario().getCanton());
             dto.setDireccionDestinatario(paquete.getClienteDestinatario().getDireccion());
             dto.setTelefonoDestinatario(paquete.getClienteDestinatario().getTelefono());
             dto.setDireccionDestinatarioCompleta(construirDireccionCompleta(
                     paquete.getClienteDestinatario().getDireccion(),
                     paquete.getClienteDestinatario().getCanton(),
-                    paquete.getClienteDestinatario().getCiudad(),
+                    paquete.getClienteDestinatario().getProvincia(),
                     paquete.getClienteDestinatario().getPais()));
         }
         if (paquete.getAgenciaDestino() != null) {
@@ -343,7 +343,7 @@ public class PaqueteMapper {
         return dto;
     }
 
-    private String construirDireccionCompleta(String direccion, String canton, String ciudad, String pais) {
+    private String construirDireccionCompleta(String direccion, String canton, String provincia, String pais) {
         List<String> partes = new ArrayList<>();
         if (direccion != null && !direccion.trim().isEmpty()) {
             partes.add(direccion.trim());
@@ -351,8 +351,8 @@ public class PaqueteMapper {
         if (canton != null && !canton.trim().isEmpty()) {
             partes.add(canton.trim());
         }
-        if (ciudad != null && !ciudad.trim().isEmpty()) {
-            partes.add(ciudad.trim());
+        if (provincia != null && !provincia.trim().isEmpty()) {
+            partes.add(provincia.trim());
         }
         if (pais != null && !pais.trim().isEmpty()) {
             partes.add(pais.trim());

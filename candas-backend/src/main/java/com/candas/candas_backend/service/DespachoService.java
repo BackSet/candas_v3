@@ -193,7 +193,7 @@ public class DespachoService {
                 ? cliente.getTelefono() : "N/A";
             nuevo.setTelefonoDestinatario(telefono);
             nuevo.setDireccionDestinatario(cliente.getDireccion());
-            nuevo.setCanton(cliente.getCiudad() != null ? cliente.getCiudad() : cliente.getCanton());
+            nuevo.setCanton(cliente.getProvincia() != null ? cliente.getProvincia() : cliente.getCanton());
             nuevo.setCodigo(cliente.getCanton());
             nuevo.setNombreEmpresa(null);
             nuevo.setFechaRegistro(LocalDateTime.now());

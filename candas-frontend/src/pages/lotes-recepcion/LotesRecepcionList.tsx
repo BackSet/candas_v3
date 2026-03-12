@@ -81,9 +81,10 @@ function LoteRecepcionRowActions({
             size="icon"
             className={
               variant === 'desktop'
-                ? 'h-7 w-7 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity'
+                ? 'h-7 w-7 text-muted-foreground hover:text-foreground opacity-100 transition-opacity'
                 : 'h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground'
             }
+            aria-label="Acciones de fila"
           >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -118,13 +119,14 @@ export default function LotesRecepcionList() {
   const stored = useFiltersStore((state) => state.filters[LIST_KEY])
   const setFiltersAction = useFiltersStore((state) => state.setFilters)
   const { page = 0, search: busqueda = '', filtroTipoLote = 'all' } = { ...stored }
+  const filtroTipoLoteValue = typeof filtroTipoLote === 'string' ? filtroTipoLote : 'all'
   const setPage = (p: number) => setFiltersAction(LIST_KEY, { page: p })
   const setBusqueda = (v: string) => setFiltersAction(LIST_KEY, { search: v, page: 0 })
   const setFiltroTipoLote = (v: string) => setFiltersAction(LIST_KEY, { filtroTipoLote: v, page: 0 })
   const [loteRecepcionAEliminar, setLoteRecepcionAEliminar] = useState<number | null>(null)
   const [loteRecepcionParaImportar, setLoteRecepcionParaImportar] = useState<number | null>(null)
 
-  const tipoLoteParam = filtroTipoLote !== 'all' ? filtroTipoLote : undefined
+  const tipoLoteParam = filtroTipoLoteValue !== 'all' ? filtroTipoLoteValue : undefined
   const { data, isLoading, error } = useLotesRecepcion(page, 20, tipoLoteParam)
   const deleteMutation = useDeleteLoteRecepcion()
 
@@ -172,8 +174,9 @@ export default function LotesRecepcionList() {
         search={busqueda}
         onSearchChange={setBusqueda}
         searchPlaceholder="Buscar..."
+        withBottomBorder={false}
         filters={
-          <Select value={filtroTipoLote} onValueChange={setFiltroTipoLote}>
+          <Select value={filtroTipoLoteValue} onValueChange={setFiltroTipoLote}>
             <SelectTrigger className="h-9 w-[160px] text-xs">
               <SelectValue placeholder="Tipo de lote" />
             </SelectTrigger>
@@ -186,14 +189,8 @@ export default function LotesRecepcionList() {
         }
       />
 
-      {busqueda.trim().length > 0 && lotesRecepcionFiltrados.length > 0 && (
-        <div className="text-xs text-muted-foreground text-center animate-in fade-in bg-muted/20 py-2 border-b border-border/40 shrink-0">
-          Resultados de búsqueda: {lotesRecepcionFiltrados.length} lote{lotesRecepcionFiltrados.length !== 1 ? 's' : ''}
-        </div>
-      )}
-
       {/* Content + pagination wrapper */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
         {/* Main Content - Notion Table View */}
         <div className="rounded-md border border-border bg-card shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
           {(isLoading || loadingBusqueda) ? (

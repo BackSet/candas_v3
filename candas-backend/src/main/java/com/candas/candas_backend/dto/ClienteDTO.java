@@ -19,7 +19,7 @@ public class ClienteDTO {
     private String documentoIdentidad;
     private String email;
     private String pais;
-    private String ciudad;
+    private String provincia;
     private String canton;
     private String direccion;
     private String telefono;

@@ -26,7 +26,7 @@ interface CrearGrupoDialogProps {
   onOpenChange: (open: boolean) => void
   loteRecepcionId: number
   paquetesSeleccionados: Paquete[]
-  ciudad: string
+  provincia: string
   canton: string
   onSuccess?: () => void
 }
@@ -36,16 +36,16 @@ export default function CrearGrupoDialog({
   onOpenChange,
   loteRecepcionId,
   paquetesSeleccionados,
-  ciudad,
+  provincia,
   canton,
   onSuccess,
 }: CrearGrupoDialogProps) {
-  const { crearGrupo, obtenerGruposPorCiudadCanton, agregarPaquetesAGrupo } = useGruposPersonalizadosLocal(loteRecepcionId)
+  const { crearGrupo, obtenerGruposPorProvinciaCanton, agregarPaquetesAGrupo } = useGruposPersonalizadosLocal(loteRecepcionId)
   const [modo, setModo] = useState<'nuevo' | 'existente'>('nuevo')
   const [grupoSeleccionado, setGrupoSeleccionado] = useState<string>('')
   
   // Generar nombre automático: Grupo 1, Grupo 2, etc.
-  const gruposExistentes = useMemo(() => obtenerGruposPorCiudadCanton(ciudad, canton), [obtenerGruposPorCiudadCanton, ciudad, canton])
+  const gruposExistentes = useMemo(() => obtenerGruposPorProvinciaCanton(provincia, canton), [obtenerGruposPorProvinciaCanton, provincia, canton])
   const siguienteNumero = gruposExistentes.length + 1
   const nombreAutomatico = `Grupo ${siguienteNumero}`
 
@@ -74,7 +74,7 @@ export default function CrearGrupoDialog({
           nombre: nombreAutomatico,
           descripcion: undefined,
           idPaquetes,
-          ciudad,
+          provincia,
           canton,
         })
       } else {
@@ -101,7 +101,7 @@ export default function CrearGrupoDialog({
         <DialogHeader>
           <DialogTitle>Crear {nombreAutomatico}</DialogTitle>
           <DialogDescription>
-            Crear un grupo con {paquetesSeleccionados.length} paquete(s) seleccionado(s) en {ciudad} {'>'} {canton}
+            Crear un grupo con {paquetesSeleccionados.length} paquete(s) seleccionado(s) en {provincia} {'>'} {canton}
           </DialogDescription>
         </DialogHeader>
 

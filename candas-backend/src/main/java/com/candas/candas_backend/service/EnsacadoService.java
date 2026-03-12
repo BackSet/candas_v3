@@ -80,7 +80,7 @@ public class EnsacadoService {
                 info.setDireccionDestinatarioCompleta(construirDireccionCompleta(
                     paquete.getClienteDestinatario().getDireccion(),
                     paquete.getClienteDestinatario().getCanton(),
-                    paquete.getClienteDestinatario().getCiudad(),
+                    paquete.getClienteDestinatario().getProvincia(),
                     paquete.getClienteDestinatario().getPais()
                 ));
             }
@@ -159,7 +159,7 @@ public class EnsacadoService {
             info.setDireccionDestinatarioCompleta(construirDireccionCompleta(
                 paquete.getClienteDestinatario().getDireccion(),
                 paquete.getClienteDestinatario().getCanton(),
-                paquete.getClienteDestinatario().getCiudad(),
+                paquete.getClienteDestinatario().getProvincia(),
                 paquete.getClienteDestinatario().getPais()
             ));
         }
@@ -556,7 +556,7 @@ public class EnsacadoService {
             String direccionCompleta = construirDireccionCompleta(
                 paquete.getClienteDestinatario().getDireccion(),
                 paquete.getClienteDestinatario().getCanton(),
-                paquete.getClienteDestinatario().getCiudad(),
+                paquete.getClienteDestinatario().getProvincia(),
                 paquete.getClienteDestinatario().getPais()
             );
             if (direccionCompleta != null && !direccionCompleta.trim().isEmpty()) {
@@ -593,7 +593,7 @@ public class EnsacadoService {
         return "Destino no especificado";
     }
 
-    private String construirDireccionCompleta(String direccion, String canton, String ciudad, String pais) {
+    private String construirDireccionCompleta(String direccion, String canton, String provincia, String pais) {
         List<String> partes = new ArrayList<>();
         if (direccion != null && !direccion.trim().isEmpty()) {
             partes.add(direccion.trim());
@@ -601,8 +601,8 @@ public class EnsacadoService {
         if (canton != null && !canton.trim().isEmpty()) {
             partes.add(canton.trim());
         }
-        if (ciudad != null && !ciudad.trim().isEmpty()) {
-            partes.add(ciudad.trim());
+        if (provincia != null && !provincia.trim().isEmpty()) {
+            partes.add(provincia.trim());
         }
         if (pais != null && !pais.trim().isEmpty()) {
             partes.add(pais.trim());

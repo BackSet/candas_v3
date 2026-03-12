@@ -230,7 +230,7 @@ function generarHTMLSaca(saca: SacaDetalle): string {
               <td class="col-guia">${p.numeroGuia || '-'}</td>
               <td class="col-dest">${p.nombreClienteDestinatario || '-'}</td>
               <td class="col-dir">${p.direccionDestinatarioCompleta || '-'}</td>
-              <td class="col-city">${p.ciudadDestinatario || '-'}</td>
+              <td class="col-city">${p.provinciaDestinatario || '-'}</td>
               <td class="col-cant">${p.cantonDestinatario || '-'}</td>
               <td class="col-tel">${p.telefonoDestinatario || '-'}</td>
               <td class="col-obs">${observacionesParaDespacho(p.observaciones)}</td>
@@ -253,7 +253,7 @@ function generarHTMLSaca(saca: SacaDetalle): string {
             <th class="col-guia">Guía</th>
             <th class="col-dest">Destinatario</th>
             <th class="col-dir">Dirección</th>
-            <th class="col-city">Ciudad</th>
+            <th class="col-city">Provincia</th>
             <th class="col-cant">Cantón</th>
             <th class="col-tel">Teléfono</th>
             <th class="col-obs">Observaciones</th>
@@ -510,7 +510,7 @@ export async function generarPDFManifiestoConsolidado(
             p.numeroGuia || '-',
             p.nombreClienteDestinatario || '-',
             p.direccionDestinatarioCompleta || '-',
-            p.ciudadDestinatario || '-',
+            p.provinciaDestinatario || '-',
             p.cantonDestinatario || '-',
             p.telefonoDestinatario || '-',
             observacionesParaDespacho(p.observaciones),

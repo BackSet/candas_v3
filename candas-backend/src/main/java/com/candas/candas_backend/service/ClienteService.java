@@ -65,7 +65,7 @@ public class ClienteService {
         cliente.setDocumentoIdentidad(dto.getDocumentoIdentidad());
         cliente.setEmail(dto.getEmail());
         cliente.setPais(dto.getPais());
-        cliente.setCiudad(dto.getCiudad());
+        cliente.setProvincia(dto.getProvincia());
         cliente.setCanton(dto.getCanton());
         cliente.setDireccion(dto.getDireccion());
         cliente.setTelefono(dto.getTelefono());
@@ -90,7 +90,7 @@ public class ClienteService {
         dto.setDocumentoIdentidad(cliente.getDocumentoIdentidad());
         dto.setEmail(cliente.getEmail());
         dto.setPais(cliente.getPais());
-        dto.setCiudad(cliente.getCiudad());
+        dto.setProvincia(cliente.getProvincia());
         dto.setCanton(cliente.getCanton());
         dto.setDireccion(cliente.getDireccion());
         dto.setTelefono(cliente.getTelefono());
@@ -106,7 +106,7 @@ public class ClienteService {
         cliente.setDocumentoIdentidad(dto.getDocumentoIdentidad());
         cliente.setEmail(dto.getEmail());
         cliente.setPais(dto.getPais());
-        cliente.setCiudad(dto.getCiudad());
+        cliente.setProvincia(dto.getProvincia());
         cliente.setCanton(dto.getCanton());
         cliente.setDireccion(dto.getDireccion());
         cliente.setTelefono(dto.getTelefono());

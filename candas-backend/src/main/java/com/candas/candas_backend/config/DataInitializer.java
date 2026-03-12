@@ -51,8 +51,6 @@ public class DataInitializer implements CommandLineRunner {
         Rol rolAdmin = initializeRole("ADMIN", "Administrador del sistema - Acceso total");
         rolRepository.findByNombre("OPERARIO")
                 .orElseThrow(() -> new RuntimeException("Error: Rol OPERARIO no encontrado."));
-        rolRepository.findByNombre("CLIENTE")
-                .orElseThrow(() -> new RuntimeException("Error: Rol CLIENTE no encontrado."));
 
         // 3. Asignar todos los permisos al rol ADMIN
         assignAllPermissionsToRole(rolAdmin);

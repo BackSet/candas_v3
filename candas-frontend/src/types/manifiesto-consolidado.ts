@@ -92,7 +92,7 @@ export interface PaqueteDetalle {
   ref?: string
   nombreClienteDestinatario?: string
   direccionDestinatarioCompleta?: string
-  ciudadDestinatario?: string
+  provinciaDestinatario?: string
   paisDestinatario?: string
   cantonDestinatario?: string
   telefonoDestinatario?: string

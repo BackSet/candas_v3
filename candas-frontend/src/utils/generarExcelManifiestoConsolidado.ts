@@ -13,19 +13,19 @@ function construirObservacion(despacho: DespachoDetalle): string {
 
   if (despacho.esDestinatarioDirecto && despacho.nombreDestinatarioDirecto) {
     destinoPartes.push(despacho.nombreDestinatarioDirecto)
-    // Agregar ciudad del destinatario directo si está disponible
+    // Agregar provincia del destinatario directo si está disponible
     if (despacho.cantonDestinatarioDirecto) {
       destinoPartes.push(despacho.cantonDestinatarioDirecto)
     }
   } else if (despacho.nombreAgencia) {
     destinoPartes.push(despacho.nombreAgencia)
-    // Agregar ciudad de la agencia si está disponible
+    // Agregar provincia de la agencia si está disponible
     if (despacho.cantonAgencia) {
       destinoPartes.push(despacho.cantonAgencia)
     }
   } else if (despacho.codigoAgencia) {
     destinoPartes.push(despacho.codigoAgencia)
-    // Agregar ciudad de la agencia si está disponible
+    // Agregar provincia de la agencia si está disponible
     if (despacho.cantonAgencia) {
       destinoPartes.push(despacho.cantonAgencia)
     }
@@ -195,12 +195,12 @@ export function generarExcelDestinatariosDirectos(manifiesto: ManifiestoConsolid
         if (!paquete.numeroGuia || paquete.numeroGuia.trim() === '') continue
 
         // Datos del cliente destino asociado al paquete
-        const ciudadPaquetePartes: string[] = []
-        if (paquete.ciudadDestinatario?.trim()) {
-          ciudadPaquetePartes.push(paquete.ciudadDestinatario.trim())
+        const provinciaPaquetePartes: string[] = []
+        if (paquete.provinciaDestinatario?.trim()) {
+          provinciaPaquetePartes.push(paquete.provinciaDestinatario.trim())
         }
         if (paquete.cantonDestinatario?.trim()) {
-          ciudadPaquetePartes.push(paquete.cantonDestinatario.trim())
+          provinciaPaquetePartes.push(paquete.cantonDestinatario.trim())
         }
 
         filas.push({
@@ -208,7 +208,7 @@ export function generarExcelDestinatariosDirectos(manifiesto: ManifiestoConsolid
           'GUIA ORIGEN': paquete.numeroGuia.trim(),
           REFERENCIA: paquete.ref?.trim() || '',
           DESTINATARIO: paquete.nombreClienteDestinatario?.trim() || '',
-          CIUDAD: ciudadPaquetePartes.join(', '),
+          CIUDAD: provinciaPaquetePartes.join(', '),
           DIRECCION: paquete.direccionDestinatarioCompleta?.trim() || '',
           TELF: paquete.telefonoDestinatario?.trim() || '',
           NOTAS: paquete.observaciones?.trim() || '',

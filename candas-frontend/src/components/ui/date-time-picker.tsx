@@ -99,11 +99,34 @@ export function DateTimePicker({
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const panelRef = React.useRef<HTMLDivElement>(null)
   const [panelPosition, setPanelPosition] = React.useState({ top: 0, left: 0, width: 380 })
+  const [portalReady, setPortalReady] = React.useState(false)
   const [inlineOpenAbove, setInlineOpenAbove] = React.useState(false)
   const [usePortalForInline, setUsePortalForInline] = React.useState(false)
   const PANEL_HEIGHT_ESTIMATE = 420
   const INLINE_PANEL_HEIGHT_ESTIMATE = 280
   const PANEL_WIDTH = 380
+
+  const updatePortalGeometry = React.useCallback((): boolean => {
+    if (!triggerRef.current) return false
+    const rect = triggerRef.current.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) return false
+    const viewportH = window.innerHeight
+    const viewportW = window.innerWidth
+    const panelW = Math.min(PANEL_WIDTH, viewportW * 0.9)
+    const panelH = inline ? INLINE_PANEL_HEIGHT_ESTIMATE : PANEL_HEIGHT_ESTIMATE
+    const spaceBelow = viewportH - rect.bottom - 8
+    const spaceAbove = rect.top - 8
+    const openAbove = spaceBelow < panelH && spaceAbove >= spaceBelow
+    const top = openAbove
+      ? Math.max(8, rect.top - panelH - 4)
+      : rect.bottom + 4
+    let left = rect.left
+    if (left + panelW > viewportW - 8) left = Math.max(8, viewportW - panelW - 8)
+    if (left < 8) left = 8
+    if (!Number.isFinite(top) || !Number.isFinite(left) || panelW <= 0) return false
+    setPanelPosition({ top, left, width: panelW })
+    return true
+  }, [inline])
 
   React.useLayoutEffect(() => {
     if (inline && open && triggerRef.current) {
@@ -136,6 +159,7 @@ export function DateTimePicker({
         if (left + panelW > viewportW - 8) left = Math.max(8, viewportW - panelW - 8)
         if (left < 8) left = 8
         setPanelPosition({ top, left, width: panelW })
+        setPortalReady(true)
       }
     }
   }, [inline, open])
@@ -143,22 +167,35 @@ export function DateTimePicker({
   React.useLayoutEffect(() => {
     if (!open || !triggerRef.current) return
     if (inline && !usePortalForInline) return
-    const rect = triggerRef.current.getBoundingClientRect()
-    const viewportH = window.innerHeight
-    const viewportW = window.innerWidth
-    const panelW = Math.min(PANEL_WIDTH, viewportW * 0.9)
-    const panelH = inline ? INLINE_PANEL_HEIGHT_ESTIMATE : PANEL_HEIGHT_ESTIMATE
-    const spaceBelow = viewportH - rect.bottom - 8
-    const spaceAbove = rect.top - 8
-    const openAbove = spaceBelow < panelH && spaceAbove >= spaceBelow
-    const top = openAbove
-      ? Math.max(8, rect.top - panelH - 4)
-      : rect.bottom + 4
-    let left = rect.left
-    if (left + panelW > viewportW - 8) left = Math.max(8, viewportW - panelW - 8)
-    if (left < 8) left = 8
-    setPanelPosition({ top, left, width: panelW })
-  }, [inline, open, usePortalForInline])
+    const ready = updatePortalGeometry()
+    setPortalReady(ready)
+  }, [inline, open, usePortalForInline, updatePortalGeometry])
+
+  React.useEffect(() => {
+    if (!open) {
+      setPortalReady(false)
+    }
+  }, [open])
+
+  React.useEffect(() => {
+    if (!open) return
+    if (inline && !usePortalForInline) return
+    const repositionOrClose = () => {
+      const ready = updatePortalGeometry()
+      setPortalReady(ready)
+      if (!ready) {
+        setOpen(false)
+      }
+    }
+    window.addEventListener('resize', repositionOrClose)
+    window.addEventListener('orientationchange', repositionOrClose)
+    window.addEventListener('scroll', repositionOrClose, true)
+    return () => {
+      window.removeEventListener('resize', repositionOrClose)
+      window.removeEventListener('orientationchange', repositionOrClose)
+      window.removeEventListener('scroll', repositionOrClose, true)
+    }
+  }, [inline, open, usePortalForInline, updatePortalGeometry])
 
   const dateValue = value == null ? null : value
 
@@ -253,7 +290,7 @@ export function DateTimePicker({
           ref={panelRef}
           data-datepicker-panel
           className={cn(
-            'absolute left-0 z-[9999] w-full min-w-[320px] max-w-[min(380px,90vw)] rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col isolate',
+            'absolute left-0 z-[9999] w-full min-w-[320px] max-w-[min(380px,90vw)] rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in duration-200 overflow-hidden flex flex-col isolate',
             inlineOpenAbove ? 'bottom-full mb-2' : 'top-full mt-2'
           )}
           role="dialog"
@@ -307,9 +344,9 @@ export function DateTimePicker({
                       type="button"
                       onClick={() => handleSelectDate(d)}
                       className={cn(
-                        'h-5 w-full rounded-md text-[10px] font-medium transition-all duration-200',
+                        'h-5 w-full rounded-md text-[10px] font-medium transition-colors duration-150',
                         isOther && 'text-muted-foreground/30',
-                        selected && 'bg-primary text-primary-foreground shadow-sm scale-105',
+                        selected && 'bg-primary text-primary-foreground shadow-sm',
                         !selected && !isOther && 'hover:bg-muted hover:text-foreground',
                         today && !selected && 'ring-1 ring-primary/40 text-primary'
                       )}
@@ -335,7 +372,7 @@ export function DateTimePicker({
                       type="button"
                       onClick={() => handleSelectTime(h, selectedMinute)}
                       className={cn(
-                        'w-full py-1 text-center text-[10px] rounded font-bold transition-all',
+                        'w-full py-1 text-center text-[10px] rounded font-bold transition-colors duration-150',
                         selectedHour === h ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'
                       )}
                     >
@@ -354,7 +391,7 @@ export function DateTimePicker({
                       type="button"
                       onClick={() => handleSelectTime(selectedHour, m)}
                       className={cn(
-                        'w-full py-1 text-center text-[10px] rounded font-bold transition-all',
+                        'w-full py-1 text-center text-[10px] rounded font-bold transition-colors duration-150',
                         selectedMinute === m ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground'
                       )}
                     >
@@ -369,12 +406,12 @@ export function DateTimePicker({
         </div>
       )}
 
-      {open && inline && usePortalForInline &&
+      {open && inline && usePortalForInline && portalReady &&
         createPortal(
           <div
             ref={panelRef}
             data-datepicker-panel
-            className="fixed z-[9999] rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col pointer-events-auto w-full min-w-[320px] max-w-[min(380px,90vw)]"
+            className="fixed z-[9999] rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in duration-200 overflow-hidden flex flex-col pointer-events-auto w-full min-w-[320px] max-w-[min(380px,90vw)]"
             style={{ top: panelPosition.top, left: panelPosition.left, width: panelPosition.width, maxWidth: '90vw' }}
             role="dialog"
             aria-label="Selector de fecha y hora"
@@ -419,9 +456,9 @@ export function DateTimePicker({
                         type="button"
                         onClick={() => handleSelectDate(d)}
                         className={cn(
-                          'h-5 w-full rounded-md text-[10px] font-medium transition-all duration-200',
+                          'h-5 w-full rounded-md text-[10px] font-medium transition-colors duration-150',
                           isOther && 'text-muted-foreground/30',
-                          selected && 'bg-primary text-primary-foreground shadow-sm scale-105',
+                          selected && 'bg-primary text-primary-foreground shadow-sm',
                           !selected && !isOther && 'hover:bg-muted hover:text-foreground',
                           today && !selected && 'ring-1 ring-primary/40 text-primary'
                         )}
@@ -442,7 +479,7 @@ export function DateTimePicker({
                   <div className="text-[9px] font-bold text-center py-1 text-muted-foreground uppercase border-b border-border/30">H</div>
                   <div className="flex-1 overflow-y-auto scrollbar-none hover:scrollbar-thin py-1 px-0.5 space-y-0.5 min-h-0">
                     {hours.map((h) => (
-                      <button key={h} type="button" onClick={() => handleSelectTime(h, selectedMinute)} className={cn('w-full py-1 text-center text-[10px] rounded font-bold transition-all', selectedHour === h ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground')}>
+                      <button key={h} type="button" onClick={() => handleSelectTime(h, selectedMinute)} className={cn('w-full py-1 text-center text-[10px] rounded font-bold transition-colors duration-150', selectedHour === h ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground')}>
                         {String(h).padStart(2, '0')}
                       </button>
                     ))}
@@ -453,7 +490,7 @@ export function DateTimePicker({
                   <div className="text-[9px] font-bold text-center py-1 text-muted-foreground uppercase border-b border-border/30">M</div>
                   <div className="flex-1 overflow-y-auto scrollbar-none hover:scrollbar-thin py-1 px-0.5 space-y-0.5 min-h-0">
                     {minutes.filter(m => m % 1 === 0).map((m) => (
-                      <button key={m} type="button" onClick={() => handleSelectTime(selectedHour, m)} className={cn('w-full py-1 text-center text-[10px] rounded font-bold transition-all', selectedMinute === m ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground')}>
+                      <button key={m} type="button" onClick={() => handleSelectTime(selectedHour, m)} className={cn('w-full py-1 text-center text-[10px] rounded font-bold transition-colors duration-150', selectedMinute === m ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground')}>
                         {String(m).padStart(2, '0')}
                       </button>
                     ))}
@@ -466,12 +503,12 @@ export function DateTimePicker({
           document.body
         )}
 
-      {open && !inline &&
+      {open && !inline && portalReady &&
         createPortal(
           <div
             ref={panelRef}
             data-datepicker-panel
-            className="fixed z-[9999] rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col pointer-events-auto"
+            className="fixed z-[9999] rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in duration-200 overflow-hidden flex flex-col pointer-events-auto"
             style={{ top: panelPosition.top, left: panelPosition.left, width: panelPosition.width, maxWidth: '90vw' }}
             role="dialog"
             aria-label="Selector de fecha y hora"
@@ -516,9 +553,9 @@ export function DateTimePicker({
                         type="button"
                         onClick={() => handleSelectDate(d)}
                         className={cn(
-                          'h-8 w-full rounded-md text-xs font-medium transition-all duration-200',
+                          'h-8 w-full rounded-md text-xs font-medium transition-colors duration-150',
                           isOther && 'text-muted-foreground/30',
-                          selected && 'bg-primary text-primary-foreground shadow-md scale-105',
+                          selected && 'bg-primary text-primary-foreground shadow-md',
                           !selected && !isOther && 'hover:bg-muted hover:text-foreground',
                           today && !selected && 'ring-1 ring-primary/40 text-primary'
                         )}
@@ -539,7 +576,7 @@ export function DateTimePicker({
                   <div className="text-[9px] font-bold text-center py-2 text-muted-foreground uppercase border-b border-border/30">H</div>
                   <div className="flex-1 overflow-y-auto scrollbar-none hover:scrollbar-thin py-2 px-1 space-y-0.5">
                     {hours.map((h) => (
-                      <button key={h} type="button" onClick={() => handleSelectTime(h, selectedMinute)} className={cn('w-full py-1.5 text-center text-[10px] rounded-md font-bold transition-all', selectedHour === h ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground')}>
+                      <button key={h} type="button" onClick={() => handleSelectTime(h, selectedMinute)} className={cn('w-full py-1.5 text-center text-[10px] rounded-md font-bold transition-colors duration-150', selectedHour === h ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground')}>
                         {String(h).padStart(2, '0')}
                       </button>
                     ))}
@@ -550,7 +587,7 @@ export function DateTimePicker({
                   <div className="text-[9px] font-bold text-center py-2 text-muted-foreground uppercase border-b border-border/30">M</div>
                   <div className="flex-1 overflow-y-auto scrollbar-none hover:scrollbar-thin py-2 px-1 space-y-0.5">
                     {minutes.filter(m => m % 1 === 0).map((m) => (
-                      <button key={m} type="button" onClick={() => handleSelectTime(selectedHour, m)} className={cn('w-full py-1.5 text-center text-[10px] rounded-md font-bold transition-all', selectedMinute === m ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground')}>
+                      <button key={m} type="button" onClick={() => handleSelectTime(selectedHour, m)} className={cn('w-full py-1.5 text-center text-[10px] rounded-md font-bold transition-colors duration-150', selectedMinute === m ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted text-muted-foreground')}>
                         {String(m).padStart(2, '0')}
                       </button>
                     ))}

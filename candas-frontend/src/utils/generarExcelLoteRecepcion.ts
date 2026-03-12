@@ -7,25 +7,25 @@ import type { DestinatarioDirecto } from '@/types/destinatario-directo'
 import type { GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
 
 /**
- * Ordena paquetes por ciudad, cantón y referencia (si existe)
+ * Ordena paquetes por provincia, cantón y referencia (si existe)
  * Los valores null/undefined/vacíos van al final en cada nivel
  * @param paquetes Lista de paquetes a ordenar
  * @returns Lista de paquetes ordenada
  */
-function ordenarPaquetesPorCiudadCantonRef(paquetes: Paquete[]): Paquete[] {
+function ordenarPaquetesPorProvinciaCantonRef(paquetes: Paquete[]): Paquete[] {
   return [...paquetes].sort((a, b) => {
-    // Ordenar por ciudad (alfabéticamente, nulls al final)
-    const ciudadA = a.ciudadDestinatario?.trim() || ''
-    const ciudadB = b.ciudadDestinatario?.trim() || ''
+    // Ordenar por provincia (alfabéticamente, nulls al final)
+    const provinciaA = a.provinciaDestinatario?.trim() || ''
+    const provinciaB = b.provinciaDestinatario?.trim() || ''
 
-    if (ciudadA && !ciudadB) return -1
-    if (!ciudadA && ciudadB) return 1
-    if (ciudadA && ciudadB) {
-      const comparacionCiudad = ciudadA.localeCompare(ciudadB, 'es', { sensitivity: 'base' })
-      if (comparacionCiudad !== 0) return comparacionCiudad
+    if (provinciaA && !provinciaB) return -1
+    if (!provinciaA && provinciaB) return 1
+    if (provinciaA && provinciaB) {
+      const comparacionProvincia = provinciaA.localeCompare(provinciaB, 'es', { sensitivity: 'base' })
+      if (comparacionProvincia !== 0) return comparacionProvincia
     }
 
-    // Si las ciudades son iguales (o ambas vacías), ordenar por cantón
+    // Si las provincias son iguales (o ambas vacias), ordenar por canton
     const cantonA = a.cantonDestinatario?.trim() || ''
     const cantonB = b.cantonDestinatario?.trim() || ''
 
@@ -36,7 +36,7 @@ function ordenarPaquetesPorCiudadCantonRef(paquetes: Paquete[]): Paquete[] {
       if (comparacionCanton !== 0) return comparacionCanton
     }
 
-    // Si ciudad y cantón son iguales (o ambas vacías), ordenar por referencia
+    // Si provincia y cantón son iguales (o ambas vacías), ordenar por referencia
     const refA = a.ref?.trim() || ''
     const refB = b.ref?.trim() || ''
 
@@ -119,10 +119,10 @@ export function generarExcelLoteRecepcion(
     paquetesNormales.push(...paquetesConGuia)
   }
 
-  // Ordenar paquetes CLEMENTINA por ciudad, cantón y referencia
-  const paquetesClementinaOrdenados = ordenarPaquetesPorCiudadCantonRef(paquetesClementina)
-  // Ordenar paquetes normales por ciudad, cantón y referencia
-  const paquetesNormalesOrdenados = ordenarPaquetesPorCiudadCantonRef(paquetesNormales)
+  // Ordenar paquetes CLEMENTINA por provincia, cantón y referencia
+  const paquetesClementinaOrdenados = ordenarPaquetesPorProvinciaCantonRef(paquetesClementina)
+  // Ordenar paquetes normales por provincia, cantón y referencia
+  const paquetesNormalesOrdenados = ordenarPaquetesPorProvinciaCantonRef(paquetesNormales)
 
   // Verificar si hay padres CLEMENTINA para crear la hoja (aunque no tengan hijos)
   const hayPadresClementina = idsPadresClementina.size > 0
@@ -178,7 +178,7 @@ export function generarExcelLoteRecepcion(
       [
         paquete.direccionDestinatario,
         paquete.cantonDestinatario,
-        paquete.ciudadDestinatario,
+        paquete.provinciaDestinatario,
         paquete.paisDestinatario
       ].filter(Boolean).join(', ') || ''
 
@@ -196,7 +196,7 @@ export function generarExcelLoteRecepcion(
         'DESTINATARIO': paquete.nombreClienteDestinatario || '',
         'TELEFONO DESTINATARIO': paquete.telefonoDestinatario || '',
         'DIRECCION DESTINO': direccionDestino,
-        'CIUDAD DESTINO': paquete.ciudadDestinatario || '',
+        'CIUDAD DESTINO': paquete.provinciaDestinatario || '',
         'CANTON DESTINO': paquete.cantonDestinatario || '',
         OBSERVACION: paquete.observaciones || '',
         REMESA: '',
@@ -215,7 +215,7 @@ export function generarExcelLoteRecepcion(
       'DESTINATARIO': paquete.nombreClienteDestinatario || '',
       'TELEFONO DESTINATARIO': paquete.telefonoDestinatario || '',
       'DIRECCION DESTINO': direccionDestino,
-      'CIUDAD DESTINO': paquete.ciudadDestinatario || '',
+      'CIUDAD DESTINO': paquete.provinciaDestinatario || '',
       'CANTON DESTINO': paquete.cantonDestinatario || '',
       OBSERVACION: paquete.observaciones || '',
       REMESA: '',
@@ -339,8 +339,8 @@ export function generarExcelGruposCompleto(
     throw new Error('No hay paquetes con número de guía para generar el Excel')
   }
 
-  // Ordenar paquetes por ciudad, cantón y referencia
-  const paquetesOrdenados = ordenarPaquetesPorCiudadCantonRef(paquetesConGuia)
+  // Ordenar paquetes por provincia, cantón y referencia
+  const paquetesOrdenados = ordenarPaquetesPorProvinciaCantonRef(paquetesConGuia)
 
   // Función helper para obtener nombre de agencia
   const obtenerNombreAgencia = (paquete: Paquete): string => {
@@ -380,7 +380,7 @@ export function generarExcelGruposCompleto(
       [
         paquete.direccionDestinatario,
         paquete.cantonDestinatario,
-        paquete.ciudadDestinatario,
+        paquete.provinciaDestinatario,
         paquete.paisDestinatario
       ].filter(Boolean).join(', ') || ''
 
@@ -391,7 +391,7 @@ export function generarExcelGruposCompleto(
       'Destinatario': paquete.nombreClienteDestinatario || '',
       'Teléfono Destinatario': paquete.telefonoDestinatario || '',
       'Dirección Destino': direccionDestino,
-      'Ciudad Destino': paquete.ciudadDestinatario || '',
+      'Provincia Destino': paquete.provinciaDestinatario || '',
       'Cantón Destino': paquete.cantonDestinatario || '',
       'Observaciones': paquete.observaciones || '',
     }
@@ -408,7 +408,7 @@ export function generarExcelGruposCompleto(
     { wch: 25 }, // Destinatario
     { wch: 15 }, // Teléfono Destinatario
     { wch: 40 }, // Dirección Destino
-    { wch: 20 }, // Ciudad Destino
+    { wch: 20 }, // Provincia Destino
     { wch: 20 }, // Cantón Destino
     { wch: 30 }, // Observaciones
   ]
@@ -584,10 +584,10 @@ export function generarExcelPorTipo(
     })
   }
 
-  // Ordenar paquetes CLEMENTINA por ciudad, cantón y referencia
-  const paquetesClementinaOrdenados = ordenarPaquetesPorCiudadCantonRef(paquetesClementina)
-  // Ordenar paquetes normales por ciudad, cantón y referencia
-  const paquetesNormalesOrdenados = ordenarPaquetesPorCiudadCantonRef(paquetesNormales)
+  // Ordenar paquetes CLEMENTINA por provincia, cantón y referencia
+  const paquetesClementinaOrdenados = ordenarPaquetesPorProvinciaCantonRef(paquetesClementina)
+  // Ordenar paquetes normales por provincia, cantón y referencia
+  const paquetesNormalesOrdenados = ordenarPaquetesPorProvinciaCantonRef(paquetesNormales)
 
   // Verificar si hay paquetes CLEMENTINA hijos para crear la hoja
   const hayPaquetesClementina = paquetesClementinaOrdenados.length > 0
@@ -599,7 +599,7 @@ export function generarExcelPorTipo(
       [
         paquete.direccionDestinatario,
         paquete.cantonDestinatario,
-        paquete.ciudadDestinatario,
+        paquete.provinciaDestinatario,
         paquete.paisDestinatario
       ].filter(Boolean).join(', ') || ''
 
@@ -613,7 +613,7 @@ export function generarExcelPorTipo(
         'Destinatario': paquete.nombreClienteDestinatario || '',
         'Teléfono Destinatario': paquete.telefonoDestinatario || '',
         'Dirección Destino': direccionDestino,
-        'Ciudad Destino': paquete.ciudadDestinatario || '',
+        'Provincia Destino': paquete.provinciaDestinatario || '',
         'Cantón Destino': paquete.cantonDestinatario || '',
         'Observaciones': paquete.observaciones || '',
       }
@@ -627,7 +627,7 @@ export function generarExcelPorTipo(
       'Destinatario': paquete.nombreClienteDestinatario || '',
       'Teléfono Destinatario': paquete.telefonoDestinatario || '',
       'Dirección Destino': direccionDestino,
-      'Ciudad Destino': paquete.ciudadDestinatario || '',
+      'Provincia Destino': paquete.provinciaDestinatario || '',
       'Cantón Destino': paquete.cantonDestinatario || '',
       'Observaciones': paquete.observaciones || '',
     }
@@ -652,7 +652,7 @@ export function generarExcelPorTipo(
       { wch: 25 }, // Destinatario
       { wch: 15 }, // Teléfono Destinatario
       { wch: 40 }, // Dirección Destino
-      { wch: 20 }, // Ciudad Destino
+      { wch: 20 }, // Provincia Destino
       { wch: 20 }, // Cantón Destino
       { wch: 30 }, // Observaciones
     ]
@@ -675,7 +675,7 @@ export function generarExcelPorTipo(
       { wch: 25 }, // Destinatario
       { wch: 15 }, // Teléfono Destinatario
       { wch: 40 }, // Dirección Destino
-      { wch: 20 }, // Ciudad Destino
+      { wch: 20 }, // Provincia Destino
       { wch: 20 }, // Cantón Destino
       { wch: 30 }, // Observaciones
     ]
@@ -941,7 +941,7 @@ export function generarExcelTrackingSistemaExterno(
   XLSX.writeFile(workbook, nombreArchivo)
 }
 
-// Interfaces para la estructura de agrupación (Ciudad → Cantón → Bucket → SubRef → TipoDestino → GrupoPersonalizado)
+// Interfaces para la estructura de agrupación (Provincia → Cantón → Bucket → SubRef → TipoDestino → GrupoPersonalizado)
 interface PaquetesPorGrupoPersonalizado {
   [grupoPersonalizado: string]: Paquete[]
 }
@@ -962,8 +962,8 @@ interface PaquetesPorCanton {
   [canton: string]: PaquetesPorBucket
 }
 
-interface PaquetesPorCiudad {
-  [ciudad: string]: PaquetesPorCanton
+interface PaquetesPorProvincia {
+  [provincia: string]: PaquetesPorCanton
 }
 
 /**
@@ -985,7 +985,7 @@ export function generarExcelClementinaHijos(
   numeroRecepcion?: string,
   tipoDestino?: TipoDestino,
   idAgencia?: number,
-  paquetesAgrupados?: PaquetesPorCiudad,
+  paquetesAgrupados?: PaquetesPorProvincia,
   paqueteAGrupoPersonalizado?: Map<number, GrupoPersonalizadoLocal>
 ): void {
   // Filtrar solo paquetes que tengan guía (propia o origen del padre)
@@ -1029,29 +1029,31 @@ export function generarExcelClementinaHijos(
     'Destinatario',
     'Teléfono Destinatario',
     'Dirección Destino',
-    'Ciudad Destino',
+    'Provincia Destino',
     'Cantón Destino',
     'Observaciones'
   ]
   datos.push(encabezados)
 
-  // Si hay estructura de agrupación, usarla (Ciudad → Cantón → Bucket → SubRef → TipoDestino → GrupoPersonalizado)
+  // Si hay estructura de agrupación, usarla (Provincia → Cantón → Bucket → SubRef → TipoDestino → GrupoPersonalizado)
   if (paquetesAgrupados && paqueteAGrupoPersonalizado) {
-    ordenarClaves(Object.keys(paquetesAgrupados)).forEach((ciudad) => {
-      const cantones = paquetesAgrupados[ciudad]
-      let totalCiudad = 0
+    ordenarClaves(Object.keys(paquetesAgrupados)).forEach((provincia) => {
+      const cantones = paquetesAgrupados[provincia]
+      let totalProvincia = 0
       Object.values(cantones).forEach(buckets => {
         Object.values(buckets).forEach(subRefs => {
           Object.values(subRefs).forEach(tiposDestino => {
-            Object.values(tiposDestino).forEach(grupo => {
-              totalCiudad += contarPaquetes(grupo)
+            Object.values(tiposDestino).forEach(gruposPersonalizados => {
+              Object.values(gruposPersonalizados).forEach(grupo => {
+                totalProvincia += contarPaquetes(grupo)
+              })
             })
           })
         })
       })
-      if (totalCiudad === 0) return
+      if (totalProvincia === 0) return
 
-      datos.push([`CIUDAD: ${ciudad} (${totalCiudad} paquete${totalCiudad !== 1 ? 's' : ''})`])
+      datos.push([`CIUDAD: ${provincia} (${totalProvincia} paquete${totalProvincia !== 1 ? 's' : ''})`])
       datos.push([])
 
       ordenarClaves(Object.keys(cantones)).forEach((canton) => {
@@ -1059,8 +1061,10 @@ export function generarExcelClementinaHijos(
         let totalCanton = 0
         Object.values(buckets).forEach(subRefs => {
           Object.values(subRefs).forEach(tiposDestino => {
-            Object.values(tiposDestino).forEach(grupo => {
-              totalCanton += contarPaquetes(grupo)
+            Object.values(tiposDestino).forEach(gruposPersonalizados => {
+              Object.values(gruposPersonalizados).forEach(grupo => {
+                totalCanton += contarPaquetes(grupo)
+              })
             })
           })
         })
@@ -1103,7 +1107,7 @@ export function generarExcelClementinaHijos(
 
                 if (paquetesFiltradosGrupo.length === 0) return
 
-                const paquetesOrdenadosGrupo = ordenarPaquetesPorCiudadCantonRef(paquetesFiltradosGrupo)
+                const paquetesOrdenadosGrupo = ordenarPaquetesPorProvinciaCantonRef(paquetesFiltradosGrupo)
 
                 datos.push([`      GRUPO: ${grupoKey} (${paquetesOrdenadosGrupo.length} paquete${paquetesOrdenadosGrupo.length !== 1 ? 's' : ''})`])
                 datos.push([])
@@ -1113,7 +1117,7 @@ export function generarExcelClementinaHijos(
                     [
                       paquete.direccionDestinatario,
                       paquete.cantonDestinatario,
-                      paquete.ciudadDestinatario,
+                      paquete.provinciaDestinatario,
                       paquete.paisDestinatario
                     ].filter(Boolean).join(', ') || ''
 
@@ -1126,7 +1130,7 @@ export function generarExcelClementinaHijos(
                     paquete.nombreClienteDestinatario || '',
                     paquete.telefonoDestinatario || '',
                     direccionDestino,
-                    paquete.ciudadDestinatario || '',
+                    paquete.provinciaDestinatario || '',
                     paquete.cantonDestinatario || '',
                     paquete.observaciones || '',
                   ])
@@ -1140,18 +1144,18 @@ export function generarExcelClementinaHijos(
         datos.push([]) // Fila en blanco después del cantón
       })
 
-      datos.push([]) // Fila en blanco después de la ciudad
+      datos.push([]) // Fila en blanco después de la provincia
     })
   } else {
     // Si no hay estructura de agrupación, exportar de forma plana (compatibilidad hacia atrás)
-    // Ordenar paquetes por ciudad, cantón y referencia
-    const paquetesOrdenados = ordenarPaquetesPorCiudadCantonRef(paquetesConGuia)
+    // Ordenar paquetes por provincia, cantón y referencia
+    const paquetesOrdenados = ordenarPaquetesPorProvinciaCantonRef(paquetesConGuia)
     paquetesOrdenados.forEach((paquete) => {
       const direccionDestino = paquete.direccionDestinatarioCompleta ||
         [
           paquete.direccionDestinatario,
           paquete.cantonDestinatario,
-          paquete.ciudadDestinatario,
+          paquete.provinciaDestinatario,
           paquete.paisDestinatario
         ].filter(Boolean).join(', ') || ''
 
@@ -1164,7 +1168,7 @@ export function generarExcelClementinaHijos(
         paquete.nombreClienteDestinatario || '',
         paquete.telefonoDestinatario || '',
         direccionDestino,
-        paquete.ciudadDestinatario || '',
+        paquete.provinciaDestinatario || '',
         paquete.cantonDestinatario || '',
         paquete.observaciones || '',
       ])
@@ -1184,7 +1188,7 @@ export function generarExcelClementinaHijos(
     { wch: 25 }, // Destinatario
     { wch: 15 }, // Teléfono Destinatario
     { wch: 40 }, // Dirección Destino
-    { wch: 20 }, // Ciudad Destino
+    { wch: 20 }, // Provincia Destino
     { wch: 20 }, // Cantón Destino
     { wch: 30 }, // Observaciones
   ]

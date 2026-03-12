@@ -41,22 +41,28 @@ import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPagination } from '@/components/list/ListPagination'
 import { PERMISSIONS } from '@/types/permissions'
-import { useFiltersStore } from '@/stores/filtersStore'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
 import { LoadingState } from '@/components/states/LoadingState'
 import { ErrorState } from '@/components/states/ErrorState'
 import { Label } from '@/components/ui/label'
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters'
 
 const LIST_KEY = 'clientes' as const
 
 export default function ClientesList() {
   const navigate = useNavigate()
-  const stored = useFiltersStore((state) => state.filters[LIST_KEY])
-  const setFiltersAction = useFiltersStore((state) => state.setFilters)
+  const { stored, setFilters, setPage, setSearch } = usePersistedListFilters<{
+    page?: number
+    size?: number
+    search?: string
+    nombre?: string
+    documento?: string
+    email?: string
+    activo?: string
+  }>(LIST_KEY)
   const { page = 0, size = 20, search: busqueda = '', nombre = '', documento = '', email: emailFilter = '', activo: activoStore = '' } = { ...stored }
-  const setPage = (p: number) => setFiltersAction(LIST_KEY, { page: p })
-  const setBusqueda = (v: string) => setFiltersAction(LIST_KEY, { search: v, page: 0 })
+  const setBusqueda = (v: string) => setSearch(v)
   const [clienteAEliminar, setClienteAEliminar] = useState<number | null>(null)
 
   const filters = useMemo(() => {
@@ -90,7 +96,7 @@ export default function ClientesList() {
   const currentPage = data?.number ?? 0
 
   const clearAdvancedFilters = () => {
-    setFiltersAction(LIST_KEY, { nombre: '', documento: '', email: '', activo: '', page: 0 })
+    setFilters({ nombre: '', documento: '', email: '', activo: '', page: 0 })
   }
 
   return (
@@ -101,7 +107,7 @@ export default function ClientesList() {
         <ProtectedByPermission permission={PERMISSIONS.CLIENTES.CREAR}>
           <Button onClick={() => navigate({ to: '/clientes/new' })} size="sm" className="h-8 shadow-sm text-xs">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nuevo Cliente
+            Nuevo
           </Button>
         </ProtectedByPermission>
       }
@@ -111,6 +117,7 @@ export default function ClientesList() {
         search={busqueda}
         onSearchChange={setBusqueda}
         searchPlaceholder="Buscar por nombre, documento..."
+        withBottomBorder={false}
         advancedFilters={
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
             <div className="space-y-1.5">
@@ -118,7 +125,7 @@ export default function ClientesList() {
               <Input
                 placeholder="Nombre"
                 value={nombre}
-                onChange={(e) => setFiltersAction(LIST_KEY, { nombre: e.target.value })}
+                onChange={(e) => setFilters({ nombre: e.target.value })}
                 className="h-9"
               />
             </div>
@@ -127,7 +134,7 @@ export default function ClientesList() {
               <Input
                 placeholder="Documento"
                 value={documento}
-                onChange={(e) => setFiltersAction(LIST_KEY, { documento: e.target.value })}
+                onChange={(e) => setFilters({ documento: e.target.value })}
                 className="h-9"
               />
             </div>
@@ -136,7 +143,7 @@ export default function ClientesList() {
               <Input
                 placeholder="Email"
                 value={emailFilter}
-                onChange={(e) => setFiltersAction(LIST_KEY, { email: e.target.value })}
+                onChange={(e) => setFilters({ email: e.target.value })}
                 className="h-9"
               />
             </div>
@@ -144,7 +151,7 @@ export default function ClientesList() {
               <Label className="text-xs font-medium text-muted-foreground">Estado</Label>
               <Select
                 value={activoStore || 'all'}
-                onValueChange={(v) => setFiltersAction(LIST_KEY, { activo: v === 'all' ? '' : v })}
+                onValueChange={(v) => setFilters({ activo: v === 'all' ? '' : v })}
               >
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Todos" />
@@ -160,7 +167,7 @@ export default function ClientesList() {
               <Button type="button" variant="outline" size="sm" className="h-9" onClick={clearAdvancedFilters}>
                 Limpiar
               </Button>
-              <Button type="button" size="sm" className="h-9" onClick={() => setFiltersAction(LIST_KEY, { page: 0 })}>
+              <Button type="button" size="sm" className="h-9" onClick={() => setFilters({ page: 0 })}>
                 Aplicar
               </Button>
             </div>
@@ -169,7 +176,7 @@ export default function ClientesList() {
       />
 
       {/* Content + pagination wrapper */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
         {/* Main Content - Notion Table View */}
         <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0 relative w-full overflow-auto">
@@ -279,17 +286,17 @@ export default function ClientesList() {
             </Table>
           </div>
 
-          {!isLoading && (
-            <ListPagination
-              page={currentPage}
-              totalPages={totalPages}
-              totalItems={data?.totalElements}
-              size={size}
-              onPageChange={setPage}
-              className="shrink-0"
-            />
-          )}
         </div>
+        {!isLoading && (
+          <ListPagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={data?.totalElements}
+            size={size}
+            onPageChange={setPage}
+            className="shrink-0"
+          />
+        )}
       </div>
 
       <Dialog open={!!clienteAEliminar} onOpenChange={(open) => !open && setClienteAEliminar(null)}>

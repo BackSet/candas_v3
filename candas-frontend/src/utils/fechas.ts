@@ -31,3 +31,17 @@ export function formatearFechaRelativa(fechaString: string): string {
     })
   }
 }
+
+export function formatearFechaCorta(fechaString: string | null | undefined): string {
+  if (!fechaString) return '-'
+  return new Date(fechaString).toLocaleDateString('es-ES')
+}
+
+export function formatearFechaLarga(fechaString: string | null | undefined): string {
+  if (!fechaString) return '-'
+  return new Date(fechaString).toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
+}

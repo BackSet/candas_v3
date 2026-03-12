@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { agenciaService } from '@/lib/api/agencia.service'
 import type { Agencia } from '@/types/agencia'
-import { toast } from 'sonner'
-
-import { getApiErrorMessage } from '@/lib/api/errors'
+import { showMutationError, showMutationSuccess } from '@/hooks/mutationFeedback'
 
 export function useAgencias(
   page: number = 0,
@@ -31,10 +29,10 @@ export function useCreateAgencia() {
     mutationFn: (dto: Agencia) => agenciaService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencias'] })
-      toast.success('Agencia creada exitosamente')
+      showMutationSuccess('Agencia creada exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear la agencia'))
+      showMutationError(error, 'Error al crear la agencia')
     },
   })
 }
@@ -48,10 +46,10 @@ export function useUpdateAgencia() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['agencias'] })
       queryClient.invalidateQueries({ queryKey: ['agencia', variables.id] })
-      toast.success('Agencia actualizada exitosamente')
+      showMutationSuccess('Agencia actualizada exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar la agencia'))
+      showMutationError(error, 'Error al actualizar la agencia')
     },
   })
 }
@@ -63,10 +61,10 @@ export function useDeleteAgencia() {
     mutationFn: (id: number) => agenciaService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencias'] })
-      toast.success('Agencia eliminada exitosamente')
+      showMutationSuccess('Agencia eliminada exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar la agencia'))
+      showMutationError(error, 'Error al eliminar la agencia')
     },
   })
 }

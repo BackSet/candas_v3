@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useAtencionPaquetes, useAtencionPaquetesPendientes, useDeleteAtencionPaquete } from '@/hooks/useAtencionPaquetes'
 import { useFiltersStore } from '@/stores/filtersStore'
 import { Button } from '@/components/ui/button'
+import { ListToolbar } from '@/components/list/ListToolbar'
 import {
   Table,
   TableBody,
@@ -36,14 +37,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Checkbox } from '@/components/ui/checkbox'
 import { EstadoAtencion, getTipoProblemaLabel } from '@/types/atencion-paquete'
-import { Eye, Edit, Trash2, Plus, Printer, Loader2, CheckCircle, MoreHorizontal, Search, Filter, AlertCircle, Package, Calendar, Clock, MessageSquare } from 'lucide-react'
+import { Eye, Edit, Trash2, Plus, Printer, Loader2, CheckCircle, MoreHorizontal, Filter, AlertCircle, Package, Calendar, Clock, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import { paqueteService } from '@/lib/api/paquete.service'
 import { imprimirAtencionPaquetes } from '@/utils/imprimirAtencionPaquetes'
 import type { Paquete } from '@/types/paquete'
 import ResolverDialog from './ResolverDialog'
 import { cn } from '@/lib/utils'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
@@ -170,70 +170,65 @@ export default function AtencionPaquetesList() {
           <ProtectedByPermission permission={PERMISSIONS.ATENCION_PAQUETES.CREAR}>
             <Button onClick={() => navigate({ to: '/atencion-paquetes/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
               <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Nueva Solicitud
+              Nuevo
             </Button>
           </ProtectedByPermission>
         </div>
       }
     >
-      {/* Toolbar */}
-      <div className="px-4 sm:px-6 py-3 border-b border-border/30 bg-muted/5 flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="relative flex-1 max-w-md group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-          <Input
-            placeholder="Buscar por guía, motivo o tipo..."
-            className="h-9 w-full pl-9 pr-4 text-sm bg-background border-border/40 rounded-lg focus-visible:ring-primary/20 shadow-sm"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center bg-background border border-border/40 rounded-lg p-0.5 h-9 shadow-sm">
-            <button
-              onClick={() => setSoloPendientes(false)}
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
-                !soloPendientes ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
-            >Todos</button>
-            <button
-              onClick={() => setSoloPendientes(true)}
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5",
-                soloPendientes ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Pendientes
-              {pendientes && pendientes.length > 0 && (
-                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground px-1">
-                  {pendientes.length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          <Select value={soloPendientes ? EstadoAtencion.PENDIENTE : filtroEstado} onValueChange={(v) => { setSoloPendientes(false); setFiltroEstado(v) }}>
-            <SelectTrigger className="h-9 w-[150px] text-xs bg-background border-border/40 shadow-sm rounded-lg">
-              <div className="flex items-center gap-2">
-                <Filter className="h-3.5 w-3.5 text-muted-foreground/50" />
-                <SelectValue placeholder="Estado" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value={EstadoAtencion.PENDIENTE}>Pendiente</SelectItem>
-              <SelectItem value={EstadoAtencion.EN_REVISION}>En revisión</SelectItem>
-              <SelectItem value={EstadoAtencion.RESUELTO}>Resuelto</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <ListToolbar
+        search={busqueda}
+        onSearchChange={setBusqueda}
+        searchPlaceholder="Buscar por guía, motivo o tipo..."
+        withBottomBorder={false}
+        filters={
+          <>
+            <div className="flex items-center bg-background border border-border/40 rounded-lg p-0.5 h-9 shadow-sm">
+              <button
+                onClick={() => setSoloPendientes(false)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
+                  !soloPendientes ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >Todos</button>
+              <button
+                onClick={() => setSoloPendientes(true)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 flex items-center gap-1.5",
+                  soloPendientes ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Pendientes
+                {pendientes && pendientes.length > 0 && (
+                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground px-1">
+                    {pendientes.length}
+                  </span>
+                )}
+              </button>
+            </div>
+            <Select value={soloPendientes ? EstadoAtencion.PENDIENTE : filtroEstado} onValueChange={(v) => { setSoloPendientes(false); setFiltroEstado(v) }}>
+              <SelectTrigger className="h-9 w-[150px] text-xs bg-background border-border/40 shadow-sm rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-3.5 w-3.5 text-muted-foreground/50" />
+                  <SelectValue placeholder="Estado" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value={EstadoAtencion.PENDIENTE}>Pendiente</SelectItem>
+                <SelectItem value={EstadoAtencion.EN_REVISION}>En revisión</SelectItem>
+                <SelectItem value={EstadoAtencion.RESUELTO}>Resuelto</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
 
       {/* Table */}
-      <div className="flex-1 overflow-hidden relative">
-        <div className="absolute inset-0 overflow-auto">
-          <Table className="notion-table w-full relative">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
+        <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 relative w-full overflow-auto">
+            <Table className="notion-table w-full relative">
             <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/40">
               <TableRow className="hover:bg-transparent border-none">
                 <TableHead className="w-10 pl-4 h-10">
@@ -265,7 +260,7 @@ export default function AtencionPaquetesList() {
                         <ProtectedByPermission permission={PERMISSIONS.ATENCION_PAQUETES.CREAR}>
                           <Button onClick={() => navigate({ to: '/atencion-paquetes/new' })} variant="outline" size="sm" className="rounded-lg">
                             <Plus className="h-3.5 w-3.5 mr-1.5" />
-                            Nueva Solicitud
+                            Nuevo
                           </Button>
                         </ProtectedByPermission>
                       ) : undefined}
@@ -370,9 +365,10 @@ export default function AtencionPaquetesList() {
                 ))
               )}
             </TableBody>
-          </Table>
-        </div>
+            </Table>
+          </div>
 
+        </div>
         {busqueda.trim().length === 0 && (
           <ListPagination
             page={currentPage}
@@ -380,7 +376,7 @@ export default function AtencionPaquetesList() {
             totalItems={data?.totalElements}
             size={size}
             onPageChange={setPage}
-            className="px-4 pb-2"
+            className="shrink-0"
           />
         )}
       </div>

@@ -54,6 +54,7 @@ const DestinatarioDirectoForm = lazyRouteComponent(() => import('@/pages/destina
 const DestinatarioDirectoDetail = lazyRouteComponent(() => import('@/pages/destinatarios-directos/DestinatarioDirectoDetail'))
 const EnsacadoPage = lazyRouteComponent(() => import('@/pages/ensacado/EnsacadoPage'))
 const ParametrosSistemaLayout = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosSistemaLayout'))
+const ParametrosSistemaIndexPage = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosSistemaIndexPage'))
 const ParametrosWhatsAppDespachoPage = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosWhatsAppDespachoPage'))
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -570,7 +571,7 @@ const parametrosSistemaLayoutRoute = createRoute({
 const parametrosSistemaIndexRoute = createRoute({
   getParentRoute: () => parametrosSistemaLayoutRoute,
   path: '/',
-  component: () => <Navigate to="/parametros-sistema/whatsapp-despacho" replace />,
+  component: ParametrosSistemaIndexPage,
 })
 
 const parametrosSistemaWhatsappDespachoRoute = createRoute({
@@ -633,7 +634,8 @@ const lotesEspecialesIdRedirectRoute = createRoute({
   path: 'lotes-especiales/$id',
   component: () => {
     const { id } = useParams({ strict: false })
-    return <Navigate to={id ? `/lotes-recepcion/${id}` : '/lotes-recepcion'} replace />
+    if (!id) return <Navigate to="/lotes-recepcion" replace />
+    return <Navigate to="/lotes-recepcion/$id" params={{ id }} replace />
   },
 })
 const lotesEspecialesIdEditRedirectRoute = createRoute({
@@ -641,7 +643,8 @@ const lotesEspecialesIdEditRedirectRoute = createRoute({
   path: 'lotes-especiales/$id/edit',
   component: () => {
     const { id } = useParams({ strict: false })
-    return <Navigate to={id ? `/lotes-recepcion/${id}/edit` : '/lotes-recepcion'} replace />
+    if (!id) return <Navigate to="/lotes-recepcion" replace />
+    return <Navigate to="/lotes-recepcion/$id/edit" params={{ id }} replace />
   },
 })
 const listasEtiquetadasRedirectRoute = createRoute({

@@ -141,19 +141,15 @@ public class PaqueteService {
         paquete.setEstado(EstadoPaquete.REGISTRADO);
         paquete.setFechaRegistro(LocalDateTime.now());
 
-        // Buscar o usar cliente remitente
-        Cliente clienteRemitente = null;
+        // Asignar remitente solo si se proporciona explícitamente.
+        // En flujo simplificado se permite paquete sin remitente.
         if (dto.getIdClienteRemitente() != null) {
-            clienteRemitente = clienteRepository.findById(dto.getIdClienteRemitente())
+            Cliente clienteRemitente = clienteRepository.findById(dto.getIdClienteRemitente())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente", dto.getIdClienteRemitente()));
+            paquete.setClienteRemitente(clienteRemitente);
         } else {
-            // Buscar cliente remitente por defecto
-            clienteRemitente = clienteRepository.findFirstByActivoTrueOrderByIdClienteAsc()
-                    .orElseThrow(() -> new BadRequestException(
-                            "No se encontró un cliente por defecto. Por favor, cree un cliente activo."));
+            paquete.setClienteRemitente(null);
         }
-
-        paquete.setClienteRemitente(clienteRemitente);
 
         // No validar tipo de paquete para paquetes simplificados
         // (se puede asignar después)
@@ -487,6 +483,7 @@ public class PaqueteService {
     /**
      * Crea o actualiza un paquete desde el flujo de listas etiquetadas.
      * Datos genéricos por defecto; ref = etiqueta (o VARIAS); observaciones = "Tipo: X" o "Tipo: X, Y".
+     * No exige cliente remitente para el flujo de listas especiales (MIAMI/GEO).
      */
     @Transactional
     public PaqueteDTO createOrUpdateFromListaEtiquetada(String numeroGuia, String etiquetaRef, String observacionesTipo) {
@@ -507,15 +504,14 @@ public class PaqueteService {
         paquete.setObservaciones(observacionesTipo);
         paquete.setEstado(EstadoPaquete.REGISTRADO);
         paquete.setFechaRegistro(LocalDateTime.now());
-        Cliente clienteRemitente = clienteRepository.findFirstByActivoTrueOrderByIdClienteAsc()
-                .orElseThrow(() -> new BadRequestException("No se encontró un cliente por defecto. Cree un cliente activo."));
-        paquete.setClienteRemitente(clienteRemitente);
+        paquete.setClienteRemitente(null);
         aplicarDefaultsListasEtiquetadas(paquete);
         return paqueteMapper.toDTO(paqueteRepository.save(paquete));
     }
 
     /**
      * Crea un paquete sin etiqueta (ref null) con datos genéricos, para clasificar después (ej. en lote especial).
+     * No exige cliente remitente.
      */
     @Transactional
     public Paquete createPaqueteSinEtiqueta(String numeroGuia) {
@@ -532,9 +528,7 @@ public class PaqueteService {
         paquete.setObservaciones(null);
         paquete.setEstado(EstadoPaquete.REGISTRADO);
         paquete.setFechaRegistro(LocalDateTime.now());
-        Cliente clienteRemitente = clienteRepository.findFirstByActivoTrueOrderByIdClienteAsc()
-                .orElseThrow(() -> new BadRequestException("No se encontró un cliente por defecto. Cree un cliente activo."));
-        paquete.setClienteRemitente(clienteRemitente);
+        paquete.setClienteRemitente(null);
         aplicarDefaultsListasEtiquetadas(paquete);
         return paqueteRepository.save(paquete);
     }

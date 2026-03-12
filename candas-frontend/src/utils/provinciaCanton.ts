@@ -1,16 +1,16 @@
 import type { Paquete } from '@/types/paquete'
 
 /**
- * Calcula la ciudad y el cantón más frecuentes entre los paquetes (destinatario).
+ * Calcula la provincia y el cantón más frecuentes entre los paquetes (destinatario).
  * Solo devuelve valor si el más común supera el 50% de los paquetes con ese dato.
  */
-export function calcularCiudadOCantonMasComun(
+export function calcularProvinciaOCantonMasComun(
   paquetes: Paquete[]
-): { ciudad: string | null; canton: string | null } {
-  if (paquetes.length === 0) return { ciudad: null, canton: null }
+): { provincia: string | null; canton: string | null } {
+  if (paquetes.length === 0) return { provincia: null, canton: null }
 
-  const ciudades = paquetes
-    .map((p) => p.ciudadDestinatario?.trim())
+  const provincias = paquetes
+    .map((p) => p.provinciaDestinatario?.trim())
     .filter((c): c is string => !!c && c.length > 0)
     .map((c) => c.toUpperCase())
 
@@ -19,9 +19,9 @@ export function calcularCiudadOCantonMasComun(
     .filter((c): c is string => !!c && c.length > 0)
     .map((c) => c.toUpperCase())
 
-  const frecuenciaCiudades: Record<string, number> = {}
-  ciudades.forEach((ciudad) => {
-    frecuenciaCiudades[ciudad] = (frecuenciaCiudades[ciudad] || 0) + 1
+  const frecuenciaProvincias: Record<string, number> = {}
+  provincias.forEach((provincia) => {
+    frecuenciaProvincias[provincia] = (frecuenciaProvincias[provincia] || 0) + 1
   })
 
   const frecuenciaCantones: Record<string, number> = {}
@@ -29,20 +29,20 @@ export function calcularCiudadOCantonMasComun(
     frecuenciaCantones[canton] = (frecuenciaCantones[canton] || 0) + 1
   })
 
-  let ciudadPredominante: string | null = null
-  if (ciudades.length > 0) {
-    const ciudadesOrdenadas = Object.entries(frecuenciaCiudades).sort(
+  let provinciaPredominante: string | null = null
+  if (provincias.length > 0) {
+    const provinciasOrdenadas = Object.entries(frecuenciaProvincias).sort(
       (a, b) => b[1] - a[1]
     )
-    if (ciudadesOrdenadas.length > 0) {
-      const [ciudadMasComun, count] = ciudadesOrdenadas[0]
-      const porcentaje = (count / ciudades.length) * 100
+    if (provinciasOrdenadas.length > 0) {
+      const [provinciaMasComun, count] = provinciasOrdenadas[0]
+      const porcentaje = (count / provincias.length) * 100
       if (porcentaje > 50) {
-        const ciudadOriginal = paquetes.find(
+        const provinciaOriginal = paquetes.find(
           (p) =>
-            p.ciudadDestinatario?.trim().toUpperCase() === ciudadMasComun
-        )?.ciudadDestinatario?.trim()
-        ciudadPredominante = ciudadOriginal ?? null
+            p.provinciaDestinatario?.trim().toUpperCase() === provinciaMasComun
+        )?.provinciaDestinatario?.trim()
+        provinciaPredominante = provinciaOriginal ?? null
       }
     }
   }
@@ -65,5 +65,5 @@ export function calcularCiudadOCantonMasComun(
     }
   }
 
-  return { ciudad: ciudadPredominante, canton: cantonPredominante }
+  return { provincia: provinciaPredominante, canton: cantonPredominante }
 }

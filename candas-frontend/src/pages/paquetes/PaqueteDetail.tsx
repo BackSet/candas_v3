@@ -124,6 +124,13 @@ export default function PaqueteDetail() {
       title={guiaEfectiva(paquete) || `Paquete #${paquete.idPaquete}`}
       subtitle={`ID: ${paquete.idPaquete}${paquete.tipoPaquete ? ` • ${paquete.tipoPaquete}` : ''}`}
       backUrl="/paquetes"
+      onBack={() => {
+        if (window.history.length > 1) {
+          window.history.back()
+          return
+        }
+        navigate({ to: '/paquetes' })
+      }}
       status={{
         label: paquete.estado,
         variant: getEstadoPaqueteBadgeVariant(paquete.estado),

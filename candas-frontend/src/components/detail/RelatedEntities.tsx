@@ -73,7 +73,7 @@ export function RelatedEntities({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate(entity.url)}
+                  onClick={() => navigate({ to: entity.url as never })}
                   className="shrink-0"
                 >
                   Ver

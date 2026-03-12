@@ -92,7 +92,7 @@ export default function DistribuidoresList() {
         <ProtectedByPermission permission={PERMISSIONS.DISTRIBUIDORES.CREAR}>
           <Button onClick={() => navigate({ to: '/distribuidores/new' })} size="sm" className="h-8 shadow-sm text-xs">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nuevo Distribuidor
+            Nuevo
           </Button>
         </ProtectedByPermission>
       }
@@ -102,10 +102,11 @@ export default function DistribuidoresList() {
         search={busqueda}
         onSearchChange={setBusqueda}
         searchPlaceholder="Buscar distribuidor..."
+        withBottomBorder={false}
       />
 
       {/* Content + pagination wrapper */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
         {/* Main Content - Notion Table View */}
         <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0 relative w-full overflow-auto">
@@ -212,17 +213,17 @@ export default function DistribuidoresList() {
             </Table>
           </div>
 
-          {busqueda.trim().length === 0 && (
-            <ListPagination
-              page={currentPage}
-              totalPages={totalPages}
-              totalItems={data?.totalElements}
-              size={size}
-              onPageChange={setPage}
-              className="shrink-0"
-            />
-          )}
         </div>
+        {busqueda.trim().length === 0 && (
+          <ListPagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={data?.totalElements}
+            size={size}
+            onPageChange={setPage}
+            className="shrink-0"
+          />
+        )}
       </div>
 
       <Dialog open={!!distribuidorAEliminar} onOpenChange={(open) => !open && setDistribuidorAEliminar(null)}>

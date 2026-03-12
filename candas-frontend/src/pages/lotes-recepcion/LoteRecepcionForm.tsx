@@ -109,7 +109,7 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
     try {
       if (isEdit) {
         await updateMutation.mutateAsync({ id: Number(id), dto: loteRecepcionData })
-        navigate(backUrl)
+        navigate({ to: backUrl as never })
       } else {
         const nuevoLoteRecepcion = await createMutation.mutateAsync(loteRecepcionData)
         setNuevoLoteRecepcionId(nuevoLoteRecepcion.idLoteRecepcion || null)
@@ -122,13 +122,13 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
 
   const handleVolverAlListado = () => {
     setShowSuccessDialog(false)
-    navigate(backUrl)
+    navigate({ to: backUrl as never })
   }
 
   const handleIrAlLote = () => {
     setShowSuccessDialog(false)
-    if (nuevoLoteRecepcionId) navigate({ to: `/lotes-recepcion/${nuevoLoteRecepcionId}` })
-    else navigate(backUrl)
+    if (nuevoLoteRecepcionId) navigate({ to: '/lotes-recepcion/$id', params: { id: String(nuevoLoteRecepcionId) } })
+    else navigate({ to: backUrl as never })
   }
 
   if (isEdit && loadingLoteRecepcion) {
@@ -148,7 +148,7 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
       }
       icon={<Package className="h-4 w-4" />}
       actions={
-        <Button variant="ghost" size="sm" onClick={() => navigate(backUrl)} className="text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="sm" onClick={() => navigate({ to: backUrl as never })} className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver
         </Button>

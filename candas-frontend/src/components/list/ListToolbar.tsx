@@ -1,9 +1,8 @@
-import { type ReactNode, useEffect, useState, useRef } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useDebounce } from '@/hooks/useDebounce'
 
 interface ListToolbarProps {
   search?: string
@@ -12,6 +11,8 @@ interface ListToolbarProps {
   filters?: ReactNode
   /** Panel colapsable de filtros avanzados (campos por criterio + Buscar/Limpiar) */
   advancedFilters?: ReactNode
+  /** Muestra borde inferior bajo el toolbar (default true) */
+  withBottomBorder?: boolean
   actions?: ReactNode
   className?: string
 }
@@ -22,40 +23,31 @@ export function ListToolbar({
   searchPlaceholder = 'Buscar...',
   filters,
   advancedFilters,
+  withBottomBorder = true,
   actions,
   className,
 }: ListToolbarProps) {
   const [localSearch, setLocalSearch] = useState(search ?? '')
   const [advancedOpen, setAdvancedOpen] = useState(false)
-  const debouncedSearch = useDebounce(localSearch, 300)
-  const prevDebouncedRef = useRef(debouncedSearch)
-  const isInternalChange = useRef(false)
 
   useEffect(() => {
-    if (search === undefined || isInternalChange.current) {
-      isInternalChange.current = false
-      return
-    }
+    if (search === undefined) return
     setLocalSearch(search)
-    prevDebouncedRef.current = search
   }, [search])
-
-  useEffect(() => {
-    if (prevDebouncedRef.current === debouncedSearch) return
-    prevDebouncedRef.current = debouncedSearch
-    isInternalChange.current = true
-    onSearchChange?.(debouncedSearch)
-  }, [debouncedSearch, onSearchChange])
 
   const handleClearSearch = () => {
     setLocalSearch('')
-    prevDebouncedRef.current = ''
-    isInternalChange.current = true
     onSearchChange?.('')
   }
 
   return (
-    <div className={cn('flex flex-col gap-4 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60', className)}>
+    <div
+      className={cn(
+        'flex flex-col gap-4 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
+        withBottomBorder && 'border-b',
+        className
+      )}
+    >
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         {onSearchChange && (
           <div className="relative w-full sm:max-w-sm">
@@ -63,19 +55,25 @@ export function ListToolbar({
             <Input
               placeholder={searchPlaceholder}
               value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value
+                setLocalSearch(value)
+                onSearchChange?.(value)
+              }}
               className="pl-9 pr-8 h-9"
             />
             {localSearch && (
-              <button
+              <Button
                 type="button"
                 aria-label="Cerrar búsqueda"
+                variant="ghost"
+                size="icon"
                 onClick={handleClearSearch}
-                onPointerDown={(e) => e.preventDefault()}
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring"
+                onMouseDown={(e) => e.preventDefault()}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             )}
           </div>
         )}

@@ -4,7 +4,6 @@ import { useUsuarios, useDeleteUsuario } from '@/hooks/useUsuarios'
 import { useQuery } from '@tanstack/react-query'
 import { usuarioService } from '@/lib/api/usuario.service'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -30,11 +29,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { Eye, Edit, Trash2, Plus, MoreHorizontal, Users, Search, Mail, Shield } from 'lucide-react'
+import { Eye, Edit, Trash2, Plus, MoreHorizontal, Users, Mail, Shield } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
+import { ListToolbar } from '@/components/list/ListToolbar'
 import { LoadingState } from '@/components/states/LoadingState'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
@@ -89,31 +89,28 @@ export default function UsuariosList() {
         <ProtectedByPermission permission={PERMISSIONS.USUARIOS.CREAR}>
           <Button onClick={() => navigate({ to: '/usuarios/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nuevo Usuario
+            Nuevo
           </Button>
         </ProtectedByPermission>
       }
     >
-      {/* Search Toolbar */}
-      <div className="px-4 sm:px-6 py-3 border-b border-border/30 bg-muted/5 flex items-center justify-between gap-4 shrink-0">
-        <div className="relative flex-1 max-w-md group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-          <Input
-            placeholder="Buscar por nombre, username o email..."
-            className="h-9 w-full pl-9 pr-4 text-sm bg-background border-border/40 rounded-lg focus-visible:ring-primary/20 shadow-sm"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-        </div>
-        <span className="text-xs text-muted-foreground hidden sm:inline-block">
-          <span className="font-medium text-foreground">{usuariosFiltrados.length}</span> usuarios
-        </span>
-      </div>
+      <ListToolbar
+        search={busqueda}
+        onSearchChange={setBusqueda}
+        searchPlaceholder="Buscar por nombre, username o email..."
+        withBottomBorder={false}
+        actions={
+          <span className="text-xs text-muted-foreground hidden sm:inline-block">
+            <span className="font-medium text-foreground">{usuariosFiltrados.length}</span> usuarios
+          </span>
+        }
+      />
 
       {/* Table */}
-      <div className="flex-1 overflow-hidden relative">
-        <div className="absolute inset-0 overflow-auto">
-          <Table className="notion-table w-full relative">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
+        <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 relative w-full overflow-auto">
+            <Table className="notion-table w-full relative">
             <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/40">
               <TableRow className="hover:bg-transparent border-none">
                 <TableHead className="h-10 text-[11px] font-bold text-muted-foreground uppercase tracking-wider pl-4 w-44">Usuario</TableHead>
@@ -220,20 +217,21 @@ export default function UsuariosList() {
                 ))
               )}
             </TableBody>
-          </Table>
-        </div>
-      </div>
+            </Table>
+          </div>
 
-      {busqueda.trim().length === 0 && (
-        <ListPagination
-          page={currentPage}
-          totalPages={totalPages}
-          totalItems={data?.totalElements}
-          size={size}
-          onPageChange={setPage}
-          className="px-4 pb-2"
-        />
-      )}
+        </div>
+        {busqueda.trim().length === 0 && (
+          <ListPagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={data?.totalElements}
+            size={size}
+            onPageChange={setPage}
+            className="shrink-0"
+          />
+        )}
+      </div>
 
       {/* Delete Dialog */}
       <Dialog open={!!usuarioAEliminar} onOpenChange={(open) => !open && setUsuarioAEliminar(null)}>

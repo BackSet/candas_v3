@@ -416,7 +416,7 @@ function generarHTMLSaca(saca: SacaDetalle): string {
             <th style="width:10%">Guía</th>
             <th style="width:15%">Destinatario</th>
             <th style="width:20%">Dirección</th>
-            <th style="width:8%">Ciudad</th>
+            <th style="width:8%">Provincia</th>
             <th style="width:8%">Provincia</th>
             <th style="width:8%">Cantón</th>
             <th style="width:10%">Teléfono</th>
@@ -434,7 +434,7 @@ function generarHTMLSaca(saca: SacaDetalle): string {
           <td>${p.numeroGuia || '-'}</td>
           <td>${p.nombreClienteDestinatario || '-'}</td>
           <td>${p.direccionDestinatarioCompleta || '-'}</td>
-          <td>${p.ciudadDestinatario || '-'}</td>
+          <td>${p.provinciaDestinatario || '-'}</td>
           <td>${p.paisDestinatario || '-'}</td>
           <td>${p.cantonDestinatario || '-'}</td>
           <td>${p.telefonoDestinatario || '-'}</td>

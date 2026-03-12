@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 
 interface GruposPersonalizadosPanelProps {
   loteRecepcionId?: number
-  onCrearGrupo: (ciudad?: string, canton?: string) => void
+  onCrearGrupo: (provincia?: string, canton?: string) => void
   onSeleccionarGrupo?: (grupo: GrupoPersonalizadoLocal) => void
   grupoSeleccionado?: string | null
   mostrarSimplificado?: boolean
@@ -73,7 +73,7 @@ export default function GruposPersonalizadosPanel({
                 size="sm"
                 onClick={() => onSeleccionarGrupo?.(grupo)}
               >
-                {grupo.nombre} ({grupo.ciudad} {'>'} {grupo.canton})
+                {grupo.nombre} ({grupo.provincia} {'>'} {grupo.canton})
               </Button>
             ))}
           </div>
@@ -90,7 +90,7 @@ export default function GruposPersonalizadosPanel({
             <div>
               <CardTitle>Grupos Personalizados</CardTitle>
               <CardDescription>
-                Grupos de paquetes organizados por Ciudad {'>'} Cantón (solo en esta sesión)
+                Grupos de paquetes organizados por Provincia {'>'} Cantón (solo en esta sesión)
               </CardDescription>
             </div>
           </div>
@@ -98,13 +98,13 @@ export default function GruposPersonalizadosPanel({
         <CardContent>
           {Object.keys(estructura).length > 0 ? (
             <div className="space-y-4">
-              {Object.keys(estructura).map((ciudad) => (
-                <div key={ciudad} className="space-y-2">
-                  <h4 className="text-sm font-semibold text-foreground">{ciudad}</h4>
-                  {Object.keys(estructura[ciudad]).map((canton) => (
+              {Object.keys(estructura).map((provincia) => (
+                <div key={provincia} className="space-y-2">
+                  <h4 className="text-sm font-semibold text-foreground">{provincia}</h4>
+                  {Object.keys(estructura[provincia]).map((canton) => (
                     <div key={canton} className="ml-4 space-y-2">
                       <h5 className="text-xs font-medium text-muted-foreground">{canton}</h5>
-                      {Object.values(estructura[ciudad][canton]).map((grupo) => (
+                      {Object.values(estructura[provincia][canton]).map((grupo) => (
                         <div
                           key={grupo.id}
                           className={`flex items-center justify-between p-3 border rounded-md transition-colors ${
@@ -156,7 +156,7 @@ export default function GruposPersonalizadosPanel({
                         </div>
                       ))}
                       <Button
-                        onClick={() => onCrearGrupo(ciudad, canton)}
+                        onClick={() => onCrearGrupo(provincia, canton)}
                         variant="outline"
                         size="sm"
                         className="ml-4"

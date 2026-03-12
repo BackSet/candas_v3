@@ -25,6 +25,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  dialogContentPresets,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -69,7 +70,6 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
-import { useFiltersStore } from '@/stores/filtersStore'
 import { useAuthStore } from '@/stores/authStore'
 import ImprimirDespachoDialog, { type TipoImpresion } from '@/components/despachos/ImprimirDespachoDialog'
 import { ListToolbar } from '@/components/list/ListToolbar'
@@ -80,6 +80,9 @@ import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { usePlantillaWhatsAppDespacho } from '@/hooks/usePlantillaWhatsAppDespacho'
 import { reemplazarVariables, construirVariablesDesdeDespacho } from '@/utils/plantillaWhatsApp'
+import { copyTextToClipboard } from '@/utils/clipboard'
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters'
+import { formatearFechaCorta, formatearFechaLarga } from '@/utils/fechas'
 
 const LIST_KEY = 'despachos' as const
 
@@ -104,7 +107,12 @@ function DespachoRowActions({
     <ProtectedByPermission permissions={[PERMISSIONS.DESPACHOS.VER, PERMISSIONS.DESPACHOS.EDITAR, PERMISSIONS.DESPACHOS.IMPRIMIR, PERMISSIONS.DESPACHOS.ELIMINAR]}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Acciones de fila"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground opacity-100 transition-opacity"
+          >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -153,12 +161,15 @@ export default function DespachosList() {
   const { data: agenciaUsuario } = useAgencia(user?.idAgencia)
   const nombreAgenciaOrigen = agenciaUsuario?.nombre ?? undefined
 
-  const stored = useFiltersStore((state) => state.filters[LIST_KEY])
-  const setFiltersAction = useFiltersStore((state) => state.setFilters)
+  const { stored, setFilters, setPage, setSearch } = usePersistedListFilters<{
+    page?: number
+    size?: number
+    search?: string
+    filtroTipoDestino?: 'all' | 'agencia' | 'directo'
+  }>(LIST_KEY)
   const { page = 0, size = 20, search: busqueda = '', filtroTipoDestino = 'all' } = { ...stored } as { page?: number; size?: number; search?: string; filtroTipoDestino?: 'all' | 'agencia' | 'directo' }
-  const setPage = (p: number) => setFiltersAction(LIST_KEY, { page: p })
-  const setBusqueda = (v: string) => setFiltersAction(LIST_KEY, { search: v, page: 0 })
-  const setFiltroTipoDestino = (v: 'all' | 'agencia' | 'directo') => setFiltersAction(LIST_KEY, { filtroTipoDestino: v, page: 0 })
+  const setBusqueda = (v: string) => setSearch(v)
+  const setFiltroTipoDestino = (v: 'all' | 'agencia' | 'directo') => setFilters({ filtroTipoDestino: v, page: 0 })
   const [despachoAEliminar, setDespachoAEliminar] = useState<number | null>(null)
   const [despachoAImprimir, setDespachoAImprimir] = useState<number | null>(null)
   const [tipoImpresion, setTipoImpresion] = useState<TipoImpresion>('etiqueta')
@@ -542,7 +553,7 @@ export default function DespachosList() {
       mensaje += '━━━━━━━━━━━━━━━━━━━━\n\n'
       mensaje += `*Manifiesto:* ${despacho.numeroManifiesto || `ID: ${despacho.idDespacho}`}\n`
       if (despacho.fechaDespacho) {
-        mensaje += `*Fecha:* ${new Date(despacho.fechaDespacho).toLocaleDateString('es-ES')}\n`
+        mensaje += `*Fecha:* ${formatearFechaCorta(despacho.fechaDespacho)}\n`
       }
       mensaje += '\n'
       if (despacho.idAgencia && agencia) {
@@ -610,24 +621,24 @@ export default function DespachosList() {
   }
 
   const copiarMensaje = async () => {
-    try {
-      await navigator.clipboard.writeText(mensajeGenerado)
+    const ok = await copyTextToClipboard(mensajeGenerado)
+    if (ok) {
       setCopiado(true)
       toast.success('Mensaje copiado al portapapeles')
       setTimeout(() => setCopiado(false), 2000)
-    } catch (error) {
+    } else {
       toast.error('Error al copiar el mensaje')
     }
   }
 
   const copiarTelefono = async () => {
     if (!telefonoDestino) return
-    try {
-      await navigator.clipboard.writeText(telefonoDestino)
+    const ok = await copyTextToClipboard(telefonoDestino)
+    if (ok) {
       setTelefonoCopiado(true)
       toast.success('Teléfono copiado al portapapeles')
       setTimeout(() => setTelefonoCopiado(false), 2000)
-    } catch (error) {
+    } else {
       toast.error('Error al copiar el teléfono')
     }
   }
@@ -709,6 +720,7 @@ export default function DespachosList() {
         search={busqueda}
         onSearchChange={setBusqueda}
         searchPlaceholder="Buscar manifiesto..."
+        withBottomBorder={false}
         filters={
           <>
             <Select value={filtroTipoDestino} onValueChange={(v) => setFiltroTipoDestino(v as 'all' | 'agencia' | 'directo')}>
@@ -733,21 +745,7 @@ export default function DespachosList() {
         }
       />
 
-      {/* Results Info Bar (when filtered) */}
-      {(busqueda.trim().length > 0 || fechaSeleccionada) && (
-        <div className="text-xs text-muted-foreground text-center animate-in fade-in bg-muted/20 py-2 border-b border-border/40">
-          {fechaSeleccionada && (
-            <span>
-              Filtro fecha: {new Date(fechaSeleccionada).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })} •
-            </span>
-          )}
-          <span className="ml-1">
-            Resultados: <strong>{despachosFiltrados.length}</strong>
-          </span>
-        </div>
-      )}
-
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
         {/* Main Content - Notion Table View */}
         <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
           {(isLoading || loadingBusqueda) ? (
@@ -824,8 +822,8 @@ export default function DespachosList() {
                                   {despacho.numeroManifiesto || `#${despacho.idDespacho}`}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                {despacho.fechaDespacho ? new Date(despacho.fechaDespacho).toLocaleDateString('es-ES') : '-'}
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                {formatearFechaCorta(despacho.fechaDespacho)}
                               </div>
                             </div>
                           </TableCell>
@@ -838,7 +836,7 @@ export default function DespachosList() {
                                   </span>
                                 </div>
                                 {despacho.cantonAgencia && (
-                                  <span className="text-[10px] text-muted-foreground">{despacho.cantonAgencia}</span>
+                                  <span className="text-xs text-muted-foreground">{despacho.cantonAgencia}</span>
                                 )}
                               </div>
                             ) : despacho.despachoDirecto?.destinatarioDirecto ? (
@@ -846,7 +844,7 @@ export default function DespachosList() {
                                 <div className="flex items-center gap-1.5 text-xs font-medium text-info">
                                   <span>Directo</span>
                                 </div>
-                                <span className="text-[10px] text-muted-foreground truncate max-w-[170px]">
+                                <span className="text-xs text-muted-foreground truncate max-w-[170px]">
                                   {despacho.despachoDirecto.destinatarioDirecto.nombreDestinatario}
                                 </span>
                               </div>
@@ -862,7 +860,7 @@ export default function DespachosList() {
                                 </div>
                               )}
                               {despacho.numeroGuiaAgenciaDistribucion && (
-                                <div className="flex items-center gap-1 font-mono text-[10px]">
+                                <div className="flex items-center gap-1 font-mono text-xs">
                                   <span>Guía: {despacho.numeroGuiaAgenciaDistribucion}</span>
                                 </div>
                               )}
@@ -914,7 +912,7 @@ export default function DespachosList() {
 
       {/* Dialogs */}
       <Dialog open={!!despachoAEliminar} onOpenChange={(open) => !open && setDespachoAEliminar(null)}>
-        <DialogContent>
+        <DialogContent className={dialogContentPresets.compact}>
           <DialogHeader className="bg-destructive/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
@@ -941,7 +939,7 @@ export default function DespachosList() {
 
       {/* ... Other existing dialogs preserved ... */}
       <Dialog open={!!despachoAMarcarDespachado} onOpenChange={(open) => !open && setDespachoAMarcarDespachado(null)}>
-        <DialogContent>
+        <DialogContent className={dialogContentPresets.compact}>
           <DialogHeader>
             <DialogTitle>Marcar como Despachado</DialogTitle>
             <DialogDescription>
@@ -958,7 +956,7 @@ export default function DespachosList() {
       </Dialog>
 
       <Dialog open={mostrarDialogoMarcarDespachadoBatch} onOpenChange={(open) => !open && setMostrarDialogoMarcarDespachadoBatch(false)}>
-        <DialogContent>
+        <DialogContent className={dialogContentPresets.compact}>
           <DialogHeader>
             <DialogTitle>Marcar como despachado</DialogTitle>
             <DialogDescription>
@@ -1005,7 +1003,7 @@ export default function DespachosList() {
 
       {/* Mensaje Dialog */}
       <Dialog open={!!despachoParaMensaje} onOpenChange={(open) => !open && setDespachoParaMensaje(null)}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className={cn(dialogContentPresets.form, "max-w-2xl p-0 overflow-hidden")}>
           <DialogHeader className="p-6 pb-2">
             <DialogTitle className="flex items-center gap-2 text-xl font-semibold tracking-tight">
               <MessageSquare className="h-5 w-5 text-info" />
@@ -1022,7 +1020,7 @@ export default function DespachosList() {
                 className="min-h-[300px] font-mono text-sm bg-background border-border focus-visible:ring-2 focus-visible:ring-primary/20 resize-y p-4 leading-relaxed"
               />
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Badge variant="secondary" className="text-[10px] font-normal uppercase tracking-wider bg-background/80 backdrop-blur-sm border shadow-sm">Editable</Badge>
+                <Badge variant="secondary" className="text-xs font-normal uppercase tracking-wider bg-background/80 backdrop-blur-sm border shadow-sm">Editable</Badge>
               </div>
             </div>
             <p className="text-xs text-muted-foreground">Puedes editar el mensaje antes de copiarlo o enviarlo por WhatsApp.</p>
@@ -1084,7 +1082,7 @@ export default function DespachosList() {
           </div>
 
           <div className="bg-muted/30 px-6 py-4 flex justify-between items-center border-t">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">MV Services Logistics System</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">MV Services Logistics System</p>
             <Button variant="ghost" size="sm" onClick={() => setDespachoParaMensaje(null)} className="h-8 text-xs">Cerrar</Button>
           </div>
         </DialogContent>
@@ -1092,7 +1090,7 @@ export default function DespachosList() {
 
       {/* Multiples Dialog */}
       <Dialog open={mostrarDialogoMultiples} onOpenChange={setMostrarDialogoMultiples}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className={cn(dialogContentPresets.form, "max-w-2xl")}>
           <DialogHeader>
             <DialogTitle>Imprimir Selección</DialogTitle>
             <DialogDescription>
@@ -1103,7 +1101,7 @@ export default function DespachosList() {
           <div className="space-y-2 py-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Acciones rápidas</p>
-              <Badge variant="secondary" className="text-[10px]">
+              <Badge variant="secondary" className="text-xs">
                 1 clic
               </Badge>
             </div>

@@ -9,7 +9,7 @@ export default function EtiquetaPaquete({ paquete }: EtiquetaPaqueteProps) {
 
   // Construir dirección del destinatario
   const direccionDestinatario = [
-    paquete.ciudadDestinatario,
+    paquete.provinciaDestinatario,
     paquete.paisDestinatario,
     paquete.cantonDestinatario
   ].filter(Boolean).join(' - ')
@@ -50,7 +50,7 @@ export default function EtiquetaPaquete({ paquete }: EtiquetaPaqueteProps) {
     elementosDerecha.push({ texto: telefonoDestinatario })
   }
   
-  // Agregar dirección del destinatario (Ciudad - País - cantón) SOLO debajo del teléfono si existe y no está duplicada
+  // Agregar dirección del destinatario (Provincia - País - cantón) SOLO debajo del teléfono si existe y no está duplicada
   if (direccionDestinatario && direccionDestinatario.trim() !== '' && 
       !elementosDerecha.some(e => e.texto === direccionDestinatario || 
         e.texto.includes(direccionDestinatario) || direccionDestinatario.includes(e.texto))) {
@@ -163,7 +163,7 @@ export default function EtiquetaPaquete({ paquete }: EtiquetaPaqueteProps) {
           )
         })}
         
-        {/* Cédula de ciudadanía destinatario */}
+        {/* Cédula de provinciaanía destinatario */}
         <div style={{ marginTop: 'auto', fontSize: '9pt', textAlign: 'center', width: '100%' }}>
           {documentoTexto}
         </div>

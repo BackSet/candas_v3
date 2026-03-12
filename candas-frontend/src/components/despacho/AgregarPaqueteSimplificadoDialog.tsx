@@ -178,7 +178,7 @@ export default function AgregarPaqueteSimplificadoDialog({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !modoMultiple) {
+    if (e.key === 'Enter' && tabValue !== 'lista') {
       e.preventDefault()
       handleAgregar()
     }

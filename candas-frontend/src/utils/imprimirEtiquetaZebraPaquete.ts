@@ -139,7 +139,7 @@ function getDatosEtiqueta(paquete: Paquete) {
   
   const contenido = paquete.descripcion || 'Contenido...'
   
-  const destino = [paquete.ciudadDestinatario, paquete.paisDestinatario || 'Ecuador', paquete.cantonDestinatario]
+  const destino = [paquete.provinciaDestinatario, paquete.paisDestinatario || 'Ecuador', paquete.cantonDestinatario]
     .filter(Boolean)
     .join(' - ') || '—'
     

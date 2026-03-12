@@ -1,8 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clienteService } from '@/lib/api/cliente.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Cliente } from '@/types/cliente'
-import { toast } from 'sonner'
+import { showMutationError, showMutationSuccess } from '@/hooks/mutationFeedback'
 
 export function useClientes(
   page: number = 0,
@@ -30,10 +29,10 @@ export function useCreateCliente() {
     mutationFn: (dto: Cliente) => clienteService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientes'] })
-      toast.success('Cliente creado exitosamente')
+      showMutationSuccess('Cliente creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el cliente'))
+      showMutationError(error, 'Error al crear el cliente')
     },
   })
 }
@@ -47,10 +46,10 @@ export function useUpdateCliente() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clientes'] })
       queryClient.invalidateQueries({ queryKey: ['cliente', variables.id] })
-      toast.success('Cliente actualizado exitosamente')
+      showMutationSuccess('Cliente actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el cliente'))
+      showMutationError(error, 'Error al actualizar el cliente')
     },
   })
 }
@@ -62,10 +61,10 @@ export function useDeleteCliente() {
     mutationFn: (id: number) => clienteService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientes'] })
-      toast.success('Cliente eliminado exitosamente')
+      showMutationSuccess('Cliente eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el cliente'))
+      showMutationError(error, 'Error al eliminar el cliente')
     },
   })
 }

@@ -74,10 +74,11 @@ import { TamanoSaca } from '@/types/saca'
 import { calcularTamanoSugerido } from '@/utils/saca'
 import { formatearTamanoSaca } from '@/utils/ensacado'
 import { guiaEfectiva } from '@/utils/paqueteGuia'
-import { calcularCiudadOCantonMasComun } from '@/utils/ciudadCanton'
+import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
 import { useAuthStore } from '@/stores/authStore'
 import { Textarea } from '@/components/ui/textarea'
+import { SegmentedToggle } from '@/components/ui/segmented-toggle'
 import { useInfiniteList } from '@/hooks/useInfiniteList'
 import { PERMISSIONS } from '@/types/permissions'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
@@ -102,7 +103,7 @@ interface ScannedPackage {
     clienteDestino?: {
         nombre?: string
         direccion?: string
-        ciudad?: string
+        provincia?: string
         canton?: string
         pais?: string
         telefono?: string
@@ -138,40 +139,40 @@ function hasDespacho(p: Paquete): boolean {
     return p.idDespacho != null && p.idDespacho > 0
 }
 
-/** Extrae datos del cliente destino del paquete para mostrar al tipiar. Quita de la dirección el sufijo ", Ciudad, Cantón, País" para mostrarlo solo en la parte inferior. */
+/** Extrae datos del cliente destino del paquete para mostrar al tipiar. Quita de la dirección el sufijo ", Provincia, Cantón, País" para mostrarlo solo en la parte inferior. */
 function buildClienteDestinoFromPaquete(p: Paquete): ScannedPackage['clienteDestino'] {
     const nombre = p.nombreClienteDestinatario?.trim()
     let direccion = (p.direccionDestinatarioCompleta || p.direccionDestinatario)?.trim() ?? ''
-    const ciudad = p.ciudadDestinatario?.trim()
+    const provincia = p.provinciaDestinatario?.trim()
     const canton = p.cantonDestinatario?.trim()
     const pais = p.paisDestinatario?.trim()
     const telefono = p.telefonoDestinatario?.trim()
-    // Quitar de la dirección el sufijo ", Ciudad, Cantón, País" (p. ej. ", Quito, Pichincha, Ecuador")
-    const sufijoUbicacion = [ciudad, canton, pais].filter(Boolean).join(', ')
+    // Quitar de la dirección el sufijo ", Provincia, Cantón, País" (p. ej. ", Quito, Pichincha, Ecuador")
+    const sufijoUbicacion = [provincia, canton, pais].filter(Boolean).join(', ')
     if (sufijoUbicacion && direccion.endsWith(sufijoUbicacion)) {
         direccion = direccion.slice(0, -sufijoUbicacion.length).replace(/,?\s*$/, '').trim()
     } else {
         // Si no hay campos separados, quitar igualmente un sufijo con forma ", X, Y, Z" al final
         direccion = direccion.replace(/,(\s*[^,]+,\s*[^,]+,\s*[^,]+)\s*$/, '').trim()
     }
-    if (!nombre && !direccion && !ciudad && !canton && !pais && !telefono) return undefined
+    if (!nombre && !direccion && !provincia && !canton && !pais && !telefono) return undefined
     return {
         nombre: nombre || undefined,
         direccion: direccion || undefined,
-        ciudad: ciudad || undefined,
+        provincia: provincia || undefined,
         canton: canton || undefined,
         pais: pais || undefined,
         telefono: telefono || undefined
     }
 }
 
-/** Para la lista: dirección sin el sufijo ", Ciudad, Cantón, País" (evita duplicados). */
+/** Para la lista: dirección sin el sufijo ", Provincia, Cantón, País" (evita duplicados). */
 function getDireccionLimpiaParaLista(p: Paquete): string {
     let dir = (p.direccionDestinatarioCompleta || p.direccionDestinatario)?.trim() ?? ''
-    const ciudad = p.ciudadDestinatario?.trim()
+    const provincia = p.provinciaDestinatario?.trim()
     const canton = p.cantonDestinatario?.trim()
     const pais = p.paisDestinatario?.trim()
-    const sufijo = [ciudad, canton, pais].filter(Boolean).join(', ')
+    const sufijo = [provincia, canton, pais].filter(Boolean).join(', ')
     if (sufijo && dir.endsWith(sufijo)) {
         dir = dir.slice(0, -sufijo.length).replace(/,?\s*$/, '').trim()
     } else {
@@ -184,14 +185,14 @@ function getDireccionLimpiaParaLista(p: Paquete): string {
 function getDireccionSortKey(p: Paquete): string {
     if (p.tipoDestino === 'AGENCIA') {
         const nombre = (p.nombreAgenciaDestino || '').trim()
-        const ciudad = (p.cantonAgenciaDestino || '').trim()
-        return `${nombre} ${ciudad}`.trim() || 'Sin destino'
+        const provincia = (p.cantonAgenciaDestino || '').trim()
+        return `${nombre} ${provincia}`.trim() || 'Sin destino'
     }
     if (p.tipoDestino === 'DOMICILIO') {
         if (p.direccionDestinatarioCompleta) return p.direccionDestinatarioCompleta.trim()
-        const ciudad = (p.ciudadDestinatario || '').trim()
+        const provincia = (p.provinciaDestinatario || '').trim()
         const dir = (p.direccionDestinatario || '').trim()
-        return `${ciudad} ${dir}`.trim() || 'Sin destino'
+        return `${provincia} ${dir}`.trim() || 'Sin destino'
     }
     return 'Sin destino'
 }
@@ -203,7 +204,7 @@ function paqueteToSessionItem(p: Paquete): DespachoMasivoSessionPaqueteItem {
         nombreClienteDestinatario: p.nombreClienteDestinatario,
         ref: p.ref,
         direccionDestinatarioCompleta: p.direccionDestinatarioCompleta,
-        ciudadDestinatario: p.ciudadDestinatario,
+        provinciaDestinatario: p.provinciaDestinatario,
         cantonDestinatario: p.cantonDestinatario,
         paisDestinatario: p.paisDestinatario,
         observaciones: p.observaciones,
@@ -223,7 +224,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
     const agencias = agenciasResponse?.content || []
     const distribuidores = distribuidoresResponse?.content || []
-    const { data: session } = useDespachoMasivoSession({ refetchInterval: false })
+            const { data: session } = useDespachoMasivoSession({ refetchInterval: false })
     const updateDespachoMasivoSession = useUpdateDespachoMasivoSession()
     const { data: destinatariosDirectos = [] } = useDestinatariosDirectos()
     const updatePaqueteMutation = useUpdatePaquete()
@@ -487,15 +488,28 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             .filter((p): p is Paquete => p != null)
     }, [paquetes, selectedPackageIdsOrder, scannedPackagesForDespacho])
 
-    /** Cantón/ciudad predominante de los paquetes del despacho (para auto-selección de destino en diálogo masivo). */
-    const ciudadOCantonBulk = useMemo(() => {
-        if (selectedPackagesForDestinatario.length === 0) return { ciudad: null as string | null, canton: null as string | null }
-        return calcularCiudadOCantonMasComun(selectedPackagesForDestinatario)
+    /** Cantón/provincia predominante de los paquetes del despacho (para auto-selección de destino en diálogo masivo). */
+    const provinciaOCantonBulk = useMemo(() => {
+        if (selectedPackagesForDestinatario.length === 0) return { provincia: null as string | null, canton: null as string | null }
+        return calcularProvinciaOCantonMasComun(selectedPackagesForDestinatario)
     }, [selectedPackagesForDestinatario])
 
     /** Peso total (kg) de los paquetes seleccionados para el despacho masivo. */
     const pesoTotalBulk = useMemo(() => {
         return selectedPackagesForDestinatario.reduce((acc, p) => acc + (p.pesoKilos ?? 0), 0)
+    }, [selectedPackagesForDestinatario])
+
+    /** IDs de paquetes seleccionados ordenados por referencia y dirección, para guardar en el lote. */
+    const idsOrdenadosPorReferenciaParaLote = useMemo(() => {
+        const refKey = (p: Paquete) => (p.ref || '').trim().toLowerCase() || '\uFFFF'
+        return [...selectedPackagesForDestinatario]
+            .sort((a, b) => {
+                const cmpRef = refKey(a).localeCompare(refKey(b))
+                if (cmpRef !== 0) return cmpRef
+                return getDireccionSortKey(a).toLowerCase().localeCompare(getDireccionSortKey(b).toLowerCase())
+            })
+            .map(p => p.idPaquete!)
+            .filter((id): id is number => id != null)
     }, [selectedPackagesForDestinatario])
 
     /** Código del destino seleccionado (agencia o destinatario directo) para mostrar en el diálogo. */
@@ -529,7 +543,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
     // Auto-seleccionar agencia o destinatario directo por cantón predominante
     useEffect(() => {
-        const cantonPredominante = ciudadOCantonBulk.canton ?? ciudadOCantonBulk.ciudad
+        const cantonPredominante = provinciaOCantonBulk.canton ?? provinciaOCantonBulk.provincia
         if (!isBulkDialogOpen || !cantonPredominante || bulkIdDestino) return
         const valorBuscar = cantonPredominante.toUpperCase()
         if (bulkTipoDestino === 'AGENCIA') {
@@ -551,7 +565,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 })
             }
         }
-    }, [isBulkDialogOpen, ciudadOCantonBulk, bulkTipoDestino, bulkDestinatarioOrigen, bulkIdDestino, agencias, destinatariosDirectos])
+    }, [isBulkDialogOpen, provinciaOCantonBulk, bulkTipoDestino, bulkDestinatarioOrigen, bulkIdDestino, agencias, destinatariosDirectos])
 
     // Sincronizar tamaños de sacas bulk cuando cambia la distribución (recomendación por peso o cantidad)
     const bulkGroups = useMemo(() =>
@@ -712,7 +726,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             const nombre = (p.nombreClienteDestinatario ?? 'Sin nombre').trim()
             const telefono = (p.telefonoDestinatario ?? '').trim()
             const telefonoSoloDigitos = telefono.replace(/\D/g, '')
-            const direccion = [p.direccionDestinatarioCompleta, p.ciudadDestinatario].filter(Boolean).join(' · ')
+            const direccion = [p.direccionDestinatarioCompleta, p.provinciaDestinatario].filter(Boolean).join(' · ')
             return {
                 value: p.idPaquete!,
                 label: `${nombre} | ${telefono}`.trim() || 'Sin datos',
@@ -740,7 +754,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
         setBulkDesdePaqueteNombre((p.nombreClienteDestinatario ?? '').trim())
         setBulkDesdePaqueteTelefono((p.telefonoDestinatario ?? '').trim())
         setBulkDesdePaqueteDireccion((p.direccionDestinatarioCompleta ?? p.direccionDestinatario ?? '').trim())
-        setBulkDesdePaqueteCanton((p.cantonDestinatario ?? p.ciudadDestinatario ?? '').trim())
+        setBulkDesdePaqueteCanton((p.cantonDestinatario ?? p.provinciaDestinatario ?? '').trim())
     }, [paqueteOrigenDestinatario])
 
     // Paquetes seleccionados para cambiar tipo (barra flotante)
@@ -776,7 +790,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     await paqueteService.update(p.idPaquete, {
                         ...p,
                         tipoDestino: TipoDestino.DOMICILIO,
-                        idDestinatarioDirecto: null
+                        idDestinatarioDirecto: undefined
                     } as Paquete)
                 }
             } else {
@@ -815,16 +829,18 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
         try {
             toast.info("Iniciando creación masiva...")
 
-            const selectedIdsArray = selectedPackageIdsOrder
+            // Orden de ingreso (reverse del estado UI: más reciente primero → primero escaneado primero)
+            const ordenParaSacas = [...selectedPackageIdsOrder].reverse()
 
-            // Asociar los paquetes al lote actual antes de crear el despacho (por si alguno fue solo escaneado y no estaba en el lote)
-            if (id && selectedIdsArray.length > 0) {
-                await loteRecepcionService.agregarPaquetes(Number(id), selectedIdsArray)
+            // Asociar los paquetes al lote actual antes de crear el despacho (orden por referencia)
+            if (id && selectedPackageIdsOrder.length > 0) {
+                await loteRecepcionService.agregarPaquetes(Number(id), idsOrdenadosPorReferenciaParaLote)
             }
 
-            // 3. Ensure Despacho (selectedIdsArray = orden tipiado)
+            // 3. Ensure Despacho (sacas con orden de ingreso)
             let despachoId = currentDespacho.idDespacho
             let newDespacho: Awaited<ReturnType<typeof despachoService.create>> | null = null
+            let createdNewDespacho = false
 
             if (!despachoId) {
                 const destinoValido = bulkTipoDestino === 'AGENCIA'
@@ -851,7 +867,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     const nombreOk = (bulkDesdePaqueteNombre.trim() || '') === (paq?.nombreClienteDestinatario ?? '').trim()
                     const telefonoOk = (bulkDesdePaqueteTelefono.trim() || '') === (paq?.telefonoDestinatario ?? '').trim()
                     const direccionOk = (bulkDesdePaqueteDireccion.trim() || '') === ((paq?.direccionDestinatarioCompleta ?? paq?.direccionDestinatario ?? '').trim())
-                    const cantonOk = (bulkDesdePaqueteCanton.trim() || '') === ((paq?.cantonDestinatario ?? paq?.ciudadDestinatario ?? '').trim())
+                    const cantonOk = (bulkDesdePaqueteCanton.trim() || '') === ((paq?.cantonDestinatario ?? paq?.provinciaDestinatario ?? '').trim())
                     const datosEditados = !nombreOk || !telefonoOk || !direccionOk || !cantonOk
 
                     if (datosEditados && bulkDesdePaqueteNombre.trim()) {
@@ -871,7 +887,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 // Construir sacas desde la distribución: el backend exige al menos una saca con idPaquetes
                 let idx = 0
                 const sacasPayload = groups.map((qty, i) => {
-                    const idPaquetes = selectedIdsArray.slice(idx, idx + qty)
+                    const idPaquetes = ordenParaSacas.slice(idx, idx + qty)
                     idx += qty
                     const tamano = tamanosSacasBulk[i] ?? TamanoSaca.GRANDE
                     return { tamano, idPaquetes }
@@ -882,7 +898,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     : new Date().toISOString().slice(0, 19).replace('Z', '')
                 const createPayload = {
                     fechaDespacho: fechaDespachoValue,
-                    usuarioRegistro: user?.nombreCompleto ?? 'OPERADOR',
+                    usuarioRegistro: user?.nombreCompleto ?? 'OPERARIO',
                     observaciones: bulkObservaciones.trim() || undefined,
                     codigoPresinto: bulkCodigoPresinto.trim() || undefined,
                     idAgencia: bulkTipoDestino === 'AGENCIA' ? Number(bulkIdDestino) : undefined,
@@ -893,6 +909,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     sacas: sacasPayload,
                 }
                 newDespacho = await despachoService.create(createPayload)
+                createdNewDespacho = true
                 despachoId = newDespacho.idDespacho
                 setCurrentDespacho(prev => ({ ...prev, idDespacho: despachoId, numero: newDespacho!.numeroManifiesto || 'PENDIENTE' }))
             }
@@ -905,12 +922,12 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     paquetes: s.idPaquetes?.length ?? 0,
                     peso: 0
                 }))
-            } else if (despachoId) {
+            } else if (despachoId && !createdNewDespacho) {
                 // Despacho ya existía: crear sacas y asignar paquetes vía API
                 let currentIndex = 0
                 for (let i = 0; i < groups.length; i++) {
                     const qty = groups[i]
-                    const sacaPaquetesIds = selectedIdsArray.slice(currentIndex, currentIndex + qty)
+                    const sacaPaquetesIds = ordenParaSacas.slice(currentIndex, currentIndex + qty)
                     const tamano = tamanosSacasBulk[i] ?? TamanoSaca.GRANDE
                     const saca = await sacaService.create({
                         idDespacho: despachoId,
@@ -1000,7 +1017,9 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             } else {
                 // 3. Classification Mode: validar una guía solo en una cola, avisar si tiene tipo
                 const mode = scanMode as ModoClasificacion
-                const otherModes: ModoClasificacion[] = ['DOMICILIO', 'CLEMENTINA', 'SEPARAR', 'CADENITA'].filter(m => m !== mode)
+                const otherModes: ModoClasificacion[] = (['DOMICILIO', 'CLEMENTINA', 'SEPARAR', 'CADENITA'] as const).filter(
+                    (m): m is ModoClasificacion => m !== mode
+                )
                 const alreadyInMode = otherModes.find(m => typedPackagesByMode[m].some(p => p.idPaquete === paquete.idPaquete))
                 if (alreadyInMode) {
                     toast.error(`La guía ${paquete.numeroGuia || guia} ya está en la cola de ${alreadyInMode}. Sáquela de esa cola si desea añadirla aquí.`)
@@ -1018,11 +1037,11 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     setPendingTypeConfirm({ paquete, mode })
                     return
                 }
-                const lastScannedPayloadClass = {
+                const lastScannedPayloadClass: ScannedPackage = {
                     id: String(paquete.idPaquete),
                     guia: paquete.numeroGuia || guia,
                     timestamp: new Date(),
-                    destinoType: scanMode === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
+                    destinoType: mode === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
                     tipoPaquete: scanMode as TipoPaquete | undefined,
                     ref: paquete.ref?.trim() || undefined,
                     clienteDestino: buildClienteDestinoFromPaquete(paquete),
@@ -1133,7 +1152,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         <div className="flex-1 min-h-0">
                             {lastScanned ? (
                                 <Card className={cn(
-                                    "h-full border-l-[8px] shadow-sm flex flex-col justify-center bg-card border-border animate-in fade-in slide-in-from-bottom-2 duration-300",
+                                    "h-full border-l-[8px] shadow-sm flex flex-col justify-center bg-card border-border animate-in fade-in duration-200",
                                     lastScanned.destinoType === 'DESPACHO' && "border-l-emerald-500 bg-emerald-500/5",
                                     lastScanned.destinoType === 'DOMICILIO' && "border-l-blue-500 bg-blue-500/5",
                                     (lastScanned.tipoPaquete === 'CLEMENTINA' || lastScanned.tipoPaquete === 'SEPARAR') && "border-l-orange-500 bg-orange-500/5",
@@ -1186,13 +1205,13 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                     {lastScanned.clienteDestino.direccion && (
                                                         <p className="text-lg font-medium text-foreground leading-relaxed break-words">{lastScanned.clienteDestino.direccion}</p>
                                                     )}
-                                                    {(lastScanned.clienteDestino.pais ?? lastScanned.clienteDestino.ciudad ?? lastScanned.clienteDestino.canton) && (
+                                                    {(lastScanned.clienteDestino.pais ?? lastScanned.clienteDestino.provincia ?? lastScanned.clienteDestino.canton) && (
                                                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm pt-1 border-t border-border/50">
                                                             {lastScanned.clienteDestino.pais && (
                                                                 <span><span className="text-muted-foreground font-medium">País:</span> {lastScanned.clienteDestino.pais}</span>
                                                             )}
-                                                            {lastScanned.clienteDestino.ciudad && (
-                                                                <span><span className="text-muted-foreground font-medium">Ciudad:</span> {lastScanned.clienteDestino.ciudad}</span>
+                                                            {lastScanned.clienteDestino.provincia && (
+                                                                <span><span className="text-muted-foreground font-medium">Provincia:</span> {lastScanned.clienteDestino.provincia}</span>
                                                             )}
                                                             {lastScanned.clienteDestino.canton && (
                                                                 <span><span className="text-muted-foreground font-medium">Cantón:</span> {lastScanned.clienteDestino.canton}</span>
@@ -1414,63 +1433,40 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 {/* Type Tabs */}
-                                <div className="flex bg-muted rounded-md p-1">
-                                    {(['OTROS', 'CLEMENTINA', 'SEPARAR', 'CADENITA'] as const).map((tipo) => (
-                                        <button
-                                            key={tipo}
-                                            onClick={() => {
-                                                setListTipoTab(tipo)
-                                                setSelectedPackageIds(new Set())
-                                                setSelectedPackageIdsOrder([])
-                                                setScannedPackagesForDespacho([])
-                                            }}
-                                            className={cn(
-                                                "px-3 py-1.5 text-xs font-medium rounded-sm transition-all",
-                                                listTipoTab === tipo
-                                                    ? "bg-background text-foreground shadow-sm"
-                                                    : "text-muted-foreground hover:text-foreground"
-                                            )}
-                                        >
-                                            {tipo === 'OTROS' && `Comunes (${countsPorTipoTab.OTROS})`}
-                                            {tipo === 'CLEMENTINA' && `Clementina (${countsPorTipoTab.CLEMENTINA})`}
-                                            {tipo === 'SEPARAR' && `Separar (${countsPorTipoTab.SEPARAR})`}
-                                            {tipo === 'CADENITA' && `Cadenita (${countsPorTipoTab.CADENITA})`}
-                                        </button>
-                                    ))}
-                                </div>
+                                <SegmentedToggle
+                                    value={listTipoTab}
+                                    onChange={(tipo) => {
+                                        setListTipoTab(tipo)
+                                        setSelectedPackageIds(new Set())
+                                        setSelectedPackageIdsOrder([])
+                                        setScannedPackagesForDespacho([])
+                                    }}
+                                    options={[
+                                        { value: 'OTROS', label: `Comunes (${countsPorTipoTab.OTROS})` },
+                                        { value: 'CLEMENTINA', label: `Clementina (${countsPorTipoTab.CLEMENTINA})` },
+                                        { value: 'SEPARAR', label: `Separar (${countsPorTipoTab.SEPARAR})` },
+                                        { value: 'CADENITA', label: `Cadenita (${countsPorTipoTab.CADENITA})` },
+                                    ]}
+                                />
 
                                 <Separator orientation="vertical" className="h-6" />
 
                                 {/* Status Filter */}
-                                <div className="flex bg-muted rounded-md p-1">
-                                    <button
-                                        onClick={() => setListFilter('PENDIENTES')}
-                                        className={cn(
-                                            "px-3 py-1.5 text-xs font-medium rounded-sm transition-all",
-                                            listFilter === 'PENDIENTES'
-                                                ? "bg-background text-foreground shadow-sm"
-                                                : "text-muted-foreground hover:text-foreground"
-                                        )}
-                                    >
-                                        Pendientes
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setListFilter('PROCESADOS')
+                                <SegmentedToggle
+                                    value={listFilter}
+                                    onChange={(value) => {
+                                        if (value === 'PROCESADOS') {
                                             setSelectedPackageIds(new Set())
                                             setSelectedPackageIdsOrder([])
                                             setScannedPackagesForDespacho([])
-                                        }}
-                                        className={cn(
-                                            "px-3 py-1.5 text-xs font-medium rounded-sm transition-all",
-                                            listFilter === 'PROCESADOS'
-                                                ? "bg-background text-foreground shadow-sm"
-                                                : "text-muted-foreground hover:text-foreground"
-                                        )}
-                                    >
-                                        Trabajados
-                                    </button>
-                                </div>
+                                        }
+                                        setListFilter(value)
+                                    }}
+                                    options={[
+                                        { value: 'PENDIENTES', label: 'Pendientes' },
+                                        { value: 'PROCESADOS', label: 'Trabajados' },
+                                    ]}
+                                />
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -1575,10 +1571,10 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                                                 {direccionLimpia && (
                                                                                     <p className="text-xs text-muted-foreground leading-snug break-words">{direccionLimpia}</p>
                                                                                 )}
-                                                                                {(pkg.paisDestinatario ?? pkg.ciudadDestinatario ?? pkg.cantonDestinatario) && (
+                                                                                {(pkg.paisDestinatario ?? pkg.provinciaDestinatario ?? pkg.cantonDestinatario) && (
                                                                                     <p className="text-xs text-foreground/80 flex flex-wrap gap-x-2 gap-y-0">
                                                                                         {pkg.paisDestinatario && <span>País: {pkg.paisDestinatario}</span>}
-                                                                                        {pkg.ciudadDestinatario && <span>Ciudad: {pkg.ciudadDestinatario}</span>}
+                                                                                        {pkg.provinciaDestinatario && <span>Provincia: {pkg.provinciaDestinatario}</span>}
                                                                                         {pkg.cantonDestinatario && <span>Cantón: {pkg.cantonDestinatario}</span>}
                                                                                     </p>
                                                                                 )}
@@ -1636,7 +1632,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
                     {/* Floating Action Bar: solo en pestaña Pendientes */}
                     {listFilter === 'PENDIENTES' && selectedPackageIds.size > 0 && (
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-popover border border-border text-popover-foreground px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom-4 z-50 ring-1 ring-border/50">
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-popover border border-border text-popover-foreground px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-in fade-in duration-200 z-50 ring-1 ring-border/50">
                             <span className="font-medium text-sm">{selectedPackageIds.size} seleccionados</span>
                             <Separator orientation="vertical" className="h-4 bg-border" />
                             <Button size="sm" variant="outline" onClick={() => setShowCambiarTipoDialog(true)} className="h-8 text-xs font-medium">
@@ -1694,11 +1690,28 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 setSacaDistribution={setSacaDistribution}
                 tamanosSacasBulk={tamanosSacasBulk}
                 setTamanosSacasBulk={setTamanosSacasBulk}
-                agencias={agencias}
-                destinatariosDirectos={destinatariosDirectos}
-                distribuidores={distribuidores}
+                agencias={agencias.filter((a): a is typeof a & { idAgencia: number } => a.idAgencia != null).map((a) => ({
+                    idAgencia: a.idAgencia,
+                    nombre: a.nombre,
+                    canton: a.canton,
+                }))}
+                destinatariosDirectos={destinatariosDirectos
+                    .filter((d): d is typeof d & { idDestinatarioDirecto: number } => d.idDestinatarioDirecto != null)
+                    .map((d) => ({
+                        idDestinatarioDirecto: d.idDestinatarioDirecto,
+                        nombreDestinatario: d.nombreDestinatario,
+                        nombreEmpresa: d.nombreEmpresa,
+                        canton: d.canton,
+                        activo: d.activo,
+                    }))}
+                distribuidores={distribuidores
+                    .filter((d): d is typeof d & { idDistribuidor: number } => d.idDistribuidor != null)
+                    .map((d) => ({
+                        idDistribuidor: d.idDistribuidor,
+                        nombre: d.nombre,
+                    }))}
                 paquetesRefOpciones={paquetesRefOpciones}
-                sugerenciaDestino={ciudadOCantonBulk.canton ?? ciudadOCantonBulk.ciudad ?? undefined}
+                sugerenciaDestino={provinciaOCantonBulk.canton ?? provinciaOCantonBulk.provincia ?? undefined}
                 onOpenCrearDestinatario={() => setShowCrearClienteDialog(true)}
                 onConfirm={executeBulkDespacho}
                 confirmDisabled={

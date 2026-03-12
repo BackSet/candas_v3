@@ -46,8 +46,8 @@ interface PaquetesPorCanton {
   [canton: string]: PaquetesPorBucket
 }
 
-interface PaquetesPorCiudad {
-  [ciudad: string]: PaquetesPorCanton
+interface PaquetesPorProvincia {
+  [provincia: string]: PaquetesPorCanton
 }
 
 interface ExportarClementinaHijosDialogProps {
@@ -56,7 +56,7 @@ interface ExportarClementinaHijosDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   agencias?: Agencia[]
-  paquetesAgrupados: PaquetesPorCiudad
+  paquetesAgrupados: PaquetesPorProvincia
   paqueteAGrupoPersonalizado: Map<number, GrupoPersonalizadoLocal>
 }
 

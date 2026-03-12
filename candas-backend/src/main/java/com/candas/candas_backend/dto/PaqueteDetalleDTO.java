@@ -13,7 +13,7 @@ public class PaqueteDetalleDTO {
     private String ref;
     private String nombreClienteDestinatario;
     private String direccionDestinatarioCompleta;
-    private String ciudadDestinatario;
+    private String provinciaDestinatario;
     private String paisDestinatario;
     private String cantonDestinatario;
     private String telefonoDestinatario;

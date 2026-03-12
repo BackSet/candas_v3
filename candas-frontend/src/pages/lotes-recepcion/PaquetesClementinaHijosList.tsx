@@ -19,7 +19,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useGruposPersonalizadosLocal } from '@/hooks/useGruposPersonalizadosLocal'
 import { PaqueteTableRow } from '@/components/lotes-recepcion/PaqueteTableRow'
 import { clasificarEtiquetaDestino } from '@/utils/clasificarEtiquetaDestino'
-import { derivarCiudadCantonDeDireccion } from '@/utils/derivarCiudadCanton'
+import { derivarProvinciaCantonDeDireccion } from '@/utils/derivarProvinciaCanton'
+import { copyTextToClipboard } from '@/utils/clipboard'
 
 /** Calcula el máximo de grupos que se pueden formar con la secuencia para N paquetes. */
 function maxGruposFromSecuencia(secuencia: string, totalPaquetes: number): number {
@@ -66,8 +67,8 @@ interface PaquetesPorCanton {
   [canton: string]: PaquetesPorBucket
 }
 
-interface PaquetesPorCiudad {
-  [ciudad: string]: PaquetesPorCanton
+interface PaquetesPorProvincia {
+  [provincia: string]: PaquetesPorCanton
 }
 
 const SUBREF_UNICO = '__SIN_SUBREF__'
@@ -122,13 +123,13 @@ export default function PaquetesClementinaHijosList({
     return mapa
   }, [gruposPersonalizados, gruposVersion])
 
-  // Agrupar por dirección y datos del paquete HIJO (no del padre): ciudad/cantón desde direccionDestinatarioCompleta del hijo, resto de campos también del hijo
+  // Agrupar por dirección y datos del paquete HIJO (no del padre): provincia/cantón desde direccionDestinatarioCompleta del hijo, resto de campos también del hijo
   const paquetesAgrupados = useMemo(() => {
-    const estructura: PaquetesPorCiudad = {}
+    const estructura: PaquetesPorProvincia = {}
 
     paquetes.forEach((paquete) => {
       // paquete = paquete hijo; toda la agrupación usa solo campos del hijo
-      const { ciudad, canton } = derivarCiudadCantonDeDireccion(paquete)
+      const { provincia, canton } = derivarProvinciaCantonDeDireccion(paquete)
       const tipoDestino = paquete.tipoDestino || 'Sin destino'
       const ref = paquete.ref && paquete.ref.trim() !== '' ? paquete.ref.trim() : 'Sin REF'
 
@@ -154,15 +155,15 @@ export default function PaquetesClementinaHijosList({
         }
       }
 
-      if (!estructura[ciudad]) estructura[ciudad] = {}
-      if (!estructura[ciudad][canton]) estructura[ciudad][canton] = {}
-      if (!estructura[ciudad][canton][bucketKey]) estructura[ciudad][canton][bucketKey] = {}
-      if (!estructura[ciudad][canton][bucketKey][subRefKey]) estructura[ciudad][canton][bucketKey][subRefKey] = {}
-      if (!estructura[ciudad][canton][bucketKey][subRefKey][tipoDestino]) estructura[ciudad][canton][bucketKey][subRefKey][tipoDestino] = {}
-      if (!estructura[ciudad][canton][bucketKey][subRefKey][tipoDestino][grupoPersonalizadoKey]) {
-        estructura[ciudad][canton][bucketKey][subRefKey][tipoDestino][grupoPersonalizadoKey] = []
+      if (!estructura[provincia]) estructura[provincia] = {}
+      if (!estructura[provincia][canton]) estructura[provincia][canton] = {}
+      if (!estructura[provincia][canton][bucketKey]) estructura[provincia][canton][bucketKey] = {}
+      if (!estructura[provincia][canton][bucketKey][subRefKey]) estructura[provincia][canton][bucketKey][subRefKey] = {}
+      if (!estructura[provincia][canton][bucketKey][subRefKey][tipoDestino]) estructura[provincia][canton][bucketKey][subRefKey][tipoDestino] = {}
+      if (!estructura[provincia][canton][bucketKey][subRefKey][tipoDestino][grupoPersonalizadoKey]) {
+        estructura[provincia][canton][bucketKey][subRefKey][tipoDestino][grupoPersonalizadoKey] = []
       }
-      estructura[ciudad][canton][bucketKey][subRefKey][tipoDestino][grupoPersonalizadoKey].push(paquete)
+      estructura[provincia][canton][bucketKey][subRefKey][tipoDestino][grupoPersonalizadoKey].push(paquete)
     })
 
     return estructura
@@ -181,7 +182,7 @@ export default function PaquetesClementinaHijosList({
     const partes = [
       paquete.direccionDestinatario,
       paquete.cantonDestinatario,
-      paquete.ciudadDestinatario,
+      paquete.provinciaDestinatario,
       paquete.paisDestinatario
     ].filter(Boolean)
     return partes.length > 0 ? partes.join(', ') : '-'
@@ -276,8 +277,8 @@ export default function PaquetesClementinaHijosList({
     const texto = lista.join('\n')
     const grupoKey = `${tipoKey}-${grupoIndex}`
 
-    try {
-      await navigator.clipboard.writeText(texto)
+    const ok = await copyTextToClipboard(texto)
+    if (ok) {
       setCopiadoPorGrupo(prev => {
         const nuevo = new Map(prev)
         nuevo.set(grupoKey, true)
@@ -292,7 +293,7 @@ export default function PaquetesClementinaHijosList({
           return nuevo
         })
       }, 2000)
-    } catch (error) {
+    } else {
       toast.error('Error al copiar la lista')
     }
   }
@@ -425,7 +426,7 @@ export default function PaquetesClementinaHijosList({
 
       {/* Floating Toolbar for selection */}
       {paquetesSeleccionados.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-background/90 backdrop-blur-md border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in duration-200 ring-1 ring-black/5 dark:ring-white/10">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-background/90 backdrop-blur-md border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 animate-in fade-in duration-200 ring-1 ring-black/5 dark:ring-white/10">
           <div className="flex items-center gap-2 mr-2">
             <div className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
               {paquetesSeleccionados.size}
@@ -478,17 +479,17 @@ export default function PaquetesClementinaHijosList({
 
       {/* Accordion principal por CIUDAD (misma estructura que paquetes normales: Bucket → SubRef → TipoDestino → GrupoPersonalizado) */}
       <div className="space-y-4">
-        {ordenarClaves(Object.keys(paquetesAgrupados)).map((ciudad) => {
-          const cantones = paquetesAgrupados[ciudad]
-          const totalPaquetesCiudad = contarPaquetesCantones(cantones)
+        {ordenarClaves(Object.keys(paquetesAgrupados)).map((provincia) => {
+          const cantones = paquetesAgrupados[provincia]
+          const totalPaquetesProvincia = contarPaquetesCantones(cantones)
 
           return (
-            <div key={ciudad} className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+            <div key={provincia} className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
               <div className="bg-muted/30 px-4 py-3 border-b border-border/50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-semibold text-sm">{ciudad}</h3>
-                  <Badge variant="secondary" className="ml-2 text-[10px] h-5">{totalPaquetesCiudad}</Badge>
+                  <h3 className="font-semibold text-sm">{provincia}</h3>
+                  <Badge variant="secondary" className="ml-2 text-[10px] h-5">{totalPaquetesProvincia}</Badge>
                 </div>
               </div>
 
@@ -575,7 +576,7 @@ export default function PaquetesClementinaHijosList({
                                                   return numA - numB
                                                 }).map((grupoKey) => {
                                                   const paquetesGrupo = gruposPersonalizados[grupoKey]
-                                                  const uniqueKey = `${ciudad}-${canton}-${bucketKey}-${subRefKey}-${tipoDestino}-${grupoKey}`
+                                                  const uniqueKey = `${provincia}-${canton}-${bucketKey}-${subRefKey}-${tipoDestino}-${grupoKey}`
                                                   const secuencia = secuenciasPorTipo.get(uniqueKey) || ''
                                                   const listasGeneradas = listasGeneradasPorTipo.get(uniqueKey) || []
 

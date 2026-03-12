@@ -66,7 +66,11 @@ export default function LoteEspecialTipeo() {
 
   useEffect(() => {
     if (lote && lote.tipoLote !== 'ESPECIAL') {
-      navigate(id != null ? `/lotes-recepcion/${id}` : '/lotes-recepcion', { replace: true })
+      if (id != null) {
+        navigate({ to: '/lotes-recepcion/$id', params: { id: String(id) }, replace: true })
+      } else {
+        navigate({ to: '/lotes-recepcion', replace: true })
+      }
     }
   }, [lote, id, navigate])
 

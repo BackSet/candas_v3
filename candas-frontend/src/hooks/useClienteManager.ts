@@ -16,7 +16,7 @@ export function useClienteManager(
   const [nuevoClienteDocumento, setNuevoClienteDocumento] = useState('')
   const [nuevoClienteEmail, setNuevoClienteEmail] = useState('')
   const [nuevoClientePais, setNuevoClientePais] = useState('')
-  const [nuevoClienteCiudad, setNuevoClienteCiudad] = useState('')
+  const [nuevoClienteProvincia, setNuevoClienteProvincia] = useState('')
   const [nuevoClienteCanton, setNuevoClienteCanton] = useState('')
   const [nuevoClienteDireccion, setNuevoClienteDireccion] = useState('')
   const [nuevoClienteTelefono, setNuevoClienteTelefono] = useState('')
@@ -76,7 +76,7 @@ export function useClienteManager(
       documentoIdentidad: nuevoClienteDocumento || undefined,
       email: nuevoClienteEmail || undefined,
       pais: nuevoClientePais || undefined,
-      ciudad: nuevoClienteCiudad || undefined,
+      provincia: nuevoClienteProvincia || undefined,
       canton: nuevoClienteCanton || undefined,
       direccion: nuevoClienteDireccion || undefined,
       telefono: nuevoClienteTelefono || undefined,
@@ -98,7 +98,7 @@ export function useClienteManager(
       setNuevoClienteDocumento('')
       setNuevoClienteEmail('')
       setNuevoClientePais('')
-      setNuevoClienteCiudad('')
+      setNuevoClienteProvincia('')
       setNuevoClienteCanton('')
       setNuevoClienteDireccion('')
       setNuevoClienteTelefono('')
@@ -123,7 +123,7 @@ export function useClienteManager(
     setNuevoClienteDocumento('')
     setNuevoClienteEmail('')
     setNuevoClientePais('')
-    setNuevoClienteCiudad('')
+    setNuevoClienteProvincia('')
     setNuevoClienteCanton('')
     setNuevoClienteDireccion('')
     setNuevoClienteTelefono('')
@@ -146,8 +146,8 @@ export function useClienteManager(
     setNuevoClienteEmail,
     nuevoClientePais,
     setNuevoClientePais,
-    nuevoClienteCiudad,
-    setNuevoClienteCiudad,
+    nuevoClienteProvincia,
+    setNuevoClienteProvincia,
     nuevoClienteCanton,
     setNuevoClienteCanton,
     nuevoClienteDireccion,

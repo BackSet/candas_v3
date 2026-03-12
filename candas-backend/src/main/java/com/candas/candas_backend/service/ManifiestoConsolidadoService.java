@@ -165,7 +165,7 @@ public class ManifiestoConsolidadoService {
             manifiesto.setIdAgencia(null);
             manifiesto.setNombreAgencia(distribuidor.getNombre());
             manifiesto.setCodigoAgencia(distribuidor.getCodigo());
-            // Distribuidor no tiene direccion ni ciudad
+            // Distribuidor no tiene direccion ni provincia
             manifiesto.setDireccionAgencia(null);
             manifiesto.setCantonAgencia(null);
         } else if (destinatarioDirecto != null) {
@@ -370,9 +370,9 @@ public class ManifiestoConsolidadoService {
             dto.setDireccionDestinatarioCompleta(construirDireccionCompleta(
                     paquete.getClienteDestinatario().getDireccion(),
                     paquete.getClienteDestinatario().getCanton(),
-                    paquete.getClienteDestinatario().getCiudad(),
+                    paquete.getClienteDestinatario().getProvincia(),
                     paquete.getClienteDestinatario().getPais()));
-            dto.setCiudadDestinatario(paquete.getClienteDestinatario().getCiudad());
+            dto.setProvinciaDestinatario(paquete.getClienteDestinatario().getProvincia());
             dto.setPaisDestinatario(paquete.getClienteDestinatario().getPais());
             dto.setCantonDestinatario(paquete.getClienteDestinatario().getCanton());
             dto.setTelefonoDestinatario(paquete.getClienteDestinatario().getTelefono());
@@ -382,7 +382,7 @@ public class ManifiestoConsolidadoService {
         return dto;
     }
 
-    private String construirDireccionCompleta(String direccion, String canton, String ciudad, String pais) {
+    private String construirDireccionCompleta(String direccion, String canton, String provincia, String pais) {
         List<String> partes = new ArrayList<>();
         if (direccion != null && !direccion.trim().isEmpty()) {
             partes.add(direccion.trim());
@@ -390,8 +390,8 @@ public class ManifiestoConsolidadoService {
         if (canton != null && !canton.trim().isEmpty()) {
             partes.add(canton.trim());
         }
-        if (ciudad != null && !ciudad.trim().isEmpty()) {
-            partes.add(ciudad.trim());
+        if (provincia != null && !provincia.trim().isEmpty()) {
+            partes.add(provincia.trim());
         }
         if (pais != null && !pais.trim().isEmpty()) {
             partes.add(pais.trim());

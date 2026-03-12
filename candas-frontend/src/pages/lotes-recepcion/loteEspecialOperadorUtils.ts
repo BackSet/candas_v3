@@ -11,28 +11,28 @@ export function hasDespacho(p: Paquete): boolean {
 export function buildClienteDestinoFromPaquete(p: Paquete): {
   nombre?: string
   direccion?: string
-  ciudad?: string
+  provincia?: string
   canton?: string
   pais?: string
   telefono?: string
 } | undefined {
   const nombre = p.nombreClienteDestinatario?.trim()
   let direccion = (p.direccionDestinatarioCompleta || p.direccionDestinatario)?.trim() ?? ''
-  const ciudad = p.ciudadDestinatario?.trim()
+  const provincia = p.provinciaDestinatario?.trim()
   const canton = p.cantonDestinatario?.trim()
   const pais = p.paisDestinatario?.trim()
   const telefono = p.telefonoDestinatario?.trim()
-  const sufijoUbicacion = [ciudad, canton, pais].filter(Boolean).join(', ')
+  const sufijoUbicacion = [provincia, canton, pais].filter(Boolean).join(', ')
   if (sufijoUbicacion && direccion.endsWith(sufijoUbicacion)) {
     direccion = direccion.slice(0, -sufijoUbicacion.length).replace(/,?\s*$/, '').trim()
   } else {
     direccion = direccion.replace(/,(\s*[^,]+,\s*[^,]+,\s*[^,]+)\s*$/, '').trim()
   }
-  if (!nombre && !direccion && !ciudad && !canton && !pais && !telefono) return undefined
+  if (!nombre && !direccion && !provincia && !canton && !pais && !telefono) return undefined
   return {
     nombre: nombre || undefined,
     direccion: direccion || undefined,
-    ciudad: ciudad || undefined,
+    provincia: provincia || undefined,
     canton: canton || undefined,
     pais: pais || undefined,
     telefono: telefono || undefined,

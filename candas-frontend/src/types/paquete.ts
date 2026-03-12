@@ -35,7 +35,7 @@ export interface Paquete {
   // Dirección del remitente
   direccionRemitenteCompleta?: string
   paisRemitente?: string
-  ciudadRemitente?: string
+  provinciaRemitente?: string
   cantonRemitente?: string
   direccionRemitente?: string
   idClienteDestinatario?: number
@@ -45,7 +45,7 @@ export interface Paquete {
   // Dirección del destinatario
   direccionDestinatarioCompleta?: string
   paisDestinatario?: string
-  ciudadDestinatario?: string
+  provinciaDestinatario?: string
   cantonDestinatario?: string
   direccionDestinatario?: string
   idAgenciaDestino?: number

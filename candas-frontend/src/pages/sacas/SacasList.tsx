@@ -92,7 +92,7 @@ export default function SacasList() {
         <ProtectedByPermission permission={PERMISSIONS.SACAS.CREAR}>
           <Button onClick={() => navigate({ to: '/sacas/new' })} size="sm" className="h-8 shadow-sm text-xs">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nueva Saca
+            Nuevo
           </Button>
         </ProtectedByPermission>
       }
@@ -102,10 +102,11 @@ export default function SacasList() {
         search={busqueda}
         onSearchChange={setBusqueda}
         searchPlaceholder="Buscar por código QR..."
+        withBottomBorder={false}
       />
 
       {/* Content + pagination wrapper */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
         {/* Main Content - Notion Table View */}
         <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0 relative w-full overflow-auto">
@@ -205,17 +206,17 @@ export default function SacasList() {
             </Table>
           </div>
 
-          {busqueda.trim().length === 0 && (
-            <ListPagination
-              page={currentPage}
-              totalPages={totalPages}
-              totalItems={data?.totalElements}
-              size={size}
-              onPageChange={setPage}
-              className="shrink-0"
-            />
-          )}
         </div>
+        {busqueda.trim().length === 0 && (
+          <ListPagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={data?.totalElements}
+            size={size}
+            onPageChange={setPage}
+            className="shrink-0"
+          />
+        )}
       </div>
 
       <Dialog open={!!sacaAEliminar} onOpenChange={(open) => !open && setSacaAEliminar(null)}>

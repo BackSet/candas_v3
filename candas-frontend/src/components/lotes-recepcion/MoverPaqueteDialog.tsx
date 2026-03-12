@@ -24,7 +24,7 @@ interface MoverPaqueteDialogProps {
   onOpenChange: (open: boolean) => void
   loteRecepcionId?: number
   paquete: Paquete
-  ciudad: string
+  provincia: string
   canton: string
   onSuccess?: () => void
 }
@@ -34,14 +34,14 @@ export default function MoverPaqueteDialog({
   onOpenChange,
   loteRecepcionId,
   paquete,
-  ciudad,
+  provincia,
   canton,
   onSuccess,
 }: MoverPaqueteDialogProps) {
-  const { moverPaqueteAGrupo, obtenerGruposPorCiudadCanton } = useGruposPersonalizadosLocal(loteRecepcionId)
+  const { moverPaqueteAGrupo, obtenerGruposPorProvinciaCanton } = useGruposPersonalizadosLocal(loteRecepcionId)
   const [grupoSeleccionado, setGrupoSeleccionado] = useState<string>('')
   
-  const gruposExistentes = useMemo(() => obtenerGruposPorCiudadCanton(ciudad, canton), [obtenerGruposPorCiudadCanton, ciudad, canton])
+  const gruposExistentes = useMemo(() => obtenerGruposPorProvinciaCanton(provincia, canton), [obtenerGruposPorProvinciaCanton, provincia, canton])
 
   // Resetear estado cuando se abre el diálogo
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function MoverPaqueteDialog({
     }
 
     try {
-      moverPaqueteAGrupo(paquete.idPaquete, grupoSeleccionado, ciudad, canton)
+      moverPaqueteAGrupo(paquete.idPaquete, grupoSeleccionado, provincia, canton)
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
@@ -76,7 +76,7 @@ export default function MoverPaqueteDialog({
         <DialogHeader>
           <DialogTitle>Mover Paquete a Grupo</DialogTitle>
           <DialogDescription>
-            Mover el paquete {paquete.numeroGuia || `ID: ${paquete.idPaquete}`} a un grupo en {ciudad} {'>'} {canton}
+            Mover el paquete {paquete.numeroGuia || `ID: ${paquete.idPaquete}`} a un grupo en {provincia} {'>'} {canton}
           </DialogDescription>
         </DialogHeader>
 

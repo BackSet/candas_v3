@@ -81,13 +81,13 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Registrar nuevo usuario", description = "Crea un nuevo usuario en el sistema. Por defecto se asigna el rol CLIENTE")
+    @Operation(summary = "Registrar nuevo usuario", description = "Crea un nuevo usuario en el sistema. Por defecto se asigna el rol OPERARIO")
     public ResponseEntity<UsuarioDTO> register(@Valid @RequestBody UsuarioDTO dto) {
-        // Asignar rol CLIENTE por defecto si no se especifica
+        // Asignar rol OPERARIO por defecto si no se especifica
         if (dto.getRoles() == null || dto.getRoles().isEmpty()) {
-            Rol rolCliente = rolRepository.findByNombre("CLIENTE")
-                .orElseThrow(() -> new BadRequestException("Rol CLIENTE no encontrado. Por favor, asegúrese de que la base de datos esté inicializada correctamente."));
-            dto.setRoles(List.of(rolCliente.getIdRol()));
+            Rol rolOperario = rolRepository.findByNombre("OPERARIO")
+                .orElseThrow(() -> new BadRequestException("Rol OPERARIO no encontrado. Por favor, asegúrese de que la base de datos esté inicializada correctamente."));
+            dto.setRoles(List.of(rolOperario.getIdRol()));
         }
         return new ResponseEntity<>(usuarioService.create(dto), HttpStatus.CREATED);
     }

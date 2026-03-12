@@ -17,6 +17,7 @@ export function DetailPageLayout({
   title,
   subtitle,
   backUrl,
+  onBack,
   status,
   actions,
   maxWidth = 'xl',
@@ -28,6 +29,7 @@ export function DetailPageLayout({
   title: string
   subtitle?: string
   backUrl: string
+  onBack?: () => void
   status?: { label: string; variant: StatusVariant }
   actions?: ReactNode
   maxWidth?: MaxWidth
@@ -48,6 +50,7 @@ export function DetailPageLayout({
           title={title}
           subtitle={subtitle}
           backUrl={backUrl}
+          onBack={onBack}
           status={status}
           actions={actions}
         />

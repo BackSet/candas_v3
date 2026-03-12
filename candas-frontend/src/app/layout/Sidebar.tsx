@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   Moon,
   Sun,
+  Monitor,
   Building2,
   MapPin,
   ClipboardCheck,
@@ -40,28 +41,27 @@ interface NavigationSection {
   items: NavigationItem[]
 }
 
-const dashboardItem: NavigationItem = {
-  name: 'Dashboard',
-  href: '/dashboard',
-  icon: LayoutDashboard,
-  permission: null,
-}
-
 const navigationSections: NavigationSection[] = [
   {
-    title: 'Gestión',
+    title: 'Inicio',
+    items: [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: null },
+    ],
+  },
+  {
+    title: 'Maestros',
     items: [
       { name: 'Paquetes', href: '/paquetes', icon: Package, permissions: [PERMISSIONS.PAQUETES.LISTAR, PERMISSIONS.PAQUETES.VER] },
       { name: 'Clientes', href: '/clientes', icon: Users, permissions: [PERMISSIONS.CLIENTES.LISTAR, PERMISSIONS.CLIENTES.VER] },
       { name: 'Destinatarios', href: '/destinatarios-directos', icon: Home, permissions: [PERMISSIONS.DESTINATARIOS_DIRECTOS.LISTAR, PERMISSIONS.DESTINATARIOS_DIRECTOS.VER] },
-    ],
-  },
-  {
-    title: 'Logística',
-    items: [
       { name: 'Agencias', href: '/agencias', icon: Building2, permissions: [PERMISSIONS.AGENCIAS.LISTAR, PERMISSIONS.AGENCIAS.VER] },
       { name: 'Distribuidores', href: '/distribuidores', icon: Building2, permissions: [PERMISSIONS.DISTRIBUIDORES.LISTAR, PERMISSIONS.DISTRIBUIDORES.VER] },
       { name: 'Puntos Origen', href: '/puntos-origen', icon: MapPin, permissions: [PERMISSIONS.PUNTOS_ORIGEN.LISTAR, PERMISSIONS.PUNTOS_ORIGEN.VER] },
+    ],
+  },
+  {
+    title: 'Operación',
+    items: [
       { name: 'Lotes Recepción', href: '/lotes-recepcion', icon: Boxes, permissions: [PERMISSIONS.LOTES_RECEPCION.LISTAR, PERMISSIONS.LOTES_RECEPCION.VER] },
       { name: 'Sacas', href: '/sacas', icon: ClipboardCheck, permissions: [PERMISSIONS.SACAS.LISTAR, PERMISSIONS.SACAS.VER] },
       { name: 'Despachos', href: '/despachos', icon: Truck, permissions: [PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER] },
@@ -69,7 +69,7 @@ const navigationSections: NavigationSection[] = [
     ],
   },
   {
-    title: 'Operaciones',
+    title: 'Seguimiento',
     items: [
       { name: 'Atención', href: '/atencion-paquetes', icon: ClipboardCheck, permissions: [PERMISSIONS.ATENCION_PAQUETES.LISTAR, PERMISSIONS.ATENCION_PAQUETES.VER] },
       { name: 'Manifiestos', href: '/manifiestos-consolidados', icon: FileText, permissions: [PERMISSIONS.MANIFIESTOS_CONSOLIDADOS.LISTAR, PERMISSIONS.MANIFIESTOS_CONSOLIDADOS.VER] },
@@ -87,14 +87,14 @@ const navigationSections: NavigationSection[] = [
 ]
 
 export function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar, theme, toggleTheme } = useUIStore()
+  const { sidebarCollapsed, toggleSidebar, theme, resolvedTheme, toggleTheme } = useUIStore()
   const [isHovering, setIsHovering] = useState(false)
 
   return (
     <div
       className={cn(
-        "group flex flex-col h-full bg-sidebar-background border-r border-sidebar-border/60 font-sans relative z-50 shrink-0 transition-[width] duration-200 ease-out",
-        sidebarCollapsed ? "w-[52px]" : "w-[240px]"
+        "group flex h-full shrink-0 flex-col border-r border-border/50 bg-background font-sans relative z-50 transition-[width] duration-200 ease-out",
+        sidebarCollapsed ? "w-[56px]" : "w-[248px]"
       )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
@@ -106,7 +106,7 @@ export function Sidebar() {
         aria-label={sidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
         title={sidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
         className={cn(
-          "relative flex items-center h-14 px-3 transition-colors hover:bg-sidebar-hover/60 cursor-pointer mx-2 mt-2 mb-1 rounded-xl",
+          "relative mx-2 mb-1 mt-2 flex h-12 items-center rounded-xl px-3 transition-colors hover:bg-muted/60 cursor-pointer",
           sidebarCollapsed ? "justify-center p-0" : "justify-start gap-3"
         )}
       >
@@ -114,16 +114,16 @@ export function Sidebar() {
           C
         </div>
         <div className={cn(
-          "flex-1 overflow-hidden transition-all duration-200",
+          "flex-1 overflow-hidden transition-[width,opacity] duration-200",
           sidebarCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100 block"
         )}>
-          <div className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">Candas</div>
-          <div className="text-[10px] text-sidebar-muted truncate mt-0.5">Sistema de Gestión</div>
+          <div className="text-sm font-semibold text-foreground truncate leading-tight">Candas</div>
+          <div className="text-[11px] text-muted-foreground truncate mt-0.5">Sistema de Gestión</div>
         </div>
 
         <div
           className={cn(
-            "text-sidebar-muted/40 transition-opacity duration-200",
+            "text-muted-foreground/50 transition-opacity duration-200",
             sidebarCollapsed ? "absolute right-1 top-1/2 -translate-y-1/2" : "",
             !isHovering && !sidebarCollapsed && "opacity-0"
           )}
@@ -142,56 +142,34 @@ export function Sidebar() {
         <button
           onClick={() => useUIStore.getState().setCommandPaletteOpen(true)}
           className={cn(
-            "flex items-center w-full text-[13px] text-sidebar-muted hover:bg-sidebar-hover/60 hover:text-sidebar-foreground rounded-lg transition-colors",
-            sidebarCollapsed ? "justify-center h-8 w-8 mx-auto" : "px-3 py-1.5 gap-2.5 mx-1"
+            "mx-1 flex w-full items-center rounded-lg border border-border/40 bg-muted/30 text-[13px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground",
+            sidebarCollapsed ? "h-8 w-8 justify-center border-0 bg-transparent" : "gap-2.5 px-3 py-1.5"
           )}
         >
           <Search className="w-4 h-4 shrink-0" />
           {!sidebarCollapsed && <span className="truncate">Buscar</span>}
           {!sidebarCollapsed && (
-            <kbd className="ml-auto text-[9px] font-mono text-sidebar-muted/50 bg-sidebar-hover/50 px-1.5 py-0.5 rounded-md border border-sidebar-border/30">⌘K</kbd>
+            <kbd className="ml-auto rounded-md border border-border/40 bg-background px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground/60">⌘K</kbd>
           )}
         </button>
       </div>
 
-      <div className="mx-3 mb-1 h-px bg-sidebar-border/30" />
+      <div className="mx-3 mb-1 h-px bg-border/50" />
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar py-1 px-2 min-h-0">
         <ul className="space-y-3">
-          {/* Dashboard */}
-          <li key={dashboardItem.name}>
-            <Link
-              to={dashboardItem.href}
-              className={cn(
-                "flex items-center rounded-lg text-[13px] font-medium transition-all duration-150 mx-1",
-                sidebarCollapsed ? "justify-center h-8 w-8 mx-auto" : "px-3 py-1.5 gap-2.5",
-                "text-sidebar-muted hover:bg-sidebar-hover/60 hover:text-sidebar-foreground"
-              )}
-              activeProps={{
-                className: cn(
-                  "flex items-center rounded-lg text-[13px] font-medium transition-all duration-150 mx-1",
-                  sidebarCollapsed ? "justify-center h-8 w-8 mx-auto" : "px-3 py-1.5 gap-2.5",
-                  "bg-primary/10 text-primary font-semibold"
-                )
-              }}
-            >
-              <dashboardItem.icon className="h-4 w-4 shrink-0" />
-              {!sidebarCollapsed && <span className="truncate">{dashboardItem.name}</span>}
-            </Link>
-          </li>
-
           {/* Sections */}
           {navigationSections.map((section) => (
             <li key={section.title || 'untitled'}>
               {!sidebarCollapsed && section.title && (
-                <div className="px-4 py-1 mt-1 text-[10px] font-bold text-sidebar-muted/50 truncate uppercase tracking-[0.12em]">
+                <div className="mt-1 truncate px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
                   {section.title}
                 </div>
               )}
 
               {sidebarCollapsed && section.title && (
-                <div className="mx-2 my-1.5 h-px bg-sidebar-border/20" />
+                <div className="mx-2 my-1.5 h-px bg-border/40" />
               )}
 
               <ul className="space-y-0.5 mt-0.5">
@@ -201,15 +179,13 @@ export function Sidebar() {
                     <Link
                       to={item.href}
                       className={cn(
-                        "flex items-center rounded-lg text-[13px] font-medium transition-all duration-150 mx-1",
+                        "mx-1 flex items-center rounded-lg text-[13px] font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground",
                         sidebarCollapsed ? "justify-center h-8 w-8 mx-auto p-0" : "px-3 py-1.5 gap-2.5",
-                        "text-sidebar-muted hover:bg-sidebar-hover/60 hover:text-sidebar-foreground"
                       )}
                       activeProps={{
                         className: cn(
-                          "flex items-center rounded-lg text-[13px] font-medium transition-all duration-150 mx-1",
+                          "mx-1 flex items-center rounded-lg border border-border/60 bg-muted text-[13px] font-semibold text-foreground transition-colors duration-150",
                           sidebarCollapsed ? "justify-center h-8 w-8 mx-auto p-0" : "px-3 py-1.5 gap-2.5",
-                          "bg-primary/10 text-primary font-semibold"
                         )
                       }}
                       title={sidebarCollapsed ? item.name : undefined}
@@ -242,32 +218,32 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="shrink-0 border-t border-sidebar-border/30 p-2">
+      <div className="shrink-0 border-t border-border/50 p-2">
         <button
           onClick={toggleTheme}
           className={cn(
-            "flex items-center w-full text-[13px] text-sidebar-muted hover:bg-sidebar-hover/60 hover:text-sidebar-foreground rounded-lg transition-colors",
+            "flex w-full items-center rounded-lg text-[13px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground",
             sidebarCollapsed ? "justify-center h-9 w-9 mx-auto" : "gap-2.5 px-3 py-2"
           )}
-          title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          title="Cambiar tema: Claro / Oscuro / Sistema"
+          type="button"
         >
-          {theme === 'dark' ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
-          {!sidebarCollapsed && <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>}
+          {theme === 'system'
+            ? <Monitor className="w-4 h-4 shrink-0" />
+            : resolvedTheme === 'dark'
+              ? <Moon className="w-4 h-4 shrink-0" />
+              : <Sun className="w-4 h-4 shrink-0" />}
+          {!sidebarCollapsed && (
+            <span>
+              {theme === 'system'
+                ? 'Tema del Sistema'
+                : theme === 'dark'
+                  ? 'Modo Oscuro'
+                  : 'Modo Claro'}
+            </span>
+          )}
         </button>
       </div>
-
-      {/* Collapse Toggle Pill */}
-      <button
-        onClick={toggleSidebar}
-        className={cn(
-          "absolute -right-3 top-1/2 -translate-y-1/2 bg-background border border-border/60 shadow-sm rounded-full p-1 text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200",
-          "opacity-0 group-hover:opacity-100",
-          sidebarCollapsed && "opacity-0 hover:opacity-100"
-        )}
-        title="Toggle Sidebar"
-      >
-        {sidebarCollapsed ? <ChevronLeft className="w-3 h-3 rotate-180" /> : <ChevronsLeft className="w-3 h-3" />}
-      </button>
     </div>
   )
 }

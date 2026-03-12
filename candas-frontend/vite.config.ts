@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       host: isLanMode,
-      port: Number(env.VITE_PORT ?? 5174),
+      port: Number(env.VITE_PORT ?? 5173),
     },
     resolve: {
       alias: {

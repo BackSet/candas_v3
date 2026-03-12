@@ -42,7 +42,7 @@ export interface DespachoMasivoSessionPaqueteItem {
   nombreClienteDestinatario?: string
   ref?: string
   direccionDestinatarioCompleta?: string
-  ciudadDestinatario?: string
+  provinciaDestinatario?: string
   cantonDestinatario?: string
   paisDestinatario?: string
   observaciones?: string

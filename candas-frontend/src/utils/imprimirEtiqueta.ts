@@ -168,7 +168,7 @@ const STYLES = `
 // Helper para obtener datos limpios
 function getEtiquetaData(paquete: Paquete) {
   const direccionDestinatario = [
-    paquete.ciudadDestinatario,
+    paquete.provinciaDestinatario,
     paquete.paisDestinatario,
     paquete.cantonDestinatario
   ].filter(Boolean).join(' - ')
@@ -191,7 +191,7 @@ function getEtiquetaData(paquete: Paquete) {
     nombreDestinatario,
     direccionCompleta,
     telefono,
-    direccionDestinatario, // Ciudad - Pais - Canton
+    direccionDestinatario, // Provincia - Pais - Canton
     documento,
     nombreAgencia,
     numeroGuia,

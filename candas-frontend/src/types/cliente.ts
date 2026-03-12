@@ -6,7 +6,7 @@ export interface Cliente {
   documentoIdentidad?: string
   email?: string
   pais?: string
-  ciudad?: string
+  provincia?: string
   canton?: string
   direccion?: string
   telefono?: string

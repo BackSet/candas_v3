@@ -378,7 +378,7 @@ export default function LoteRecepcionDetail() {
                           key={ag.idAgencia}
                           onClick={() => handleExportarPorDestino('AGENCIA', { idAgencia: ag.idAgencia })}
                         >
-                          {ag.nombre}{ag.ciudad ? ` (${ag.ciudad})` : ''}
+                          {ag.nombre}{ag.provincia ? ` (${ag.provincia})` : ''}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuSubContent>

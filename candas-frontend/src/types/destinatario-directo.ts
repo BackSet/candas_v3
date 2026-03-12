@@ -3,6 +3,7 @@ export interface DestinatarioDirecto {
   nombreDestinatario: string
   telefonoDestinatario: string
   direccionDestinatario?: string
+  provincia?: string
   canton?: string
   codigo?: string
   nombreEmpresa?: string

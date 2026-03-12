@@ -57,6 +57,25 @@ export function Combobox<T = any>({
 
   const selectedOption = options.find((opt) => opt.value === value)
 
+  const updatePortalGeometry = React.useCallback((): boolean => {
+    if (!usePortal || !triggerRef.current) return true
+    const rect = triggerRef.current.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) return false
+    setDropdownRect({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(rect.width, 200),
+    })
+    if (portalContainerRef?.current) {
+      const cr = portalContainerRef.current.getBoundingClientRect()
+      if (cr.width <= 0 || cr.height <= 0) return false
+      setContainerRect({ top: cr.top, left: cr.left })
+    } else {
+      setContainerRect(null)
+    }
+    return true
+  }, [usePortal, portalContainerRef])
+
   const filteredOptions = React.useMemo(() => {
     if (!search) return options
     const searchLower = search.toLowerCase()
@@ -73,20 +92,8 @@ export function Combobox<T = any>({
       setContainerRect(null)
       return
     }
-    if (!usePortal || !triggerRef.current) return
-    const rect = triggerRef.current.getBoundingClientRect()
-    setDropdownRect({
-      top: rect.bottom + 4,
-      left: rect.left,
-      width: Math.max(rect.width, 200),
-    })
-    if (portalContainerRef?.current) {
-      const cr = portalContainerRef.current.getBoundingClientRect()
-      setContainerRect({ top: cr.top, left: cr.left })
-    } else {
-      setContainerRect(null)
-    }
-  }, [open, usePortal, portalContainerRef])
+    updatePortalGeometry()
+  }, [open, updatePortalGeometry])
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next)
@@ -122,23 +129,21 @@ export function Combobox<T = any>({
         }
     : undefined
 
-  // Cerrar dropdown al hacer scroll en el diálogo/contenedor para que no se "despegue" del trigger
+  // Recalcular en scroll/resize y cerrar si la geometría deja de ser válida.
   React.useEffect(() => {
     if (!open || !usePortal || !triggerRef.current) return
-    const trigger = triggerRef.current
-    const scrollParents: Element[] = []
-    let p: HTMLElement | null = trigger.parentElement
-    while (p) {
-      const s = getComputedStyle(p)
-      const overflow = `${s.overflow}${s.overflowY}${s.overflowX}`
-      if (/auto|scroll|overlay/.test(overflow)) scrollParents.push(p)
-      p = p.parentElement
+    const repositionOrClose = () => {
+      if (!updatePortalGeometry()) {
+        handleOpenChangeRef.current(false)
+      }
     }
-    scrollParents.push(document.documentElement)
-    const close = () => handleOpenChangeRef.current(false)
-    scrollParents.forEach((el) => el.addEventListener('scroll', close, true))
-    return () => scrollParents.forEach((el) => el.removeEventListener('scroll', close, true))
-  }, [open, usePortal])
+    window.addEventListener('resize', repositionOrClose)
+    window.addEventListener('scroll', repositionOrClose, true)
+    return () => {
+      window.removeEventListener('resize', repositionOrClose)
+      window.removeEventListener('scroll', repositionOrClose, true)
+    }
+  }, [open, usePortal, updatePortalGeometry])
 
   // Enfocar el input de búsqueda tras montar el portal (evita que el focus trap del diálogo lo robe)
   React.useLayoutEffect(() => {
@@ -151,11 +156,13 @@ export function Combobox<T = any>({
 
   const dropdownContent = showPortalDropdown ? (
     <>
-      <div
-        className="fixed inset-0 z-[90]"
-        onClick={() => handleOpenChange(false)}
-        aria-hidden
-      />
+      {usePortal && (
+        <div
+          className="fixed inset-0 z-[90]"
+          onClick={() => handleOpenChange(false)}
+          aria-hidden
+        />
+      )}
       <div
         role="dialog"
         aria-label="Lista de opciones"

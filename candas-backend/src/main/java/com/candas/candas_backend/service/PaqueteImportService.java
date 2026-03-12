@@ -609,22 +609,22 @@ public class PaqueteImportService {
 
             // Agregar información de dirección del remitente al DTO
             paqueteDTO.setPaisRemitente(clienteRemitente.getPais());
-            paqueteDTO.setCiudadRemitente(clienteRemitente.getCiudad());
+            paqueteDTO.setProvinciaRemitente(clienteRemitente.getProvincia());
             paqueteDTO.setCantonRemitente(clienteRemitente.getCanton());
             paqueteDTO.setDireccionRemitente(clienteRemitente.getDireccion());
             paqueteDTO.setDireccionRemitenteCompleta(construirDireccionCompleta(
-                    clienteRemitente.getDireccion(), clienteRemitente.getCanton(), clienteRemitente.getCiudad(),
+                    clienteRemitente.getDireccion(), clienteRemitente.getCanton(), clienteRemitente.getProvincia(),
                     clienteRemitente.getPais()));
 
             if (clienteDestinatario != null) {
                 paqueteDTO.setIdClienteDestinatario(clienteDestinatario.getIdCliente());
                 paqueteDTO.setPaisDestinatario(clienteDestinatario.getPais());
-                paqueteDTO.setCiudadDestinatario(clienteDestinatario.getCiudad());
+                paqueteDTO.setProvinciaDestinatario(clienteDestinatario.getProvincia());
                 paqueteDTO.setCantonDestinatario(clienteDestinatario.getCanton());
                 paqueteDTO.setDireccionDestinatario(clienteDestinatario.getDireccion());
                 paqueteDTO.setDireccionDestinatarioCompleta(construirDireccionCompleta(
                         clienteDestinatario.getDireccion(), clienteDestinatario.getCanton(),
-                        clienteDestinatario.getCiudad(), clienteDestinatario.getPais()));
+                        clienteDestinatario.getProvincia(), clienteDestinatario.getPais()));
                 paqueteDTO.setTelefonoDestinatario(clienteDestinatario.getTelefono());
             }
 
@@ -674,7 +674,7 @@ public class PaqueteImportService {
 
     private Cliente crearClienteNuevo(
             String nombre, String numeroDocumento, String email, String telefono,
-            String pais, String ciudad, String canton, String direccion) {
+            String pais, String provincia, String canton, String direccion) {
         Cliente cliente = new Cliente();
         cliente.setNombreCompleto((nombre == null || nombre.trim().isEmpty()) ? "Sin nombre" : nombre.trim());
         cliente.setDocumentoIdentidad(
@@ -682,7 +682,7 @@ public class PaqueteImportService {
         cliente.setEmail((email == null || email.trim().isEmpty()) ? null : email.trim());
         cliente.setTelefono((telefono == null || telefono.trim().isEmpty()) ? null : telefono.trim());
         cliente.setPais((pais == null || pais.trim().isEmpty()) ? null : pais.trim());
-        cliente.setCiudad((ciudad == null || ciudad.trim().isEmpty()) ? null : ciudad.trim());
+        cliente.setProvincia((provincia == null || provincia.trim().isEmpty()) ? null : provincia.trim());
         cliente.setCanton((canton == null || canton.trim().isEmpty()) ? null : canton.trim());
         cliente.setDireccion((direccion == null || direccion.trim().isEmpty()) ? null : direccion.trim());
         cliente.setFechaRegistro(LocalDateTime.now());
@@ -690,7 +690,7 @@ public class PaqueteImportService {
         return clienteRepository.save(cliente);
     }
 
-    private String construirDireccionCompleta(String direccion, String canton, String ciudad, String pais) {
+    private String construirDireccionCompleta(String direccion, String canton, String provincia, String pais) {
         List<String> partes = new ArrayList<>();
         if (direccion != null && !direccion.trim().isEmpty()) {
             partes.add(direccion.trim());
@@ -698,8 +698,8 @@ public class PaqueteImportService {
         if (canton != null && !canton.trim().isEmpty()) {
             partes.add(canton.trim());
         }
-        if (ciudad != null && !ciudad.trim().isEmpty()) {
-            partes.add(ciudad.trim());
+        if (provincia != null && !provincia.trim().isEmpty()) {
+            partes.add(provincia.trim());
         }
         if (pais != null && !pais.trim().isEmpty()) {
             partes.add(pais.trim());

@@ -89,7 +89,7 @@ export default function RolesList() {
         <ProtectedByPermission permission={PERMISSIONS.ROLES.CREAR}>
           <Button onClick={() => navigate({ to: '/roles/new' })} size="sm" className="h-8 shadow-sm text-xs rounded-lg">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nuevo Rol
+            Nuevo
           </Button>
         </ProtectedByPermission>
       }
@@ -98,6 +98,7 @@ export default function RolesList() {
         search={busqueda}
         onSearchChange={setBusqueda}
         searchPlaceholder="Buscar por nombre..."
+        withBottomBorder={false}
         actions={
           <span className="text-xs text-muted-foreground hidden sm:inline-block">
             <span className="font-medium text-foreground">{rolesFiltrados.length}</span> roles
@@ -106,9 +107,10 @@ export default function RolesList() {
       />
 
       {/* Table */}
-      <div className="flex-1 overflow-hidden relative">
-        <div className="absolute inset-0 overflow-auto">
-          <Table className="notion-table w-full relative">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
+        <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 relative w-full overflow-auto">
+            <Table className="notion-table w-full relative">
             <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/40">
               <TableRow className="hover:bg-transparent border-none">
                 <TableHead className="h-10 text-[11px] font-bold text-muted-foreground uppercase tracking-wider pl-4 w-48">Rol</TableHead>
@@ -215,20 +217,21 @@ export default function RolesList() {
                 ))
               )}
             </TableBody>
-          </Table>
-        </div>
-      </div>
+            </Table>
+          </div>
 
-      {busqueda.trim().length === 0 && (
-        <ListPagination
-          page={currentPage}
-          totalPages={totalPages}
-          totalItems={data?.totalElements}
-          size={size}
-          onPageChange={setPage}
-          className="px-4 pb-2"
-        />
-      )}
+        </div>
+        {busqueda.trim().length === 0 && (
+          <ListPagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={data?.totalElements}
+            size={size}
+            onPageChange={setPage}
+            className="shrink-0"
+          />
+        )}
+      </div>
 
       {/* Delete Dialog */}
       <Dialog open={!!rolAEliminar} onOpenChange={(open) => !open && setRolAEliminar(null)}>

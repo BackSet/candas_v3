@@ -41,22 +41,27 @@ import { cn } from '@/lib/utils'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPagination } from '@/components/list/ListPagination'
-import { useFiltersStore } from '@/stores/filtersStore'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
 import { LoadingState } from '@/components/states/LoadingState'
 import { ErrorState } from '@/components/states/ErrorState'
 import { Label } from '@/components/ui/label'
+import { usePersistedListFilters } from '@/hooks/usePersistedListFilters'
 
 const LIST_KEY = 'agencias' as const
 
 export default function AgenciasList() {
   const navigate = useNavigate()
-  const stored = useFiltersStore((state) => state.filters[LIST_KEY])
-  const setFiltersAction = useFiltersStore((state) => state.setFilters)
+  const { stored, setFilters, setPage, setSearch } = usePersistedListFilters<{
+    page?: number
+    size?: number
+    search?: string
+    nombre?: string
+    codigo?: string
+    activa?: string
+  }>(LIST_KEY)
   const { page = 0, size = 20, search: busqueda = '', nombre = '', codigo = '', activa: activaStore = '' } = { ...stored }
-  const setPage = (p: number) => setFiltersAction(LIST_KEY, { page: p })
-  const setBusqueda = (v: string) => setFiltersAction(LIST_KEY, { search: v, page: 0 })
+  const setBusqueda = (v: string) => setSearch(v)
   const [agenciaAEliminar, setAgenciaAEliminar] = useState<number | null>(null)
 
   const filters = useMemo(() => {
@@ -89,10 +94,10 @@ export default function AgenciasList() {
   const currentPage = data?.number ?? 0
 
   const applyAdvancedFilters = (vals: { nombre?: string; codigo?: string; activa?: string }) => {
-    setFiltersAction(LIST_KEY, { ...vals, page: 0 })
+    setFilters({ ...vals, page: 0 })
   }
   const clearAdvancedFilters = () => {
-    setFiltersAction(LIST_KEY, { nombre: '', codigo: '', activa: '', page: 0 })
+    setFilters({ nombre: '', codigo: '', activa: '', page: 0 })
   }
 
   return (
@@ -103,7 +108,7 @@ export default function AgenciasList() {
         <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.CREAR}>
           <Button onClick={() => navigate({ to: '/agencias/new' })} size="sm" className="h-8 shadow-sm text-xs">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nueva Agencia
+            Nuevo
           </Button>
         </ProtectedByPermission>
       }
@@ -113,6 +118,7 @@ export default function AgenciasList() {
         search={busqueda}
         onSearchChange={setBusqueda}
         searchPlaceholder="Buscar por nombre, código, ubicación..."
+        withBottomBorder={false}
         advancedFilters={
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
             <div className="space-y-1.5">
@@ -120,7 +126,7 @@ export default function AgenciasList() {
               <Input
                 placeholder="Nombre agencia"
                 value={nombre}
-                onChange={(e) => setFiltersAction(LIST_KEY, { nombre: e.target.value })}
+                onChange={(e) => setFilters({ nombre: e.target.value })}
                 className="h-9"
               />
             </div>
@@ -129,7 +135,7 @@ export default function AgenciasList() {
               <Input
                 placeholder="Código"
                 value={codigo}
-                onChange={(e) => setFiltersAction(LIST_KEY, { codigo: e.target.value })}
+                onChange={(e) => setFilters({ codigo: e.target.value })}
                 className="h-9"
               />
             </div>
@@ -137,7 +143,7 @@ export default function AgenciasList() {
               <Label>Estado</Label>
               <Select
                 value={activaStore || 'all'}
-                onValueChange={(v) => setFiltersAction(LIST_KEY, { activa: v === 'all' ? '' : v })}
+                onValueChange={(v) => setFilters({ activa: v === 'all' ? '' : v })}
               >
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Todos" />
@@ -162,7 +168,7 @@ export default function AgenciasList() {
       />
 
       {/* Content + pagination wrapper */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
         {/* Main Content - Notion Table View */}
         <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0 relative w-full overflow-auto">
@@ -284,17 +290,17 @@ export default function AgenciasList() {
             </Table>
           </div>
 
-          {!isLoading && (
-            <ListPagination
-              page={currentPage}
-              totalPages={totalPages}
-              totalItems={data?.totalElements}
-              size={size}
-              onPageChange={setPage}
-              className="shrink-0"
-            />
-          )}
         </div>
+        {!isLoading && (
+          <ListPagination
+            page={currentPage}
+            totalPages={totalPages}
+            totalItems={data?.totalElements}
+            size={size}
+            onPageChange={setPage}
+            className="shrink-0"
+          />
+        )}
       </div>
 
       <Dialog open={!!agenciaAEliminar} onOpenChange={(open) => !open && setAgenciaAEliminar(null)}>

@@ -33,7 +33,7 @@ export function PageHeader({
             {title}
           </div>
           {subtitle ? (
-            <div className="text-xs text-muted-foreground mt-0.5 truncate">
+            <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
               {subtitle}
             </div>
           ) : null}
