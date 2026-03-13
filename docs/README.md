@@ -50,10 +50,12 @@
 
 ## Despliegue
 
-13. **[DEPLOYMENT.md](DEPLOYMENT.md)** — Guía de despliegue en producción: requisitos, variables de entorno, build del backend y frontend.
+13. **Frontend:** [candas-frontend/docs/XLSX_SECURITY_MITIGATION.md](../candas-frontend/docs/XLSX_SECURITY_MITIGATION.md) — Mitigación temporal para riesgos de seguridad en importación Excel y plan de migración para retirar `xlsx`.
+
+14. **[DEPLOYMENT.md](DEPLOYMENT.md)** — Guía de despliegue en producción: requisitos, variables de entorno, build del backend y frontend.
 
 ---
 
 ## Artefactos internos
 
-14. [candas-frontend/src/artifacts/implementation_plan_flows.md](../candas-frontend/src/artifacts/implementation_plan_flows.md) — Plan de implementación de flujos de recepción y despacho (referencia para desarrollo).
+15. [candas-frontend/src/artifacts/implementation_plan_flows.md](../candas-frontend/src/artifacts/implementation_plan_flows.md) — Plan de implementación de flujos de recepción y despacho (referencia para desarrollo).
