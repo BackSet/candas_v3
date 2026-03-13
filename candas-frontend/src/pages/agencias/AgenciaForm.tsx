@@ -29,6 +29,7 @@ import {
   type AgenciaFormData,
   type TelefonoFormItem,
 } from '@/schemas/agencia'
+import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
 
 export default function AgenciaForm() {
   const navigate = useNavigate()
@@ -159,7 +160,7 @@ export default function AgenciaForm() {
                     variant="outline"
                     size="sm"
                     className="h-9 shrink-0"
-                    onClick={() => setValue('codigo', String(Math.floor(1000000000 + Math.random() * 9000000000)))}
+                    onClick={() => setValue('codigo', generarCodigo10Digitos())}
                   >
                     <Sparkles className="h-3.5 w-3.5 mr-1" />
                     Generar

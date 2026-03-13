@@ -8,6 +8,7 @@ export const destinatarioDirectoSchema = z.object({
   canton: z.string().optional(),
   codigo: z.string().optional(),
   nombreEmpresa: z.string().optional(),
+  activo: z.boolean().optional(),
 })
 
 export type DestinatarioDirectoFormData = z.infer<typeof destinatarioDirectoSchema>
@@ -25,6 +26,7 @@ export function destinatarioDirectoFormDataToDto(data: DestinatarioDirectoFormDa
     canton: optionalTrim(data.canton),
     codigo: optionalTrim(data.codigo),
     nombreEmpresa: optionalTrim(data.nombreEmpresa),
+    activo: data.activo ?? true,
   }
 }
 
@@ -36,6 +38,7 @@ export function destinatarioToFormData(destinatario: DestinatarioDirecto): Desti
     canton: destinatario.canton ?? '',
     codigo: destinatario.codigo ?? '',
     nombreEmpresa: destinatario.nombreEmpresa ?? '',
+    activo: destinatario.activo ?? true,
   }
 }
 

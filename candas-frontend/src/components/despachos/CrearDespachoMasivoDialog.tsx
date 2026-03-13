@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Box, FileText, MapPin, Truck, Package, SplitSquareVertical, Sparkles } from 'lucide-react'
+import { Box, FileText, MapPin, Truck, Package, SplitSquareVertical, Sparkles, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
@@ -71,6 +71,7 @@ export interface CrearDespachoMasivoDialogProps {
   setBulkDesdePaqueteDireccion: (v: string) => void
   bulkDesdePaqueteCanton: string
   setBulkDesdePaqueteCanton: (v: string) => void
+  bulkDesdePaqueteCodigo: string
   bulkIdDistribuidor: string
   setBulkIdDistribuidor: (v: string) => void
   bulkNumeroGuia: string
@@ -91,6 +92,7 @@ export interface CrearDespachoMasivoDialogProps {
   paquetesRefOpciones: ComboboxOption<Paquete>[]
   sugerenciaDestino?: string
   onOpenCrearDestinatario: () => void
+  onOpenCrearAgencia: () => void
   onConfirm: () => void
   confirmDisabled: boolean
 }
@@ -137,6 +139,7 @@ export default function CrearDespachoMasivoDialog({
   setBulkDesdePaqueteDireccion,
   bulkDesdePaqueteCanton,
   setBulkDesdePaqueteCanton,
+  bulkDesdePaqueteCodigo,
   bulkIdDistribuidor,
   setBulkIdDistribuidor,
   bulkNumeroGuia,
@@ -157,6 +160,7 @@ export default function CrearDespachoMasivoDialog({
   paquetesRefOpciones,
   sugerenciaDestino,
   onOpenCrearDestinatario,
+  onOpenCrearAgencia,
   onConfirm,
   confirmDisabled,
 }: CrearDespachoMasivoDialogProps) {
@@ -271,19 +275,33 @@ export default function CrearDespachoMasivoDialog({
                 {bulkTipoDestino === 'AGENCIA' && (
                   <div className="grid gap-2 min-w-0">
                     <Label className="text-sm font-medium">Agencia</Label>
-                    <Combobox<AgenciaOption>
-                      options={agenciasOpciones}
-                      value={bulkIdDestino ? Number(bulkIdDestino) : null}
-                      onValueChange={(v) => setBulkIdDestino(v != null ? String(v) : '')}
-                      placeholder="Buscar agencia..."
-                      searchPlaceholder="Buscar por nombre o cantón..."
-                      emptyMessage="Sin resultados"
-                      className="h-11 text-base"
-                      onSearchChange={setBusquedaAgencia}
-                      searchValue={busquedaAgencia}
-                      usePortal
-                      portalContainerRef={dialogContentRef}
-                    />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex-1 min-w-0">
+                        <Combobox<AgenciaOption>
+                          options={agenciasOpciones}
+                          value={bulkIdDestino ? Number(bulkIdDestino) : null}
+                          onValueChange={(v) => setBulkIdDestino(v != null ? String(v) : '')}
+                          placeholder="Buscar agencia..."
+                          searchPlaceholder="Buscar por nombre o cantón..."
+                          emptyMessage="Sin resultados"
+                          className="h-10 text-base"
+                          onSearchChange={setBusquedaAgencia}
+                          searchValue={busquedaAgencia}
+                          usePortal
+                          portalContainerRef={dialogContentRef}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 rounded-md"
+                        onClick={onOpenCrearAgencia}
+                        title="Crear nueva agencia"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 )}
 
@@ -312,19 +330,33 @@ export default function CrearDespachoMasivoDialog({
                     {bulkDestinatarioOrigen === 'EXISTENTE' && (
                       <div className="grid gap-2 relative z-[60] min-w-0">
                         <Label className="text-sm font-medium">Destinatario directo</Label>
-                        <Combobox<DestinatarioDirectoOption>
-                          options={destinatariosOpciones}
-                          value={bulkIdDestino?.trim() ? Number(bulkIdDestino) : null}
-                          onValueChange={(v) => setBulkIdDestino(v != null ? String(v) : '')}
-                          placeholder="Buscar destinatario directo..."
-                          searchPlaceholder="Buscar por nombre o cantón..."
-                          emptyMessage="Sin destinatarios. Asegúrese de tener destinatarios directos dados de alta."
-                          className="h-11 text-base"
-                          onSearchChange={setBusquedaDestinatario}
-                          searchValue={busquedaDestinatario}
-                          usePortal
-                          portalContainerRef={dialogContentRef}
-                        />
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex-1 min-w-0">
+                            <Combobox<DestinatarioDirectoOption>
+                              options={destinatariosOpciones}
+                              value={bulkIdDestino?.trim() ? Number(bulkIdDestino) : null}
+                              onValueChange={(v) => setBulkIdDestino(v != null ? String(v) : '')}
+                              placeholder="Buscar destinatario directo..."
+                              searchPlaceholder="Buscar por nombre o cantón..."
+                              emptyMessage="Sin destinatarios. Asegúrese de tener destinatarios directos dados de alta."
+                              className="h-10 text-base"
+                              onSearchChange={setBusquedaDestinatario}
+                              searchValue={busquedaDestinatario}
+                              usePortal
+                              portalContainerRef={dialogContentRef}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-9 w-9 shrink-0 rounded-md"
+                            onClick={onOpenCrearDestinatario}
+                            title="Crear nuevo destinatario directo"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     )}
 
@@ -344,6 +376,12 @@ export default function CrearDespachoMasivoDialog({
                         />
                         <div className="space-y-4 pt-4 border-t border-primary/20">
                           <p className="text-sm font-medium text-muted-foreground">Datos del destinatario (editable)</p>
+                          {bulkDesdePaqueteCodigo && (
+                            <div className="grid gap-2">
+                              <Label className="text-sm">Código generado</Label>
+                              <Input value={bulkDesdePaqueteCodigo} readOnly className="h-11 text-base font-mono" />
+                            </div>
+                          )}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="grid gap-2">
                               <Label className="text-sm">Nombre</Label>

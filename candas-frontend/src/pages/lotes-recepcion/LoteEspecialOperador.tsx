@@ -3,7 +3,7 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLoteRecepcion, usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
 import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
-import { useAgencias } from '@/hooks/useAgencias'
+import { useAgencias, useCreateAgencia } from '@/hooks/useAgencias'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
 import { useDestinatariosDirectos } from '@/hooks/useDestinatariosDirectos'
 import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
@@ -57,7 +57,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ScanLine, Loader2, List as ListIcon, FileText, X, Box, Truck, MapPin, QrCode, CheckCircle2, Download, FileDown, FileSpreadsheet, Printer, Edit, ChevronDown, Trash2, Upload, ChevronsUpDown, Plus } from 'lucide-react'
+import { ScanLine, Loader2, List as ListIcon, FileText, X, Box, Truck, MapPin, QrCode, CheckCircle2, Download, FileDown, FileSpreadsheet, Printer, Edit, ChevronDown, Trash2, Upload, ChevronsUpDown, Plus, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { LoadingState } from '@/components/states'
@@ -72,6 +72,8 @@ import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionD
 import CrearDespachoMasivoDialog from '@/components/despachos/CrearDespachoMasivoDialog'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import { hasDespacho, buildClienteDestinoFromPaquete, SIN_ETIQUETA_KEY, VARIAS_LISTAS_KEY } from './loteEspecialOperadorUtils'
+import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
+import type { TelefonoFormItem } from '@/schemas/agencia'
 
 export interface LoteEspecialOperadorProps {
   embedded?: boolean
@@ -120,8 +122,104 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     setNuevoClienteDireccion,
     nuevoClienteCanton,
     setNuevoClienteCanton,
+    nuevoClienteCodigo,
+    setNuevoClienteCodigo,
+    nuevoClienteNombreEmpresa,
+    setNuevoClienteNombreEmpresa,
+    nuevoClienteActivo,
+    setNuevoClienteActivo,
+    generarCodigo,
     handleCrearCliente,
   } = destinatarioManager
+  const createAgenciaMutation = useCreateAgencia()
+  const [showCrearAgenciaDialog, setShowCrearAgenciaDialog] = useState(false)
+  const [nuevaAgenciaNombre, setNuevaAgenciaNombre] = useState('')
+  const [nuevaAgenciaCanton, setNuevaAgenciaCanton] = useState('')
+  const [nuevaAgenciaDireccion, setNuevaAgenciaDireccion] = useState('')
+  const [nuevaAgenciaCodigo, setNuevaAgenciaCodigo] = useState('')
+  const [nuevaAgenciaTelefonos, setNuevaAgenciaTelefonos] = useState<TelefonoFormItem[]>([
+    { numero: '', principal: true },
+  ])
+  const [nuevaAgenciaEmail, setNuevaAgenciaEmail] = useState('')
+  const [nuevaAgenciaNombrePersonal, setNuevaAgenciaNombrePersonal] = useState('')
+  const [nuevaAgenciaHorarioAtencion, setNuevaAgenciaHorarioAtencion] = useState('')
+  const [nuevaAgenciaActiva, setNuevaAgenciaActiva] = useState(true)
+
+  const handleCrearAgencia = async () => {
+    const nombre = nuevaAgenciaNombre.trim()
+    if (!nombre) {
+      toast.error('El nombre de la agencia es obligatorio')
+      return
+    }
+    const telefonosValidos = nuevaAgenciaTelefonos.filter((t) => t.numero.trim() !== '')
+    if (telefonosValidos.length === 0) {
+      toast.error('Debe ingresar al menos un número de teléfono')
+      return
+    }
+    if (!telefonosValidos.some((t) => t.principal)) {
+      telefonosValidos[0].principal = true
+    }
+
+    try {
+      const creada = await createAgenciaMutation.mutateAsync({
+        nombre,
+        canton: nuevaAgenciaCanton.trim() || undefined,
+        direccion: nuevaAgenciaDireccion.trim() || undefined,
+        codigo: nuevaAgenciaCodigo.trim() || undefined,
+        email: nuevaAgenciaEmail.trim() || undefined,
+        nombrePersonal: nuevaAgenciaNombrePersonal.trim() || undefined,
+        horarioAtencion: nuevaAgenciaHorarioAtencion.trim() || undefined,
+        activa: nuevaAgenciaActiva,
+        telefonos: telefonosValidos.map((telefono) => ({
+          numero: telefono.numero.trim(),
+          principal: telefono.principal,
+        })),
+      })
+      if (creada?.idAgencia != null) {
+        setBulkTipoDestino('AGENCIA')
+        setBulkIdDestino(String(creada.idAgencia))
+      }
+      setShowCrearAgenciaDialog(false)
+      setNuevaAgenciaNombre('')
+      setNuevaAgenciaCanton('')
+      setNuevaAgenciaDireccion('')
+      setNuevaAgenciaCodigo('')
+      setNuevaAgenciaEmail('')
+      setNuevaAgenciaNombrePersonal('')
+      setNuevaAgenciaHorarioAtencion('')
+      setNuevaAgenciaActiva(true)
+      setNuevaAgenciaTelefonos([{ numero: '', principal: true }])
+    } catch {
+      // El toast de error ya se maneja en el hook.
+    }
+  }
+
+  const handleAgregarTelefonoAgencia = () => {
+    setNuevaAgenciaTelefonos((prev) => [...prev, { numero: '', principal: false }])
+  }
+
+  const handleEliminarTelefonoAgencia = (index: number) => {
+    setNuevaAgenciaTelefonos((prev) => {
+      if (prev.length <= 1) return prev
+      const next = prev.filter((_, i) => i !== index)
+      if (prev[index]?.principal && next.length > 0) {
+        next[0].principal = true
+      }
+      return next
+    })
+  }
+
+  const handleCambiarPrincipalAgencia = (index: number) => {
+    setNuevaAgenciaTelefonos((prev) =>
+      prev.map((telefono, i) => ({ ...telefono, principal: i === index }))
+    )
+  }
+
+  const handleActualizarTelefonoAgencia = (index: number, numero: string) => {
+    setNuevaAgenciaTelefonos((prev) =>
+      prev.map((telefono, i) => (i === index ? { ...telefono, numero } : telefono))
+    )
+  }
 
   const agencias = agenciasResponse?.content ?? []
   const distribuidores = distribuidoresResponse?.content ?? []
@@ -161,6 +259,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
   const [bulkDesdePaqueteTelefono, setBulkDesdePaqueteTelefono] = useState('')
   const [bulkDesdePaqueteDireccion, setBulkDesdePaqueteDireccion] = useState('')
   const [bulkDesdePaqueteCanton, setBulkDesdePaqueteCanton] = useState('')
+  const [bulkDesdePaqueteCodigo, setBulkDesdePaqueteCodigo] = useState('')
   const [bulkIdDistribuidor, setBulkIdDistribuidor] = useState<string>('')
   const [bulkNumeroGuia, setBulkNumeroGuia] = useState('')
   const [bulkObservaciones, setBulkObservaciones] = useState('')
@@ -340,6 +439,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       setBulkDesdePaqueteTelefono('')
       setBulkDesdePaqueteDireccion('')
       setBulkDesdePaqueteCanton('')
+      setBulkDesdePaqueteCodigo('')
       return
     }
     const p = paqueteOrigenDestinatario
@@ -347,6 +447,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     setBulkDesdePaqueteTelefono((p.telefonoDestinatario ?? '').trim())
     setBulkDesdePaqueteDireccion((p.direccionDestinatarioCompleta ?? p.direccionDestinatario ?? '').trim())
     setBulkDesdePaqueteCanton((p.cantonDestinatario ?? p.provinciaDestinatario ?? '').trim())
+    setBulkDesdePaqueteCodigo(generarCodigo10Digitos())
   }, [paqueteOrigenDestinatario])
 
   const pesoTotalBulk = useMemo(() => {
@@ -360,8 +461,11 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     if (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'EXISTENTE' && bulkIdDestino) {
       return destinatariosDirectos.find((d) => String(d.idDestinatarioDirecto) === bulkIdDestino)?.codigo ?? null
     }
+    if (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE') {
+      return bulkDesdePaqueteCodigo || null
+    }
     return null
-  }, [bulkTipoDestino, bulkIdDestino, bulkDestinatarioOrigen, agencias, destinatariosDirectos])
+  }, [bulkTipoDestino, bulkIdDestino, bulkDestinatarioOrigen, bulkDesdePaqueteCodigo, agencias, destinatariosDirectos])
 
   const destinoResumenBulk = useMemo(() => {
     if (bulkTipoDestino === 'AGENCIA' && bulkIdDestino) {
@@ -481,31 +585,22 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     setBulkSubmitting(true)
     try {
     let idDestinatarioDirectoPayload: number | undefined
-    let idPaqueteOrigenDestinatarioPayload: number | undefined
     if (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'EXISTENTE') {
       idDestinatarioDirectoPayload = Number(bulkIdDestino)
     } else if (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && bulkIdPaqueteOrigenDestinatario) {
-      const paq = selectedPackagesForDestinatario.find((p) => p.idPaquete === Number(bulkIdPaqueteOrigenDestinatario))
-      const nombreOk = (bulkDesdePaqueteNombre.trim() || '') === (paq?.nombreClienteDestinatario ?? '').trim()
-      const telefonoOk = (bulkDesdePaqueteTelefono.trim() || '') === (paq?.telefonoDestinatario ?? '').trim()
-      const direccionOk =
-        (bulkDesdePaqueteDireccion.trim() || '') ===
-        (paq?.direccionDestinatarioCompleta ?? paq?.direccionDestinatario ?? '').trim()
-      const cantonOk =
-        (bulkDesdePaqueteCanton.trim() || '') === (paq?.cantonDestinatario ?? paq?.provinciaDestinatario ?? '').trim()
-      const datosEditados = !nombreOk || !telefonoOk || !direccionOk || !cantonOk
-      if (datosEditados && bulkDesdePaqueteNombre.trim()) {
-        const nuevoDest = await destinatarioDirectoService.create({
-          nombreDestinatario: bulkDesdePaqueteNombre.trim(),
-          telefonoDestinatario: bulkDesdePaqueteTelefono.trim() || '—',
-          direccionDestinatario: bulkDesdePaqueteDireccion.trim() || undefined,
-          canton: bulkDesdePaqueteCanton.trim() || undefined,
-        })
-        idDestinatarioDirectoPayload = nuevoDest.idDestinatarioDirecto!
-        queryClient.invalidateQueries({ queryKey: ['destinatarios-directos'] })
-      } else {
-        idPaqueteOrigenDestinatarioPayload = Number(bulkIdPaqueteOrigenDestinatario)
+      if (!bulkDesdePaqueteNombre.trim()) {
+        toast.error('El paquete seleccionado no tiene nombre de destinatario válido')
+        return
       }
+      const nuevoDest = await destinatarioDirectoService.create({
+        nombreDestinatario: bulkDesdePaqueteNombre.trim(),
+        telefonoDestinatario: bulkDesdePaqueteTelefono.trim() || '—',
+        direccionDestinatario: bulkDesdePaqueteDireccion.trim() || undefined,
+        canton: bulkDesdePaqueteCanton.trim() || undefined,
+        codigo: bulkDesdePaqueteCodigo.trim() || undefined,
+      })
+      idDestinatarioDirectoPayload = nuevoDest.idDestinatarioDirecto!
+      queryClient.invalidateQueries({ queryKey: ['destinatarios-directos'] })
     }
       const selectedIdsArray = selectedPackageIdsOrder
       if (id && selectedIdsArray.length > 0) {
@@ -530,7 +625,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         codigoPresinto: bulkCodigoPresinto.trim() || undefined,
         idAgencia: bulkTipoDestino === 'AGENCIA' ? Number(bulkIdDestino) : undefined,
         idDestinatarioDirecto: idDestinatarioDirectoPayload,
-        idPaqueteOrigenDestinatario: idPaqueteOrigenDestinatarioPayload,
+        idPaqueteOrigenDestinatario: undefined,
         idDistribuidor: Number(bulkIdDistribuidor),
         numeroGuiaAgenciaDistribucion: bulkNumeroGuia.trim() || undefined,
         sacas: sacasPayload,
@@ -547,6 +642,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       setBulkDesdePaqueteTelefono('')
       setBulkDesdePaqueteDireccion('')
       setBulkDesdePaqueteCanton('')
+      setBulkDesdePaqueteCodigo('')
       clearDraft(draftKey)
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', id] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion', id] })
@@ -1332,6 +1428,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         setBulkDesdePaqueteDireccion={setBulkDesdePaqueteDireccion}
         bulkDesdePaqueteCanton={bulkDesdePaqueteCanton}
         setBulkDesdePaqueteCanton={setBulkDesdePaqueteCanton}
+        bulkDesdePaqueteCodigo={bulkDesdePaqueteCodigo}
         bulkIdDistribuidor={bulkIdDistribuidor}
         setBulkIdDistribuidor={setBulkIdDistribuidor}
         bulkNumeroGuia={bulkNumeroGuia}
@@ -1363,6 +1460,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
           .map((d) => ({ idDistribuidor: d.idDistribuidor, nombre: d.nombre }))}
         paquetesRefOpciones={paquetesRefOpciones}
         onOpenCrearDestinatario={() => setShowCrearClienteDialog(true)}
+        onOpenCrearAgencia={() => setShowCrearAgenciaDialog(true)}
         onConfirm={executeBulkDespacho}
         confirmDisabled={
           bulkSubmitting ||
@@ -1370,23 +1468,179 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
           sacaDistribution.split(',').reduce((a, b) => a + (parseInt(b.trim(), 10) || 0), 0) !== selectedPackageIds.size ||
           (bulkTipoDestino === 'AGENCIA' && !bulkIdDestino) ||
           (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'EXISTENTE' && !bulkIdDestino) ||
-          (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && !bulkIdPaqueteOrigenDestinatario)
+          (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && (!bulkIdPaqueteOrigenDestinatario || !bulkDesdePaqueteCodigo))
         }
       />
 
       {/* Diálogo: Nuevo destinatario directo (desde Crear Despacho Masivo) */}
       <Dialog open={showCrearClienteDialog} onOpenChange={setShowCrearClienteDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Nuevo destinatario directo</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Nuevo Destinatario</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label className="text-sm font-medium">Nombre</Label><Input value={nuevoClienteNombre} onChange={e => setNuevoClienteNombre(e.target.value)} /></div>
-            <div className="space-y-2"><Label className="text-sm font-medium">Teléfono</Label><Input value={nuevoClienteTelefono} onChange={e => setNuevoClienteTelefono(e.target.value)} /></div>
-            <div className="space-y-2"><Label className="text-sm font-medium">Cantón</Label><Input value={nuevoClienteCanton} onChange={e => setNuevoClienteCanton(e.target.value)} /></div>
-            <div className="space-y-2"><Label className="text-sm font-medium">Dirección</Label><Textarea value={nuevoClienteDireccion} onChange={e => setNuevoClienteDireccion(e.target.value)} /></div>
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Nombre completo <span className="text-destructive">*</span></Label>
+                  <Input value={nuevoClienteNombre} onChange={e => setNuevoClienteNombre(e.target.value)} placeholder="Ej: Juan Pérez" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Teléfono <span className="text-destructive">*</span></Label>
+                  <Input value={nuevoClienteTelefono} onChange={e => setNuevoClienteTelefono(e.target.value)} placeholder="Ej: 0912345678" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Código</Label>
+                  <div className="flex gap-2">
+                    <Input value={nuevoClienteCodigo} onChange={e => setNuevoClienteCodigo(e.target.value)} className="font-mono" />
+                    <Button type="button" variant="outline" size="sm" className="h-9 shrink-0" onClick={generarCodigo}>
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      Generar
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Estado</Label>
+                  <Select
+                    value={nuevoClienteActivo ? 'true' : 'false'}
+                    onValueChange={(value) => setNuevoClienteActivo(value === 'true')}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Activo</SelectItem>
+                      <SelectItem value="false">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Cantón</Label>
+                  <Input value={nuevoClienteCanton} onChange={e => setNuevoClienteCanton(e.target.value)} placeholder="Ej: Quito" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Nombre empresa</Label>
+                  <Input value={nuevoClienteNombreEmpresa} onChange={e => setNuevoClienteNombreEmpresa(e.target.value)} placeholder="Opcional" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Dirección</Label>
+                  <Textarea value={nuevoClienteDireccion} onChange={e => setNuevoClienteDireccion(e.target.value)} placeholder="Calle principal, secundaria, número de casa..." className="min-h-[80px] resize-none" />
+                </div>
+              </div>
+            </section>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCrearClienteDialog(false)}>Cancelar</Button>
             <Button onClick={handleCrearCliente}>Crear</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCrearAgenciaDialog} onOpenChange={setShowCrearAgenciaDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Nueva Agencia</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Nombre Agencia <span className="text-destructive">*</span></Label>
+                  <Input value={nuevaAgenciaNombre} onChange={e => setNuevaAgenciaNombre(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Email</Label>
+                  <Input value={nuevaAgenciaEmail} onChange={e => setNuevaAgenciaEmail(e.target.value)} placeholder="correo@agencia.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Estado</Label>
+                  <Select
+                    value={nuevaAgenciaActiva ? 'true' : 'false'}
+                    onValueChange={(value) => setNuevaAgenciaActiva(value === 'true')}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Activa</SelectItem>
+                      <SelectItem value="false">Inactiva</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Código</Label>
+                  <div className="flex gap-2">
+                    <Input value={nuevaAgenciaCodigo} onChange={e => setNuevaAgenciaCodigo(e.target.value)} className="font-mono" />
+                    <Button type="button" variant="outline" size="sm" className="h-9 shrink-0" onClick={() => setNuevaAgenciaCodigo(generarCodigo10Digitos())}>
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      Generar
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Cantón</Label>
+                  <Input value={nuevaAgenciaCanton} onChange={e => setNuevaAgenciaCanton(e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Nombre personal contacto</Label>
+                  <Input value={nuevaAgenciaNombrePersonal} onChange={e => setNuevaAgenciaNombrePersonal(e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Dirección</Label>
+                  <Textarea value={nuevaAgenciaDireccion} onChange={e => setNuevaAgenciaDireccion(e.target.value)} placeholder="Dirección completa..." className="min-h-[80px] resize-none" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Horario de atención</Label>
+                  <Textarea value={nuevaAgenciaHorarioAtencion} onChange={e => setNuevaAgenciaHorarioAtencion(e.target.value)} placeholder="Lunes a Viernes: 9:00 - 18:00..." className="min-h-[80px] resize-none" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Contacto telefónico</Label>
+                  <div className="space-y-2">
+                    {nuevaAgenciaTelefonos.map((telefono, index) => (
+                      <div key={`tel-agencia-lote-especial-${index}`} className="flex gap-2 items-center">
+                        <div className="flex-1">
+                          <Input
+                            placeholder="Número de teléfono"
+                            value={telefono.numero}
+                            onChange={(e) => handleActualizarTelefonoAgencia(index, e.target.value)}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant={telefono.principal ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleCambiarPrincipalAgencia(index)}
+                          className={telefono.principal ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+                        >
+                          {telefono.principal ? 'Principal' : 'Hacer Principal'}
+                        </Button>
+                        {nuevaAgenciaTelefonos.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleEliminarTelefonoAgencia(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAgregarTelefonoAgencia}
+                      className="w-full border-dashed"
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1.5" />
+                      Agregar otro teléfono
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCrearAgenciaDialog(false)}>Cancelar</Button>
+            <Button onClick={handleCrearAgencia} disabled={createAgenciaMutation.isPending}>Crear</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

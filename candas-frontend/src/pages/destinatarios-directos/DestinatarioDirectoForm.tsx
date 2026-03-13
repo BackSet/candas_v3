@@ -5,6 +5,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useDestinatarioDirecto, useCreateDestinatarioDirecto, useUpdateDestinatarioDirecto } from '@/hooks/useDestinatariosDirectos'
 import {
   destinatarioDirectoSchema,
@@ -35,9 +42,11 @@ export default function DestinatarioDirectoForm() {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
     reset,
   } = useForm<DestinatarioDirectoFormData>({
     resolver: zodResolver(destinatarioDirectoSchema),
+    defaultValues: { activo: true },
   })
 
   useEffect(() => {
@@ -141,6 +150,21 @@ export default function DestinatarioDirectoForm() {
                   </Button>
                 </div>
                 <FormError message={errors.codigo?.message} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="activo">Estado</Label>
+                <Select
+                  value={watch('activo') ? 'true' : 'false'}
+                  onValueChange={(value) => setValue('activo', value === 'true')}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Activo</SelectItem>
+                    <SelectItem value="false">Inactivo</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="nombreEmpresa" className="flex items-center gap-2">

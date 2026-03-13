@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useDespacho, useCreateDespacho, useUpdateDespacho, useSacasDespacho } from '@/hooks/useDespachos'
 import { usePaquete } from '@/hooks/usePaquetes'
 import { paqueteService } from '@/lib/api/paquete.service'
-import { useAgencias, useAgencia, useSearchAgencias } from '@/hooks/useAgencias'
+import { useAgencias, useAgencia, useSearchAgencias, useCreateAgencia } from '@/hooks/useAgencias'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
 import { usePaquetes } from '@/hooks/usePaquetes'
 import { useDestinatarioDirecto, useDestinatariosDirectos } from '@/hooks/useDestinatariosDirectos'
@@ -39,6 +39,8 @@ import { LoadingState } from '@/components/states'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { useDraftStore } from '@/stores/draftStore'
 import { CopyActionButton } from '@/components/ui/copy-action-button'
+import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
+import type { TelefonoFormItem } from '@/schemas/agencia'
 
 const DESPACHO_DRAFT_KEY = 'despacho-new'
 
@@ -385,6 +387,19 @@ export default function DespachoForm() {
     setValue('idDestinatarioDirecto', destinatario.idDestinatarioDirecto)
     setDestinatarioSeleccionado(destinatario)
   })
+  const createAgenciaMutation = useCreateAgencia()
+  const [showCrearAgenciaDialog, setShowCrearAgenciaDialog] = useState(false)
+  const [nuevaAgenciaNombre, setNuevaAgenciaNombre] = useState('')
+  const [nuevaAgenciaCodigo, setNuevaAgenciaCodigo] = useState('')
+  const [nuevaAgenciaEmail, setNuevaAgenciaEmail] = useState('')
+  const [nuevaAgenciaCanton, setNuevaAgenciaCanton] = useState('')
+  const [nuevaAgenciaNombrePersonal, setNuevaAgenciaNombrePersonal] = useState('')
+  const [nuevaAgenciaDireccion, setNuevaAgenciaDireccion] = useState('')
+  const [nuevaAgenciaHorarioAtencion, setNuevaAgenciaHorarioAtencion] = useState('')
+  const [nuevaAgenciaActiva, setNuevaAgenciaActiva] = useState(true)
+  const [nuevaAgenciaTelefonos, setNuevaAgenciaTelefonos] = useState<TelefonoFormItem[]>([
+    { numero: '', principal: true },
+  ])
 
   const {
     busqueda: busquedaDestinatarioDirecto, setBusqueda: setBusquedaDestinatarioDirecto,
@@ -394,8 +409,95 @@ export default function DespachoForm() {
     nuevoClienteTelefono, setNuevoClienteTelefono,
     nuevoClienteDireccion, setNuevoClienteDireccion,
     nuevoClienteCanton, setNuevoClienteCanton,
+    nuevoClienteCodigo, setNuevoClienteCodigo,
+    nuevoClienteNombreEmpresa, setNuevoClienteNombreEmpresa,
+    nuevoClienteActivo, setNuevoClienteActivo,
+    generarCodigo,
     handleCrearCliente,
   } = destinatarioManager
+
+  const handleAgregarTelefonoAgencia = () => {
+    setNuevaAgenciaTelefonos((prev) => [...prev, { numero: '', principal: false }])
+  }
+
+  const handleEliminarTelefonoAgencia = (index: number) => {
+    setNuevaAgenciaTelefonos((prev) => {
+      if (prev.length <= 1) return prev
+      const next = prev.filter((_, i) => i !== index)
+      if (prev[index]?.principal && next.length > 0) {
+        next[0].principal = true
+      }
+      return next
+    })
+  }
+
+  const handleCambiarPrincipalAgencia = (index: number) => {
+    setNuevaAgenciaTelefonos((prev) =>
+      prev.map((telefono, i) => ({ ...telefono, principal: i === index }))
+    )
+  }
+
+  const handleActualizarTelefonoAgencia = (index: number, numero: string) => {
+    setNuevaAgenciaTelefonos((prev) =>
+      prev.map((telefono, i) => (i === index ? { ...telefono, numero } : telefono))
+    )
+  }
+
+  const resetCrearAgenciaDialog = () => {
+    setNuevaAgenciaNombre('')
+    setNuevaAgenciaCodigo('')
+    setNuevaAgenciaEmail('')
+    setNuevaAgenciaCanton('')
+    setNuevaAgenciaNombrePersonal('')
+    setNuevaAgenciaDireccion('')
+    setNuevaAgenciaHorarioAtencion('')
+    setNuevaAgenciaActiva(true)
+    setNuevaAgenciaTelefonos([{ numero: '', principal: true }])
+  }
+
+  const handleCrearAgenciaRapida = async () => {
+    const nombre = nuevaAgenciaNombre.trim()
+    if (!nombre) {
+      toast.error('El nombre de la agencia es obligatorio')
+      return
+    }
+
+    const telefonosValidos = nuevaAgenciaTelefonos.filter((t) => t.numero.trim() !== '')
+    if (telefonosValidos.length === 0) {
+      toast.error('Debe ingresar al menos un número de teléfono')
+      return
+    }
+
+    if (!telefonosValidos.some((t) => t.principal)) {
+      telefonosValidos[0].principal = true
+    }
+
+    try {
+      const creada = await createAgenciaMutation.mutateAsync({
+        nombre,
+        codigo: nuevaAgenciaCodigo.trim() || undefined,
+        email: nuevaAgenciaEmail.trim() || undefined,
+        canton: nuevaAgenciaCanton.trim() || undefined,
+        nombrePersonal: nuevaAgenciaNombrePersonal.trim() || undefined,
+        direccion: nuevaAgenciaDireccion.trim() || undefined,
+        horarioAtencion: nuevaAgenciaHorarioAtencion.trim() || undefined,
+        activa: nuevaAgenciaActiva,
+        telefonos: telefonosValidos.map((telefono) => ({
+          numero: telefono.numero.trim(),
+          principal: telefono.principal,
+        })),
+      })
+
+      if (creada?.idAgencia != null) {
+        setValue('idAgencia', creada.idAgencia)
+        setTipoEnvio('agencia')
+      }
+      setShowCrearAgenciaDialog(false)
+      resetCrearAgenciaDialog()
+    } catch {
+      // Error gestionado por el hook.
+    }
+  }
 
   const { data: todosDestinatariosDirectos } = useDestinatariosDirectos()
   const idAgencia = watch('idAgencia')
@@ -1128,14 +1230,21 @@ export default function DespachoForm() {
                 {tipoEnvio === 'agencia' ? (
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Seleccionar Agencia</Label>
-                    <Combobox
-                      options={agenciasOpciones}
-                      value={idAgencia || null}
-                      onValueChange={(v) => setValue('idAgencia', v ? Number(v) : undefined)}
-                      placeholder="Buscar agencia..."
-                      onSearchChange={setBusquedaAgencia}
-                      searchValue={busquedaAgencia}
-                    />
+                    <div className="flex gap-2 items-end flex-wrap">
+                      <div className="flex-1 min-w-[200px]">
+                        <Combobox
+                          options={agenciasOpciones}
+                          value={idAgencia || null}
+                          onValueChange={(v) => setValue('idAgencia', v ? Number(v) : undefined)}
+                          placeholder="Buscar agencia..."
+                          onSearchChange={setBusquedaAgencia}
+                          searchValue={busquedaAgencia}
+                        />
+                      </div>
+                      <Button type="button" variant="outline" className="h-9 w-9 p-0 rounded-md" onClick={() => setShowCrearAgenciaDialog(true)}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                     {agenciaSeleccionada && (
                       <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-border text-sm space-y-1">
                         <p className="font-medium">{agenciaSeleccionada.nombre}</p>
@@ -1164,7 +1273,7 @@ export default function DespachoForm() {
                           searchValue={busquedaDestinatarioDirecto}
                         />
                       </div>
-                      <Button type="button" variant="outline" onClick={() => destinatarioManager.setShowCrearClienteDialog(true)}>
+                      <Button type="button" variant="outline" className="h-9 w-9 p-0 rounded-md" onClick={() => destinatarioManager.setShowCrearClienteDialog(true)}>
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -1618,17 +1727,162 @@ export default function DespachoForm() {
       </Dialog>
 
       <Dialog open={destinatarioManager.showCrearClienteDialog} onOpenChange={destinatarioManager.setShowCrearClienteDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Nuevo Cliente</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Nuevo Destinatario</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label>Nombre</Label><Input value={nuevoClienteNombre} onChange={e => setNuevoClienteNombre(e.target.value)} /></div>
-            <div className="space-y-2"><Label>Teléfono</Label><Input value={nuevoClienteTelefono} onChange={e => setNuevoClienteTelefono(e.target.value)} /></div>
-            <div className="space-y-2"><Label>Cantón</Label><Input value={nuevoClienteCanton} onChange={e => setNuevoClienteCanton(e.target.value)} /></div>
-            <div className="space-y-2"><Label>Dirección</Label><Textarea value={nuevoClienteDireccion} onChange={e => setNuevoClienteDireccion(e.target.value)} /></div>
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Nombre completo <span className="text-destructive">*</span></Label>
+                  <Input value={nuevoClienteNombre} onChange={e => setNuevoClienteNombre(e.target.value)} placeholder="Ej: Juan Pérez" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Teléfono <span className="text-destructive">*</span></Label>
+                  <Input value={nuevoClienteTelefono} onChange={e => setNuevoClienteTelefono(e.target.value)} placeholder="Ej: 0912345678" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Código</Label>
+                  <div className="flex gap-2">
+                    <Input value={nuevoClienteCodigo} onChange={e => setNuevoClienteCodigo(e.target.value)} className="font-mono" />
+                    <Button type="button" variant="outline" size="sm" className="h-9 shrink-0" onClick={generarCodigo}>
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      Generar
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Estado</Label>
+                  <Select value={nuevoClienteActivo ? 'true' : 'false'} onValueChange={(value) => setNuevoClienteActivo(value === 'true')}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Activo</SelectItem>
+                      <SelectItem value="false">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Cantón</Label>
+                  <Input value={nuevoClienteCanton} onChange={e => setNuevoClienteCanton(e.target.value)} placeholder="Ej: Quito" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Nombre empresa</Label>
+                  <Input value={nuevoClienteNombreEmpresa} onChange={e => setNuevoClienteNombreEmpresa(e.target.value)} placeholder="Opcional" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Dirección</Label>
+                  <Textarea value={nuevoClienteDireccion} onChange={e => setNuevoClienteDireccion(e.target.value)} placeholder="Calle principal, secundaria, número de casa..." className="min-h-[80px] resize-none" />
+                </div>
+              </div>
+            </section>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => destinatarioManager.setShowCrearClienteDialog(false)}>Cancelar</Button>
             <Button onClick={handleCrearCliente}>Crear</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCrearAgenciaDialog} onOpenChange={setShowCrearAgenciaDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Nueva Agencia</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Nombre Agencia <span className="text-destructive">*</span></Label>
+                  <Input value={nuevaAgenciaNombre} onChange={e => setNuevaAgenciaNombre(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Código</Label>
+                  <div className="flex gap-2">
+                    <Input value={nuevaAgenciaCodigo} onChange={e => setNuevaAgenciaCodigo(e.target.value)} className="font-mono" />
+                    <Button type="button" variant="outline" size="sm" className="h-9 shrink-0" onClick={() => setNuevaAgenciaCodigo(generarCodigo10Digitos())}>
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      Generar
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Email</Label>
+                  <Input value={nuevaAgenciaEmail} onChange={e => setNuevaAgenciaEmail(e.target.value)} type="email" placeholder="correo@agencia.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Estado</Label>
+                  <Select value={nuevaAgenciaActiva ? 'true' : 'false'} onValueChange={(value) => setNuevaAgenciaActiva(value === 'true')}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Activa</SelectItem>
+                      <SelectItem value="false">Inactiva</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Cantón</Label>
+                  <Input value={nuevaAgenciaCanton} onChange={e => setNuevaAgenciaCanton(e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Nombre personal contacto</Label>
+                  <Input value={nuevaAgenciaNombrePersonal} onChange={e => setNuevaAgenciaNombrePersonal(e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Dirección</Label>
+                  <Textarea value={nuevaAgenciaDireccion} onChange={e => setNuevaAgenciaDireccion(e.target.value)} placeholder="Dirección completa..." className="min-h-[80px] resize-none" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium">Horario de atención</Label>
+                  <Textarea value={nuevaAgenciaHorarioAtencion} onChange={e => setNuevaAgenciaHorarioAtencion(e.target.value)} placeholder="Lunes a Viernes: 9:00 - 18:00..." className="min-h-[80px] resize-none" />
+                </div>
+              </div>
+            </section>
+            <section className="rounded-lg border border-border bg-card p-4 sm:p-5 shadow-sm space-y-3">
+              <Label className="text-sm font-medium">Contacto telefónico</Label>
+              {nuevaAgenciaTelefonos.map((telefono, index) => (
+                <div key={`tel-agencia-rapida-${index}`} className="flex gap-2 items-center">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Número de teléfono"
+                      value={telefono.numero}
+                      onChange={(e) => handleActualizarTelefonoAgencia(index, e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant={telefono.principal ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleCambiarPrincipalAgencia(index)}
+                    className={telefono.principal ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+                  >
+                    {telefono.principal ? 'Principal' : 'Hacer Principal'}
+                  </Button>
+                  {nuevaAgenciaTelefonos.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleEliminarTelefonoAgencia(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={handleAgregarTelefonoAgencia} className="w-full border-dashed">
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Agregar otro teléfono
+              </Button>
+            </section>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCrearAgenciaDialog(false)}>Cancelar</Button>
+            <Button onClick={handleCrearAgenciaRapida} disabled={createAgenciaMutation.isPending}>
+              {createAgenciaMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Crear
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

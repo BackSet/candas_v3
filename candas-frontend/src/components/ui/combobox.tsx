@@ -4,7 +4,6 @@ import { Check, ChevronsUpDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 export interface ComboboxOption<T = any> {
   value: string | number
@@ -49,6 +48,7 @@ export function Combobox<T = any>({
   const [internalSearch, setInternalSearch] = React.useState("")
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const searchInputRef = React.useRef<HTMLInputElement>(null)
+  const dropdownPanelRef = React.useRef<HTMLDivElement>(null)
   const [dropdownRect, setDropdownRect] = React.useState({ top: 0, left: 0, width: 0 })
   const [containerRect, setContainerRect] = React.useState<{ top: number; left: number } | null>(null)
 
@@ -129,7 +129,8 @@ export function Combobox<T = any>({
         }
     : undefined
 
-  // Recalcular en scroll/resize y cerrar si la geometría deja de ser válida.
+  // Recalcular en resize y en scroll de contenedores relevantes del trigger.
+  // Evita escuchar scroll global en captura para no interferir con el scroll interno del dropdown.
   React.useEffect(() => {
     if (!open || !usePortal || !triggerRef.current) return
     const repositionOrClose = () => {
@@ -137,13 +138,29 @@ export function Combobox<T = any>({
         handleOpenChangeRef.current(false)
       }
     }
+
+    const trigger = triggerRef.current
+    const scrollParents: EventTarget[] = []
+    let p: HTMLElement | null = trigger.parentElement
+    while (p) {
+      const s = getComputedStyle(p)
+      const overflow = `${s.overflow}${s.overflowY}${s.overflowX}`
+      if (/auto|scroll|overlay/.test(overflow)) {
+        scrollParents.push(p)
+      }
+      p = p.parentElement
+    }
+    if (portalContainerRef?.current) {
+      scrollParents.push(portalContainerRef.current)
+    }
+
     window.addEventListener('resize', repositionOrClose)
-    window.addEventListener('scroll', repositionOrClose, true)
+    scrollParents.forEach((el) => el.addEventListener('scroll', repositionOrClose))
     return () => {
       window.removeEventListener('resize', repositionOrClose)
-      window.removeEventListener('scroll', repositionOrClose, true)
+      scrollParents.forEach((el) => el.removeEventListener('scroll', repositionOrClose))
     }
-  }, [open, usePortal, updatePortalGeometry])
+  }, [open, usePortal, updatePortalGeometry, portalContainerRef])
 
   // Enfocar el input de búsqueda tras montar el portal (evita que el focus trap del diálogo lo robe)
   React.useLayoutEffect(() => {
@@ -164,6 +181,7 @@ export function Combobox<T = any>({
         />
       )}
       <div
+        ref={dropdownPanelRef}
         role="dialog"
         aria-label="Lista de opciones"
         className={cn(
@@ -200,8 +218,11 @@ export function Combobox<T = any>({
             />
           </div>
         </div>
-        <ScrollArea
-          className={cn("max-h-60", usePortal && "flex-1 min-h-0")}
+        <div
+          className={cn(
+            "max-h-60 overflow-y-auto overscroll-contain",
+            usePortal && "flex-1 min-h-0"
+          )}
         >
           {filteredOptions.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
@@ -246,7 +267,7 @@ export function Combobox<T = any>({
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </div>
     </>
   ) : null
