@@ -171,10 +171,6 @@ public class DespachoService {
 
         despacho.setNumeroGuiaAgenciaDistribucion(dto.getNumeroGuiaAgenciaDistribucion());
         
-        // Generar número de manifiesto automáticamente
-        String numeroManifiesto = generarNumeroManifiesto();
-        despacho.setNumeroManifiesto(numeroManifiesto);
-        
         // Asignar destinatario directo: existente o creado desde paquete (prioridad a existente)
         if (dto.getIdDestinatarioDirecto() != null) {
             DestinatarioDirecto destinatarioDirecto = destinatarioDirectoRepository.findById(dto.getIdDestinatarioDirecto())
@@ -202,8 +198,12 @@ public class DespachoService {
             despacho.setDestinatarioDirecto(guardado);
         }
 
-        // Guardar despacho primero
+        // Guardar primero para obtener un ID real y generar un manifiesto sin colisiones.
         Despacho despachoGuardado = despachoRepository.save(despacho);
+        if (despachoGuardado.getNumeroManifiesto() == null || despachoGuardado.getNumeroManifiesto().isBlank()) {
+            despachoGuardado.setNumeroManifiesto(generarNumeroManifiesto(despachoGuardado.getIdDespacho()));
+            despachoGuardado = despachoRepository.save(despachoGuardado);
+        }
         if (despachoGuardado.getCodigoPresinto() == null || despachoGuardado.getCodigoPresinto().isBlank()) {
             despachoGuardado.setCodigoPresinto(calcularCodigoPresinto(despachoGuardado));
             despachoGuardado = despachoRepository.save(despachoGuardado);
@@ -221,9 +221,11 @@ public class DespachoService {
         );
     }
 
-    private String generarNumeroManifiesto() {
-        long siguienteId = despachoRepository.count() + 1;
-        String codigoHex = String.format("%0" + PADDING_HEX_CODIGO + "X", siguienteId);
+    private String generarNumeroManifiesto(Long idDespacho) {
+        if (idDespacho == null || idDespacho <= 0) {
+            throw new IllegalStateException("No se pudo generar numero de manifiesto: id de despacho inválido");
+        }
+        String codigoHex = String.format("%0" + PADDING_HEX_CODIGO + "X", idDespacho);
         return PREFIJO_NUMERO_MANIFIESTO + codigoHex;
     }
 
