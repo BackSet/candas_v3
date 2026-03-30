@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 @Configuration
 public class CorsConfig {
 
-    @Value("${candas.cors.allowed-origin-patterns:http://localhost:5174,http://127.0.0.1:5174}")
+    @Value("${candas.cors.allowed-origin-patterns:http://localhost:5173,http://127.0.0.1:5173}")
     private String allowedOriginPatterns;
 
     @Bean

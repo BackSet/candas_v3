@@ -1,96 +1,104 @@
 # Despliegue en producción — Candas
 
-Guía para desplegar el backend y el frontend de Candas en un entorno de producción. Para el stack exacto (versiones) consultar [TECH-STACK.md](TECH-STACK.md).
+Guía para desplegar Candas en Railway con dos servicios Docker separados.
 
----
+## Arquitectura objetivo (Railway)
 
-## Requisitos de producción
+- Servicio `candas-backend` (Spring Boot + Flyway + PostgreSQL).
+- Servicio `candas-frontend` (Vite compilado y servido con Nginx).
+- Ambos servicios públicos; frontend consume backend por URL pública.
 
-- **Java 25** (JDK 25)
-- **Node.js 20+** y **npm** (solo para generar el build del frontend)
-- **PostgreSQL** (12+ recomendado; el proyecto suele usar PostgreSQL 18 en desarrollo)
-- Servidor web o reverse proxy (Nginx, Caddy, etc.) para servir el frontend estático y, si se desea, proxy inverso al backend
+## Archivos de despliegue
 
----
+- Backend:
+  - `candas-backend/Dockerfile`
+  - `candas-backend/.dockerignore`
+  - `candas-backend/src/main/resources/application-prod.properties`
+- Frontend:
+  - `candas-frontend/Dockerfile`
+  - `candas-frontend/nginx.conf`
+  - `candas-frontend/.dockerignore`
 
-## Variables de entorno
+## Paso 1: Crear proyecto y servicios en Railway
 
-### Backend (Spring Boot)
+1. Crea un proyecto en Railway.
+2. Crea un servicio para backend conectado al mismo repo.
+3. Crea un servicio para frontend conectado al mismo repo.
+4. Configura el **Root Directory**:
+   - Backend: `candas-backend`
+   - Frontend: `candas-frontend`
 
-Configurar antes de ejecutar el JAR o el contenedor:
+## Paso 2: Configurar variables de entorno
 
-- **Base de datos:** `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
-- **JWT:** Secret y caducidad (por ejemplo `JWT_SECRET`, `JWT_EXPIRATION` o las propiedades que use la aplicación)
-- **Perfil:** `SPRING_PROFILES_ACTIVE=prod` (si existe perfil `prod`)
+### Backend (`candas-backend`)
 
-Consultar `candas-backend/src/main/resources/application.properties` (y perfiles `application-*.properties` si existen) para los nombres exactos de las propiedades.
+Variables mínimas:
 
-### Frontend (build estático)
+- `SPRING_PROFILES_ACTIVE=prod`
+- `DB_URL=jdbc:postgresql://<host>:<port>/<database>`
+- `DB_USERNAME=<usuario>`
+- `DB_PASSWORD=<password>`
+- `JWT_SECRET=<secreto-largo-y-seguro>`
+- `JWT_EXPIRATION=86400000`
+- `PRESINTO_SECRET=<secreto-largo-y-seguro>`
+- `CORS_ALLOWED_ORIGINS=https://<frontend>.up.railway.app`
 
-El frontend se construye contra una URL base del API. Si la API está en otro origen o ruta, configurar la variable de entorno que use Vite (por ejemplo `VITE_API_BASE_URL`) antes del build. Revisar `candas-frontend` para la variable exacta.
+Notas:
 
----
+- En `prod`, el backend usa `server.port=${PORT:8080}` para ajustarse al puerto dinámico de Railway.
+- En `prod`, no necesitas definir `SERVER_ADDRESS` ni `SERVER_PORT`.
+- Flyway corre al arranque y aplica migraciones automáticamente.
+- También se acepta `CORS_ALLOWED_ORIGIN_PATTERNS` por compatibilidad, pero se recomienda `CORS_ALLOWED_ORIGINS`.
 
-## Backend: generación del JAR y ejecución
+### Frontend (`candas-frontend`)
 
-1. **Generar el JAR:**
-   ```bash
-   cd candas-backend
-   ./mvnw -DskipTests package
-   ```
-   El JAR ejecutable quedará en `target/` (por ejemplo `candas-backend-0.0.1-SNAPSHOT.jar`).
+Variables mínimas:
 
-2. **Ejecutar:**
-   ```bash
-   java -jar target/candas-backend-*.jar
-   ```
-   O con variables de entorno:
-   ```bash
-   export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/candas
-   export SPRING_DATASOURCE_USERNAME=usuario
-   export SPRING_DATASOURCE_PASSWORD=contraseña
-   java -jar target/candas-backend-*.jar
-   ```
+- `VITE_API_BASE_URL=https://<backend>.up.railway.app`
 
-3. **Flyway** se ejecuta al arranque y aplica las migraciones sobre la base de datos configurada. Asegurar que el usuario de BD tenga permisos para crear/modificar tablas.
+Notas:
 
-4. Por defecto Spring Boot expone la API en el puerto **8080**. Cambiar con `server.port` o `SERVER_PORT` si hace falta.
+- El frontend toma variables desde `candas-frontend/.env` durante el build.
+- En Railway, define `VITE_API_BASE_URL` en el servicio frontend para que Railway genere ese `.env` en build-time.
+- El Nginx del contenedor incluye fallback SPA para rutas de TanStack Router.
+- Para desarrollo local, puedes usar `candas-frontend/.env.development.example` si necesitas personalizar `VITE_NETWORK_MODE` y `VITE_PORT`.
 
----
+## Paso 3: Orden de despliegue recomendado
 
-## Frontend: build de producción
+1. Desplegar backend.
+2. Confirmar que backend responde:
+   - `https://<backend>.up.railway.app/v3/api-docs`
+3. Configurar/validar `VITE_API_BASE_URL` en frontend.
+4. Desplegar frontend.
+5. Validar login y llamadas a `/api`.
 
-1. **Instalar dependencias y generar build:**
-   ```bash
-   cd candas-frontend
-   npm ci
-   npm run build
-   ```
-   La salida estática quedará en `dist/` (por defecto en Vite).
+## Comandos útiles de validación local
 
-2. **Servir el contenido de `dist/`:**
-   - Copiar el contenido de `dist/` al directorio que sirva el servidor web (Nginx, Caddy, Apache, etc.).
-   - Configurar **SPA fallback:** todas las rutas que no coincidan con un archivo estático deben devolver `index.html` para que TanStack Router funcione.
-   - Ejemplo Nginx:
-     ```nginx
-     root /ruta/a/candas-frontend/dist;
-     index index.html;
-     location / {
-         try_files $uri $uri/ /index.html;
-     }
-     ```
-   - Si el backend está en el mismo dominio bajo `/api`, configurar el proxy inverso correspondiente para que el frontend llame a `/api/...`.
+### Backend
 
-3. **CORS:** Si el frontend y el backend están en dominios distintos, configurar CORS en el backend (Spring Security) para permitir el origen del frontend.
+```bash
+cd candas-backend
+./mvnw -DskipTests compile
+docker build -t candas-backend:local .
+```
 
----
+### Frontend
 
-## Resumen
+```bash
+cd candas-frontend
+npm ci
+npm run build
+docker build -t candas-frontend:local .
+```
 
-| Componente | Comando / Acción |
-|------------|-------------------|
-| Backend | `./mvnw -DskipTests package` → `java -jar target/*.jar` |
-| Frontend | `npm ci` → `npm run build` → servir contenido de `dist/` con SPA fallback |
-| Base de datos | PostgreSQL creado y migrado por Flyway al arrancar el backend |
+## Troubleshooting rápido
 
-Para más detalle sobre tecnologías y versiones: [TECH-STACK.md](TECH-STACK.md).
+- **Error CORS en navegador**:
+  - Revisar `CORS_ALLOWED_ORIGINS` en backend.
+  - Confirmar que el valor coincide con la URL exacta del frontend Railway.
+- **Frontend no conecta API**:
+  - Verificar `VITE_API_BASE_URL` y redeploy frontend.
+- **Backend no inicia**:
+  - Validar `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` y logs de Flyway.
+
+Para más detalle de stack y versiones: [TECH-STACK.md](TECH-STACK.md).
