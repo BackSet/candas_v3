@@ -345,7 +345,7 @@ CANDAS se posiciona en el **nivel intermedio-alto** del mercado de sistemas log�
 
 - Docker (Containerización, opcional)
 - PostgreSQL (Base de datos)
-- Nginx (Reverse proxy, opcional)
+- Caddy (Servidor estático del SPA en imagen Docker de producción)
 
 ### Arquitectura
 

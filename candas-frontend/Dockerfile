@@ -1,3 +1,4 @@
+# ---- Stage 1: Build ----
 FROM node:20-alpine AS build
 WORKDIR /app
 
@@ -11,12 +12,15 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.27-alpine
+# ---- Stage 2: Runtime (Caddy, alineado con ecubox-frontend) ----
+FROM caddy:2-alpine
+WORKDIR /srv
 
-# Railway (y otros) suelen sobrescribir PORT en runtime (p. ej. 80); nginx.conf usa listen ${PORT}.
-ENV PORT=8080
+ENV PORT=80
 
-COPY nginx.conf /etc/nginx/templates/default.conf.template
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /app/dist /srv/dist
 
-EXPOSE 8080
+EXPOSE 80
+
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
