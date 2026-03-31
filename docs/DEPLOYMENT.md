@@ -17,6 +17,7 @@ Guía para desplegar Candas en Railway con dos servicios Docker separados.
 - Frontend:
   - `candas-frontend/Dockerfile`
   - `candas-frontend/nginx.conf` (plantilla para `/etc/nginx/templates/`)
+  - `candas-frontend/railway.json` (healthcheck, restart)
   - `candas-frontend/.dockerignore`
 
 ## Paso 1: Crear proyecto y servicios en Railway
@@ -60,7 +61,7 @@ Notas:
 
 - El `Dockerfile` declara `ARG`/`ENV` para `VITE_API_BASE_URL` antes de `npm run build`, de modo que la variable del servicio Railway quede embebida en el bundle.
 - En local: copia `candas-frontend/.env.production.example` a `.env.production` o exporta la variable antes de `npm run build`.
-- Nginx usa `listen ${PORT}` tras `envsubst` en el arranque de la imagen oficial. `ENV PORT=80` en el Dockerfile es valor por defecto; Railway suele sobrescribir `PORT` (el **target port** del dominio debe coincidir).
+- Nginx usa `listen 0.0.0.0:${PORT}` tras `envsubst` (recomendación Railway: `0.0.0.0` + variable `PORT`). `ENV PORT=80` en el Dockerfile es solo default local; Railway sobrescribe `PORT` en runtime.
 - Desarrollo: `candas-frontend/.env.development.example` y `.env.lan.example` (`VITE_NETWORK_MODE=lan` solo para acceso en red local).
 
 ## Paso 3: Orden de despliegue recomendado
@@ -100,5 +101,26 @@ docker build -t candas-frontend:local .
   - Verificar `VITE_API_BASE_URL` y redeploy frontend.
 - **Backend no inicia**:
   - Validar `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` y logs de Flyway.
+
+### Railway: «Application failed to respond» / 502
+
+Ese mensaje indica que el [Edge Proxy no puede alcanzar tu aplicación](https://docs.railway.com/guides/fixing-common-errors) (respuesta 502). Revisa en este orden:
+
+1. **Target port**  
+   En el servicio afectado, abre **Variables** y anota el valor de **`PORT`** (Railway lo inyecta). En **Networking → dominio público**, el **target port** debe ser **exactamente** ese número. Un error típico es dejar el target en `3000` cuando la app escucha en `8080` (o al revés), [como describe la documentación](https://docs.railway.com/guides/fixing-common-errors).
+
+2. **Host y puerto de escucha**  
+   El proceso debe escuchar en **`0.0.0.0`** y en el **`PORT`** de Railway. El frontend usa Nginx con `listen 0.0.0.0:${PORT}`; el backend Spring usa `server.port=${PORT:8080}`.
+
+3. **Dominio correcto**  
+   El `.up.railway.app` (o custom domain) debe estar asociado al **mismo servicio** que despliega esa app (no mezclar un dominio del servicio `candas-frontend` con otro servicio).
+
+4. **Healthcheck**  
+   `candas-frontend/railway.json` define `healthcheckPath: "/"` para que el despliegue no se marque listo hasta que Nginx responda. Si falla, revisa **Deploy logs** (p. ej. `listen` mal formado si `PORT` no se sustituyó).
+
+5. **Build del frontend**  
+   `VITE_API_BASE_URL` no corrige un 502 en `/`, pero es necesaria para el login y las llamadas al API tras cargar la SPA.
+
+Referencias oficiales: [Fixing Common Errors](https://docs.railway.com/guides/fixing-common-errors), [Config as code](https://docs.railway.com/reference/config-as-code), [Public networking](https://docs.railway.com/networking/public-networking).
 
 Para más detalle de stack y versiones: [TECH-STACK.md](TECH-STACK.md).
