@@ -16,8 +16,9 @@ RUN npm run build
 # Nginx + plantilla envsubst: patrón recomendado en Railway (evita 502 frecuentes con Caddy + edge).
 FROM nginx:1.27-alpine
 
-# Default para docker local. En Railway la plataforma inyecta PORT en runtime: el
-# target port del dominio público (Networking) debe ser exactamente ese valor.
+# Default para docker local (`docker run` sin PORT). En Railway la plataforma
+# inyecta PORT en runtime (típ. 8080): Nginx escucha ahí vía envsubst; el target
+# port del dominio en Networking debe coincidir con ese PORT, no con lo siguiente.
 ENV PORT=80
 
 COPY nginx.conf /etc/nginx/templates/default.conf.template
@@ -26,4 +27,6 @@ RUN chmod +x /docker-entrypoint.d/10-default-port.sh
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+# 80 = imagen local con ENV PORT=80. 8080 = puerto habitual de Railway (PORT
+# inyectado). EXPOSE es solo metadocumentación; el edge usa el target port del panel.
+EXPOSE 80 8080

@@ -74,6 +74,16 @@ Notas:
 4. Desplegar frontend.
 5. Validar login y llamadas a `/api`.
 
+### Checklist: dominio público del frontend (evitar 502 con healthcheck OK)
+
+Railway no expone el **target port** del dominio en `railway.json`; hay que revisarlo en el panel. Si en **Deploy logs** ves `candas-frontend: Nginx escuchará en PORT=8080` y el healthcheck da 200, pero el navegador recibe 502:
+
+1. Abre el servicio **`candas-frontend`** (mismo que usa `candas-frontend/Dockerfile`), no el backend.
+2. Ve a **Settings → Networking** (o **Public Networking**).
+3. Edita el dominio (`…-frontend.up.railway.app` o el custom).
+4. Pon el **target port** en el **mismo número** que **`PORT`** en **Variables** (o el que muestra el log al arrancar; suele ser **8080**).
+5. **No** uses **80** como target solo porque el `Dockerfile` declara `EXPOSE 80` / `ENV PORT=80`: eso es el default para **Docker local**; en Railway Nginx escucha en el **`PORT` inyectado** por la plataforma.
+
 ## Comandos útiles de validación local
 
 ### Backend
@@ -113,7 +123,7 @@ Ese mensaje indica que el [Edge Proxy no puede alcanzar tu aplicación](https://
 2. **Host y puerto de escucha**  
    El proceso debe escuchar en **`0.0.0.0`** y en el **`PORT`** de Railway. El frontend usa Nginx con `listen 0.0.0.0:${PORT}` y `listen [::]:${PORT}`; el backend Spring usa `server.port=${PORT:8080}`.
 
-   **Healthcheck 200 en logs pero el navegador sigue con 502:** el healthcheck de Railway habla con el contenedor en el puerto correcto (`PORT`), pero el **dominio público** puede tener un **target port** distinto. Abre **Networking** en el servicio **frontend**, edita el dominio (`…-frontend.up.railway.app`) y pon el **target port = mismo número** que ves en **Variables → `PORT`** (o el que imprime el log `candas-frontend: Nginx escuchará en PORT=…` al arrancar). No mezcles el `PORT` del backend con el del frontend.
+   **Healthcheck 200 en logs pero el navegador sigue con 502:** el healthcheck de Railway habla con el contenedor en el puerto correcto (`PORT`), pero el **dominio público** puede tener un **target port** distinto. Abre **Networking** en el servicio **frontend**, edita el dominio (`…-frontend.up.railway.app`) y pon el **target port = mismo número** que ves en **Variables → `PORT`** (o el que imprime el log `candas-frontend: Nginx escuchará en PORT=…` al arrancar). No mezcles el `PORT` del backend con el del frontend. Si el log muestra `PORT=8080`, el dominio debe apuntar a **8080**; **no** tomes **80** del `EXPOSE` del Dockerfile como referencia para producción.
 
 3. **Dominio correcto**  
    El `.up.railway.app` (o custom domain) debe estar asociado al **mismo servicio** que despliega esa app (no mezclar un dominio del servicio `candas-frontend` con otro servicio). Si el **backend responde** pero `https://…-frontend.up.railway.app` no, revisa **solo el servicio del frontend** (Variables + Networking de ese servicio, no del backend).
