@@ -60,7 +60,7 @@ Notas:
 
 - El `Dockerfile` declara `ARG`/`ENV` para `VITE_API_BASE_URL` antes de `npm run build`, de modo que la variable del servicio Railway quede embebida en el bundle.
 - En local: copia `candas-frontend/.env.production.example` a `.env.production` o exporta la variable antes de `npm run build`.
-- Caddy escucha `:{$PORT}`; el `Dockerfile` fija `ENV PORT=80` por defecto. Railway puede sobrescribir `PORT`; el **target port** del dominio público debe coincidir.
+- Caddy escucha `:{$PORT:80}`: Railway debe definir `PORT` en runtime y el **target port** del dominio público debe ser el mismo. Si ejecutas el contenedor en local sin `PORT`, se usa 80.
 - Desarrollo: `candas-frontend/.env.development.example` y `.env.lan.example` (`VITE_NETWORK_MODE=lan` solo para acceso en red local).
 
 ## Paso 3: Orden de despliegue recomendado

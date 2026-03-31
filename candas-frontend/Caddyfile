@@ -1,19 +1,28 @@
-# Puerto en runtime: Railway u otros inyectan PORT (por defecto 80 en Dockerfile).
-:{$PORT}
+# Railway inyecta PORT en runtime. Si falta (p. ej. docker local), Caddy usa 80.
+# Bloque de sitio explícito + handle evita fallos de encadenado try_files/file_server (502 en edge).
+:{$PORT:80} {
+	root * /srv/dist
+	encode zstd gzip
 
-encode zstd gzip
-root * /srv/dist
+	@cachedStatic {
+		path *.css *.js *.mjs *.ico *.svg *.png *.jpg *.jpeg *.gif *.webp *.woff *.woff2 *.ttf
+	}
+	header @cachedStatic Cache-Control "public, max-age=31536000, immutable"
 
-@assets {
-	path *.css *.js *.mjs *.ico *.svg *.png *.jpg *.jpeg *.gif *.webp *.woff *.woff2 *.ttf
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	# Vite: JS/CSS con hash bajo /assets/
+	handle /assets/* {
+		file_server
+	}
+
+	# SPA: rutas del cliente (/, /login, …)
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
 }
-header @assets Cache-Control "public, max-age=31536000, immutable"
-
-header {
-	X-Content-Type-Options nosniff
-	X-Frame-Options DENY
-	Referrer-Policy strict-origin-when-cross-origin
-}
-
-try_files {path} /index.html
-file_server

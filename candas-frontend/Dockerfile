@@ -16,7 +16,8 @@ RUN npm run build
 FROM caddy:2-alpine
 WORKDIR /srv
 
-ENV PORT=80
+# No fijar PORT aquí: Railway lo inyecta y debe coincidir con el target del dominio público.
+# Caddyfile usa {$PORT:80} si la variable no existe (p. ej. prueba local sin -e PORT).
 
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/dist /srv/dist
