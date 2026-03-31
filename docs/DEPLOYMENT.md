@@ -79,9 +79,9 @@ Notas:
 Railway no expone el **target port** del dominio en `railway.json`; hay que revisarlo en el panel. Si en **Deploy logs** ves `candas-frontend: Nginx escuchará en PORT=8080` y el healthcheck da 200, pero el navegador recibe 502:
 
 1. Abre el servicio **`candas-frontend`** (mismo que usa `candas-frontend/Dockerfile`), no el backend.
-2. Ve a **Settings → Networking** (o **Public Networking**).
-3. Edita el dominio (`…-frontend.up.railway.app` o el custom).
-4. Pon el **target port** en el **mismo número** que **`PORT`** en **Variables** (o el que muestra el log al arrancar; suele ser **8080**).
+2. Ve a **Settings → Networking** → **Public Networking** (no basta con la pestaña Build/Deploy).
+3. En la tarjeta del dominio (`…-frontend.up.railway.app` o custom), pulsa **editar** (icono de lápiz).
+4. Pon el **target port** en el **mismo número** que **`PORT`** en **Variables** o el que muestra el log (`candas-frontend: Nginx escuchará en PORT=…`; suele ser **8080**). **Señal típica:** la UI muestra **→ Port 80** debajo del dominio pero el log indica **`PORT=8080`** → ahí el edge habla con el puerto equivocado y aparece 502 / [Application failed to respond](https://docs.railway.com/networking/troubleshooting/application-failed-to-respond). Deja el dominio en **→ Port 8080** (o el mismo entero que `PORT`).
 5. **No** uses **80** como target solo porque el `Dockerfile` declara `EXPOSE 80` / `ENV PORT=80`: eso es el default para **Docker local**; en Railway Nginx escucha en el **`PORT` inyectado** por la plataforma.
 
 ## Comandos útiles de validación local
