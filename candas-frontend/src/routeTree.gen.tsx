@@ -1,13 +1,13 @@
 import { createRoute, createRouter, useParams } from '@tanstack/react-router'
 import { rootRoute } from './routes/__root'
 import { layoutRoute } from './routes/_layout'
-import { indexRoute } from './routes/index'
 import { lazyRouteComponent } from '@tanstack/react-router'
 import { PERMISSIONS } from '@/types/permissions'
 import ProtectedRouteByPermission from '@/components/auth/ProtectedByPermission'
 import { useAuthStore } from '@/stores/authStore'
 import { Navigate } from '@tanstack/react-router'
 
+const HomePage = lazyRouteComponent(() => import('@/pages/home/HomePage'))
 const Login = lazyRouteComponent(() => import('@/pages/auth/Login'))
 const Register = lazyRouteComponent(() => import('@/pages/auth/Register'))
 const Dashboard = lazyRouteComponent(() => import('@/pages/dashboard/Dashboard'))
@@ -62,6 +62,16 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
+
+const homeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: () => (
+    <PublicRoute>
+      <HomePage />
+    </PublicRoute>
+  ),
+})
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -659,10 +669,10 @@ const operarioEtiquetasRedirectRoute = createRoute({
 })
 
 const routeTree = rootRoute.addChildren([
+  homeRoute,
   loginRoute,
   registerRoute,
   layoutRoute.addChildren([
-    indexRoute,
     dashboardRoute,
     paquetesIndexRoute,
     paquetesNewRoute,
