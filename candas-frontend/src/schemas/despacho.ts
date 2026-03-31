@@ -56,9 +56,9 @@ export function despachoToFormData(despacho: Despacho): DespachoFormData {
     usuarioRegistro: despacho.usuarioRegistro,
     observaciones: despacho.observaciones || '',
     codigoPresinto: despacho.codigoPresinto ?? '',
-    idAgencia: despacho.idAgencia,
-    idDistribuidor: despacho.idDistribuidor,
-    numeroGuiaAgenciaDistribucion: despacho.numeroGuiaAgenciaDistribucion,
+    idAgencia: despacho.idAgencia ?? undefined,
+    idDistribuidor: despacho.idDistribuidor ?? undefined,
+    numeroGuiaAgenciaDistribucion: despacho.numeroGuiaAgenciaDistribucion ?? undefined,
     idDestinatarioDirecto:
       despacho.idDestinatarioDirecto ||
       despacho.despachoDirecto?.destinatarioDirecto?.idDestinatarioDirecto,

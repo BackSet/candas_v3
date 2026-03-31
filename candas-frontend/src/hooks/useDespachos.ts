@@ -52,11 +52,11 @@ export function useUpdateDespacho() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto: Despacho }) =>
-      despachoService.update(id, dto),
+    mutationFn: ({ id, dto }: { id: number; dto: Despacho }) => despachoService.update(id, dto),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['despachos'] })
       queryClient.invalidateQueries({ queryKey: ['despacho', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['despacho-sacas', variables.id] })
       toast.success('Despacho actualizado exitosamente')
     },
     onError: (error: unknown) => {

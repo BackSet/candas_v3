@@ -35,7 +35,7 @@ import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoMan
 import AgregarCadenitaFormDialog from '@/components/despacho/AgregarCadenitaFormDialog'
 import PaqueteRapidoFormDialog from '@/components/despacho/PaqueteRapidoFormDialog'
 import { Separator } from '@/components/ui/separator'
-import { LoadingState } from '@/components/states'
+import { ErrorState, LoadingState } from '@/components/states'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { useDraftStore } from '@/stores/draftStore'
 import { CopyActionButton } from '@/components/ui/copy-action-button'
@@ -195,7 +195,12 @@ export default function DespachoForm() {
   const [sacaSeleccionadaParaPaquetes, setSacaSeleccionadaParaPaquetes] = useState<number | null>(null)
   const [paquetesAgregados, setPaquetesAgregados] = useState<Map<number, Paquete>>(new Map())
 
-  const { data: despacho, isLoading: loadingDespacho } = useDespacho(id ? Number(id) : undefined)
+  const {
+    data: despacho,
+    isLoading: loadingDespacho,
+    isError: isErrorDespacho,
+    error: errorDespacho,
+  } = useDespacho(id ? Number(id) : undefined)
   const { data: agenciasData } = useAgencias(0, 100)
   const { data: distribuidoresData } = useDistribuidores(0, 100)
   const { data: paquetesData } = usePaquetes(0, 1000)
@@ -230,14 +235,23 @@ export default function DespachoForm() {
   const { sacas, setSacas } = sacasManager
 
   useEffect(() => {
-    if (isEdit && sacasDespacho && sacasDespacho.length > 0) {
+    if (!isEdit) return
+    if (sacasDespacho && sacasDespacho.length > 0) {
       const nuevasSacas: SacaFormData[] = sacasDespacho.map(s => ({
         tamano: s.tamano,
         idPaquetes: s.idPaquetes || [],
       }))
       setSacas(nuevasSacas)
+      return
     }
-  }, [sacasDespacho, isEdit, setSacas])
+    if (despacho?.sacas && despacho.sacas.length > 0) {
+      const nuevasSacas: SacaFormData[] = despacho.sacas.map(s => ({
+        tamano: s.tamano,
+        idPaquetes: s.idPaquetes || [],
+      }))
+      setSacas(nuevasSacas)
+    }
+  }, [sacasDespacho, despacho?.sacas, isEdit, setSacas])
 
   // Restaurar borrador al montar (solo para nuevo despacho)
   useEffect(() => {
@@ -893,12 +907,20 @@ export default function DespachoForm() {
   }
 
   const onSubmit = async (data: DespachoFormData) => {
-    if (sacas.length === 0) { toast.error('Debe haber al menos una saca'); return }
-    for (let i = 0; i < sacas.length; i++) {
-      if (sacas[i].idPaquetes.length === 0) { toast.error(`La saca ${i + 1} debe tener al menos un paquete`); return }
+    if (sacas.length === 0) {
+      toast.error('Debe haber al menos una saca'); return
     }
-    if (tipoEnvio === 'agencia' && !data.idAgencia) { toast.error('Selecciona una agencia'); return }
-    if (tipoEnvio === 'directo' && !data.idDestinatarioDirecto) { toast.error('Selecciona un destinatario'); return }
+    for (let i = 0; i < sacas.length; i++) {
+      if (sacas[i].idPaquetes.length === 0) {
+        toast.error(`La saca ${i + 1} debe tener al menos un paquete`); return
+      }
+    }
+    if (tipoEnvio === 'agencia' && !data.idAgencia) {
+      toast.error('Selecciona una agencia'); return
+    }
+    if (tipoEnvio === 'directo' && !data.idDestinatarioDirecto) {
+      toast.error('Selecciona un destinatario'); return
+    }
 
     const despachoData: Despacho = {
       fechaDespacho: new Date(data.fechaDespacho).toISOString(),
@@ -920,10 +942,21 @@ export default function DespachoForm() {
         toast.success(`Despacho creado: ${res.numeroManifiesto}`)
       }
       navigate({ to: '/despachos' })
-    } catch (e) { }
+    } catch (e) {
+      // Error manejado por el hook
+    }
   }
 
   if (isEdit && loadingDespacho) return <LoadingState label="Cargando..." className="min-h-[50vh]" />
+  if (isEdit && isErrorDespacho) {
+    return (
+      <ErrorState
+        title="No se pudo cargar el despacho"
+        description={(errorDespacho as Error | undefined)?.message ?? 'Intenta nuevamente en unos segundos.'}
+        className="min-h-[50vh]"
+      />
+    )
+  }
 
   return (
     <StandardPageLayout

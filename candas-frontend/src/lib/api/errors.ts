@@ -4,7 +4,13 @@
 export type ApiError = {
   response?: {
     status?: number
-    data?: { message?: string; detail?: string; reason?: string }
+    data?: {
+      message?: string
+      detail?: string
+      reason?: string
+      error?: string
+      errors?: Record<string, string>
+    }
   }
 }
 
@@ -13,7 +19,13 @@ export type ApiError = {
  */
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   const data = (error as ApiError)?.response?.data
-  const message = data?.message ?? data?.detail ?? data?.reason
+  const validationMessage =
+    data?.errors && Object.keys(data.errors).length > 0
+      ? Object.entries(data.errors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join(' | ')
+      : undefined
+  const message = data?.message ?? data?.detail ?? data?.reason ?? validationMessage ?? data?.error
   return typeof message === 'string' && message.trim().length > 0
     ? message
     : fallback

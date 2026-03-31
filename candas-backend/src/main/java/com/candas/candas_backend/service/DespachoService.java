@@ -17,6 +17,7 @@ import com.candas.candas_backend.security.AgenciaScopeResolver;
 import com.candas.candas_backend.util.PresintoUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,6 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class DespachoService {
-
     private static final String PREFIJO_NUMERO_MANIFIESTO = "MAN-";
     private static final String PREFIJO_CODIGO_QR_SACA = "SAC-";
     private static final int PADDING_HEX_CODIGO = 8;
@@ -48,6 +48,7 @@ public class DespachoService {
     private final PresintoUtil presintoUtil;
     private final AgenciaScopeResolver agenciaScopeResolver;
     private final UsuarioRepository usuarioRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public DespachoService(
             DespachoRepository despachoRepository,
@@ -58,7 +59,8 @@ public class DespachoService {
             DestinatarioDirectoRepository destinatarioDirectoRepository,
             PresintoUtil presintoUtil,
             AgenciaScopeResolver agenciaScopeResolver,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            JdbcTemplate jdbcTemplate) {
         this.despachoRepository = despachoRepository;
         this.sacaRepository = sacaRepository;
         this.agenciaRepository = agenciaRepository;
@@ -68,6 +70,7 @@ public class DespachoService {
         this.presintoUtil = presintoUtil;
         this.agenciaScopeResolver = agenciaScopeResolver;
         this.usuarioRepository = usuarioRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public Page<DespachoDTO> findAll(Pageable pageable, String tipoDestino, LocalDate fechaDesde, LocalDate fechaHasta, String search) {
@@ -191,28 +194,7 @@ public class DespachoService {
             }
         });
 
-        // Validar que haya al menos una saca
-        if (dto.getSacas() == null || dto.getSacas().isEmpty()) {
-            throw new IllegalArgumentException("Debe haber al menos una saca en el despacho");
-        }
-
-        // Validar que cada saca tenga al menos un paquete
-        for (SacaDTO sacaDTO : dto.getSacas()) {
-            if (sacaDTO.getIdPaquetes() == null || sacaDTO.getIdPaquetes().isEmpty()) {
-                throw new IllegalArgumentException("Cada saca debe tener al menos un paquete");
-            }
-        }
-
-        // Validar que no se pueda tener agencia Y envío directo al mismo tiempo
-        if (dto.getIdAgencia() != null && (dto.getIdDestinatarioDirecto() != null || dto.getIdPaqueteOrigenDestinatario() != null)) {
-            throw new IllegalArgumentException("Un despacho no puede tener agencia y envío directo al mismo tiempo");
-        }
-        // Para despacho a domicilio debe indicarse destinatario existente o paquete origen
-        if (dto.getIdAgencia() == null
-                && dto.getIdDestinatarioDirecto() == null
-                && (dto.getIdPaqueteOrigenDestinatario() == null)) {
-            throw new IllegalArgumentException("Debe indicar un destinatario directo existente o un paquete de origen para crear el destinatario");
-        }
+        validarDespacho(dto);
 
         Despacho despacho = toEntity(dto);
         
@@ -238,25 +220,7 @@ public class DespachoService {
                 .orElseThrow(() -> new ResourceNotFoundException("DestinatarioDirecto", dto.getIdDestinatarioDirecto()));
             despacho.setDestinatarioDirecto(destinatarioDirecto);
         } else if (dto.getIdPaqueteOrigenDestinatario() != null) {
-            Paquete paquete = paqueteRepository.findById(dto.getIdPaqueteOrigenDestinatario())
-                .orElseThrow(() -> new ResourceNotFoundException("Paquete", dto.getIdPaqueteOrigenDestinatario()));
-            Cliente cliente = paquete.getClienteDestinatario();
-            if (cliente == null) {
-                throw new IllegalArgumentException("El paquete no tiene cliente destinatario");
-            }
-            DestinatarioDirecto nuevo = new DestinatarioDirecto();
-            nuevo.setNombreDestinatario(cliente.getNombreCompleto() != null ? cliente.getNombreCompleto() : "Sin nombre");
-            String telefono = (cliente.getTelefono() != null && !cliente.getTelefono().isBlank())
-                ? cliente.getTelefono() : "N/A";
-            nuevo.setTelefonoDestinatario(telefono);
-            nuevo.setDireccionDestinatario(cliente.getDireccion());
-            nuevo.setCanton(cliente.getProvincia() != null ? cliente.getProvincia() : cliente.getCanton());
-            nuevo.setCodigo(cliente.getCanton());
-            nuevo.setNombreEmpresa(null);
-            nuevo.setFechaRegistro(LocalDateTime.now());
-            nuevo.setActivo(true);
-            DestinatarioDirecto guardado = destinatarioDirectoRepository.save(nuevo);
-            despacho.setDestinatarioDirecto(guardado);
+            despacho.setDestinatarioDirecto(crearDestinatarioDesdePaquete(dto.getIdPaqueteOrigenDestinatario()));
         }
 
         // Guardar primero para obtener un ID real y generar un manifiesto sin colisiones.
@@ -332,7 +296,7 @@ public class DespachoService {
         for (Saca sacaExistente : sacasExistentes) {
             desasociarPaquetesDeSaca(sacaExistente);
         }
-        
+
         // Eliminar todas las sacas existentes usando consulta nativa para garantizar ejecución inmediata
         sacaRepository.deleteByDespachoIdDespacho(despacho.getIdDespacho());
         
@@ -345,6 +309,9 @@ public class DespachoService {
     }
 
     private void crearYAsignarSacas(Despacho despacho, List<SacaDTO> sacasDTO) {
+        // Al eliminar y recrear sacas, la secuencia puede quedar desfasada en BD.
+        // Se realinea antes de insertar para evitar colisiones de PK.
+        alinearSecuenciaSaca();
         int numeroOrden = 1;
         for (SacaDTO sacaDTO : sacasDTO) {
             Saca saca = new Saca();
@@ -396,9 +363,32 @@ public class DespachoService {
         return PREFIJO_CODIGO_QR_SACA + codigoDespacho + "-" + String.format("%0" + PADDING_NUMERO_ORDEN_SACA + "d", numeroOrden);
     }
 
+    private void alinearSecuenciaSaca() {
+        jdbcTemplate.queryForObject(
+                "SELECT setval(pg_get_serial_sequence('saca', 'id_saca'), COALESCE((SELECT MAX(id_saca) FROM saca), 0) + 1, false)",
+                Long.class);
+    }
+
     private void validarDespacho(DespachoDTO dto) {
-        if (dto.getIdAgencia() != null && dto.getIdDestinatarioDirecto() != null) {
+        validarSacas(dto.getSacas());
+        if (dto.getIdAgencia() != null && (dto.getIdDestinatarioDirecto() != null || dto.getIdPaqueteOrigenDestinatario() != null)) {
             throw new IllegalArgumentException("Un despacho no puede tener agencia y envío directo al mismo tiempo");
+        }
+        if (dto.getIdAgencia() == null
+                && dto.getIdDestinatarioDirecto() == null
+                && dto.getIdPaqueteOrigenDestinatario() == null) {
+            throw new IllegalArgumentException("Debe indicar una agencia o un destinatario directo para el despacho");
+        }
+    }
+
+    private void validarSacas(List<SacaDTO> sacas) {
+        if (sacas == null || sacas.isEmpty()) {
+            throw new IllegalArgumentException("Debe haber al menos una saca en el despacho");
+        }
+        for (SacaDTO sacaDTO : sacas) {
+            if (sacaDTO.getIdPaquetes() == null || sacaDTO.getIdPaquetes().isEmpty()) {
+                throw new IllegalArgumentException("Cada saca debe tener al menos un paquete");
+            }
         }
     }
 
@@ -442,9 +432,32 @@ public class DespachoService {
                 .findById(dto.getIdDestinatarioDirecto())
                 .orElseThrow(() -> new ResourceNotFoundException("DestinatarioDirecto", dto.getIdDestinatarioDirecto()));
             despacho.setDestinatarioDirecto(destinatarioDirecto);
+        } else if (dto.getIdPaqueteOrigenDestinatario() != null) {
+            despacho.setDestinatarioDirecto(crearDestinatarioDesdePaquete(dto.getIdPaqueteOrigenDestinatario()));
         } else {
             despacho.setDestinatarioDirecto(null);
         }
+    }
+
+    private DestinatarioDirecto crearDestinatarioDesdePaquete(Long idPaqueteOrigenDestinatario) {
+        Paquete paquete = paqueteRepository.findById(idPaqueteOrigenDestinatario)
+            .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaqueteOrigenDestinatario));
+        Cliente cliente = paquete.getClienteDestinatario();
+        if (cliente == null) {
+            throw new IllegalArgumentException("El paquete no tiene cliente destinatario");
+        }
+        DestinatarioDirecto nuevo = new DestinatarioDirecto();
+        nuevo.setNombreDestinatario(cliente.getNombreCompleto() != null ? cliente.getNombreCompleto() : "Sin nombre");
+        String telefono = (cliente.getTelefono() != null && !cliente.getTelefono().isBlank())
+            ? cliente.getTelefono() : "N/A";
+        nuevo.setTelefonoDestinatario(telefono);
+        nuevo.setDireccionDestinatario(cliente.getDireccion());
+        nuevo.setCanton(cliente.getProvincia() != null ? cliente.getProvincia() : cliente.getCanton());
+        nuevo.setCodigo(cliente.getCanton());
+        nuevo.setNombreEmpresa(null);
+        nuevo.setFechaRegistro(LocalDateTime.now());
+        nuevo.setActivo(true);
+        return destinatarioDirectoRepository.save(nuevo);
     }
 
     @Transactional
@@ -489,8 +502,10 @@ public class DespachoService {
             Paquete paquete = ps.getPaquete();
             paquete.getPaqueteSacas().remove(ps);
             if (paquete.getPaqueteSacas().isEmpty()) {
-                paquete.setEstado(EstadoPaquete.RECIBIDO);
-                paquete.setFechaEnsacado(null);
+                if (paquete.getEstado() == EstadoPaquete.ASIGNADO_SACA || paquete.getEstado() == EstadoPaquete.ENSACADO) {
+                    paquete.setEstado(EstadoPaquete.RECIBIDO);
+                    paquete.setFechaEnsacado(null);
+                }
             }
             paqueteRepository.save(paquete);
         }
@@ -551,6 +566,7 @@ public class DespachoService {
             .max()
             .orElse(0) + 1;
 
+        alinearSecuenciaSaca();
         Saca saca = new Saca();
         saca.setDespacho(despacho);
         saca.setNumeroOrden(numeroOrden);
@@ -750,4 +766,5 @@ public class DespachoService {
         // Las relaciones y sacas se manejan en create()
         return despacho;
     }
+
 }

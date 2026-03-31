@@ -56,6 +56,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalState(IllegalStateException ex) {
+        ApiErrorResponse error = new ApiErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Estado inválido",
+                ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         ApiErrorResponse error = new ApiErrorResponse(
@@ -87,6 +97,9 @@ public class GlobalExceptionHandler {
         }
         String lower = raw.toLowerCase();
         if (lower.contains("duplicate") || lower.contains("unique") || lower.contains("duplicado") || lower.contains("unique_key")) {
+            if (lower.contains("saca_pkey")) {
+                return "Conflicto de secuencia de sacas. Intenta nuevamente.";
+            }
             return "Registro duplicado o violación de restricción de unicidad.";
         }
         if (lower.contains("foreign") || lower.contains("constraint") || lower.contains("referencia")) {

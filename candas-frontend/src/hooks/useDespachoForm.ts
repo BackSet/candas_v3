@@ -34,7 +34,7 @@ export function useDespachoForm(despacho?: Despacho, isEdit: boolean = false) {
     if (despacho) {
       const formData = despachoToFormData(despacho)
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== undefined) {
+        if (value != null) {
           setValue(key as keyof DespachoFormData, value)
         }
       })

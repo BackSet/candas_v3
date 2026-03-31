@@ -1,5 +1,6 @@
 package com.candas.candas_backend.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -44,5 +45,6 @@ public class DespachoDTO {
     @Size(max = 64)
     private String codigoPresinto; // Código del presinto (etiqueta Zebra/normal); opcional, puede enviarse al crear/editar o generarse en backend
     
-    private List<SacaDTO> sacas; // Para crear sacas junto con el despacho
+    @Valid
+    private List<SacaDTO> sacas; // Para crear/editar sacas junto con el despacho
 }
