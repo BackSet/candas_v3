@@ -3,6 +3,8 @@ export interface ManifiestoConsolidado {
   idAgencia?: number
   nombreAgencia: string
   codigoAgencia?: string
+  idAgenciaPropietaria?: number
+  nombreAgenciaPropietaria?: string
   direccionAgencia?: string
   cantonAgencia?: string
   fechaInicio?: string
@@ -24,6 +26,8 @@ export interface ManifiestoConsolidadoResumen {
   nombreAgencia: string
   codigoAgencia?: string
   cantonAgencia?: string
+  idAgenciaPropietaria?: number
+  nombreAgenciaPropietaria?: string
   periodo: string
   fechaGeneracion: string
   usuarioGenerador: string
@@ -48,6 +52,8 @@ export interface ManifiestoConsolidadoDetalle {
   codigoAgencia?: string
   direccionAgencia?: string
   cantonAgencia?: string
+  idAgenciaPropietaria?: number
+  nombreAgenciaPropietaria?: string
   fechaInicio?: string
   fechaFin?: string
   mes?: number

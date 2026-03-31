@@ -19,6 +19,8 @@ public class ManifiestoConsolidadoDetalleDTO {
     private String codigoAgencia;
     private String direccionAgencia;
     private String cantonAgencia;
+    private Long idAgenciaPropietaria;
+    private String nombreAgenciaPropietaria;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private Integer mes;

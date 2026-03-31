@@ -1,15 +1,11 @@
 package com.candas.candas_backend.repository.spec;
 
-import com.candas.candas_backend.entity.Agencia;
 import com.candas.candas_backend.entity.Despacho;
-import com.candas.candas_backend.entity.Usuario;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
@@ -17,17 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Specifications para filtrado opcional del listado de despachos (search, fechas, tipo destino, alcance por agencia del registrador).
+ * Specifications para filtrado opcional del listado de despachos (search, fechas, tipo destino, alcance por agencia propietaria).
  */
 public final class DespachoSpecs {
 
     private DespachoSpecs() {
     }
 
-    /**
-     * @param idAgenciaRestringida si no es null, solo despachos cuyo {@code usuarioRegistro} corresponde a un {@link Usuario}
-     *                               con esa agencia asignada.
-     */
     public static Specification<Despacho> withFilters(
             String search,
             LocalDateTime fechaDesde,
@@ -58,7 +50,10 @@ public final class DespachoSpecs {
                 }
             }
             if (idAgenciaRestringida != null) {
-                predicates.add(cb.exists(subqueryRegistradorEnAgencia(root, query, cb, idAgenciaRestringida)));
+                predicates.add(cb.equal(
+                        root.join("agenciaPropietaria", JoinType.LEFT).get("idAgencia"),
+                        idAgenciaRestringida
+                ));
             }
 
             if (predicates.isEmpty()) {
@@ -66,21 +61,5 @@ public final class DespachoSpecs {
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-    }
-
-    private static Subquery<Integer> subqueryRegistradorEnAgencia(
-            Root<Despacho> despachoRoot,
-            CriteriaQuery<?> query,
-            CriteriaBuilder cb,
-            Long idAgenciaRestringida) {
-        Subquery<Integer> sq = query.subquery(Integer.class);
-        Root<Usuario> u = sq.from(Usuario.class);
-        sq.select(cb.literal(1));
-        Join<Usuario, Agencia> ag = u.join("agencia", JoinType.INNER);
-        sq.where(
-                cb.equal(u.get("username"), despachoRoot.get("usuarioRegistro")),
-                cb.equal(ag.get("idAgencia"), idAgenciaRestringida)
-        );
-        return sq;
     }
 }

@@ -17,6 +17,8 @@ public class AtencionPaqueteDTO {
     
     @NotNull(message = "El paquete es obligatorio")
     private Long idPaquete;
+    private Long idAgenciaPropietaria;
+    private String nombreAgenciaPropietaria;
     
     private String numeroGuia; // Número de guía del paquete para mostrar en listas
     

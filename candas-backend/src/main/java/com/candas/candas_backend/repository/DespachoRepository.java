@@ -16,57 +16,57 @@ import java.util.Optional;
 
 @Repository
 public interface DespachoRepository extends JpaRepository<Despacho, Long>, JpaSpecificationExecutor<Despacho> {
-    @EntityGraph(attributePaths = {"agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     Page<Despacho> findAll(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     Page<Despacho> findAllByAgenciaIsNotNull(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     Page<Despacho> findAllByDestinatarioDirectoIsNotNull(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     Optional<Despacho> findById(Long id);
     
     @Query("SELECT d FROM Despacho d WHERE d.idDespacho = :id")
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     Optional<Despacho> findByIdWithPaquetes(@Param("id") Long id);
     
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     List<Despacho> findByAgencia_IdAgenciaAndFechaDespachoBetween(
         Long idAgencia, 
         LocalDateTime fechaInicio, 
         LocalDateTime fechaFin
     );
     
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     List<Despacho> findByFechaDespachoBetween(
         LocalDateTime fechaInicio,
         LocalDateTime fechaFin
     );
 
-    @EntityGraph(attributePaths = {"agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     Page<Despacho> findByFechaDespachoBetween(
         LocalDateTime fechaInicio,
         LocalDateTime fechaFin,
         Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {"agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     Page<Despacho> findByFechaDespachoBetweenAndAgenciaIsNotNull(
         LocalDateTime fechaInicio,
         LocalDateTime fechaFin,
         Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {"agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     Page<Despacho> findByFechaDespachoBetweenAndDestinatarioDirectoIsNotNull(
         LocalDateTime fechaInicio,
         LocalDateTime fechaFin,
         Pageable pageable
     );
     
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     List<Despacho> findByDistribuidor_IdDistribuidorAndFechaDespachoBetween(
         Long idDistribuidor, 
         LocalDateTime fechaInicio, 
@@ -80,11 +80,11 @@ public interface DespachoRepository extends JpaRepository<Despacho, Long>, JpaSp
     List<Long> searchIds(@Param("query") String query);
 
     @Query("SELECT d FROM Despacho d WHERE d.idDespacho IN :ids")
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     List<Despacho> findAllByIdWithRelations(@Param("ids") Iterable<Long> ids);
     
     // Consultas para ensacado - Despachos con paquetes pendientes (en progreso) por periodo
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     @Query(value = "SELECT DISTINCT d FROM Despacho d " +
            "JOIN d.sacas s " +
            "JOIN s.paqueteSacas ps " +
@@ -97,7 +97,7 @@ public interface DespachoRepository extends JpaRepository<Despacho, Long>, JpaSp
         @Param("fechaFin") LocalDateTime fechaFin);
 
     // Consultas para ensacado - Despachos completamente ensacados
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     @Query(value = "SELECT DISTINCT d FROM Despacho d " +
            "WHERE d.idDespacho NOT IN (" +
            "  SELECT DISTINCT d2.idDespacho FROM Despacho d2 " +
@@ -111,7 +111,7 @@ public interface DespachoRepository extends JpaRepository<Despacho, Long>, JpaSp
     List<Despacho> findDespachosCompletamenteEnsacados(@Param("fechaInicio") LocalDateTime fechaInicio);
     
     // Consultas para manifiestos consolidados - Despachos por destinatario directo
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     @Query("SELECT d FROM Despacho d WHERE d.destinatarioDirecto.idDestinatarioDirecto = :idDestinatarioDirecto AND d.fechaDespacho BETWEEN :inicio AND :fin")
     List<Despacho> findByDestinatarioDirecto_IdDestinatarioDirectoAndFechaDespachoBetween(
         @Param("idDestinatarioDirecto") Long idDestinatarioDirecto,
@@ -120,7 +120,7 @@ public interface DespachoRepository extends JpaRepository<Despacho, Long>, JpaSp
     );
     
     // Consultas para manifiestos consolidados - Todos los despachos de destinatarios directos en un rango
-    @EntityGraph(attributePaths = {"sacas", "agencia", "distribuidor", "destinatarioDirecto"})
+    @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto"})
     @Query("SELECT d FROM Despacho d WHERE d.destinatarioDirecto IS NOT NULL AND d.fechaDespacho BETWEEN :inicio AND :fin")
     List<Despacho> findByDestinatarioDirectoIsNotNullAndFechaDespachoBetween(
         @Param("inicio") LocalDateTime inicio,

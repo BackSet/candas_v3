@@ -13,10 +13,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { authService } from '@/lib/api/auth.service'
 import { useNavigate } from '@tanstack/react-router'
+import { useAgencia } from '@/hooks/useAgencias'
 
 export function Header() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const { data: agenciaUsuario } = useAgencia(user?.idAgencia)
 
   const handleLogout = () => {
     authService.logout()
@@ -93,6 +95,9 @@ export function Header() {
                     <div className="overflow-hidden flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{user.username}</p>
                       <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
+                      <p className="text-[11px] text-muted-foreground truncate mt-1">
+                        Agencia: {agenciaUsuario?.nombre ?? (user.idAgencia ? `#${user.idAgencia}` : 'Sin agencia')}
+                      </p>
                       {user.roles && user.roles.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {user.roles.map((role) => (

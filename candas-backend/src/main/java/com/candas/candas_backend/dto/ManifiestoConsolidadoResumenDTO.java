@@ -15,6 +15,8 @@ public class ManifiestoConsolidadoResumenDTO {
     private Long idAgencia;
     private String nombreAgencia;
     private String codigoAgencia;
+    private Long idAgenciaPropietaria;
+    private String nombreAgenciaPropietaria;
     private String periodo;
     private LocalDateTime fechaGeneracion;
     private String usuarioGenerador;

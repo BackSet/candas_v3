@@ -25,6 +25,10 @@ public class AtencionPaquete {
     @JoinColumn(name = "id_paquete", nullable = false)
     private Paquete paquete;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_agencia_propietaria")
+    private Agencia agenciaPropietaria;
+
     @Column(name = "motivo", nullable = false, columnDefinition = "TEXT")
     private String motivo;
 

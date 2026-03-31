@@ -16,16 +16,16 @@ import java.util.List;
 @Repository
 public interface ManifiestoConsolidadoRepository extends JpaRepository<ManifiestoConsolidado, Long>, JpaSpecificationExecutor<ManifiestoConsolidado> {
 
-    @EntityGraph(attributePaths = { "agencia" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
     Page<ManifiestoConsolidado> findAllByOrderByFechaGeneracionDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = { "agencia" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
     List<ManifiestoConsolidado> findByAgencia_IdAgenciaOrderByFechaGeneracionDesc(Long idAgencia);
 
-    @EntityGraph(attributePaths = { "agencia" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
     Page<ManifiestoConsolidado> findByAgencia_IdAgenciaOrderByFechaGeneracionDesc(Long idAgencia, Pageable pageable);
 
-    @EntityGraph(attributePaths = { "agencia" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
     Page<ManifiestoConsolidado> findByFechaGeneracionBetweenOrderByFechaGeneracionDesc(
             LocalDateTime inicio,
             LocalDateTime fin,
@@ -40,7 +40,7 @@ public interface ManifiestoConsolidadoRepository extends JpaRepository<Manifiest
     List<Long> searchIds(@Param("query") String query);
 
     @Query("SELECT mc FROM ManifiestoConsolidado mc WHERE mc.idManifiestoConsolidado IN :ids")
-    @EntityGraph(attributePaths = { "agencia" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
     List<ManifiestoConsolidado> findAllByIdWithAgencia(@Param("ids") Iterable<Long> ids);
 
     @Query(value = "SELECT MAX(numero_manifiesto) FROM manifiesto_consolidado WHERE numero_manifiesto LIKE 'MCF-%'", nativeQuery = true)

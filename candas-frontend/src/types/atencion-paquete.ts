@@ -43,6 +43,8 @@ export function getTipoProblemaLabel(tipo: TipoProblemaAtencion | string | undef
 export interface AtencionPaquete {
   idAtencion?: number
   idPaquete: number
+  idAgenciaPropietaria?: number
+  nombreAgenciaPropietaria?: string
   numeroGuia?: string // Número de guía del paquete para mostrar en listas
   motivo: string
   tipoProblema: TipoProblemaAtencion

@@ -11,6 +11,8 @@ export interface Despacho {
   idAgencia?: number
   nombreAgencia?: string // Nombre de la agencia para mostrar en listas
   cantonAgencia?: string // Cantón de la agencia para mostrar en listas
+  idAgenciaPropietaria?: number
+  nombreAgenciaPropietaria?: string
   idDistribuidor?: number
   nombreDistribuidor?: string // Nombre del distribuidor para mostrar en listas
   numeroGuiaAgenciaDistribucion?: string

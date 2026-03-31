@@ -36,7 +36,7 @@ public final class ManifiestoConsolidadoSpecs {
                 }
             }
             if (idAgencia != null) {
-                predicates.add(cb.equal(root.join("agencia", JoinType.LEFT).get("idAgencia"), idAgencia));
+                predicates.add(cb.equal(root.join("agenciaPropietaria", JoinType.LEFT).get("idAgencia"), idAgencia));
             }
             if (mes != null) {
                 predicates.add(cb.equal(root.get("mes"), mes));

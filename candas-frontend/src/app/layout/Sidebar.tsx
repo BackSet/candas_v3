@@ -63,7 +63,6 @@ const navigationSections: NavigationSection[] = [
     title: 'Operación',
     items: [
       { name: 'Lotes Recepción', href: '/lotes-recepcion', icon: Boxes, permissions: [PERMISSIONS.LOTES_RECEPCION.LISTAR, PERMISSIONS.LOTES_RECEPCION.VER] },
-      { name: 'Sacas', href: '/sacas', icon: ClipboardCheck, permissions: [PERMISSIONS.SACAS.LISTAR, PERMISSIONS.SACAS.VER] },
       { name: 'Despachos', href: '/despachos', icon: Truck, permissions: [PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER] },
       { name: 'Ensacado', href: '/ensacado', icon: Scan, permission: PERMISSIONS.ENSACADO.OPERAR },
     ],

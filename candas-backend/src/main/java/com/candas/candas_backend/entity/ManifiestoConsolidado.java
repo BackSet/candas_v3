@@ -28,6 +28,10 @@ public class ManifiestoConsolidado {
     @JoinColumn(name = "id_agencia", nullable = true)
     private Agencia agencia;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_agencia_propietaria", nullable = true)
+    private Agencia agenciaPropietaria;
+
     @Column(name = "fecha_inicio")
     private LocalDate fechaInicio;
 

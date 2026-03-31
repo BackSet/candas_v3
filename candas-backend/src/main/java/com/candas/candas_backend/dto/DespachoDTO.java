@@ -29,6 +29,9 @@ public class DespachoDTO {
     private Long idAgencia;
     private String nombreAgencia; // Nombre de la agencia para mostrar en listas
     private String cantonAgencia; // Cantón de la agencia para mostrar en listas
+
+    private Long idAgenciaPropietaria;
+    private String nombreAgenciaPropietaria;
     
     private Long idDistribuidor;
     private String nombreDistribuidor; // Nombre del distribuidor para mostrar en listas

@@ -121,13 +121,9 @@ public class DespachoService {
             .collect(java.util.stream.Collectors.toList());
     }
 
-    /**
-     * Despacho visible para alcance de agencia si el usuario registrador pertenece a esa agencia.
-     */
     private boolean despachoVisibleParaAgencia(Despacho despacho, Long idAgencia) {
-        return usuarioRepository.findByUsername(despacho.getUsuarioRegistro())
-                .filter(u -> u.getAgencia() != null && idAgencia.equals(u.getAgencia().getIdAgencia()))
-                .isPresent();
+        return despacho.getAgenciaPropietaria() != null
+                && idAgencia.equals(despacho.getAgenciaPropietaria().getIdAgencia());
     }
 
     private void assertDespachoAccesible(Despacho despacho) {
@@ -158,8 +154,7 @@ public class DespachoService {
 
     private String construirMensajeAccesoDespacho(Long idAgenciaUsuario, Despacho despacho) {
         var agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAgenciaUsuario).orElse(null), idAgenciaUsuario);
-        var agenciaDespacho = usuarioRepository.findByUsername(despacho.getUsuarioRegistro())
-                .map(Usuario::getAgencia)
+        var agenciaDespacho = Optional.ofNullable(despacho.getAgenciaPropietaria())
                 .map(this::descripcionAgencia)
                 .orElse("agencia no identificada");
         return "Tu usuario pertenece a la " + agenciaUsuario
@@ -204,6 +199,7 @@ public class DespachoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia()));
             despacho.setAgencia(agencia);
         }
+        resolverAgenciaPropietariaActual().ifPresent(despacho::setAgenciaPropietaria);
 
         // Buscar o crear distribuidor
         if (dto.getIdDistribuidor() != null) {
@@ -404,6 +400,16 @@ public class DespachoService {
         }
         despacho.setObservaciones(dto.getObservaciones());
         despacho.setNumeroGuiaAgenciaDistribucion(dto.getNumeroGuiaAgenciaDistribucion());
+        resolverAgenciaPropietariaActual().ifPresent(despacho::setAgenciaPropietaria);
+    }
+
+    private Optional<Agencia> resolverAgenciaPropietariaActual() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null || auth.getName().isBlank()) {
+            return Optional.empty();
+        }
+        return usuarioRepository.findByUsername(auth.getName())
+                .map(Usuario::getAgencia);
     }
 
     private void actualizarAgencia(Despacho despacho, DespachoDTO dto) {
@@ -685,6 +691,10 @@ public class DespachoService {
             dto.setIdAgencia(despacho.getAgencia().getIdAgencia());
             dto.setNombreAgencia(despacho.getAgencia().getNombre());
             dto.setCantonAgencia(despacho.getAgencia().getCanton());
+        }
+        if (despacho.getAgenciaPropietaria() != null) {
+            dto.setIdAgenciaPropietaria(despacho.getAgenciaPropietaria().getIdAgencia());
+            dto.setNombreAgenciaPropietaria(despacho.getAgenciaPropietaria().getNombre());
         }
         if (despacho.getDistribuidor() != null) {
             dto.setIdDistribuidor(despacho.getDistribuidor().getIdDistribuidor());

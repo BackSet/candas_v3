@@ -37,6 +37,10 @@ public class Despacho {
     private Agencia agencia;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_agencia_propietaria")
+    private Agencia agenciaPropietaria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_distribuidor")
     private Distribuidor distribuidor;
 
