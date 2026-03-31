@@ -32,26 +32,26 @@ public class ManifiestoConsolidadoService {
     private final ManifiestoConsolidadoRepository manifiestoConsolidadoRepository;
     private final DespachoRepository despachoRepository;
     private final AgenciaRepository agenciaRepository;
+    private final UsuarioRepository usuarioRepository;
     private final DistribuidorRepository distribuidorRepository;
     private final DestinatarioDirectoRepository destinatarioDirectoRepository;
     private final AgenciaScopeResolver agenciaScopeResolver;
-    private final UsuarioRepository usuarioRepository;
 
     public ManifiestoConsolidadoService(
             ManifiestoConsolidadoRepository manifiestoConsolidadoRepository,
             DespachoRepository despachoRepository,
             AgenciaRepository agenciaRepository,
+            UsuarioRepository usuarioRepository,
             DistribuidorRepository distribuidorRepository,
             DestinatarioDirectoRepository destinatarioDirectoRepository,
-            AgenciaScopeResolver agenciaScopeResolver,
-            UsuarioRepository usuarioRepository) {
+            AgenciaScopeResolver agenciaScopeResolver) {
         this.manifiestoConsolidadoRepository = manifiestoConsolidadoRepository;
         this.despachoRepository = despachoRepository;
         this.agenciaRepository = agenciaRepository;
+        this.usuarioRepository = usuarioRepository;
         this.distribuidorRepository = distribuidorRepository;
         this.destinatarioDirectoRepository = destinatarioDirectoRepository;
         this.agenciaScopeResolver = agenciaScopeResolver;
-        this.usuarioRepository = usuarioRepository;
     }
 
     public ManifiestoConsolidadoResumenDTO crearManifiestoConsolidado(ManifiestoConsolidadoDTO dto) {
@@ -72,7 +72,7 @@ public class ManifiestoConsolidadoService {
             dto.setIdAgencia(idRestr);
         });
 
-        String usuarioActual = obtenerUsuarioActual();
+        Usuario usuarioActual = obtenerUsuarioActual();
         validarPeriodo(dto);
         validarFiltrosManifiesto(dto);
         Agencia agencia = resolverEntidadFiltro(dto);
@@ -487,7 +487,7 @@ public class ManifiestoConsolidadoService {
             dto.setNombreAgenciaPropietaria(manifiesto.getAgenciaPropietaria().getNombre());
         }
         dto.setFechaGeneracion(manifiesto.getFechaGeneracion());
-        dto.setUsuarioGenerador(manifiesto.getUsuarioGenerador());
+        dto.setUsuarioGenerador(nombreVisibleUsuario(manifiesto.getUsuarioGenerador()));
         dto.setTotalDespachos(manifiesto.getTotalDespachos());
         dto.setTotalSacas(manifiesto.getTotalSacas());
         dto.setTotalPaquetes(manifiesto.getTotalPaquetes());
@@ -526,7 +526,7 @@ public class ManifiestoConsolidadoService {
         detalle.setIdManifiestoConsolidado(manifiesto.getIdManifiestoConsolidado());
         detalle.setNumeroManifiesto(manifiesto.getNumeroManifiesto());
         detalle.setFechaGeneracion(manifiesto.getFechaGeneracion());
-        detalle.setUsuarioGenerador(manifiesto.getUsuarioGenerador());
+        detalle.setUsuarioGenerador(nombreVisibleUsuario(manifiesto.getUsuarioGenerador()));
         if (manifiesto.getAgenciaPropietaria() != null) {
             detalle.setIdAgenciaPropietaria(manifiesto.getAgenciaPropietaria().getIdAgencia());
             detalle.setNombreAgenciaPropietaria(manifiesto.getAgenciaPropietaria().getNombre());
@@ -535,13 +535,8 @@ public class ManifiestoConsolidadoService {
     }
 
     private java.util.Optional<Agencia> resolverAgenciaPropietariaActual() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication.getName() == null || authentication.getName().isBlank()) {
-            return java.util.Optional.empty();
-        }
-        return usuarioRepository.findByUsername(authentication.getName())
-                .map(Usuario::getAgencia);
+        return agenciaScopeResolver.idAgenciaRestringida()
+                .flatMap(agenciaRepository::findById);
     }
 
     private void validarPeriodo(ManifiestoConsolidadoDTO dto) {
@@ -629,12 +624,22 @@ public class ManifiestoConsolidadoService {
         return PREFIJO_NUMERO_MANIFIESTO_CONSOLIDADO + codigoHex;
     }
 
-    private String obtenerUsuarioActual() {
+    private Usuario obtenerUsuarioActual() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            return authentication.getName();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getName() != null) {
+            return usuarioRepository.findByUsername(authentication.getName()).orElse(null);
         }
-        return "SISTEMA";
+        return null;
+    }
+
+    private String nombreVisibleUsuario(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        if (usuario.getNombreCompleto() != null && !usuario.getNombreCompleto().isBlank()) {
+            return usuario.getNombreCompleto();
+        }
+        return usuario.getUsername();
     }
 
 }

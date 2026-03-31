@@ -2,7 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { atencionPaqueteService } from '@/lib/api/atencion-paquete.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { AtencionPaquete } from '@/types/atencion-paquete'
+import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
+
+function assertAgenciaActivaSeleccionada() {
+  if (useAuthStore.getState().activeAgencyId == null) {
+    throw new Error('Debes seleccionar una agencia activa para continuar.')
+  }
+}
 
 export function useAtencionPaquetes(
   page: number = 0,
@@ -10,15 +17,17 @@ export function useAtencionPaquetes(
   estado?: string,
   search?: string
 ) {
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['atencion-paquetes', page, size, estado, search],
+    queryKey: ['atencion-paquetes', activeAgencyId, page, size, estado, search],
     queryFn: () => atencionPaqueteService.findAll(page, size, estado, search),
   })
 }
 
 export function useAtencionPaquete(id: number | undefined) {
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['atencion-paquete', id],
+    queryKey: ['atencion-paquete', activeAgencyId, id],
     queryFn: () => atencionPaqueteService.findById(id!),
     enabled: !!id,
   })
@@ -26,8 +35,9 @@ export function useAtencionPaquete(id: number | undefined) {
 
 
 export function useAtencionPaquetesPendientes() {
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['atencion-paquetes-pendientes'],
+    queryKey: ['atencion-paquetes-pendientes', activeAgencyId],
     queryFn: () => atencionPaqueteService.findPendientes(),
   })
 }
@@ -36,7 +46,10 @@ export function useCreateAtencionPaquete() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (dto: AtencionPaquete) => atencionPaqueteService.create(dto),
+    mutationFn: (dto: AtencionPaquete) => {
+      assertAgenciaActivaSeleccionada()
+      return atencionPaqueteService.create(dto)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['atencion-paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['atencion-paquetes-pendientes'] })
@@ -53,7 +66,10 @@ export function useUpdateAtencionPaquete() {
 
   return useMutation({
     mutationFn: ({ id, dto }: { id: number; dto: AtencionPaquete }) =>
-      atencionPaqueteService.update(id, dto),
+      {
+        assertAgenciaActivaSeleccionada()
+        return atencionPaqueteService.update(id, dto)
+      },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['atencion-paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['atencion-paquete', variables.id] })

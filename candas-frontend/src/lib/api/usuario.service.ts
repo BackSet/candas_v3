@@ -54,6 +54,20 @@ export const usuarioService = {
     )
   },
 
+  async obtenerAgencias(id: number): Promise<number[]> {
+    const response = await apiClient.get<number[]>(
+      `${API_ENDPOINTS.USUARIOS.BY_ID(id)}/agencias`
+    )
+    return response.data
+  },
+
+  async asignarAgencias(id: number, agencias: number[]): Promise<void> {
+    await apiClient.put(
+      `${API_ENDPOINTS.USUARIOS.BY_ID(id)}/agencias`,
+      { agencias }
+    )
+  },
+
 
 
   async search(query: string): Promise<Usuario[]> {

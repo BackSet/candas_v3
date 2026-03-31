@@ -2,7 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { despachoService, type TipoDestinoDespacho } from '@/lib/api/despacho.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Despacho } from '@/types/despacho'
+import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
+
+function assertAgenciaActivaSeleccionada() {
+  if (useAuthStore.getState().activeAgencyId == null) {
+    throw new Error('Debes seleccionar una agencia activa para continuar.')
+  }
+}
 
 export function useDespachos(
   page: number = 0,
@@ -11,23 +18,26 @@ export function useDespachos(
   fechaDesde?: string,
   fechaHasta?: string
 ) {
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['despachos', page, size, tipoDestino, fechaDesde, fechaHasta],
+    queryKey: ['despachos', activeAgencyId, page, size, tipoDestino, fechaDesde, fechaHasta],
     queryFn: () => despachoService.findAll(page, size, tipoDestino, fechaDesde, fechaHasta),
   })
 }
 
 export function useDespacho(id: number | undefined) {
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['despacho', id],
+    queryKey: ['despacho', activeAgencyId, id],
     queryFn: () => despachoService.findById(id!),
     enabled: !!id,
   })
 }
 
 export function useSacasDespacho(id: number | undefined) {
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['despacho-sacas', id],
+    queryKey: ['despacho-sacas', activeAgencyId, id],
     queryFn: () => despachoService.obtenerSacas(id!),
     enabled: !!id,
   })
@@ -37,7 +47,10 @@ export function useCreateDespacho() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (dto: Despacho) => despachoService.create(dto),
+    mutationFn: (dto: Despacho) => {
+      assertAgenciaActivaSeleccionada()
+      return despachoService.create(dto)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['despachos'] })
       toast.success('Despacho creado exitosamente')
@@ -52,7 +65,10 @@ export function useUpdateDespacho() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto: Despacho }) => despachoService.update(id, dto),
+    mutationFn: ({ id, dto }: { id: number; dto: Despacho }) => {
+      assertAgenciaActivaSeleccionada()
+      return despachoService.update(id, dto)
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['despachos'] })
       queryClient.invalidateQueries({ queryKey: ['despacho', variables.id] })

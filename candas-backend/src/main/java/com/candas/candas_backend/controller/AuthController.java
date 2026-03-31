@@ -77,6 +77,9 @@ public class AuthController {
         response.setRoles(customUserDetailsService.getRolesForUsername(username));
         response.setPermisos(customUserDetailsService.getPermisosForUsername(username));
         response.setIdAgencia(usuario.getAgencia() != null ? usuario.getAgencia().getIdAgencia() : null);
+        response.setIdAgencias(usuario.getAgencias() != null
+                ? usuario.getAgencias().stream().map(a -> a.getIdAgencia()).toList()
+                : List.of());
         return ResponseEntity.ok(response);
     }
 

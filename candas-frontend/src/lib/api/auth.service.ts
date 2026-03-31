@@ -14,7 +14,7 @@ export const authService = {
     )
     
     // Guardar en el store
-    const { token, idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia } = response.data
+    const { token, idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias } = response.data
     useAuthStore.getState().setAuth(
       {
         idUsuario,
@@ -24,6 +24,7 @@ export const authService = {
         roles,
         permisos,
         idAgencia,
+        idAgencias,
       },
       token
     )
@@ -47,8 +48,8 @@ export const authService = {
    */
   async me(): Promise<User> {
     const response = await apiClient.get<LoginResponse>('/api/auth/me')
-    const { idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia } = response.data
-    return { idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia }
+    const { idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias } = response.data
+    return { idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias }
   },
 
   /**

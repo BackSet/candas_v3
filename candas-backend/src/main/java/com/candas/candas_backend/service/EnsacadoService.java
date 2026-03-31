@@ -466,7 +466,7 @@ public class EnsacadoService {
                 .orElse("agencia con id " + idAgenciaUsuario);
         String agenciaRecurso = "agencia no identificada";
         if (despachoEnSaca != null) {
-            agenciaRecurso = usuarioRepository.findByUsername(despachoEnSaca.getUsuarioRegistro())
+            agenciaRecurso = Optional.ofNullable(despachoEnSaca.getUsuarioRegistro())
                     .map(Usuario::getAgencia)
                     .map(this::descripcionAgencia)
                     .orElse("agencia no identificada");

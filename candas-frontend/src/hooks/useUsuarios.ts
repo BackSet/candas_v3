@@ -29,6 +29,14 @@ export function useRolesUsuario(id: number | undefined) {
   })
 }
 
+export function useAgenciasUsuario(id: number | undefined) {
+  return useQuery({
+    queryKey: ['usuario-agencias', id],
+    queryFn: () => usuarioService.obtenerAgencias(id!),
+    enabled: !!id,
+  })
+}
+
 
 
 export function useCreateUsuario() {
@@ -92,6 +100,24 @@ export function useAsignarRolesUsuario() {
     },
     onError: (error: unknown) => {
       toast.error(getApiErrorMessage(error, 'Error al asignar los roles'))
+    },
+  })
+}
+
+export function useAsignarAgenciasUsuario() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, agencias }: { id: number; agencias: number[] }) =>
+      usuarioService.asignarAgencias(id, agencias),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] })
+      queryClient.invalidateQueries({ queryKey: ['usuario', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['usuario-agencias', variables.id] })
+      toast.success('Agencias asignadas exitosamente')
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al asignar agencias'))
     },
   })
 }

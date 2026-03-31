@@ -29,8 +29,9 @@ public class PaqueteNoEncontrado {
     @Column(name = "fecha_registro", nullable = false)
     private LocalDateTime fechaRegistro;
 
-    @Column(name = "usuario_registro", nullable = false)
-    private String usuarioRegistro;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario_registro")
+    private Usuario usuarioRegistro;
 
     @PrePersist
     protected void onCreate() {

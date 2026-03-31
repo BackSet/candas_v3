@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpecificationExecutor<Usuario> {
     @EntityGraph(attributePaths = {
-            "usuarioRoles", "usuarioRoles.rol", "agencia"
+            "usuarioRoles", "usuarioRoles.rol", "agencia", "agencias"
     })
     Optional<Usuario> findByUsername(String username);
     
@@ -25,14 +25,19 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
     boolean existsByEmail(String email);
     
     @EntityGraph(attributePaths = {
-            "usuarioRoles", "usuarioRoles.rol"
+            "usuarioRoles", "usuarioRoles.rol", "agencia", "agencias"
     })
     Page<Usuario> findAll(Pageable pageable);
     
     @EntityGraph(attributePaths = {
-            "usuarioRoles", "usuarioRoles.rol"
+            "usuarioRoles", "usuarioRoles.rol", "agencia", "agencias"
     })
     List<Usuario> findAllById(Iterable<Long> ids);
+
+    @EntityGraph(attributePaths = {
+            "usuarioRoles", "usuarioRoles.rol", "agencia", "agencias"
+    })
+    Optional<Usuario> findById(Long id);
     
     @Query(value = "SELECT DISTINCT u.id_usuario FROM usuario u " +
            "LEFT JOIN cliente c ON c.id_cliente = u.id_cliente " +

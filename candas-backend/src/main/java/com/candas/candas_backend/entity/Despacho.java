@@ -26,8 +26,9 @@ public class Despacho {
     @Column(name = "fecha_despacho", nullable = false)
     private LocalDateTime fechaDespacho;
 
-    @Column(name = "usuario_registro", nullable = false)
-    private String usuarioRegistro;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario_registro")
+    private Usuario usuarioRegistro;
 
     @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;

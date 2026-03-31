@@ -1,4 +1,5 @@
-import { Search, Bell, LogOut, Shield } from 'lucide-react'
+import { Search, Bell, LogOut, Shield, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import { Button } from '@/components/ui/button'
@@ -13,17 +14,36 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { authService } from '@/lib/api/auth.service'
 import { useNavigate } from '@tanstack/react-router'
-import { useAgencia } from '@/hooks/useAgencias'
+import { useAgencias } from '@/hooks/useSelectOptions'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export function Header() {
-  const { user } = useAuthStore()
+  const { user, activeAgencyId, setActiveAgencyId } = useAuthStore()
   const navigate = useNavigate()
-  const { data: agenciaUsuario } = useAgencia(user?.idAgencia)
+  const [isSwitchingAgency, setIsSwitchingAgency] = useState(false)
+  const { data: agencias = [] } = useAgencias()
+  const agenciasUsuario = (user?.idAgencias ?? (user?.idAgencia ? [user.idAgencia] : []))
+    .map((id) => agencias.find((a) => a.value === id))
+    .filter((a): a is { value: number; label: string } => !!a)
+  const agenciaActivaLabel = agenciasUsuario.find((a) => a.value === activeAgencyId)?.label
+    ?? (activeAgencyId ? `#${activeAgencyId}` : 'Sin agencia')
 
   const handleLogout = () => {
     authService.logout()
     navigate({ to: '/login' })
   }
+
+  useEffect(() => {
+    if (!isSwitchingAgency) return
+    const t = window.setTimeout(() => setIsSwitchingAgency(false), 500)
+    return () => window.clearTimeout(t)
+  }, [activeAgencyId, isSwitchingAgency])
 
   const initials = user?.username
     ? user.username.slice(0, 2).toUpperCase()
@@ -57,6 +77,38 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-1 ml-auto">
+        {agenciasUsuario.length > 0 && (
+          <Select
+            value={activeAgencyId != null ? String(activeAgencyId) : undefined}
+            onValueChange={(value) => {
+              const nextId = Number(value)
+              if (nextId === activeAgencyId) return
+              setIsSwitchingAgency(true)
+              setActiveAgencyId(nextId)
+            }}
+          >
+            <SelectTrigger
+              className="h-8 min-w-[210px] rounded-lg border-border/40 bg-muted/30 text-[12px]"
+              disabled={isSwitchingAgency}
+            >
+              <SelectValue placeholder="Seleccionar agencia" />
+            </SelectTrigger>
+            <SelectContent>
+              {agenciasUsuario.map((agencia) => (
+                <SelectItem key={agencia.value} value={String(agencia.value)}>
+                  {agencia.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {isSwitchingAgency && (
+          <div className="inline-flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Cambiando entorno...
+          </div>
+        )}
+
         {/* Notifications */}
         <Button
           variant="ghost"
@@ -96,7 +148,7 @@ export function Header() {
                       <p className="text-sm font-semibold text-foreground truncate">{user.username}</p>
                       <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
                       <p className="text-[11px] text-muted-foreground truncate mt-1">
-                        Agencia: {agenciaUsuario?.nombre ?? (user.idAgencia ? `#${user.idAgencia}` : 'Sin agencia')}
+                        Agencia activa: {agenciaActivaLabel}
                       </p>
                       {user.roles && user.roles.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">

@@ -19,6 +19,7 @@ import { usePaquetes, usePaquetePorNumeroGuia, usePaquete } from '@/hooks/usePaq
 import { Search, ArrowLeft, Save, Package, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LoadingState } from '@/components/states'
+import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
 
 const atencionPaqueteSchema = z.object({
   idPaquete: z.number().min(1, 'El paquete es requerido'),
@@ -156,6 +157,8 @@ export default function AtencionPaqueteForm() {
       </div>
 
       <div className="flex-1 p-8 max-w-3xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <AssignedAgencyNotice />
+
         {/* Section 1: Package Selection */}
         <section className="space-y-4">
           <div>

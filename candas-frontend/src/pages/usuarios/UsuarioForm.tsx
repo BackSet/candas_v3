@@ -15,8 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
-import { useUsuario, useCreateUsuario, useUpdateUsuario, useRolesUsuario, useAsignarRolesUsuario } from '@/hooks/useUsuarios'
+import { useUsuario, useCreateUsuario, useUpdateUsuario, useRolesUsuario, useAgenciasUsuario, useAsignarRolesUsuario, useAsignarAgenciasUsuario } from '@/hooks/useUsuarios'
 import { useClientes, useAgencias } from '@/hooks/useSelectOptions'
 import { useRoles } from '@/hooks/useRoles'
 import type { Usuario } from '@/types/usuario'
@@ -24,6 +23,7 @@ import { Search, UserCog, Save, ArrowLeft, Shield, Building2, User, Mail, Lock, 
 import { cn } from '@/lib/utils'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { LoadingState } from '@/components/states/LoadingState'
+import { useHasAnyRole } from '@/hooks/useHasRole'
 
 const usuarioSchema = z.object({
   username: z.string().min(1, 'El username es requerido'),
@@ -32,7 +32,8 @@ const usuarioSchema = z.object({
   nombreCompleto: z.string().min(1, 'El nombre completo es requerido'),
   activo: z.boolean().optional(),
   idCliente: z.number().optional().or(z.literal('')),
-  idAgencia: z.union([z.number(), z.literal('')]).optional(),
+  idAgencia: z.union([z.number(), z.literal('')]).optional(), // compat temporal
+  idAgencias: z.array(z.number()).optional(),
 })
 
 type UsuarioFormData = z.infer<typeof usuarioSchema>
@@ -47,13 +48,19 @@ export default function UsuarioForm() {
   const { data: agencias = [] } = useAgencias()
   const { data: rolesData } = useRoles(0, 100)
   const { data: rolesActuales } = useRolesUsuario(id ? Number(id) : undefined)
+  const { data: agenciasActuales } = useAgenciasUsuario(id ? Number(id) : undefined)
   const createMutation = useCreateUsuario()
   const updateMutation = useUpdateUsuario()
   const asignarRolesMutation = useAsignarRolesUsuario()
+  const asignarAgenciasMutation = useAsignarAgenciasUsuario()
+  const canManageAgencias = useHasAnyRole(['ADMIN', 'SUPERVISOR'])
 
   const [selectedRoles, setSelectedRoles] = useState<number[]>([])
+  const [selectedAgencias, setSelectedAgencias] = useState<number[]>([])
   const [busquedaRoles, setBusquedaRoles] = useState('')
+  const [busquedaAgencias, setBusquedaAgencias] = useState('')
   const rolesInicializados = useRef(false)
+  const agenciasInicializadas = useRef(false)
 
   const {
     register,
@@ -75,7 +82,7 @@ export default function UsuarioForm() {
       setValue('nombreCompleto', usuario.nombreCompleto)
       setValue('activo', usuario.activo ?? true)
       setValue('idCliente', usuario.idCliente ?? '')
-      setValue('idAgencia', usuario.idAgencia ?? '')
+      setValue('idAgencia', usuario.idAgencia ?? '') // compat temporal
     }
   }, [usuario, setValue])
 
@@ -86,7 +93,9 @@ export default function UsuarioForm() {
 
   useEffect(() => {
     rolesInicializados.current = false
+    agenciasInicializadas.current = false
     setSelectedRoles([])
+    setSelectedAgencias([])
   }, [id])
 
   useEffect(() => {
@@ -96,14 +105,14 @@ export default function UsuarioForm() {
     }
   }, [isEdit, rolesActualesMemo])
 
-  const roles = rolesData?.content || []
-  const agenciasComboboxOptions = useMemo<ComboboxOption<number>[]>(() => {
-    return agencias.map((agencia) => ({
-      value: agencia.value,
-      label: agencia.label,
-    }))
-  }, [agencias])
+  useEffect(() => {
+    if (isEdit && agenciasActuales && !agenciasInicializadas.current) {
+      setSelectedAgencias(agenciasActuales)
+      agenciasInicializadas.current = true
+    }
+  }, [isEdit, agenciasActuales])
 
+  const roles = rolesData?.content || []
   const rolesFiltrados = roles.filter((r) => {
     if (busquedaRoles && !r.nombre?.toLowerCase().includes(busquedaRoles.toLowerCase()) &&
       !r.descripcion?.toLowerCase().includes(busquedaRoles.toLowerCase())) {
@@ -111,6 +120,10 @@ export default function UsuarioForm() {
     }
     return true
   })
+
+  const agenciasFiltradas = agencias.filter((a) =>
+    a.label.toLowerCase().includes(busquedaAgencias.toLowerCase())
+  )
 
   const handleToggleRol = (idRol: number) => {
     setSelectedRoles((prev) =>
@@ -128,12 +141,23 @@ export default function UsuarioForm() {
     }
   }
 
+  const handleToggleAgencia = (idAgencia: number) => {
+    setSelectedAgencias((prev) =>
+      prev.includes(idAgencia)
+        ? prev.filter((id) => id !== idAgencia)
+        : [...prev, idAgencia]
+    )
+  }
+
   const onSubmit = async (data: UsuarioFormData) => {
     const usuarioData: Usuario = {
       ...data,
       password: data.password || undefined,
       idCliente: data.idCliente === '' ? undefined : data.idCliente,
-      idAgencia: data.idAgencia === '' || data.idAgencia == null ? undefined : data.idAgencia,
+      idAgencia: selectedAgencias.length > 0 ? selectedAgencias[0] : undefined,
+      idAgencias: canManageAgencias
+        ? selectedAgencias
+        : (usuario?.idAgencias ?? (usuario?.idAgencia ? [usuario.idAgencia] : [])),
     }
 
     if (isEdit && !data.password) {
@@ -155,12 +179,19 @@ export default function UsuarioForm() {
         roles: selectedRoles,
       })
 
+      if (canManageAgencias) {
+        await asignarAgenciasMutation.mutateAsync({
+          id: usuarioId,
+          agencias: selectedAgencias,
+        })
+      }
+
       navigate({ to: '/usuarios' })
     } catch { /* hook */ }
   }
 
   const isLoading = isEdit && loadingUsuario
-  const isSaving = createMutation.isPending || updateMutation.isPending || asignarRolesMutation.isPending
+  const isSaving = createMutation.isPending || updateMutation.isPending || asignarRolesMutation.isPending || asignarAgenciasMutation.isPending
 
   if (isLoading) {
     return (
@@ -329,18 +360,40 @@ export default function UsuarioForm() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Agencia (Opcional)</Label>
-                <Combobox
-                  options={agenciasComboboxOptions}
-                  value={typeof watch('idAgencia') === 'number' ? watch('idAgencia') : null}
-                  onValueChange={(value) => setValue('idAgencia', typeof value === 'number' ? value : '')}
-                  placeholder="Seleccionar agencia"
-                  searchPlaceholder="Buscar agencia..."
-                  emptyMessage="No se encontraron agencias"
-                  className="w-full"
-                  usePortal
-                />
-                <p className="text-[10px] text-muted-foreground">Agencia a la que pertenece el usuario. Puedes buscar por nombre.</p>
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Agencias habilitadas (Multi-agencia)
+                </Label>
+                <div className={cn("border border-border/30 rounded-lg p-3 bg-muted/20 space-y-2", !canManageAgencias && "opacity-70")}>
+                  <Input
+                    placeholder="Buscar agencia..."
+                    value={busquedaAgencias}
+                    onChange={(e) => setBusquedaAgencias(e.target.value)}
+                    className="h-8 bg-background/70 border-border/30 text-xs"
+                    disabled={!canManageAgencias}
+                  />
+                  <div className="max-h-36 overflow-auto space-y-1 pr-1">
+                    {agenciasFiltradas.map((agencia) => (
+                      <button
+                        key={agencia.value}
+                        type="button"
+                        onClick={() => handleToggleAgencia(agencia.value)}
+                        disabled={!canManageAgencias}
+                        className={cn(
+                          "w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/60 text-xs",
+                          selectedAgencias.includes(agencia.value) && "bg-primary/10"
+                        )}
+                      >
+                        <CheckboxIndicator checked={selectedAgencias.includes(agencia.value)} />
+                        <span className="truncate">{agencia.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {canManageAgencias
+                    ? "Selecciona una o más agencias para habilitar entornos del usuario."
+                    : "Solo ADMIN o SUPERVISOR puede editar agencias habilitadas."}
+                </p>
               </div>
             </div>
           </div>

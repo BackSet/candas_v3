@@ -24,6 +24,7 @@ import { FilePlus, Calendar, Globe, Building2, User, CalendarRange, CalendarDays
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
+import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
 
 interface GenerarManifiestoConsolidadoDialogProps {
   open: boolean
@@ -140,6 +141,8 @@ export default function GenerarManifiestoConsolidadoDialog({
         </DialogHeader>
 
         <div className="p-6 space-y-6">
+          <AssignedAgencyNotice />
+
           {/* Configuración Principal */}
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">

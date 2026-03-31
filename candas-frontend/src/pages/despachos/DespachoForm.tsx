@@ -41,6 +41,7 @@ import { useDraftStore } from '@/stores/draftStore'
 import { CopyActionButton } from '@/components/ui/copy-action-button'
 import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
 import type { TelefonoFormItem } from '@/schemas/agencia'
+import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
 
 const DESPACHO_DRAFT_KEY = 'despacho-new'
 
@@ -1233,6 +1234,7 @@ export default function DespachoForm() {
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-6">
                 <SectionTitle title="Destino del Despacho" variant="form" />
+                <AssignedAgencyNotice />
 
                 {(provinciaOCantonPredominante.canton || provinciaOCantonPredominante.provincia) && (
                   <div className="bg-primary/5 border border-primary/20 rounded-md p-3 text-sm flex items-start gap-2 text-primary">
@@ -1262,7 +1264,7 @@ export default function DespachoForm() {
 
                 {tipoEnvio === 'agencia' ? (
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Seleccionar Agencia</Label>
+                    <Label className="text-sm font-medium">Agencia destino</Label>
                     <div className="flex gap-2 items-end flex-wrap">
                       <div className="flex-1 min-w-[200px]">
                         <Combobox

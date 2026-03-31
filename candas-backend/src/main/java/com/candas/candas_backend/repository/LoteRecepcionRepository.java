@@ -25,19 +25,23 @@ public interface LoteRecepcionRepository extends JpaRepository<LoteRecepcion, Lo
     Long countPaquetesDespachadosByLoteRecepcion(@Param("idLoteRecepcion") Long idLoteRecepcion);
     
     @Query(value = "SELECT DISTINCT lr.id_lote_recepcion FROM lote_recepcion lr " +
+           "LEFT JOIN usuario u ON u.id_usuario = lr.id_usuario_registro " +
            "WHERE (LOWER(COALESCE(lr.numero_recepcion, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "OR LOWER(COALESCE(lr.usuario_registro, '')) LIKE LOWER(CONCAT('%', :query, '%')))",
+           "OR LOWER(COALESCE(u.username, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(COALESCE(u.nombre_completo, '')) LIKE LOWER(CONCAT('%', :query, '%')))",
            nativeQuery = true)
     List<Long> searchIds(@Param("query") String query);
 
     @Query(value = "SELECT DISTINCT lr.id_lote_recepcion FROM lote_recepcion lr " +
+           "LEFT JOIN usuario u ON u.id_usuario = lr.id_usuario_registro " +
            "WHERE lr.tipo_lote = :tipoLote " +
            "AND (LOWER(COALESCE(lr.numero_recepcion, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
-           "OR LOWER(COALESCE(lr.usuario_registro, '')) LIKE LOWER(CONCAT('%', :query, '%')))",
+           "OR LOWER(COALESCE(u.username, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(COALESCE(u.nombre_completo, '')) LIKE LOWER(CONCAT('%', :query, '%')))",
            nativeQuery = true)
     List<Long> searchIdsByTipoLote(@Param("query") String query, @Param("tipoLote") String tipoLote);
 
     @Query("SELECT lr FROM LoteRecepcion lr WHERE lr.idLoteRecepcion IN :ids")
-    @EntityGraph(attributePaths = { "agencia" })
+    @EntityGraph(attributePaths = { "agencia", "usuarioRegistro" })
     List<LoteRecepcion> findAllByIdWithAgencia(@Param("ids") Iterable<Long> ids);
 }

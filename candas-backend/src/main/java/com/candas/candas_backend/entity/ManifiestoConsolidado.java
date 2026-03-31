@@ -47,8 +47,9 @@ public class ManifiestoConsolidado {
     @Column(name = "fecha_generacion", nullable = false)
     private LocalDateTime fechaGeneracion;
 
-    @Column(name = "usuario_generador", nullable = false, length = 255)
-    private String usuarioGenerador;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario_generador")
+    private Usuario usuarioGenerador;
 
     @Column(name = "total_despachos")
     private Integer totalDespachos = 0;

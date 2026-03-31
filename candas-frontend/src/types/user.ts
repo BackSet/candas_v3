@@ -7,6 +7,7 @@ export interface User {
   permisos?: string[]
   activo?: boolean
   idAgencia?: number
+  idAgencias?: number[]
 }
 
 export interface LoginRequest {
@@ -33,4 +34,5 @@ export interface LoginResponse {
   roles: string[]
   permisos?: string[]
   idAgencia?: number
+  idAgencias?: number[]
 }

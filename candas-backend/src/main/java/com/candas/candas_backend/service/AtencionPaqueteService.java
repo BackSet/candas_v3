@@ -10,7 +10,6 @@ import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.AtencionPaqueteRepository;
 import com.candas.candas_backend.repository.AgenciaRepository;
 import com.candas.candas_backend.repository.PaqueteRepository;
-import com.candas.candas_backend.repository.UsuarioRepository;
 import com.candas.candas_backend.security.AgenciaScopeResolver;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,19 +29,16 @@ public class AtencionPaqueteService {
     private final AgenciaRepository agenciaRepository;
     private final PaqueteRepository paqueteRepository;
     private final AgenciaScopeResolver agenciaScopeResolver;
-    private final UsuarioRepository usuarioRepository;
 
     public AtencionPaqueteService(
             AtencionPaqueteRepository atencionPaqueteRepository,
             AgenciaRepository agenciaRepository,
             PaqueteRepository paqueteRepository,
-            AgenciaScopeResolver agenciaScopeResolver,
-            UsuarioRepository usuarioRepository) {
+            AgenciaScopeResolver agenciaScopeResolver) {
         this.atencionPaqueteRepository = atencionPaqueteRepository;
         this.agenciaRepository = agenciaRepository;
         this.paqueteRepository = paqueteRepository;
         this.agenciaScopeResolver = agenciaScopeResolver;
-        this.usuarioRepository = usuarioRepository;
     }
 
     public Page<AtencionPaqueteDTO> findAll(EstadoAtencion estado, String search, Pageable pageable) {
@@ -241,11 +237,7 @@ public class AtencionPaqueteService {
     }
 
     private Optional<com.candas.candas_backend.entity.Agencia> resolverAgenciaPropietariaActual() {
-        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null || auth.getName().isBlank()) {
-            return Optional.empty();
-        }
-        return usuarioRepository.findByUsername(auth.getName())
-                .map(com.candas.candas_backend.entity.Usuario::getAgencia);
+        return agenciaScopeResolver.idAgenciaRestringida()
+                .flatMap(agenciaRepository::findById);
     }
 }

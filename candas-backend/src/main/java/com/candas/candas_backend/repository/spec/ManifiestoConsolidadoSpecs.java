@@ -26,9 +26,11 @@ public final class ManifiestoConsolidadoSpecs {
             List<Predicate> predicates = new ArrayList<>();
             if (search != null && !search.isBlank()) {
                 String pattern = "%" + search.trim().toLowerCase() + "%";
+                var usuarioJoin = root.join("usuarioGenerador", JoinType.LEFT);
                 predicates.add(cb.or(
                     cb.like(cb.lower(root.get("numeroManifiesto")), pattern),
-                    cb.like(cb.lower(root.get("usuarioGenerador")), pattern)
+                    cb.like(cb.lower(usuarioJoin.get("username")), pattern),
+                    cb.like(cb.lower(usuarioJoin.get("nombreCompleto")), pattern)
                 ));
             } else {
                 if (numeroManifiesto != null && !numeroManifiesto.isBlank()) {

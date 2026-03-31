@@ -2,18 +2,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { manifiestoConsolidadoService } from '@/lib/api/manifiesto-consolidado.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { CrearManifiestoConsolidadoDTO, ManifiestoConsolidadoResumen } from '@/types/manifiesto-consolidado'
+import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 
+function assertAgenciaActivaSeleccionada() {
+  if (useAuthStore.getState().activeAgencyId == null) {
+    throw new Error('Debes seleccionar una agencia activa para continuar.')
+  }
+}
+
 export function useManifiestosConsolidados(page: number = 0, size: number = 20) {
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['manifiestos-consolidados', page, size],
+    queryKey: ['manifiestos-consolidados', activeAgencyId, page, size],
     queryFn: () => manifiestoConsolidadoService.findAll(page, size),
   })
 }
 
 export function useManifiestoConsolidado(id: number | undefined) {
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['manifiesto-consolidado', id],
+    queryKey: ['manifiesto-consolidado', activeAgencyId, id],
     queryFn: () => manifiestoConsolidadoService.findById(id!),
     enabled: !!id,
   })
@@ -26,6 +35,7 @@ export function useCreateManifiestoConsolidado() {
 
   return useMutation({
     mutationFn: async (dto: CrearManifiestoConsolidadoDTO) => {
+      assertAgenciaActivaSeleccionada()
       const manifiesto = await manifiestoConsolidadoService.crearManifiestoConsolidado(dto)
       return manifiesto
     },

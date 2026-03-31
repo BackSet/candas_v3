@@ -83,6 +83,21 @@ public class UsuarioController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{id}/agencias")
+    @Operation(summary = "Obtener agencias de un usuario")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR') or hasAuthority('" + PermissionConstants.USUARIOS_VER + "')")
+    public ResponseEntity<List<Long>> obtenerAgencias(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.obtenerAgencias(id));
+    }
+
+    @PutMapping("/{id}/agencias")
+    @Operation(summary = "Asignar agencias a usuario")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR') or hasAuthority('" + PermissionConstants.USUARIOS_EDITAR + "')")
+    public ResponseEntity<Void> asignarAgencias(@PathVariable Long id, @RequestBody Map<String, List<Long>> request) {
+        usuarioService.asignarAgencias(id, request.get("agencias"));
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar usuario")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.USUARIOS_ELIMINAR + "')")

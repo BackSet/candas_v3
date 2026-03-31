@@ -35,5 +35,6 @@ public class UsuarioDTO {
     private LocalDateTime ultimoAcceso;
     private Long idCliente;
     private Long idAgencia;
+    private List<Long> idAgencias;
     private List<Long> roles; // IDs de roles para asignar
 }

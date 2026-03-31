@@ -21,7 +21,6 @@ public class DespachoDTO {
     @NotNull(message = "La fecha de despacho es obligatoria")
     private LocalDateTime fechaDespacho;
     
-    @NotNull(message = "El usuario de registro es obligatorio")
     private String usuarioRegistro;
     
     private String observaciones;

@@ -26,7 +26,6 @@ public class LoteRecepcionDTO {
     @NotNull(message = "La fecha de recepción es obligatoria")
     private LocalDateTime fechaRecepcion;
     
-    @NotNull(message = "El usuario de registro es obligatorio")
     private String usuarioRegistro;
     
     private String observaciones;

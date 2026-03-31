@@ -14,6 +14,7 @@ export interface Usuario {
   ultimoAcceso?: string
   idCliente?: number
   idAgencia?: number
+  idAgencias?: number[]
   roles?: number[]
 }
 

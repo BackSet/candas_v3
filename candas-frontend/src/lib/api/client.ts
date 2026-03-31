@@ -44,9 +44,12 @@ export const apiClient = axios.create({
 // Interceptor para agregar token JWT a las peticiones
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = useAuthStore.getState().token
+    const { token, activeAgencyId } = useAuthStore.getState()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    if (activeAgencyId != null) {
+      config.headers['X-Agencia-Activa-Id'] = String(activeAgencyId)
     }
 
     return config

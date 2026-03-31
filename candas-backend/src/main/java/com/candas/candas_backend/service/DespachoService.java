@@ -45,9 +45,9 @@ public class DespachoService {
     private final DistribuidorRepository distribuidorRepository;
     private final PaqueteRepository paqueteRepository;
     private final DestinatarioDirectoRepository destinatarioDirectoRepository;
+    private final UsuarioRepository usuarioRepository;
     private final PresintoUtil presintoUtil;
     private final AgenciaScopeResolver agenciaScopeResolver;
-    private final UsuarioRepository usuarioRepository;
     private final JdbcTemplate jdbcTemplate;
 
     public DespachoService(
@@ -57,9 +57,9 @@ public class DespachoService {
             DistribuidorRepository distribuidorRepository,
             PaqueteRepository paqueteRepository,
             DestinatarioDirectoRepository destinatarioDirectoRepository,
+            UsuarioRepository usuarioRepository,
             PresintoUtil presintoUtil,
             AgenciaScopeResolver agenciaScopeResolver,
-            UsuarioRepository usuarioRepository,
             JdbcTemplate jdbcTemplate) {
         this.despachoRepository = despachoRepository;
         this.sacaRepository = sacaRepository;
@@ -67,9 +67,9 @@ public class DespachoService {
         this.distribuidorRepository = distribuidorRepository;
         this.paqueteRepository = paqueteRepository;
         this.destinatarioDirectoRepository = destinatarioDirectoRepository;
+        this.usuarioRepository = usuarioRepository;
         this.presintoUtil = presintoUtil;
         this.agenciaScopeResolver = agenciaScopeResolver;
-        this.usuarioRepository = usuarioRepository;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -182,13 +182,6 @@ public class DespachoService {
     }
 
     public DespachoDTO create(DespachoDTO dto) {
-        agenciaScopeResolver.idAgenciaRestringida().ifPresent(ignored -> {
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.getName() != null && !auth.getName().isBlank()) {
-                dto.setUsuarioRegistro(auth.getName());
-            }
-        });
-
         validarDespacho(dto);
 
         Despacho despacho = toEntity(dto);
@@ -390,26 +383,15 @@ public class DespachoService {
 
     private void actualizarCamposBasicos(Despacho despacho, DespachoDTO dto) {
         despacho.setFechaDespacho(dto.getFechaDespacho());
-        if (agenciaScopeResolver.idAgenciaRestringida().isPresent()) {
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.getName() != null && !auth.getName().isBlank()) {
-                despacho.setUsuarioRegistro(auth.getName());
-            }
-        } else {
-            despacho.setUsuarioRegistro(dto.getUsuarioRegistro());
-        }
+        despacho.setUsuarioRegistro(resolverUsuarioRegistroDesdeContextoODto(dto.getUsuarioRegistro()));
         despacho.setObservaciones(dto.getObservaciones());
         despacho.setNumeroGuiaAgenciaDistribucion(dto.getNumeroGuiaAgenciaDistribucion());
         resolverAgenciaPropietariaActual().ifPresent(despacho::setAgenciaPropietaria);
     }
 
     private Optional<Agencia> resolverAgenciaPropietariaActual() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null || auth.getName().isBlank()) {
-            return Optional.empty();
-        }
-        return usuarioRepository.findByUsername(auth.getName())
-                .map(Usuario::getAgencia);
+        return agenciaScopeResolver.idAgenciaRestringida()
+                .flatMap(agenciaRepository::findById);
     }
 
     private void actualizarAgencia(Despacho despacho, DespachoDTO dto) {
@@ -684,7 +666,7 @@ public class DespachoService {
         dto.setIdDespacho(despacho.getIdDespacho());
         dto.setNumeroManifiesto(despacho.getNumeroManifiesto());
         dto.setFechaDespacho(despacho.getFechaDespacho());
-        dto.setUsuarioRegistro(despacho.getUsuarioRegistro());
+        dto.setUsuarioRegistro(nombreVisibleUsuario(despacho.getUsuarioRegistro()));
         dto.setObservaciones(despacho.getObservaciones());
 
         if (despacho.getAgencia() != null) {
@@ -768,13 +750,34 @@ public class DespachoService {
         Despacho despacho = new Despacho();
         // numeroManifiesto se genera automáticamente en create()
         despacho.setFechaDespacho(dto.getFechaDespacho());
-        despacho.setUsuarioRegistro(dto.getUsuarioRegistro());
+        despacho.setUsuarioRegistro(resolverUsuarioRegistroDesdeContextoODto(dto.getUsuarioRegistro()));
         despacho.setObservaciones(dto.getObservaciones());
         if (dto.getCodigoPresinto() != null && !dto.getCodigoPresinto().isBlank()) {
             despacho.setCodigoPresinto(dto.getCodigoPresinto().trim());
         }
         // Las relaciones y sacas se manejan en create()
         return despacho;
+    }
+
+    private Usuario resolverUsuarioRegistroDesdeContextoODto(String usuarioRegistroDto) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null && !auth.getName().isBlank()) {
+            return usuarioRepository.findByUsername(auth.getName()).orElse(null);
+        }
+        if (usuarioRegistroDto == null || usuarioRegistroDto.isBlank()) {
+            return null;
+        }
+        return usuarioRepository.findByUsername(usuarioRegistroDto.trim()).orElse(null);
+    }
+
+    private String nombreVisibleUsuario(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        if (usuario.getNombreCompleto() != null && !usuario.getNombreCompleto().isBlank()) {
+            return usuario.getNombreCompleto();
+        }
+        return usuario.getUsername();
     }
 
 }

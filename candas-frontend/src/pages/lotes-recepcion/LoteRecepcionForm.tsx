@@ -31,6 +31,7 @@ import { FormError } from '@/components/ui/form-error'
 import { SectionTitle } from '@/components/ui/section-title'
 import { LoadingState } from '@/components/states'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
+import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
 import {
   loteRecepcionSchema,
   loteRecepcionFormDataToDto,
@@ -55,12 +56,13 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
   const { id } = useParams({ strict: false })
   const isEdit = !!id
   const user = useAuthStore((state) => state.user)
+  const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   const refreshMe = useAuthStore((state) => state.refreshMe)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [nuevoLoteRecepcionId, setNuevoLoteRecepcionId] = useState<number | null>(null)
 
   const { data: loteRecepcion, isLoading: loadingLoteRecepcion } = useLoteRecepcion(id ? Number(id) : undefined)
-  const { data: agencias = [], isLoading: loadingAgencias } = useAgencias()
+  const { data: agencias = [] } = useAgencias()
   const createMutation = useCreateLoteRecepcion()
   const updateMutation = useUpdateLoteRecepcion()
 
@@ -75,7 +77,7 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
   } = useForm<LoteRecepcionFormData>({
     resolver: zodResolver(loteRecepcionSchema),
     defaultValues: {
-      ...defaultLoteRecepcionFormData(user?.nombreCompleto, user?.idAgencia),
+      ...defaultLoteRecepcionFormData(user?.nombreCompleto, activeAgencyId ?? user?.idAgencia),
       tipoLote: (defaultTipoLote === 'ESPECIAL' ? 'ESPECIAL' : 'NORMAL') as 'NORMAL' | 'ESPECIAL',
     },
   })
@@ -87,15 +89,19 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
     }
   }, [isEdit, refreshMe])
 
-  // Actualizar el campo de usuario y agencia automáticamente cuando el usuario esté disponible
+  // Actualizar el campo de usuario y agencia automáticamente cuando el usuario/entorno estén disponibles
   useEffect(() => {
     if (user?.nombreCompleto && !isEdit) {
       setValue('usuarioRegistro', user.nombreCompleto)
     }
-    if (user?.idAgencia != null && !isEdit) {
-      setValue('idAgencia', user.idAgencia)
+    if (activeAgencyId != null) {
+      setValue('idAgencia', activeAgencyId, { shouldValidate: true })
+      return
     }
-  }, [user?.nombreCompleto, user?.idAgencia, setValue, isEdit])
+    if (user?.idAgencia != null && !isEdit) {
+      setValue('idAgencia', user.idAgencia, { shouldValidate: true })
+    }
+  }, [user?.nombreCompleto, user?.idAgencia, activeAgencyId, setValue, isEdit])
 
   useEffect(() => {
     if (loteRecepcion) {
@@ -104,7 +110,9 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
   }, [loteRecepcion, reset])
 
   const onSubmit = async (data: LoteRecepcionFormData) => {
+    const idAgenciaFinal = activeAgencyId ?? data.idAgencia
     const loteRecepcionData = loteRecepcionFormDataToDto(data, defaultTipoLote)
+    loteRecepcionData.idAgencia = idAgenciaFinal
 
     try {
       if (isEdit) {
@@ -170,6 +178,8 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <AssignedAgencyNotice />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {!isEdit && (
                 <div className="space-y-2">
@@ -191,32 +201,6 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
                   </p>
                 </div>
               )}
-
-              <div className="space-y-2">
-                <Label htmlFor="idAgencia">
-                  Agencia <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  value={watch('idAgencia')?.toString() || ''}
-                  onValueChange={(value) => setValue('idAgencia', Number(value), { shouldValidate: true })}
-                  disabled={loadingAgencias}
-                >
-                  <SelectTrigger id="idAgencia" className={errors.idAgencia ? 'border-destructive' : ''}>
-                    <SelectValue placeholder="Selecciona una agencia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {agencias.map((agencia) => (
-                      <SelectItem key={agencia.value} value={agencia.value.toString()}>
-                        {agencia.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormError message={errors.idAgencia?.message} showIcon />
-                {!errors.idAgencia && watch('idAgencia') && (
-                  <p className="text-xs text-muted-foreground">Agencia seleccionada</p>
-                )}
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="fechaRecepcion">
@@ -250,8 +234,8 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
                   {...register('usuarioRegistro')}
                   className={errors.usuarioRegistro ? 'border-destructive' : ''}
                   placeholder="Usuario que registra la recepción"
-                  disabled={!isEdit}
-                  readOnly={!isEdit}
+                  disabled
+                  readOnly
                 />
                 {!isEdit && (
                   <p className="text-xs text-muted-foreground">

@@ -19,4 +19,5 @@ public class LoginResponse {
     private List<String> roles;
     private List<String> permisos;
     private Long idAgencia;
+    private List<Long> idAgencias;
 }

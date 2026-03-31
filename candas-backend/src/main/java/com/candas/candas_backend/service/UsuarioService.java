@@ -14,7 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -145,6 +149,7 @@ public class UsuarioService {
         } else {
             usuario.setAgencia(null);
         }
+        aplicarAgenciasMultiples(usuario, dto.getIdAgencias(), dto.getIdAgencia());
         
         return toDTO(usuarioRepository.save(usuario));
     }
@@ -190,6 +195,32 @@ public class UsuarioService {
             .collect(Collectors.toList());
     }
 
+    public List<Long> obtenerAgencias(Long idUsuario) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", idUsuario));
+        Set<Long> ids = new HashSet<>();
+        if (usuario.getAgencias() != null) {
+            usuario.getAgencias().stream()
+                    .map(Agencia::getIdAgencia)
+                    .forEach(ids::add);
+        }
+        if (usuario.getAgencia() != null) {
+            ids.add(usuario.getAgencia().getIdAgencia());
+        }
+        return ids.stream().toList();
+    }
+
+    public void asignarAgencias(Long idUsuario, List<Long> idAgencias) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", idUsuario));
+        aplicarAgenciasMultiples(
+                usuario,
+                idAgencias,
+                usuario.getAgencia() != null ? usuario.getAgencia().getIdAgencia() : null
+        );
+        usuarioRepository.save(usuario);
+    }
+
     private UsuarioDTO toDTO(Usuario usuario) {
         UsuarioDTO dto = new UsuarioDTO();
         dto.setIdUsuario(usuario.getIdUsuario());
@@ -208,6 +239,14 @@ public class UsuarioService {
         if (usuario.getAgencia() != null) {
             dto.setIdAgencia(usuario.getAgencia().getIdAgencia());
         }
+        Set<Long> agencias = new HashSet<>();
+        if (usuario.getAgencias() != null) {
+            usuario.getAgencias().stream().map(Agencia::getIdAgencia).forEach(agencias::add);
+        }
+        if (usuario.getAgencia() != null) {
+            agencias.add(usuario.getAgencia().getIdAgencia());
+        }
+        dto.setIdAgencias(new ArrayList<>(agencias));
         dto.setRoles(obtenerRoles(usuario.getIdUsuario()));
         return dto;
     }
@@ -225,6 +264,28 @@ public class UsuarioService {
             usuario.setAgencia(agenciaRepository.findById(dto.getIdAgencia())
                 .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia())));
         }
+        aplicarAgenciasMultiples(usuario, dto.getIdAgencias(), dto.getIdAgencia());
         return usuario;
+    }
+
+    private void aplicarAgenciasMultiples(Usuario usuario, List<Long> idAgencias, Long idAgenciaLegacy) {
+        Set<Long> ids = new HashSet<>();
+        if (idAgencias != null) {
+            ids.addAll(idAgencias);
+        }
+        if (idAgenciaLegacy != null) {
+            ids.add(idAgenciaLegacy);
+        }
+        if (ids.isEmpty()) {
+            usuario.setAgencias(Set.of());
+            usuario.setAgencia(null);
+            return;
+        }
+        List<Agencia> agencias = ids.stream()
+                .map(id -> agenciaRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Agencia", id)))
+                .toList();
+        usuario.setAgencias(new LinkedHashSet<>(agencias));
+        usuario.setAgencia(agencias.get(0));
     }
 }

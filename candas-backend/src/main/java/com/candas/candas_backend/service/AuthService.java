@@ -70,6 +70,9 @@ public class AuthService {
             response.setRoles(roles);
             response.setPermisos(permisos);
             response.setIdAgencia(usuario.getAgencia() != null ? usuario.getAgencia().getIdAgencia() : null);
+            response.setIdAgencias(usuario.getAgencias() != null
+                    ? usuario.getAgencias().stream().map(a -> a.getIdAgencia()).toList()
+                    : List.of());
 
             return response;
         } catch (BadCredentialsException e) {

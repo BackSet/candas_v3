@@ -16,16 +16,16 @@ import java.util.List;
 @Repository
 public interface ManifiestoConsolidadoRepository extends JpaRepository<ManifiestoConsolidado, Long>, JpaSpecificationExecutor<ManifiestoConsolidado> {
 
-    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria", "usuarioGenerador" })
     Page<ManifiestoConsolidado> findAllByOrderByFechaGeneracionDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria", "usuarioGenerador" })
     List<ManifiestoConsolidado> findByAgencia_IdAgenciaOrderByFechaGeneracionDesc(Long idAgencia);
 
-    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria", "usuarioGenerador" })
     Page<ManifiestoConsolidado> findByAgencia_IdAgenciaOrderByFechaGeneracionDesc(Long idAgencia, Pageable pageable);
 
-    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria", "usuarioGenerador" })
     Page<ManifiestoConsolidado> findByFechaGeneracionBetweenOrderByFechaGeneracionDesc(
             LocalDateTime inicio,
             LocalDateTime fin,
@@ -33,14 +33,16 @@ public interface ManifiestoConsolidadoRepository extends JpaRepository<Manifiest
 
     @Query(value = "SELECT DISTINCT mc.id_manifiesto_consolidado FROM manifiesto_consolidado mc " +
             "LEFT JOIN agencia a ON a.id_agencia = mc.id_agencia " +
+            "LEFT JOIN usuario u ON u.id_usuario = mc.id_usuario_generador " +
             "WHERE (LOWER(COALESCE(mc.numero_manifiesto, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
             "OR LOWER(COALESCE(a.nombre, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
             "OR LOWER(COALESCE(mc.periodo, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
-            "OR LOWER(COALESCE(mc.usuario_generador, '')) LIKE LOWER(CONCAT('%', :query, '%')))", nativeQuery = true)
+            "OR LOWER(COALESCE(u.username, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "OR LOWER(COALESCE(u.nombre_completo, '')) LIKE LOWER(CONCAT('%', :query, '%')))", nativeQuery = true)
     List<Long> searchIds(@Param("query") String query);
 
     @Query("SELECT mc FROM ManifiestoConsolidado mc WHERE mc.idManifiestoConsolidado IN :ids")
-    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria" })
+    @EntityGraph(attributePaths = { "agencia", "agenciaPropietaria", "usuarioGenerador" })
     List<ManifiestoConsolidado> findAllByIdWithAgencia(@Param("ids") Iterable<Long> ids);
 
     @Query(value = "SELECT MAX(numero_manifiesto) FROM manifiesto_consolidado WHERE numero_manifiesto LIKE 'MCF-%'", nativeQuery = true)

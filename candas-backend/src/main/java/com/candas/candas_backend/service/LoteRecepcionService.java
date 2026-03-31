@@ -160,20 +160,23 @@ public class LoteRecepcionService {
             loteRecepcion.setNumeroRecepcion(dto.getNumeroRecepcion().trim());
         }
         
-        // Agencia: del DTO o de la agencia asignada al usuario autenticado
-        if (dto.getIdAgencia() != null) {
-            agenciaScopeResolver.idAgenciaRestringida().ifPresent(idAg -> {
-                if (!idAg.equals(dto.getIdAgencia())) {
-                    String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAg).orElse(null), idAg);
-                    Agencia agenciaSolicitada = agenciaRepository.findById(dto.getIdAgencia()).orElse(null);
-                    String agenciaRecurso = descripcionAgencia(agenciaSolicitada, dto.getIdAgencia());
-                    throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
-                            + ". Estás intentando crear un lote para " + agenciaRecurso
-                            + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.");
-                }
-            });
+        // Patrón de agencia activa: si viene por header, manda sobre el DTO.
+        Long idAgenciaActiva = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        if (idAgenciaActiva != null) {
+            if (dto.getIdAgencia() != null && !idAgenciaActiva.equals(dto.getIdAgencia())) {
+                String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAgenciaActiva).orElse(null), idAgenciaActiva);
+                Agencia agenciaSolicitada = agenciaRepository.findById(dto.getIdAgencia()).orElse(null);
+                String agenciaRecurso = descripcionAgencia(agenciaSolicitada, dto.getIdAgencia());
+                throw new AgenciaAccessDeniedException("Tu entorno activo es " + agenciaUsuario
+                        + ". Estás intentando crear un lote para " + agenciaRecurso
+                        + ". Cambia de entorno para continuar.");
+            }
+            Agencia agencia = agenciaRepository.findById(idAgenciaActiva)
+                    .orElseThrow(() -> new ResourceNotFoundException("Agencia", idAgenciaActiva));
+            loteRecepcion.setAgencia(agencia);
+        } else if (dto.getIdAgencia() != null) {
             Agencia agencia = agenciaRepository.findById(dto.getIdAgencia())
-                .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia()));
             loteRecepcion.setAgencia(agencia);
         } else {
             Optional<Usuario> usuarioOpt = obtenerUsuarioActual();
@@ -185,22 +188,7 @@ public class LoteRecepcionService {
         
         loteRecepcion.setFechaRecepcion(dto.getFechaRecepcion());
         
-        // Obtener nombre completo del usuario del contexto de seguridad
-        // Siempre usar el nombre completo del usuario autenticado, ignorar el valor del DTO
-        String usuarioRegistro = obtenerNombreCompletoUsuario();
-        if (usuarioRegistro == null || usuarioRegistro.isEmpty()) {
-            // Si no se puede obtener el nombre completo, intentar obtenerlo del DTO
-            // pero si el DTO tiene un username, buscar el nombre completo
-            if (dto.getUsuarioRegistro() != null && !dto.getUsuarioRegistro().isEmpty()) {
-                // Intentar buscar si es un username
-                usuarioRegistro = usuarioRepository.findByUsername(dto.getUsuarioRegistro())
-                    .map(Usuario::getNombreCompleto)
-                    .orElse(dto.getUsuarioRegistro());
-            } else {
-                usuarioRegistro = "system";
-            }
-        }
-        loteRecepcion.setUsuarioRegistro(usuarioRegistro);
+        loteRecepcion.setUsuarioRegistro(resolverUsuarioRegistroActual(dto.getUsuarioRegistro()));
         
         loteRecepcion.setObservaciones(dto.getObservaciones());
 
@@ -219,19 +207,22 @@ public class LoteRecepcionService {
             loteRecepcion.setNumeroRecepcion(dto.getNumeroRecepcion().trim());
         }
         
-        if (dto.getIdAgencia() != null) {
-            agenciaScopeResolver.idAgenciaRestringida().ifPresent(idAg -> {
-                if (!idAg.equals(dto.getIdAgencia())) {
-                    String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAg).orElse(null), idAg);
-                    Agencia agenciaSolicitada = agenciaRepository.findById(dto.getIdAgencia()).orElse(null);
-                    String agenciaRecurso = descripcionAgencia(agenciaSolicitada, dto.getIdAgencia());
-                    throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
-                            + ". Estás intentando reasignar el lote a " + agenciaRecurso
-                            + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.");
-                }
-            });
+        Long idAgenciaActiva = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        if (idAgenciaActiva != null) {
+            if (dto.getIdAgencia() != null && !idAgenciaActiva.equals(dto.getIdAgencia())) {
+                String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAgenciaActiva).orElse(null), idAgenciaActiva);
+                Agencia agenciaSolicitada = agenciaRepository.findById(dto.getIdAgencia()).orElse(null);
+                String agenciaRecurso = descripcionAgencia(agenciaSolicitada, dto.getIdAgencia());
+                throw new AgenciaAccessDeniedException("Tu entorno activo es " + agenciaUsuario
+                        + ". Estás intentando reasignar el lote a " + agenciaRecurso
+                        + ". Cambia de entorno para continuar.");
+            }
+            Agencia agencia = agenciaRepository.findById(idAgenciaActiva)
+                    .orElseThrow(() -> new ResourceNotFoundException("Agencia", idAgenciaActiva));
+            loteRecepcion.setAgencia(agencia);
+        } else if (dto.getIdAgencia() != null) {
             Agencia agencia = agenciaRepository.findById(dto.getIdAgencia())
-                .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia()));
             loteRecepcion.setAgencia(agencia);
         }
         
@@ -662,12 +653,7 @@ public class LoteRecepcionService {
             paqueteNoEncontrado.setLoteRecepcion(loteRecepcion);
             paqueteNoEncontrado.setNumeroGuia(numeroGuia);
             
-            // Obtener nombre completo del usuario del contexto de seguridad
-            String usuarioRegistro = obtenerNombreCompletoUsuario();
-            if (usuarioRegistro == null || usuarioRegistro.isEmpty()) {
-                usuarioRegistro = "system";
-            }
-            paqueteNoEncontrado.setUsuarioRegistro(usuarioRegistro);
+            paqueteNoEncontrado.setUsuarioRegistro(resolverUsuarioRegistroActual(null));
             
             paqueteNoEncontradoRepository.save(paqueteNoEncontrado);
         }
@@ -679,29 +665,24 @@ public class LoteRecepcionService {
         dto.setIdLoteRecepcion(paqueteNoEncontrado.getLoteRecepcion().getIdLoteRecepcion());
         dto.setNumeroGuia(paqueteNoEncontrado.getNumeroGuia());
         dto.setFechaRegistro(paqueteNoEncontrado.getFechaRegistro());
-        dto.setUsuarioRegistro(paqueteNoEncontrado.getUsuarioRegistro());
+        dto.setUsuarioRegistro(nombreVisibleUsuario(paqueteNoEncontrado.getUsuarioRegistro()));
         return dto;
     }
 
-    /**
-     * Obtiene el nombre completo del usuario autenticado desde el contexto de seguridad
-     * @return El nombre completo del usuario o null si no está autenticado o no se encuentra
-     */
-    private String obtenerNombreCompletoUsuario() {
+    private Usuario resolverUsuarioRegistroActual(String usernameFallback) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
                 String username = authentication.getName();
-                if (username != null && !username.isEmpty() && !username.equals("anonymousUser")) {
-                    Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
-                    if (usuarioOpt.isPresent()) {
-                        return usuarioOpt.get().getNombreCompleto();
-                    }
+                if (username != null && !username.isBlank() && !"anonymousUser".equals(username)) {
+                    return usuarioRepository.findByUsername(username).orElse(null);
                 }
             }
-        } catch (Exception e) {
-            // Si hay algún error, retornar null
-            return null;
+        } catch (Exception ignored) {
+            // Sin usuario autenticado, se usa fallback.
+        }
+        if (usernameFallback != null && !usernameFallback.isBlank()) {
+            return usuarioRepository.findByUsername(usernameFallback.trim()).orElse(null);
         }
         return null;
     }
@@ -775,7 +756,7 @@ public class LoteRecepcionService {
         }
         
         dto.setFechaRecepcion(loteRecepcion.getFechaRecepcion());
-        dto.setUsuarioRegistro(loteRecepcion.getUsuarioRegistro());
+        dto.setUsuarioRegistro(nombreVisibleUsuario(loteRecepcion.getUsuarioRegistro()));
         dto.setObservaciones(loteRecepcion.getObservaciones());
         
         // Calcular estadísticas
@@ -798,6 +779,16 @@ public class LoteRecepcionService {
         dto.setPorcentajeCompletado(porcentajeCompletado);
         
         return dto;
+    }
+
+    private String nombreVisibleUsuario(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        if (usuario.getNombreCompleto() != null && !usuario.getNombreCompleto().isBlank()) {
+            return usuario.getNombreCompleto();
+        }
+        return usuario.getUsername();
     }
 
 }
