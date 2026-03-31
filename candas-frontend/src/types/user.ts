@@ -24,6 +24,13 @@ export interface RegisterRequest {
   roles?: number[]
 }
 
+export interface UpdateProfileRequest {
+  username: string
+  email: string
+  nombreCompleto: string
+  password?: string
+}
+
 export interface LoginResponse {
   token: string
   type: string

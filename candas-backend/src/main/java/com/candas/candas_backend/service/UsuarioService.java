@@ -1,6 +1,7 @@
 package com.candas.candas_backend.service;
 
 import com.candas.candas_backend.dto.UsuarioDTO;
+import com.candas.candas_backend.dto.PerfilUsuarioUpdateDTO;
 import com.candas.candas_backend.entity.*;
 import com.candas.candas_backend.exception.BadRequestException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
@@ -118,15 +119,25 @@ public class UsuarioService {
     public UsuarioDTO update(Long id, UsuarioDTO dto) {
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Usuario", id));
+
+        if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
+            String username = dto.getUsername().trim();
+            if (!username.equals(usuario.getUsername()) && usuarioRepository.existsByUsername(username)) {
+                throw new BadRequestException("El username ya existe");
+            }
+            usuario.setUsername(username);
+        }
         
         if (dto.getEmail() != null && !dto.getEmail().equals(usuario.getEmail())) {
             if (usuarioRepository.existsByEmail(dto.getEmail())) {
                 throw new BadRequestException("El email ya existe");
             }
-            usuario.setEmail(dto.getEmail());
+            usuario.setEmail(dto.getEmail().trim());
         }
         
-        usuario.setNombreCompleto(dto.getNombreCompleto());
+        if (dto.getNombreCompleto() != null && !dto.getNombreCompleto().isBlank()) {
+            usuario.setNombreCompleto(dto.getNombreCompleto().trim());
+        }
         if (dto.getActivo() != null) usuario.setActivo(dto.getActivo());
         if (dto.getCuentaNoExpirada() != null) usuario.setCuentaNoExpirada(dto.getCuentaNoExpirada());
         if (dto.getCuentaNoBloqueada() != null) usuario.setCuentaNoBloqueada(dto.getCuentaNoBloqueada());
@@ -152,6 +163,31 @@ public class UsuarioService {
         aplicarAgenciasMultiples(usuario, dto.getIdAgencias(), dto.getIdAgencia());
         
         return toDTO(usuarioRepository.save(usuario));
+    }
+
+    public Usuario actualizarPerfilPropio(String usernameActual, PerfilUsuarioUpdateDTO dto) {
+        Usuario usuario = usuarioRepository.findByUsername(usernameActual)
+                .orElseThrow(() -> new BadRequestException("Usuario autenticado no encontrado"));
+
+        String nuevoUsername = dto.getUsername().trim();
+        if (!nuevoUsername.equals(usuario.getUsername()) && usuarioRepository.existsByUsername(nuevoUsername)) {
+            throw new BadRequestException("El username ya existe");
+        }
+
+        String nuevoEmail = dto.getEmail().trim();
+        if (!nuevoEmail.equals(usuario.getEmail()) && usuarioRepository.existsByEmail(nuevoEmail)) {
+            throw new BadRequestException("El email ya existe");
+        }
+
+        usuario.setUsername(nuevoUsername);
+        usuario.setEmail(nuevoEmail);
+        usuario.setNombreCompleto(dto.getNombreCompleto().trim());
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
+        return usuarioRepository.save(usuario);
     }
 
     public void delete(Long id) {

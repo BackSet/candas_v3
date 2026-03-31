@@ -10,6 +10,7 @@ import { Navigate } from '@tanstack/react-router'
 const HomePage = lazyRouteComponent(() => import('@/pages/home/HomePage'))
 const Login = lazyRouteComponent(() => import('@/pages/auth/Login'))
 const Register = lazyRouteComponent(() => import('@/pages/auth/Register'))
+const MiPerfil = lazyRouteComponent(() => import('@/pages/auth/MiPerfil'))
 const Dashboard = lazyRouteComponent(() => import('@/pages/dashboard/Dashboard'))
 const PaquetesList = lazyRouteComponent(() => import('@/pages/paquetes/PaquetesList'))
 const PaqueteForm = lazyRouteComponent(() => import('@/pages/paquetes/PaqueteForm'))
@@ -94,6 +95,7 @@ const registerRoute = createRoute({
 })
 
 const dashboardRoute = createRoute({ getParentRoute: () => layoutRoute, path: 'dashboard', component: Dashboard })
+const miPerfilRoute = createRoute({ getParentRoute: () => layoutRoute, path: 'mi-perfil', component: MiPerfil })
 
 const paquetesIndexRoute = createRoute({
   getParentRoute: () => layoutRoute,
@@ -674,6 +676,7 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   layoutRoute.addChildren([
     dashboardRoute,
+    miPerfilRoute,
     paquetesIndexRoute,
     paquetesNewRoute,
     paquetesIdRoute,

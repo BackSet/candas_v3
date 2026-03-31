@@ -1,4 +1,4 @@
-import { Search, Bell, LogOut, Shield, Loader2 } from 'lucide-react'
+import { Search, Bell, LogOut, Shield, Loader2, UserCog } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -169,6 +169,13 @@ export function Header() {
                 </div>
                 <DropdownMenuSeparator className="m-0" />
                 <div className="p-1.5">
+                  <DropdownMenuItem
+                    onClick={() => navigate({ to: '/mi-perfil' })}
+                    className="rounded-lg text-[13px] gap-2 cursor-pointer"
+                  >
+                    <UserCog className="h-4 w-4" />
+                    Mi perfil
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleLogout}
                     className="rounded-lg text-[13px] gap-2 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
