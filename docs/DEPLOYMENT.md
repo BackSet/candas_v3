@@ -5,7 +5,7 @@ Guía para desplegar Candas en Railway con dos servicios Docker separados.
 ## Arquitectura objetivo (Railway)
 
 - Servicio `candas-backend` (Spring Boot + Flyway + PostgreSQL).
-- Servicio `candas-frontend` (Vite compilado y servido con **Caddy** en el puerto 80 por defecto).
+- Servicio `candas-frontend` (Vite compilado y servido con **Nginx**; plantilla `default.conf.template` sustituye `${PORT}`).
 - Ambos servicios públicos; frontend consume backend por URL pública.
 
 ## Archivos de despliegue
@@ -16,7 +16,7 @@ Guía para desplegar Candas en Railway con dos servicios Docker separados.
   - `candas-backend/src/main/resources/application-prod.properties`
 - Frontend:
   - `candas-frontend/Dockerfile`
-  - `candas-frontend/Caddyfile`
+  - `candas-frontend/nginx.conf` (plantilla para `/etc/nginx/templates/`)
   - `candas-frontend/.dockerignore`
 
 ## Paso 1: Crear proyecto y servicios en Railway
@@ -60,7 +60,7 @@ Notas:
 
 - El `Dockerfile` declara `ARG`/`ENV` para `VITE_API_BASE_URL` antes de `npm run build`, de modo que la variable del servicio Railway quede embebida en el bundle.
 - En local: copia `candas-frontend/.env.production.example` a `.env.production` o exporta la variable antes de `npm run build`.
-- Caddy escucha `:{$PORT:80}`: Railway debe definir `PORT` en runtime y el **target port** del dominio público debe ser el mismo. Si ejecutas el contenedor en local sin `PORT`, se usa 80.
+- Nginx usa `listen ${PORT}` tras `envsubst` en el arranque de la imagen oficial. `ENV PORT=80` en el Dockerfile es valor por defecto; Railway suele sobrescribir `PORT` (el **target port** del dominio debe coincidir).
 - Desarrollo: `candas-frontend/.env.development.example` y `.env.lan.example` (`VITE_NETWORK_MODE=lan` solo para acceso en red local).
 
 ## Paso 3: Orden de despliegue recomendado

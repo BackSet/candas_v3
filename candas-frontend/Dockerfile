@@ -12,16 +12,13 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# ---- Stage 2: Runtime (Caddy, alineado con ecubox-frontend) ----
-FROM caddy:2-alpine
-WORKDIR /srv
+# ---- Stage 2: Runtime ----
+# Nginx + plantilla envsubst: patrón recomendado en Railway (evita 502 frecuentes con Caddy + edge).
+FROM nginx:1.27-alpine
 
-# No fijar PORT aquí: Railway lo inyecta y debe coincidir con el target del dominio público.
-# Caddyfile usa {$PORT:80} si la variable no existe (p. ej. prueba local sin -e PORT).
+ENV PORT=80
 
-COPY Caddyfile /etc/caddy/Caddyfile
-COPY --from=build /app/dist /srv/dist
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
-
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
