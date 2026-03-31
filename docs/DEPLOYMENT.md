@@ -52,16 +52,16 @@ Notas:
 
 ### Frontend (`candas-frontend`)
 
-Variables mínimas:
+Variables mínimas (build de la imagen Docker / `vite build`):
 
-- `VITE_API_BASE_URL=https://<backend>.up.railway.app`
+- `VITE_API_BASE_URL=https://<backend>.up.railway.app` (URL completa del API; el código de producción no añade puerto por defecto)
 
 Notas:
 
-- El frontend toma variables desde `candas-frontend/.env` durante el build.
-- En Railway, define `VITE_API_BASE_URL` en el servicio frontend para que Railway genere ese `.env` en build-time.
-- El Nginx del contenedor incluye fallback SPA para rutas de TanStack Router.
-- Para desarrollo local, puedes usar `candas-frontend/.env.development.example` si necesitas personalizar `VITE_NETWORK_MODE` y `VITE_PORT`.
+- El `Dockerfile` declara `ARG`/`ENV` para `VITE_API_BASE_URL` antes de `npm run build`, de modo que la variable del servicio Railway quede embebida en el bundle.
+- En local: copia `candas-frontend/.env.production.example` a `.env.production` o exporta la variable antes de `npm run build`.
+- El Nginx del contenedor usa `listen ${PORT}`; Railway inyecta `PORT` en runtime (suele ser `80` en el dominio público).
+- Desarrollo: `candas-frontend/.env.development.example` y `.env.lan.example` (`VITE_NETWORK_MODE=lan` solo para acceso en red local).
 
 ## Paso 3: Orden de despliegue recomendado
 

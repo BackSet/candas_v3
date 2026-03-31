@@ -1,13 +1,34 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
 
-const isLanMode = import.meta.env.VITE_NETWORK_MODE === 'lan'
-const defaultApiUrl =
-  typeof window !== 'undefined' && isLanMode
-    ? `http://${window.location.hostname}:8080`
-    : 'http://localhost:8080'
+/**
+ * Desarrollo / preview de Vite: permite LAN (`hostname:8080`) o `localhost:8080`.
+ * Producción (`vite build`): solo `VITE_API_BASE_URL` (URL completa del backend, sin inferir puerto).
+ */
+function resolveApiBaseUrl(): string {
+  const fromEnv = import.meta.env.VITE_API_BASE_URL?.trim()
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultApiUrl
+  if (import.meta.env.PROD) {
+    if (!fromEnv) {
+      throw new Error(
+        'VITE_API_BASE_URL es obligatoria en producción. Defínela en el build (ej. https://api.tudominio.com).'
+      )
+    }
+    return fromEnv.replace(/\/$/, '')
+  }
+
+  if (fromEnv) {
+    return fromEnv.replace(/\/$/, '')
+  }
+
+  const isLanMode = import.meta.env.VITE_NETWORK_MODE === 'lan'
+  if (typeof window !== 'undefined' && isLanMode) {
+    return `http://${window.location.hostname}:8080`
+  }
+  return 'http://localhost:8080'
+}
+
+const API_BASE_URL = resolveApiBaseUrl()
 
 export { API_BASE_URL }
 

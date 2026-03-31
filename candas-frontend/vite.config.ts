@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
-      host: isLanMode,
+      // Solo `VITE_NETWORK_MODE=lan` expone el dev server en la LAN (0.0.0.0).
+      host: isLanMode ? true : undefined,
       port: Number(env.VITE_PORT ?? 5173),
     },
     resolve: {
