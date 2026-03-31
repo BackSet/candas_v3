@@ -17,6 +17,7 @@ Guía para desplegar Candas en Railway con dos servicios Docker separados.
 - Frontend:
   - `candas-frontend/Dockerfile`
   - `candas-frontend/nginx.conf` (plantilla para `/etc/nginx/templates/`)
+  - `candas-frontend/docker-entrypoint.d/10-default-port.sh` (asegura `PORT` antes de `envsubst`)
   - `candas-frontend/railway.json` (healthcheck, restart)
   - `candas-frontend/.dockerignore`
 
@@ -113,12 +114,15 @@ Ese mensaje indica que el [Edge Proxy no puede alcanzar tu aplicación](https://
    El proceso debe escuchar en **`0.0.0.0`** y en el **`PORT`** de Railway. El frontend usa Nginx con `listen 0.0.0.0:${PORT}`; el backend Spring usa `server.port=${PORT:8080}`.
 
 3. **Dominio correcto**  
-   El `.up.railway.app` (o custom domain) debe estar asociado al **mismo servicio** que despliega esa app (no mezclar un dominio del servicio `candas-frontend` con otro servicio).
+   El `.up.railway.app` (o custom domain) debe estar asociado al **mismo servicio** que despliega esa app (no mezclar un dominio del servicio `candas-frontend` con otro servicio). Si el **backend responde** pero `https://…-frontend.up.railway.app` no, revisa **solo el servicio del frontend** (Variables + Networking de ese servicio, no del backend).
 
-4. **Healthcheck**  
+4. **Variable `PORT` en el servicio frontend**  
+   No dejes `PORT` **vacía** ni un valor que no coincida con el **target port** del dominio. Si añadiste `PORT` a mano y duda, elimínala y vuelve a desplegar para que Railway la inyecte; o usa **Generate Domain** en ese servicio para alinear dominio y puerto.
+
+5. **Healthcheck**  
    `candas-frontend/railway.json` define `healthcheckPath: "/"` para que el despliegue no se marque listo hasta que Nginx responda. Si falla, revisa **Deploy logs** (p. ej. `listen` mal formado si `PORT` no se sustituyó).
 
-5. **Build del frontend**  
+6. **Build del frontend**  
    `VITE_API_BASE_URL` no corrige un 502 en `/`, pero es necesaria para el login y las llamadas al API tras cargar la SPA.
 
 Referencias oficiales: [Fixing Common Errors](https://docs.railway.com/guides/fixing-common-errors), [Config as code](https://docs.railway.com/reference/config-as-code), [Public networking](https://docs.railway.com/networking/public-networking).
