@@ -111,7 +111,9 @@ Ese mensaje indica que el [Edge Proxy no puede alcanzar tu aplicación](https://
    En el servicio afectado, abre **Variables** y anota el valor de **`PORT`** (Railway lo inyecta). En **Networking → dominio público**, el **target port** debe ser **exactamente** ese número. Un error típico es dejar el target en `3000` cuando la app escucha en `8080` (o al revés), [como describe la documentación](https://docs.railway.com/guides/fixing-common-errors).
 
 2. **Host y puerto de escucha**  
-   El proceso debe escuchar en **`0.0.0.0`** y en el **`PORT`** de Railway. El frontend usa Nginx con `listen 0.0.0.0:${PORT}`; el backend Spring usa `server.port=${PORT:8080}`.
+   El proceso debe escuchar en **`0.0.0.0`** y en el **`PORT`** de Railway. El frontend usa Nginx con `listen 0.0.0.0:${PORT}` y `listen [::]:${PORT}`; el backend Spring usa `server.port=${PORT:8080}`.
+
+   **Healthcheck 200 en logs pero el navegador sigue con 502:** el healthcheck de Railway habla con el contenedor en el puerto correcto (`PORT`), pero el **dominio público** puede tener un **target port** distinto. Abre **Networking** en el servicio **frontend**, edita el dominio (`…-frontend.up.railway.app`) y pon el **target port = mismo número** que ves en **Variables → `PORT`** (o el que imprime el log `candas-frontend: Nginx escuchará en PORT=…` al arrancar). No mezcles el `PORT` del backend con el del frontend.
 
 3. **Dominio correcto**  
    El `.up.railway.app` (o custom domain) debe estar asociado al **mismo servicio** que despliega esa app (no mezclar un dominio del servicio `candas-frontend` con otro servicio). Si el **backend responde** pero `https://…-frontend.up.railway.app` no, revisa **solo el servicio del frontend** (Variables + Networking de ese servicio, no del backend).
