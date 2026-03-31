@@ -61,9 +61,9 @@ Variables mínimas (build de la imagen Docker / `vite build`):
 Notas:
 
 - El `Dockerfile` declara `ARG`/`ENV` para `VITE_API_BASE_URL` antes de `npm run build`, de modo que la variable del servicio Railway quede embebida en el bundle.
-- En local: copia `candas-frontend/.env.production.example` a `.env.production` o exporta la variable antes de `npm run build`.
+- En local: usa `candas-frontend/.env.example` como base y copia a `.env.production` (o exporta variables antes de `npm run build`).
 - Nginx usa `listen 0.0.0.0:${PORT}` tras `envsubst` (recomendación Railway: `0.0.0.0` + variable `PORT`). `ENV PORT=80` en el Dockerfile es solo default local; Railway sobrescribe `PORT` en runtime.
-- Desarrollo: `candas-frontend/.env.development.example` y `.env.lan.example` (`VITE_NETWORK_MODE=lan` solo para acceso en red local).
+- Desarrollo: usa `candas-frontend/.env.example` como base y copia a `.env.development` (`VITE_NETWORK_MODE=lan` solo para acceso en red local).
 
 ## Paso 3: Orden de despliegue recomendado
 
