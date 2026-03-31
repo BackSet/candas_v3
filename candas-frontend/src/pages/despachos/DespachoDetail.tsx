@@ -20,8 +20,10 @@ import { SectionTitle } from '@/components/ui/section-title'
 import { Property } from '@/components/detail/InfoCard'
 import { QuickActions } from '@/components/detail/QuickActions'
 import { LoadingState } from '@/components/states'
+import { ErrorState } from '@/components/states/ErrorState'
 import { useHasPermission } from '@/hooks/useHasRole'
 import { PERMISSIONS } from '@/types/permissions'
+import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
 
 export default function DespachoDetail() {
   const navigate = useNavigate()
@@ -29,7 +31,7 @@ export default function DespachoDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showAgregarSacas, setShowAgregarSacas] = useState(false)
 
-  const { data: despacho, isLoading } = useDespacho(id ? Number(id) : undefined)
+  const { data: despacho, isLoading, error } = useDespacho(id ? Number(id) : undefined)
   const { data: sacas } = useSacasDespacho(id ? Number(id) : undefined)
   const { data: agencia } = useAgencia(despacho?.idAgencia)
   const { data: distribuidor } = useDistribuidor(despacho?.idDistribuidor)
@@ -54,12 +56,21 @@ export default function DespachoDetail() {
   }
 
   if (!despacho) {
+    const status = getApiStatus(error)
+    const es403 = status === 403
     return (
-      <div className="p-8 flex flex-col items-center justify-center space-y-4">
-        <p className="text-error font-medium">Despacho no encontrado</p>
-        <Button onClick={() => navigate({ to: '/despachos' })} variant="outline">
-          Volver a la lista
-        </Button>
+      <div className="p-6">
+        <ErrorState
+          title={es403 ? 'Acceso restringido por agencia' : 'Despacho no encontrado'}
+          description={es403
+            ? getApiErrorMessage(error, 'No tienes acceso a este despacho por alcance de agencia.')
+            : 'No se encontró el despacho solicitado.'}
+          action={
+            <Button onClick={() => navigate({ to: '/despachos' })} variant="outline">
+              Volver a la lista
+            </Button>
+          }
+        />
       </div>
     )
   }

@@ -455,7 +455,6 @@ public class PaqueteImportService {
             errorMessage += " - Causa: " + e.getCause().getMessage();
         }
         errores.add(errorMessage);
-        e.printStackTrace(); // Log para debugging
     }
 
     private void establecerResultado(ImportResultDTO resultado, ContadoresImportacion contadores,

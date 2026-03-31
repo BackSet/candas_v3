@@ -5,10 +5,12 @@ import com.candas.candas_backend.entity.*;
 import com.candas.candas_backend.entity.enums.EstadoPaquete;
 import com.candas.candas_backend.entity.enums.TipoLote;
 import com.candas.candas_backend.entity.enums.TipoPaquete;
+import com.candas.candas_backend.exception.AgenciaAccessDeniedException;
 import com.candas.candas_backend.exception.BadRequestException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.*;
 import com.candas.candas_backend.repository.spec.LoteRecepcionSpecs;
+import com.candas.candas_backend.security.AgenciaScopeResolver;
 import com.candas.candas_backend.util.ExcelDuplicateDetector;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
@@ -40,6 +42,7 @@ public class LoteRecepcionService {
     private final PaqueteService paqueteService;
     private final PaqueteNoEncontradoRepository paqueteNoEncontradoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final AgenciaScopeResolver agenciaScopeResolver;
 
     public LoteRecepcionService(
             LoteRecepcionRepository loteRecepcionRepository,
@@ -47,31 +50,60 @@ public class LoteRecepcionService {
             PaqueteRepository paqueteRepository,
             PaqueteService paqueteService,
             PaqueteNoEncontradoRepository paqueteNoEncontradoRepository,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            AgenciaScopeResolver agenciaScopeResolver) {
         this.loteRecepcionRepository = loteRecepcionRepository;
         this.agenciaRepository = agenciaRepository;
         this.paqueteRepository = paqueteRepository;
         this.paqueteService = paqueteService;
         this.paqueteNoEncontradoRepository = paqueteNoEncontradoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.agenciaScopeResolver = agenciaScopeResolver;
+    }
+
+    private void assertLoteAccesible(LoteRecepcion lote) {
+        agenciaScopeResolver.idAgenciaRestringida().ifPresent(idAg -> {
+            if (lote.getAgencia() == null || !idAg.equals(lote.getAgencia().getIdAgencia())) {
+                throw new AgenciaAccessDeniedException(construirMensajeAccesoLote(idAg, lote));
+            }
+        });
+    }
+
+    /** Valida que el lote exista y sea accesible para el usuario según alcance por agencia. */
+    public void ensureLoteAccesible(Long idLoteRecepcion) {
+        if (idLoteRecepcion == null) {
+            return;
+        }
+        LoteRecepcion lote = loteRecepcionRepository.findById(idLoteRecepcion)
+                .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
+        assertLoteAccesible(lote);
     }
 
     public Page<LoteRecepcionDTO> findAll(Pageable pageable) {
-        return loteRecepcionRepository.findAll(pageable).map(this::toDTO);
+        Long idAg = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        if (idAg == null) {
+            return loteRecepcionRepository.findAll(pageable).map(this::toDTO);
+        }
+        var spec = LoteRecepcionSpecs.withFilters(null, null, idAg);
+        return loteRecepcionRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
     public Page<LoteRecepcionDTO> findAll(Pageable pageable, String search, TipoLote tipoLote) {
-        var spec = LoteRecepcionSpecs.withFilters(search, tipoLote);
+        Long idAg = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        var spec = LoteRecepcionSpecs.withFilters(search, tipoLote, idAg);
         return loteRecepcionRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
     public Page<LoteRecepcionDTO> findAllByTipoLote(TipoLote tipoLote, Pageable pageable) {
-        return loteRecepcionRepository.findByTipoLote(tipoLote, pageable).map(this::toDTO);
+        Long idAg = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        var spec = LoteRecepcionSpecs.withFilters(null, tipoLote, idAg);
+        return loteRecepcionRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
     public LoteRecepcionDTO findById(Long id) {
         LoteRecepcion loteRecepcion = loteRecepcionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", id));
+        assertLoteAccesible(loteRecepcion);
         return toDTO(loteRecepcion);
     }
 
@@ -84,6 +116,14 @@ public class LoteRecepcionService {
             return List.of();
         }
         return loteRecepcionRepository.findAllByIdWithAgencia(ids).stream()
+            .filter(l -> {
+                try {
+                    assertLoteAccesible(l);
+                    return true;
+                } catch (AgenciaAccessDeniedException e) {
+                    return false;
+                }
+            })
             .map(this::toDTO)
             .collect(java.util.stream.Collectors.toList());
     }
@@ -97,6 +137,14 @@ public class LoteRecepcionService {
             return List.of();
         }
         return loteRecepcionRepository.findAllByIdWithAgencia(ids).stream()
+            .filter(l -> {
+                try {
+                    assertLoteAccesible(l);
+                    return true;
+                } catch (AgenciaAccessDeniedException e) {
+                    return false;
+                }
+            })
             .map(this::toDTO)
             .collect(java.util.stream.Collectors.toList());
     }
@@ -114,13 +162,23 @@ public class LoteRecepcionService {
         
         // Agencia: del DTO o de la agencia asignada al usuario autenticado
         if (dto.getIdAgencia() != null) {
+            agenciaScopeResolver.idAgenciaRestringida().ifPresent(idAg -> {
+                if (!idAg.equals(dto.getIdAgencia())) {
+                    String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAg).orElse(null), idAg);
+                    Agencia agenciaSolicitada = agenciaRepository.findById(dto.getIdAgencia()).orElse(null);
+                    String agenciaRecurso = descripcionAgencia(agenciaSolicitada, dto.getIdAgencia());
+                    throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
+                            + ". Estás intentando crear un lote para " + agenciaRecurso
+                            + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.");
+                }
+            });
             Agencia agencia = agenciaRepository.findById(dto.getIdAgencia())
                 .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia()));
             loteRecepcion.setAgencia(agencia);
         } else {
             Optional<Usuario> usuarioOpt = obtenerUsuarioActual();
             if (usuarioOpt.isEmpty() || usuarioOpt.get().getAgencia() == null) {
-                throw new BadRequestException("Debe indicar la agencia en el lote o asignar una agencia al usuario");
+                throw new AgenciaAccessDeniedException("El usuario no tiene agencia asignada para crear lotes.");
             }
             loteRecepcion.setAgencia(usuarioOpt.get().getAgencia());
         }
@@ -155,12 +213,23 @@ public class LoteRecepcionService {
     public LoteRecepcionDTO update(Long id, LoteRecepcionDTO dto) {
         LoteRecepcion loteRecepcion = loteRecepcionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", id));
-        
+        assertLoteAccesible(loteRecepcion);
+
         if (dto.getNumeroRecepcion() != null) {
             loteRecepcion.setNumeroRecepcion(dto.getNumeroRecepcion().trim());
         }
         
         if (dto.getIdAgencia() != null) {
+            agenciaScopeResolver.idAgenciaRestringida().ifPresent(idAg -> {
+                if (!idAg.equals(dto.getIdAgencia())) {
+                    String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAg).orElse(null), idAg);
+                    Agencia agenciaSolicitada = agenciaRepository.findById(dto.getIdAgencia()).orElse(null);
+                    String agenciaRecurso = descripcionAgencia(agenciaSolicitada, dto.getIdAgencia());
+                    throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
+                            + ". Estás intentando reasignar el lote a " + agenciaRecurso
+                            + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.");
+                }
+            });
             Agencia agencia = agenciaRepository.findById(dto.getIdAgencia())
                 .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia()));
             loteRecepcion.setAgencia(agencia);
@@ -184,7 +253,8 @@ public class LoteRecepcionService {
     public void delete(Long id) {
         LoteRecepcion loteRecepcion = loteRecepcionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", id));
-        
+        assertLoteAccesible(loteRecepcion);
+
         // Desasociar todos los paquetes del lote de recepción antes de eliminarlo
         // Esto evita que se eliminen los paquetes cuando se elimina el lote
         List<Paquete> paquetes = loteRecepcion.getPaquetes();
@@ -209,7 +279,8 @@ public class LoteRecepcionService {
     public void agregarPaquetes(Long idLoteRecepcion, List<Long> idPaquetes) {
         LoteRecepcion loteRecepcion = loteRecepcionRepository.findById(idLoteRecepcion)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
-        
+        assertLoteAccesible(loteRecepcion);
+
         for (Long idPaquete : idPaquetes) {
             Paquete paquete = paqueteRepository.findById(idPaquete)
                 .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
@@ -223,11 +294,10 @@ public class LoteRecepcionService {
     }
 
     public List<PaqueteDTO> obtenerPaquetes(Long idLoteRecepcion) {
-        // Verificar que el lote de recepción existe
-        if (!loteRecepcionRepository.existsById(idLoteRecepcion)) {
-            throw new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion);
-        }
-        
+        LoteRecepcion loteCheck = loteRecepcionRepository.findById(idLoteRecepcion)
+                .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
+        assertLoteAccesible(loteCheck);
+
         // Obtener todos los paquetes asociados directamente al lote (estos son los padres)
         List<Paquete> paquetesDelLote = paqueteRepository.findByLoteRecepcionIdLoteRecepcion(idLoteRecepcion);
         
@@ -253,7 +323,8 @@ public class LoteRecepcionService {
     public LoteRecepcionImportResultDTO importarPaquetesDesdeExcel(Long idLoteRecepcion, MultipartFile file) {
         LoteRecepcion loteRecepcion = loteRecepcionRepository.findById(idLoteRecepcion)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
-        
+        assertLoteAccesible(loteRecepcion);
+
         LoteRecepcionImportResultDTO resultado = new LoteRecepcionImportResultDTO();
         List<String> numerosGuiaNoEncontrados = new ArrayList<>();
         List<PaqueteDTO> paquetesAsociados = new ArrayList<>();
@@ -375,7 +446,8 @@ public class LoteRecepcionService {
     public LoteRecepcionImportResultDTO agregarPaquetesPorNumeroGuia(Long idLoteRecepcion, List<String> numerosGuia) {
         LoteRecepcion loteRecepcion = loteRecepcionRepository.findById(idLoteRecepcion)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
-        
+        assertLoteAccesible(loteRecepcion);
+
         LoteRecepcionImportResultDTO resultado = new LoteRecepcionImportResultDTO();
         List<String> numerosGuiaNoEncontrados = new ArrayList<>();
         List<PaqueteDTO> paquetesAsociados = new ArrayList<>();
@@ -414,10 +486,10 @@ public class LoteRecepcionService {
     }
 
     public LoteRecepcionImportResultDTO agregarHijosClementinaALote(Long idLoteRecepcion, Long idPaquetePadre, List<Long> idPaquetesHijos) {
-        // Verificar que el lote de recepción existe
         LoteRecepcion loteRecepcion = loteRecepcionRepository.findById(idLoteRecepcion)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
-        
+        assertLoteAccesible(loteRecepcion);
+
         // Asignar los hijos al padre CLEMENTINA usando el servicio de paquetes
         List<PaqueteDTO> hijosAsignados = paqueteService.asignarHijosAClementina(idPaquetePadre, idPaquetesHijos);
         
@@ -454,10 +526,10 @@ public class LoteRecepcionService {
     }
 
     public LoteRecepcionImportResultDTO agregarHijoClementinaPorGuiaALote(Long idLoteRecepcion, Long idPaquetePadre, String numeroGuia) {
-        // Verificar que el lote de recepción existe
         LoteRecepcion loteRecepcion = loteRecepcionRepository.findById(idLoteRecepcion)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
-        
+        assertLoteAccesible(loteRecepcion);
+
         // Asignar el hijo al padre CLEMENTINA usando el servicio de paquetes
         PaqueteDTO hijoAsignado = paqueteService.asignarHijoPorNumeroGuia(idPaquetePadre, numeroGuia);
         
@@ -490,10 +562,10 @@ public class LoteRecepcionService {
     }
 
     public LoteRecepcionEstadisticasDTO obtenerEstadisticas(Long idLoteRecepcion) {
-        // Verificar que el lote de recepción existe
-        loteRecepcionRepository.findById(idLoteRecepcion)
+        LoteRecepcion lote = loteRecepcionRepository.findById(idLoteRecepcion)
             .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
-        
+        assertLoteAccesible(lote);
+
         Long totalPaquetes = loteRecepcionRepository.countPaquetesByLoteRecepcion(idLoteRecepcion);
         Long paquetesDespachados = loteRecepcionRepository.countPaquetesDespachadosByLoteRecepcion(idLoteRecepcion);
         
@@ -520,7 +592,10 @@ public class LoteRecepcionService {
         String fecha = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         String prefijo = "REC-" + fecha + "-";
         
-        List<LoteRecepcion> recepcionesDelDia = loteRecepcionRepository.findAll().stream()
+        List<LoteRecepcion> base = agenciaScopeResolver.idAgenciaRestringida()
+                .map(idAg -> loteRecepcionRepository.findAll(LoteRecepcionSpecs.withFilters(null, null, idAg)))
+                .orElseGet(loteRecepcionRepository::findAll);
+        List<LoteRecepcion> recepcionesDelDia = base.stream()
             .filter(r -> r.getNumeroRecepcion() != null && r.getNumeroRecepcion().startsWith(prefijo))
             .sorted((r1, r2) -> {
                 String num1 = r1.getNumeroRecepcion().substring(prefijo.length());
@@ -540,32 +615,31 @@ public class LoteRecepcionService {
 
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return null;
-        
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue();
-            case NUMERIC:
+
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> {
                 if (DateUtil.isCellDateFormatted(cell)) {
-                    return cell.getDateCellValue().toString();
-                } else {
-                    // Convertir número a string sin decimales si es entero
-                    double numericValue = cell.getNumericCellValue();
-                    if (numericValue == (long) numericValue) {
-                        return String.valueOf((long) numericValue);
-                    } else {
-                        return String.valueOf(numericValue);
-                    }
+                    yield cell.getDateCellValue().toString();
                 }
-            case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
-            case FORMULA:
-                return cell.getCellFormula();
-            default:
-                return null;
-        }
+                // Convertir número a string sin decimales si es entero
+                double numericValue = cell.getNumericCellValue();
+                if (numericValue == (long) numericValue) {
+                    yield String.valueOf((long) numericValue);
+                }
+                yield String.valueOf(numericValue);
+            }
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> cell.getCellFormula();
+            default -> null;
+        };
     }
 
     public List<PaqueteNoEncontradoDTO> obtenerPaquetesNoEncontrados(Long idLoteRecepcion) {
+        LoteRecepcion lote = loteRecepcionRepository.findById(idLoteRecepcion)
+                .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
+        assertLoteAccesible(lote);
+
         List<PaqueteNoEncontrado> paquetesNoEncontrados = paqueteNoEncontradoRepository
             .findByLoteRecepcionIdLoteRecepcion(idLoteRecepcion);
         
@@ -627,7 +701,7 @@ public class LoteRecepcionService {
             }
         } catch (Exception e) {
             // Si hay algún error, retornar null
-            e.printStackTrace();
+            return null;
         }
         return null;
     }
@@ -659,6 +733,33 @@ public class LoteRecepcionService {
         } catch (IllegalArgumentException e) {
             return TipoLote.NORMAL;
         }
+    }
+
+    private String construirMensajeAccesoLote(Long idAgenciaUsuario, LoteRecepcion lote) {
+        String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAgenciaUsuario).orElse(null), idAgenciaUsuario);
+        String agenciaRecurso = descripcionAgencia(lote.getAgencia());
+        return "Tu usuario pertenece a la " + agenciaUsuario
+                + ". El lote solicitado pertenece a " + agenciaRecurso
+                + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.";
+    }
+
+    private String descripcionAgencia(Agencia agencia) {
+        if (agencia == null) {
+            return "agencia no identificada";
+        }
+        if (agencia.getCodigo() != null && !agencia.getCodigo().isBlank()) {
+            return "agencia \"" + agencia.getNombre() + "\" (código " + agencia.getCodigo() + ")";
+        }
+        return "agencia \"" + agencia.getNombre() + "\"";
+    }
+
+    private String descripcionAgencia(Agencia agencia, Long idAgenciaFallback) {
+        if (agencia != null) {
+            return descripcionAgencia(agencia);
+        }
+        return idAgenciaFallback != null
+                ? "agencia con id " + idAgenciaFallback
+                : "agencia no identificada";
     }
 
     private LoteRecepcionDTO toDTO(LoteRecepcion loteRecepcion) {

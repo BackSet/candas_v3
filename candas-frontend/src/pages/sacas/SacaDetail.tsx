@@ -30,9 +30,11 @@ import AgregarPaquetesDialog from './AgregarPaquetesDialog'
 import { EstadoPaquete } from '@/types/paquete'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { EmptyState, LoadingState } from '@/components/states'
+import { ErrorState } from '@/components/states/ErrorState'
 import { CAPACIDADES_SACA_KG } from '@/types/saca'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
+import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
 
 export default function SacaDetail() {
   const navigate = useNavigate()
@@ -40,7 +42,7 @@ export default function SacaDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showAgregarPaquetes, setShowAgregarPaquetes] = useState(false)
 
-  const { data: saca, isLoading } = useSaca(id ? Number(id) : undefined)
+  const { data: saca, isLoading, error } = useSaca(id ? Number(id) : undefined)
   const { data: paquetes } = usePaquetesSaca(id ? Number(id) : undefined)
   const { data: despacho } = useDespacho(saca?.idDespacho)
   const calcularPesoMutation = useCalcularPesoSaca()
@@ -72,6 +74,20 @@ export default function SacaDetail() {
   }
 
   if (!saca) {
+    const status = getApiStatus(error)
+    if (status === 403) {
+      return (
+        <ErrorState
+          title="Acceso restringido por agencia"
+          description={getApiErrorMessage(error, 'No tienes acceso a esta saca por alcance de agencia.')}
+          action={
+            <Button variant="outline" onClick={() => navigate({ to: '/sacas' })}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Volver a la lista
+            </Button>
+          }
+        />
+      )
+    }
     return (
       <EmptyState
         title="Saca no encontrada"

@@ -6,10 +6,14 @@ import com.candas.candas_backend.entity.PaqueteSaca;
 import com.candas.candas_backend.entity.PaqueteSacaId;
 import com.candas.candas_backend.entity.Saca;
 import com.candas.candas_backend.entity.enums.EstadoPaquete;
+import com.candas.candas_backend.exception.AgenciaAccessDeniedException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.DespachoRepository;
 import com.candas.candas_backend.repository.PaqueteRepository;
 import com.candas.candas_backend.repository.SacaRepository;
+import com.candas.candas_backend.repository.AgenciaRepository;
+import com.candas.candas_backend.repository.spec.SacaSpecs;
+import com.candas.candas_backend.security.AgenciaScopeResolver;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,26 +31,39 @@ public class SacaService {
     private final SacaRepository sacaRepository;
     private final DespachoRepository despachoRepository;
     private final PaqueteRepository paqueteRepository;
+    private final AgenciaRepository agenciaRepository;
     private final PaqueteService paqueteService;
+    private final AgenciaScopeResolver agenciaScopeResolver;
+    private final DespachoService despachoService;
 
     public SacaService(
             SacaRepository sacaRepository,
             DespachoRepository despachoRepository,
             PaqueteRepository paqueteRepository,
-            PaqueteService paqueteService) {
+            AgenciaRepository agenciaRepository,
+            PaqueteService paqueteService,
+            AgenciaScopeResolver agenciaScopeResolver,
+            DespachoService despachoService) {
         this.sacaRepository = sacaRepository;
         this.despachoRepository = despachoRepository;
         this.paqueteRepository = paqueteRepository;
+        this.agenciaRepository = agenciaRepository;
         this.paqueteService = paqueteService;
+        this.agenciaScopeResolver = agenciaScopeResolver;
+        this.despachoService = despachoService;
     }
 
     public Page<SacaDTO> findAll(Pageable pageable) {
-        return sacaRepository.findAll(pageable).map(this::toDTO);
+        return agenciaScopeResolver.idAgenciaRestringida()
+                .map(idAg -> sacaRepository.findAll(SacaSpecs.despachoRegistradorEnAgencia(idAg), pageable))
+                .orElseGet(() -> sacaRepository.findAll(pageable))
+                .map(this::toDTO);
     }
 
     public SacaDTO findById(Long id) {
         Saca saca = sacaRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Saca", id));
+        assertSacaAccesible(saca);
         return toDTO(saca);
     }
 
@@ -59,11 +76,37 @@ public class SacaService {
             return List.of();
         }
         return sacaRepository.findAllByIdWithDespacho(ids).stream()
+            .filter(s -> {
+                try {
+                    assertSacaAccesible(s);
+                    return true;
+                } catch (AgenciaAccessDeniedException e) {
+                    return false;
+                }
+            })
             .map(this::toDTO)
             .collect(java.util.stream.Collectors.toList());
     }
 
+    private void assertSacaAccesible(Saca saca) {
+        if (saca.getDespacho() == null) {
+            agenciaScopeResolver.idAgenciaRestringida().ifPresent(idAgUsuario -> {
+                var agenciaUsuario = agenciaRepository.findById(idAgUsuario)
+                        .map(a -> "agencia \"" + a.getNombre() + "\"")
+                        .orElse("agencia con id " + idAgUsuario);
+                throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
+                        + ". La saca solicitada no tiene un despacho asociado para validar su alcance de agencia."
+                        + " No tienes acceso a estos datos mientras no inicies sesión con un usuario de la agencia correcta.");
+            });
+            return;
+        }
+        despachoService.ensureDespachoAccesible(saca.getDespacho().getIdDespacho());
+    }
+
     public SacaDTO create(SacaDTO dto) {
+        if (dto.getIdDespacho() != null) {
+            despachoService.ensureDespachoAccesible(dto.getIdDespacho());
+        }
         Saca saca = toEntity(dto);
         saca.setFechaCreacion(LocalDateTime.now());
         
@@ -110,7 +153,11 @@ public class SacaService {
     public SacaDTO update(Long id, SacaDTO dto) {
         Saca saca = sacaRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Saca", id));
-        
+        assertSacaAccesible(saca);
+        if (dto.getIdDespacho() != null) {
+            despachoService.ensureDespachoAccesible(dto.getIdDespacho());
+        }
+
         saca.setCodigoQr(dto.getCodigoQr());
         saca.setNumeroOrden(dto.getNumeroOrden());
         saca.setTamano(dto.getTamano());
@@ -126,12 +173,14 @@ public class SacaService {
     public void delete(Long id) {
         Saca saca = sacaRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Saca", id));
+        assertSacaAccesible(saca);
         sacaRepository.delete(saca);
     }
 
     public void agregarPaquetes(Long idSaca, List<Long> idPaquetes) {
         Saca saca = sacaRepository.findById(idSaca)
             .orElseThrow(() -> new ResourceNotFoundException("Saca", idSaca));
+        assertSacaAccesible(saca);
 
         int ordenEnSaca = 1;
         for (Long idPaquete : idPaquetes) {
@@ -158,11 +207,10 @@ public class SacaService {
     }
 
     public List<com.candas.candas_backend.dto.PaqueteDTO> obtenerPaquetes(Long idSaca) {
-        // Verificar que la saca existe
-        if (!sacaRepository.existsById(idSaca)) {
-            throw new ResourceNotFoundException("Saca", idSaca);
-        }
-        
+        Saca saca = sacaRepository.findById(idSaca)
+                .orElseThrow(() -> new ResourceNotFoundException("Saca", idSaca));
+        assertSacaAccesible(saca);
+
         // Usar el repositorio de paquetes con EntityGraph para cargar todas las relaciones necesarias
         return paqueteRepository.findBySacaIdSacaOrderByOrdenEnSacaAsc(idSaca).stream()
             .map(paqueteService::toDTO)
@@ -172,6 +220,7 @@ public class SacaService {
     public SacaDTO calcularPesoTotal(Long id) {
         Saca saca = sacaRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Saca", id));
+        assertSacaAccesible(saca);
 
         // Solo sumar paquetes ensacados (estado ENSACADO)
         BigDecimal pesoTotal = saca.getPaqueteSacas() == null ? BigDecimal.ZERO : saca.getPaqueteSacas().stream()

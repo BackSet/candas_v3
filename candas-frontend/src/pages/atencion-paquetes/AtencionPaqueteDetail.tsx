@@ -17,8 +17,10 @@ import { cn } from '@/lib/utils'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
 import { EmptyState, LoadingState } from '@/components/states'
+import { ErrorState } from '@/components/states/ErrorState'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
+import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
 
 export default function AtencionPaqueteDetail() {
   const navigate = useNavigate()
@@ -26,7 +28,7 @@ export default function AtencionPaqueteDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showResolverDialog, setShowResolverDialog] = useState(false)
 
-  const { data: atencion, isLoading } = useAtencionPaquete(id ? Number(id) : undefined)
+  const { data: atencion, isLoading, error } = useAtencionPaquete(id ? Number(id) : undefined)
   const deleteMutation = useDeleteAtencionPaquete()
 
   const handleDelete = async () => {
@@ -43,6 +45,20 @@ export default function AtencionPaqueteDetail() {
   }
 
   if (!atencion) {
+    const status = getApiStatus(error)
+    if (status === 403) {
+      return (
+        <ErrorState
+          title="Acceso restringido por agencia"
+          description={getApiErrorMessage(error, 'No tienes acceso a esta atención por alcance de agencia.')}
+          action={
+            <Button onClick={() => navigate({ to: '/atencion-paquetes' })} variant="outline" className="rounded-lg">
+              Volver a la lista
+            </Button>
+          }
+        />
+      )
+    }
     return (
       <EmptyState
         title="Atención no encontrada"

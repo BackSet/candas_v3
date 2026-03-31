@@ -54,6 +54,7 @@ import { useFiltersStore } from '@/stores/filtersStore'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
 import type { LoteRecepcion } from '@/types/lote-recepcion'
+import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
 
 const LIST_KEY = 'lotes-recepcion' as const
 
@@ -201,6 +202,10 @@ export default function LotesRecepcionList() {
             <div className="p-6">
               <ErrorState
                 title="Error al cargar los datos"
+                description={
+                  getInteragencyRestrictionMessage(error)
+                    ?? getApiErrorMessage(error, 'No se pudieron cargar los lotes de recepción.')
+                }
                 icon={<AlertCircle className="h-5 w-5" />}
               />
             </div>

@@ -83,6 +83,7 @@ import { reemplazarVariables, construirVariablesDesdeDespacho } from '@/utils/pl
 import { copyTextToClipboard } from '@/utils/clipboard'
 import { usePersistedListFilters } from '@/hooks/usePersistedListFilters'
 import { formatearFechaCorta, formatearFechaLarga } from '@/utils/fechas'
+import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
 
 const LIST_KEY = 'despachos' as const
 
@@ -751,7 +752,13 @@ export default function DespachosList() {
           {(isLoading || loadingBusqueda) ? (
             <LoadingState label="Cargando despachos..." />
           ) : error ? (
-            <ErrorState title="Error al cargar los despachos" />
+            <ErrorState
+              title="Error al cargar los despachos"
+              description={
+                getInteragencyRestrictionMessage(error)
+                  ?? getApiErrorMessage(error, 'No se pudieron cargar los despachos.')
+              }
+            />
           ) : (
             <div className="flex-1 min-h-0 relative w-full overflow-auto">
               <Table className="notion-table">

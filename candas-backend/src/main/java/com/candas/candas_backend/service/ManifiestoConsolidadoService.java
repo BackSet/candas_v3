@@ -2,9 +2,11 @@ package com.candas.candas_backend.service;
 
 import com.candas.candas_backend.dto.*;
 import com.candas.candas_backend.entity.*;
+import com.candas.candas_backend.exception.AgenciaAccessDeniedException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.*;
 import com.candas.candas_backend.repository.spec.ManifiestoConsolidadoSpecs;
+import com.candas.candas_backend.security.AgenciaScopeResolver;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,21 +34,41 @@ public class ManifiestoConsolidadoService {
     private final AgenciaRepository agenciaRepository;
     private final DistribuidorRepository distribuidorRepository;
     private final DestinatarioDirectoRepository destinatarioDirectoRepository;
+    private final AgenciaScopeResolver agenciaScopeResolver;
 
     public ManifiestoConsolidadoService(
             ManifiestoConsolidadoRepository manifiestoConsolidadoRepository,
             DespachoRepository despachoRepository,
             AgenciaRepository agenciaRepository,
             DistribuidorRepository distribuidorRepository,
-            DestinatarioDirectoRepository destinatarioDirectoRepository) {
+            DestinatarioDirectoRepository destinatarioDirectoRepository,
+            AgenciaScopeResolver agenciaScopeResolver) {
         this.manifiestoConsolidadoRepository = manifiestoConsolidadoRepository;
         this.despachoRepository = despachoRepository;
         this.agenciaRepository = agenciaRepository;
         this.distribuidorRepository = distribuidorRepository;
         this.destinatarioDirectoRepository = destinatarioDirectoRepository;
+        this.agenciaScopeResolver = agenciaScopeResolver;
     }
 
     public ManifiestoConsolidadoResumenDTO crearManifiestoConsolidado(ManifiestoConsolidadoDTO dto) {
+        agenciaScopeResolver.idAgenciaRestringida().ifPresent(idRestr -> {
+            if (dto.getIdDistribuidor() != null || dto.getIdDestinatarioDirecto() != null) {
+                String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idRestr).orElse(null), idRestr);
+                throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
+                        + ". Estás intentando generar un manifiesto fuera de tu alcance de agencia."
+                        + " No tienes acceso a estos datos mientras no inicies sesión con un usuario de la agencia correcta.");
+            }
+            if (dto.getIdAgencia() != null && !dto.getIdAgencia().equals(idRestr)) {
+                String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idRestr).orElse(null), idRestr);
+                String agenciaRecurso = descripcionAgencia(agenciaRepository.findById(dto.getIdAgencia()).orElse(null), dto.getIdAgencia());
+                throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
+                        + ". Estás intentando generar un manifiesto para " + agenciaRecurso
+                        + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.");
+            }
+            dto.setIdAgencia(idRestr);
+        });
+
         String usuarioActual = obtenerUsuarioActual();
         validarPeriodo(dto);
         validarFiltrosManifiesto(dto);
@@ -86,12 +108,15 @@ public class ManifiestoConsolidadoService {
     }
 
     public Page<ManifiestoConsolidadoResumenDTO> findAll(Pageable pageable) {
-        return manifiestoConsolidadoRepository.findAllByOrderByFechaGeneracionDesc(pageable)
-                .map(this::toResumenDTO);
+        Long idAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        var spec = ManifiestoConsolidadoSpecs.withFilters(null, null, idAgencia, null, null);
+        Pageable p = pageable.getSort().isSorted() ? pageable : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("fechaGeneracion").descending());
+        return manifiestoConsolidadoRepository.findAll(spec, p).map(this::toResumenDTO);
     }
 
     public Page<ManifiestoConsolidadoResumenDTO> findAll(Pageable pageable, String search, String numeroManifiesto, Long idAgencia, Integer mes, Integer anio) {
-        var spec = ManifiestoConsolidadoSpecs.withFilters(search, numeroManifiesto, idAgencia, mes, anio);
+        Long effectiveIdAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(idAgencia);
+        var spec = ManifiestoConsolidadoSpecs.withFilters(search, numeroManifiesto, effectiveIdAgencia, mes, anio);
         Pageable p = pageable.getSort().isSorted() ? pageable : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("fechaGeneracion").descending());
         return manifiestoConsolidadoRepository.findAll(spec, p).map(this::toResumenDTO);
     }
@@ -99,6 +124,7 @@ public class ManifiestoConsolidadoService {
     public ManifiestoConsolidadoDetalleDTO findById(Long id) {
         ManifiestoConsolidado manifiesto = manifiestoConsolidadoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ManifiestoConsolidado", id));
+        assertManifiestoAccesible(manifiesto);
         return toDetalleDTO(manifiesto);
     }
 
@@ -111,11 +137,21 @@ public class ManifiestoConsolidadoService {
             return List.of();
         }
         return manifiestoConsolidadoRepository.findAllByIdWithAgencia(ids).stream()
+                .filter(this::manifiestoVisibleParaAlcance)
                 .map(this::toResumenDTO)
                 .collect(Collectors.toList());
     }
 
     public Page<ManifiestoConsolidadoResumenDTO> findByAgencia(Long idAgencia, Pageable pageable) {
+        agenciaScopeResolver.idAgenciaRestringida().ifPresent(idRestr -> {
+            if (!idRestr.equals(idAgencia)) {
+                String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idRestr).orElse(null), idRestr);
+                String agenciaRecurso = descripcionAgencia(agenciaRepository.findById(idAgencia).orElse(null), idAgencia);
+                throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
+                        + ". Estás intentando listar manifiestos de " + agenciaRecurso
+                        + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.");
+            }
+        });
         return manifiestoConsolidadoRepository.findByAgencia_IdAgenciaOrderByFechaGeneracionDesc(idAgencia, pageable)
                 .map(this::toResumenDTO);
     }
@@ -123,7 +159,45 @@ public class ManifiestoConsolidadoService {
     public void delete(Long id) {
         ManifiestoConsolidado manifiesto = manifiestoConsolidadoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ManifiestoConsolidado", id));
+        assertManifiestoAccesible(manifiesto);
         manifiestoConsolidadoRepository.delete(manifiesto);
+    }
+
+    private boolean manifiestoVisibleParaAlcance(ManifiestoConsolidado m) {
+        return agenciaScopeResolver.idAgenciaRestringida()
+                .map(idAg -> m.getAgencia() != null && idAg.equals(m.getAgencia().getIdAgencia()))
+                .orElse(true);
+    }
+
+    private void assertManifiestoAccesible(ManifiestoConsolidado m) {
+        agenciaScopeResolver.idAgenciaRestringida().ifPresent(idAgenciaUsuario -> {
+            if (!manifiestoVisibleParaAlcance(m)) {
+                String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAgenciaUsuario).orElse(null), idAgenciaUsuario);
+                String agenciaRecurso = descripcionAgencia(m.getAgencia());
+                throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
+                        + ". El manifiesto solicitado pertenece a " + agenciaRecurso
+                        + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.");
+            }
+        });
+    }
+
+    private String descripcionAgencia(Agencia agencia) {
+        if (agencia == null) {
+            return "agencia no identificada";
+        }
+        if (agencia.getCodigo() != null && !agencia.getCodigo().isBlank()) {
+            return "agencia \"" + agencia.getNombre() + "\" (código " + agencia.getCodigo() + ")";
+        }
+        return "agencia \"" + agencia.getNombre() + "\"";
+    }
+
+    private String descripcionAgencia(Agencia agencia, Long idAgenciaFallback) {
+        if (agencia != null) {
+            return descripcionAgencia(agencia);
+        }
+        return idAgenciaFallback != null
+                ? "agencia con id " + idAgenciaFallback
+                : "agencia no identificada";
     }
 
     private ManifiestoConsolidadoDetalleDTO generarManifiestoConsolidado(Long idAgencia, Long idDistribuidor,
@@ -507,8 +581,8 @@ public class ManifiestoConsolidadoService {
         long siguienteIdBase = 0;
         if (maxNumeroStr != null && maxNumeroStr.length() > PREFIJO_NUMERO_MANIFIESTO_CONSOLIDADO.length()) {
             try {
-                Long maxNumero = Long.parseLong(maxNumeroStr.substring(PREFIJO_NUMERO_MANIFIESTO_CONSOLIDADO.length()), 16);
-                if (maxNumero != null) siguienteIdBase = maxNumero;
+                siguienteIdBase = Long.parseLong(
+                        maxNumeroStr.substring(PREFIJO_NUMERO_MANIFIESTO_CONSOLIDADO.length()), 16);
             } catch (NumberFormatException ignored) {
             }
         }
@@ -527,15 +601,14 @@ public class ManifiestoConsolidadoService {
 
     private String generarNumeroManifiesto() {
         String maxNumeroStr = manifiestoConsolidadoRepository.findMaxNumeroManifiesto();
-        Long maxNumero = null;
+        long siguienteId = 1;
         if (maxNumeroStr != null && maxNumeroStr.length() > PREFIJO_NUMERO_MANIFIESTO_CONSOLIDADO.length()) {
             try {
-                maxNumero = Long.parseLong(maxNumeroStr.substring(PREFIJO_NUMERO_MANIFIESTO_CONSOLIDADO.length()), 16);
+                long maxNumero = Long.parseLong(maxNumeroStr.substring(PREFIJO_NUMERO_MANIFIESTO_CONSOLIDADO.length()), 16);
+                siguienteId = maxNumero + 1;
             } catch (NumberFormatException ignored) {
             }
         }
-
-        long siguienteId = (maxNumero != null) ? maxNumero + 1 : 1;
         String codigoHex = String.format("%0" + PADDING_HEX_CODIGO + "X", siguienteId);
         return PREFIJO_NUMERO_MANIFIESTO_CONSOLIDADO + codigoHex;
     }
@@ -547,4 +620,5 @@ public class ManifiestoConsolidadoService {
         }
         return "SISTEMA";
     }
+
 }

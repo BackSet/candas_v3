@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Search, Package, CheckSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getInteragencyRestrictionMessage } from '@/lib/api/errors'
 
 interface AgregarPaquetesDialogProps {
   sacaId: number
@@ -28,8 +29,11 @@ export default function AgregarPaquetesDialog({
 }: AgregarPaquetesDialogProps) {
   const [selectedPaquetes, setSelectedPaquetes] = useState<number[]>([])
   const [busqueda, setBusqueda] = useState('')
-  const { data, isLoading } = usePaquetes(0, 100)
+  const { data, isLoading, error } = usePaquetes(0, 100)
   const agregarMutation = useAgregarPaquetesSaca()
+  const restrictionMessage =
+    getInteragencyRestrictionMessage(error) ??
+    getInteragencyRestrictionMessage(agregarMutation.error)
 
   const paquetesFiltrados = data?.content.filter((p) => {
     if (busqueda && !p.numeroGuia?.toLowerCase().includes(busqueda.toLowerCase()) &&
@@ -75,6 +79,11 @@ export default function AgregarPaquetesDialog({
             Busca y selecciona los paquetes para añadir a esta saca.
           </DialogDescription>
         </DialogHeader>
+        {restrictionMessage && (
+          <div className="mx-4 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {restrictionMessage}
+          </div>
+        )}
 
         <div className="flex-1 flex flex-col overflow-hidden bg-muted/5">
           {/* Search Bar */}
@@ -95,6 +104,10 @@ export default function AgregarPaquetesDialog({
             <div className="space-y-1">
               {isLoading ? (
                 <div className="py-12 text-center text-muted-foreground animate-pulse text-sm">Cargando paquetes...</div>
+              ) : restrictionMessage ? (
+                <div className="py-12 text-center text-amber-700 border-2 border-dashed border-amber-300 rounded-lg">
+                  {restrictionMessage}
+                </div>
               ) : paquetesFiltrados.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border/30 rounded-lg">
                   <Package className="h-8 w-8 mx-auto mb-2 opacity-20" />

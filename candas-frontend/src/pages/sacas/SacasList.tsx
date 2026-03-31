@@ -39,6 +39,7 @@ import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
 import { LoadingState } from '@/components/states/LoadingState'
 import { ErrorState } from '@/components/states/ErrorState'
+import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
 
 const LIST_KEY = 'sacas' as const
 
@@ -131,7 +132,13 @@ export default function SacasList() {
                 ) : error ? (
                   <TableRow>
                     <TableCell colSpan={6} className="p-8">
-                      <ErrorState title="Error al cargar sacas" />
+                      <ErrorState
+                        title="Error al cargar sacas"
+                        description={
+                          getInteragencyRestrictionMessage(error)
+                            ?? getApiErrorMessage(error, 'No se pudieron cargar las sacas.')
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 ) : sacasFiltradas.length === 0 ? (

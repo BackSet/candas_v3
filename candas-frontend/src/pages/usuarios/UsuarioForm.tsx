@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 import { useUsuario, useCreateUsuario, useUpdateUsuario, useRolesUsuario, useAsignarRolesUsuario } from '@/hooks/useUsuarios'
 import { useClientes, useAgencias } from '@/hooks/useSelectOptions'
 import { useRoles } from '@/hooks/useRoles'
@@ -96,6 +97,13 @@ export default function UsuarioForm() {
   }, [isEdit, rolesActualesMemo])
 
   const roles = rolesData?.content || []
+  const agenciasComboboxOptions = useMemo<ComboboxOption<number>[]>(() => {
+    return agencias.map((agencia) => ({
+      value: agencia.value,
+      label: agencia.label,
+    }))
+  }, [agencias])
+
   const rolesFiltrados = roles.filter((r) => {
     if (busquedaRoles && !r.nombre?.toLowerCase().includes(busquedaRoles.toLowerCase()) &&
       !r.descripcion?.toLowerCase().includes(busquedaRoles.toLowerCase())) {
@@ -322,23 +330,17 @@ export default function UsuarioForm() {
 
               <div className="space-y-2">
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Agencia (Opcional)</Label>
-                <Select
-                  value={watch('idAgencia')?.toString() || 'none'}
-                  onValueChange={(value) => setValue('idAgencia', value === 'none' ? '' : Number(value))}
-                >
-                  <SelectTrigger className="h-9 bg-muted/30 border-border/30 rounded-lg focus:ring-0 focus:bg-background focus:border-primary/40">
-                    <SelectValue placeholder="Ninguna" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="none">Ninguna</SelectItem>
-                    {agencias.map((agencia) => (
-                      <SelectItem key={agencia.value} value={agencia.value.toString()}>
-                        {agencia.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground">Agencia a la que pertenece el usuario.</p>
+                <Combobox
+                  options={agenciasComboboxOptions}
+                  value={typeof watch('idAgencia') === 'number' ? watch('idAgencia') : null}
+                  onValueChange={(value) => setValue('idAgencia', typeof value === 'number' ? value : '')}
+                  placeholder="Seleccionar agencia"
+                  searchPlaceholder="Buscar agencia..."
+                  emptyMessage="No se encontraron agencias"
+                  className="w-full"
+                  usePortal
+                />
+                <p className="text-[10px] text-muted-foreground">Agencia a la que pertenece el usuario. Puedes buscar por nombre.</p>
               </div>
             </div>
           </div>

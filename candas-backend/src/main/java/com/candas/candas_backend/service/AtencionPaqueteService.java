@@ -2,11 +2,15 @@ package com.candas.candas_backend.service;
 
 import com.candas.candas_backend.dto.AtencionPaqueteDTO;
 import com.candas.candas_backend.entity.AtencionPaquete;
+import com.candas.candas_backend.entity.Paquete;
 import com.candas.candas_backend.entity.enums.EstadoAtencion;
+import com.candas.candas_backend.exception.AgenciaAccessDeniedException;
 import com.candas.candas_backend.exception.BadRequestException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.AtencionPaqueteRepository;
+import com.candas.candas_backend.repository.AgenciaRepository;
 import com.candas.candas_backend.repository.PaqueteRepository;
+import com.candas.candas_backend.security.AgenciaScopeResolver;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,29 +26,40 @@ import java.util.stream.Collectors;
 public class AtencionPaqueteService {
 
     private final AtencionPaqueteRepository atencionPaqueteRepository;
+    private final AgenciaRepository agenciaRepository;
     private final PaqueteRepository paqueteRepository;
+    private final AgenciaScopeResolver agenciaScopeResolver;
 
     public AtencionPaqueteService(
             AtencionPaqueteRepository atencionPaqueteRepository,
-            PaqueteRepository paqueteRepository) {
+            AgenciaRepository agenciaRepository,
+            PaqueteRepository paqueteRepository,
+            AgenciaScopeResolver agenciaScopeResolver) {
         this.atencionPaqueteRepository = atencionPaqueteRepository;
+        this.agenciaRepository = agenciaRepository;
         this.paqueteRepository = paqueteRepository;
+        this.agenciaScopeResolver = agenciaScopeResolver;
     }
 
     public Page<AtencionPaqueteDTO> findAll(EstadoAtencion estado, String search, Pageable pageable) {
         String searchTrimmed = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         EstadoAtencion estadoFilter = estado;
-        return atencionPaqueteRepository.findAllFiltered(estadoFilter, searchTrimmed, pageable).map(this::toDTO);
+        Long idAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        return atencionPaqueteRepository.findAllFiltered(estadoFilter, searchTrimmed, idAgencia, pageable).map(this::toDTO);
     }
 
     public AtencionPaqueteDTO findById(Long id) {
         AtencionPaquete atencion = atencionPaqueteRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("AtencionPaquete", id));
+        assertAtencionAccesible(atencion);
         return toDTO(atencion);
     }
 
     public AtencionPaqueteDTO create(AtencionPaqueteDTO dto) {
-        AtencionPaquete atencion = toEntity(dto);
+        Paquete paquete = paqueteRepository.findByIdWithAlcanceAtencion(dto.getIdPaquete())
+                .orElseThrow(() -> new ResourceNotFoundException("Paquete", dto.getIdPaquete()));
+        assertPaqueteEnAlcanceAtencion(paquete);
+        AtencionPaquete atencion = toEntity(dto, paquete);
         atencion.setFechaSolicitud(LocalDateTime.now());
         atencion.setEstado(EstadoAtencion.PENDIENTE);
         atencion.setActiva(true);
@@ -61,7 +77,8 @@ public class AtencionPaqueteService {
     public AtencionPaqueteDTO update(Long id, AtencionPaqueteDTO dto) {
         AtencionPaquete atencion = atencionPaqueteRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("AtencionPaquete", id));
-        
+        assertAtencionAccesible(atencion);
+
         atencion.setMotivo(dto.getMotivo());
         atencion.setTipoProblema(dto.getTipoProblema());
         atencion.setEstado(dto.getEstado());
@@ -78,7 +95,8 @@ public class AtencionPaqueteService {
     public AtencionPaqueteDTO resolver(Long id, String observacionesResolucion) {
         AtencionPaquete atencion = atencionPaqueteRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("AtencionPaquete", id));
-        
+        assertAtencionAccesible(atencion);
+
         if (atencion.getEstado() == EstadoAtencion.RESUELTO) {
             throw new BadRequestException("La atención ya está resuelta");
         }
@@ -92,6 +110,9 @@ public class AtencionPaqueteService {
     }
 
     public List<AtencionPaqueteDTO> findByPaquete(Long idPaquete) {
+        Paquete paquete = paqueteRepository.findByIdWithAlcanceAtencion(idPaquete)
+                .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
+        assertPaqueteEnAlcanceAtencion(paquete);
         return atencionPaqueteRepository.findByPaqueteIdPaquete(idPaquete)
             .stream()
             .map(this::toDTO)
@@ -99,7 +120,8 @@ public class AtencionPaqueteService {
     }
 
     public List<AtencionPaqueteDTO> findPendientes() {
-        List<AtencionPaquete> atenciones = atencionPaqueteRepository.findByEstadoAndActivaTrue(EstadoAtencion.PENDIENTE);
+        Long idAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        List<AtencionPaquete> atenciones = atencionPaqueteRepository.findByEstadoAndActivaTrue(EstadoAtencion.PENDIENTE, idAgencia);
         return atenciones.stream()
             .map(this::toDTO)
             .collect(Collectors.toList());
@@ -108,7 +130,59 @@ public class AtencionPaqueteService {
     public void delete(Long id) {
         AtencionPaquete atencion = atencionPaqueteRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("AtencionPaquete", id));
+        assertAtencionAccesible(atencion);
         atencionPaqueteRepository.delete(atencion);
+    }
+
+    /**
+     * Visible si el paquete tiene agencia destino o lote de recepción en la agencia restringida.
+     */
+    private void assertPaqueteEnAlcanceAtencion(Paquete paquete) {
+        Optional<Long> idAgOpt = agenciaScopeResolver.idAgenciaRestringida();
+        if (idAgOpt.isEmpty()) {
+            return;
+        }
+        Long idAg = idAgOpt.get();
+        if (paquete.getAgenciaDestino() != null && idAg.equals(paquete.getAgenciaDestino().getIdAgencia())) {
+            return;
+        }
+        if (paquete.getLoteRecepcion() != null && paquete.getLoteRecepcion().getAgencia() != null
+                && idAg.equals(paquete.getLoteRecepcion().getAgencia().getIdAgencia())) {
+            return;
+        }
+        throw new AgenciaAccessDeniedException(construirMensajeAccesoAtencion(idAg, paquete));
+    }
+
+    private void assertAtencionAccesible(AtencionPaquete atencion) {
+        if (atencion.getPaquete() == null) {
+            return;
+        }
+        assertPaqueteEnAlcanceAtencion(atencion.getPaquete());
+    }
+
+    private String construirMensajeAccesoAtencion(Long idAgenciaUsuario, Paquete paquete) {
+        String agenciaUsuario = agenciaRepository.findById(idAgenciaUsuario)
+                .map(this::descripcionAgencia)
+                .orElse("agencia con id " + idAgenciaUsuario);
+        String agenciaRecurso = "agencia no identificada";
+        if (paquete.getAgenciaDestino() != null) {
+            agenciaRecurso = descripcionAgencia(paquete.getAgenciaDestino());
+        } else if (paquete.getLoteRecepcion() != null && paquete.getLoteRecepcion().getAgencia() != null) {
+            agenciaRecurso = descripcionAgencia(paquete.getLoteRecepcion().getAgencia());
+        }
+        return "Tu usuario pertenece a la " + agenciaUsuario
+                + ". La atención solicitada pertenece a " + agenciaRecurso
+                + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.";
+    }
+
+    private String descripcionAgencia(com.candas.candas_backend.entity.Agencia agencia) {
+        if (agencia == null) {
+            return "agencia no identificada";
+        }
+        if (agencia.getCodigo() != null && !agencia.getCodigo().isBlank()) {
+            return "agencia \"" + agencia.getNombre() + "\" (código " + agencia.getCodigo() + ")";
+        }
+        return "agencia \"" + agencia.getNombre() + "\"";
     }
 
     private AtencionPaqueteDTO toDTO(AtencionPaquete atencion) {
@@ -130,7 +204,7 @@ public class AtencionPaqueteService {
         return dto;
     }
 
-    private AtencionPaquete toEntity(AtencionPaqueteDTO dto) {
+    private AtencionPaquete toEntity(AtencionPaqueteDTO dto, Paquete paquete) {
         AtencionPaquete atencion = new AtencionPaquete();
         atencion.setMotivo(dto.getMotivo());
         atencion.setTipoProblema(dto.getTipoProblema());
@@ -139,8 +213,7 @@ public class AtencionPaqueteService {
             atencion.setEstado(dto.getEstado());
         }
         atencion.setObservacionesResolucion(dto.getObservacionesResolucion());
-        atencion.setPaquete(paqueteRepository.findById(dto.getIdPaquete())
-            .orElseThrow(() -> new ResourceNotFoundException("Paquete", dto.getIdPaquete())));
+        atencion.setPaquete(paquete);
         return atencion;
     }
 }

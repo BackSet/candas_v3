@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PaqueteRepository extends JpaRepository<Paquete, Long> {
+public interface PaqueteRepository extends JpaRepository<Paquete, Long>, JpaSpecificationExecutor<Paquete> {
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
             "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })
     java.util.Optional<Paquete> findByNumeroGuia(String numeroGuia);
@@ -57,6 +58,11 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long> {
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
             "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })
     java.util.Optional<Paquete> findById(Long id);
+
+    /** Para alcance atención: agencia destino y agencia del lote de recepción. */
+    @EntityGraph(attributePaths = { "agenciaDestino", "loteRecepcion", "loteRecepcion.agencia" })
+    @Query("SELECT p FROM Paquete p WHERE p.idPaquete = :id")
+    java.util.Optional<Paquete> findByIdWithAlcanceAtencion(@Param("id") Long id);
 
     // Consultas para ensacado
     @EntityGraph(attributePaths = { "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "clienteDestinatario", "agenciaDestino",

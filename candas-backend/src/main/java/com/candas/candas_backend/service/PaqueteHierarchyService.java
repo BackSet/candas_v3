@@ -42,6 +42,9 @@ public class PaqueteHierarchyService {
     }
 
     public List<PaqueteDTO> findHijos(Long idPaquetePadre) {
+        if (!paqueteRepository.existsById(idPaquetePadre)) {
+            throw new ResourceNotFoundException("Paquete", idPaquetePadre);
+        }
         return paqueteRepository.findByPaquetePadreIdPaquete(idPaquetePadre)
                 .stream()
                 .map(paqueteMapper::toDTO)

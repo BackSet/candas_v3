@@ -41,14 +41,17 @@ public class ListasEtiquetadasService {
     private final PaqueteRepository paqueteRepository;
     private final PaqueteService paqueteService;
     private final LoteRecepcionRepository loteRecepcionRepository;
+    private final LoteRecepcionService loteRecepcionService;
 
     public ListasEtiquetadasService(
             PaqueteRepository paqueteRepository,
             PaqueteService paqueteService,
-            LoteRecepcionRepository loteRecepcionRepository) {
+            LoteRecepcionRepository loteRecepcionRepository,
+            LoteRecepcionService loteRecepcionService) {
         this.paqueteRepository = paqueteRepository;
         this.paqueteService = paqueteService;
         this.loteRecepcionRepository = loteRecepcionRepository;
+        this.loteRecepcionService = loteRecepcionService;
     }
 
     public ListasEtiquetadasBatchResultDTO createBatch(ListasEtiquetadasBatchRequest request) {
@@ -130,6 +133,7 @@ public class ListasEtiquetadasService {
      * Crea/actualiza paquetes con datos genéricos y los asocia al lote con estado RECIBIDO.
      */
     public ListasEtiquetadasBatchResultDTO addListasEspecialesALote(Long idLoteRecepcion, ListasEtiquetadasBatchRequest request) {
+        loteRecepcionService.ensureLoteAccesible(idLoteRecepcion);
         LoteRecepcion lote = loteRecepcionRepository.findById(idLoteRecepcion)
                 .orElseThrow(() -> new ResourceNotFoundException("LoteRecepcion", idLoteRecepcion));
         if (lote.getTipoLote() != TipoLote.ESPECIAL) {
@@ -235,6 +239,9 @@ public class ListasEtiquetadasService {
         String n = numeroGuia != null ? numeroGuia.trim().toUpperCase() : null;
         if (n == null || n.isEmpty()) {
             throw new BadRequestException("El número de guía es obligatorio");
+        }
+        if (idLoteRecepcion != null) {
+            loteRecepcionService.ensureLoteAccesible(idLoteRecepcion);
         }
         Paquete paquete = paqueteRepository.findByNumeroGuiaIgnoreCase(n).orElse(null);
         if (paquete == null) {

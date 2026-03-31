@@ -48,12 +48,14 @@ import { Property } from '@/components/detail/InfoCard'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { QuickActions } from '@/components/detail/QuickActions'
 import { EmptyState, LoadingState } from '@/components/states'
+import { ErrorState } from '@/components/states/ErrorState'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { cn } from '@/lib/utils'
 import LoteRecepcionOperador from './LoteRecepcionOperador'
 import LoteEspecialOperador from './LoteEspecialOperador'
 import { useHasPermission } from '@/hooks/useHasRole'
+import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
 
 export default function LoteRecepcionDetail() {
   const navigate = useNavigate()
@@ -67,7 +69,7 @@ export default function LoteRecepcionDetail() {
   const [tipoExportacionTracking, setTipoExportacionTracking] = useState<TipoExportacionTracking>('NORMAL')
   const [subTipoClementinaTracking, setSubTipoClementinaTracking] = useState<SubTipoClementinaTracking>('hijas')
 
-  const { data: loteRecepcion, isLoading } = useLoteRecepcion(id ? Number(id) : undefined)
+  const { data: loteRecepcion, isLoading, error } = useLoteRecepcion(id ? Number(id) : undefined)
   const { data: paquetes } = usePaquetesLoteRecepcion(id ? Number(id) : undefined)
   const { data: agenciasData } = useAgencias(0, 1000) // Para el diálogo de exportación Excel
   const deleteMutation = useDeleteLoteRecepcion()
@@ -123,6 +125,20 @@ export default function LoteRecepcionDetail() {
   }
 
   if (!loteRecepcion) {
+    const status = getApiStatus(error)
+    if (status === 403) {
+      return (
+        <ErrorState
+          title="Acceso restringido por agencia"
+          description={getApiErrorMessage(error, 'No tienes acceso a este lote por alcance de agencia.')}
+          action={
+            <Button variant="outline" onClick={() => navigate({ to: '/lotes-recepcion' })}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Volver a la lista
+            </Button>
+          }
+        />
+      )
+    }
     return (
       <EmptyState
         title="Lote de recepción no encontrado"

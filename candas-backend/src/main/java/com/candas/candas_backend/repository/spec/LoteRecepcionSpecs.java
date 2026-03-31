@@ -16,7 +16,7 @@ public final class LoteRecepcionSpecs {
     private LoteRecepcionSpecs() {
     }
 
-    public static Specification<LoteRecepcion> withFilters(String search, TipoLote tipoLote) {
+    public static Specification<LoteRecepcion> withFilters(String search, TipoLote tipoLote, Long idAgenciaRestringida) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (search != null && !search.isBlank()) {
@@ -29,7 +29,13 @@ public final class LoteRecepcionSpecs {
             if (tipoLote != null) {
                 predicates.add(cb.equal(root.get("tipoLote"), tipoLote));
             }
-            return predicates.isEmpty() ? null : cb.and(predicates.toArray(new Predicate[0]));
+            if (idAgenciaRestringida != null) {
+                predicates.add(cb.equal(root.get("agencia").get("idAgencia"), idAgenciaRestringida));
+            }
+            if (predicates.isEmpty()) {
+                return cb.conjunction();
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 }

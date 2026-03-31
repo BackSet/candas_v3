@@ -4,8 +4,10 @@ import com.candas.candas_backend.dto.*;
 import com.candas.candas_backend.entity.*;
 import com.candas.candas_backend.entity.enums.EstadoPaquete;
 import com.candas.candas_backend.entity.enums.TamanoSaca;
+import com.candas.candas_backend.exception.AgenciaAccessDeniedException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.*;
+import com.candas.candas_backend.security.AgenciaScopeResolver;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,20 +29,29 @@ public class EnsacadoService {
     private final PaqueteRepository paqueteRepository;
     private final DespachoRepository despachoRepository;
     private final SacaRepository sacaRepository;
+    private final AgenciaRepository agenciaRepository;
     private final UsuarioRepository usuarioRepository;
     private final EnsacadoSesionRepository ensacadoSesionRepository;
+    private final AgenciaScopeResolver agenciaScopeResolver;
+    private final DespachoService despachoService;
 
     public EnsacadoService(
             PaqueteRepository paqueteRepository,
             DespachoRepository despachoRepository,
             SacaRepository sacaRepository,
+            AgenciaRepository agenciaRepository,
             UsuarioRepository usuarioRepository,
-            EnsacadoSesionRepository ensacadoSesionRepository) {
+            EnsacadoSesionRepository ensacadoSesionRepository,
+            AgenciaScopeResolver agenciaScopeResolver,
+            DespachoService despachoService) {
         this.paqueteRepository = paqueteRepository;
         this.despachoRepository = despachoRepository;
         this.sacaRepository = sacaRepository;
+        this.agenciaRepository = agenciaRepository;
         this.usuarioRepository = usuarioRepository;
         this.ensacadoSesionRepository = ensacadoSesionRepository;
+        this.agenciaScopeResolver = agenciaScopeResolver;
+        this.despachoService = despachoService;
     }
 
     // Capacidades máximas por tamaño de saca (en kg)
@@ -57,6 +68,8 @@ public class EnsacadoService {
     public PaqueteEnsacadoInfoDTO buscarPaqueteParaEnsacar(String numeroGuia) {
         Paquete paquete = paqueteRepository.findByNumeroGuiaIgnoreCase(numeroGuia)
             .orElseThrow(() -> new ResourceNotFoundException("Paquete con número de guía: " + numeroGuia));
+
+        assertPaqueteAccesibleEnsacado(paquete);
         
         // Verificar si el paquete está en una saca
         PaqueteSaca ps = null;
@@ -220,6 +233,8 @@ public class EnsacadoService {
     public void marcarPaqueteComoEnsacado(Long idPaquete) {
         Paquete paquete = paqueteRepository.findById(idPaquete)
             .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
+
+        assertPaqueteAccesibleEnsacado(paquete);
         
         if (paquete.getEstado() == EstadoPaquete.ENSACADO) {
             throw new IllegalArgumentException("El paquete ya está ensacado físicamente");
@@ -349,6 +364,7 @@ public class EnsacadoService {
         }
         List<Despacho> despachos = despachoRepository.findDespachosConPaquetesPendientesEntre(inicio, fin);
         return despachos.stream()
+            .filter(despachoService::isDespachoAccesiblePorAlcance)
             .map(this::calcularInfoDespacho)
             .collect(Collectors.toList());
     }
@@ -361,6 +377,7 @@ public class EnsacadoService {
         LocalDateTime fechaInicio = LocalDateTime.now().minusDays(7);
         List<Despacho> despachos = despachoRepository.findDespachosCompletamenteEnsacados(fechaInicio);
         return despachos.stream()
+            .filter(despachoService::isDespachoAccesiblePorAlcance)
             .map(this::calcularInfoDespacho)
             .sorted(Comparator
                 .comparing((DespachoEnsacadoInfoDTO d) -> d.getFechaUltimoEnsacado() != null ? d.getFechaUltimoEnsacado() : d.getFechaDespacho(), Comparator.nullsLast(Comparator.reverseOrder()))
@@ -372,6 +389,7 @@ public class EnsacadoService {
      * Obtiene información detallada de un despacho para ensacado
      */
     public DespachoEnsacadoInfoDTO obtenerInfoDespacho(Long idDespacho) {
+        despachoService.ensureDespachoAccesible(idDespacho);
         Despacho despacho = despachoRepository.findById(idDespacho)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespacho));
         return calcularInfoDespacho(despacho);
@@ -381,6 +399,7 @@ public class EnsacadoService {
      * Obtiene sacas en progreso de un despacho
      */
     public List<SacaEnsacadoInfoDTO> obtenerSacasEnProgreso(Long idDespacho) {
+        despachoService.ensureDespachoAccesible(idDespacho);
         Despacho despacho = despachoRepository.findById(idDespacho)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespacho));
         
@@ -394,6 +413,7 @@ public class EnsacadoService {
      * Obtiene sacas completadas de un despacho
      */
     public List<SacaEnsacadoInfoDTO> obtenerSacasCompletadas(Long idDespacho) {
+        despachoService.ensureDespachoAccesible(idDespacho);
         Despacho despacho = despachoRepository.findById(idDespacho)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespacho));
         
@@ -404,6 +424,71 @@ public class EnsacadoService {
     }
 
     // Métodos auxiliares privados
+
+    /**
+     * Alcance ensacado: si hay restricción por agencia, el paquete debe estar ligado a un despacho visible
+     * (registrador en la agencia) o, sin despacho en saca, a agencia destino o lote de recepción de esa agencia.
+     */
+    private void assertPaqueteAccesibleEnsacado(Paquete paquete) {
+        var idAgOpt = agenciaScopeResolver.idAgenciaRestringida();
+        if (idAgOpt.isEmpty()) {
+            return;
+        }
+        Long idAgencia = idAgOpt.get();
+        Despacho despachoEnSaca = null;
+        if (paquete.getPaqueteSacas() != null) {
+            for (PaqueteSaca ps : paquete.getPaqueteSacas()) {
+                if (ps.getSaca() != null && ps.getSaca().getDespacho() != null) {
+                    despachoEnSaca = ps.getSaca().getDespacho();
+                    break;
+                }
+            }
+        }
+        if (despachoEnSaca != null) {
+            if (!despachoService.isDespachoAccesiblePorAlcance(despachoEnSaca)) {
+                throw new AgenciaAccessDeniedException(construirMensajeAccesoEnsacado(idAgencia, paquete, despachoEnSaca));
+            }
+            return;
+        }
+        if (paquete.getAgenciaDestino() != null && idAgencia.equals(paquete.getAgenciaDestino().getIdAgencia())) {
+            return;
+        }
+        if (paquete.getLoteRecepcion() != null && paquete.getLoteRecepcion().getAgencia() != null
+                && idAgencia.equals(paquete.getLoteRecepcion().getAgencia().getIdAgencia())) {
+            return;
+        }
+        throw new AgenciaAccessDeniedException(construirMensajeAccesoEnsacado(idAgencia, paquete, null));
+    }
+
+    private String construirMensajeAccesoEnsacado(Long idAgenciaUsuario, Paquete paquete, Despacho despachoEnSaca) {
+        String agenciaUsuario = agenciaRepository.findById(idAgenciaUsuario)
+                .map(this::descripcionAgencia)
+                .orElse("agencia con id " + idAgenciaUsuario);
+        String agenciaRecurso = "agencia no identificada";
+        if (despachoEnSaca != null) {
+            agenciaRecurso = usuarioRepository.findByUsername(despachoEnSaca.getUsuarioRegistro())
+                    .map(Usuario::getAgencia)
+                    .map(this::descripcionAgencia)
+                    .orElse("agencia no identificada");
+        } else if (paquete.getAgenciaDestino() != null) {
+            agenciaRecurso = descripcionAgencia(paquete.getAgenciaDestino());
+        } else if (paquete.getLoteRecepcion() != null && paquete.getLoteRecepcion().getAgencia() != null) {
+            agenciaRecurso = descripcionAgencia(paquete.getLoteRecepcion().getAgencia());
+        }
+        return "Tu usuario pertenece a la " + agenciaUsuario
+                + ". El recurso que intentas operar en ensacado pertenece a " + agenciaRecurso
+                + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.";
+    }
+
+    private String descripcionAgencia(Agencia agencia) {
+        if (agencia == null) {
+            return "agencia no identificada";
+        }
+        if (agencia.getCodigo() != null && !agencia.getCodigo().isBlank()) {
+            return "agencia \"" + agencia.getNombre() + "\" (código " + agencia.getCodigo() + ")";
+        }
+        return "agencia \"" + agencia.getNombre() + "\"";
+    }
 
     private LocalDateTime obtenerFechaUltimoEnsacadoDespacho(Despacho despacho) {
         List<Paquete> todosPaquetes = paqueteRepository.findBySacaDespachoIdDespacho(despacho.getIdDespacho());

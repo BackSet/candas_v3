@@ -8,13 +8,16 @@ import com.candas.candas_backend.entity.*;
 import com.candas.candas_backend.entity.enums.EstadoPaquete;
 import com.candas.candas_backend.entity.enums.TamanoSaca;
 import com.candas.candas_backend.entity.enums.TipoPaquete;
+import com.candas.candas_backend.exception.AgenciaAccessDeniedException;
 import com.candas.candas_backend.exception.BadRequestException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.*;
 import com.candas.candas_backend.repository.spec.DespachoSpecs;
+import com.candas.candas_backend.security.AgenciaScopeResolver;
 import com.candas.candas_backend.util.PresintoUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,6 +46,8 @@ public class DespachoService {
     private final PaqueteRepository paqueteRepository;
     private final DestinatarioDirectoRepository destinatarioDirectoRepository;
     private final PresintoUtil presintoUtil;
+    private final AgenciaScopeResolver agenciaScopeResolver;
+    private final UsuarioRepository usuarioRepository;
 
     public DespachoService(
             DespachoRepository despachoRepository,
@@ -50,7 +56,9 @@ public class DespachoService {
             DistribuidorRepository distribuidorRepository,
             PaqueteRepository paqueteRepository,
             DestinatarioDirectoRepository destinatarioDirectoRepository,
-            PresintoUtil presintoUtil) {
+            PresintoUtil presintoUtil,
+            AgenciaScopeResolver agenciaScopeResolver,
+            UsuarioRepository usuarioRepository) {
         this.despachoRepository = despachoRepository;
         this.sacaRepository = sacaRepository;
         this.agenciaRepository = agenciaRepository;
@@ -58,6 +66,8 @@ public class DespachoService {
         this.paqueteRepository = paqueteRepository;
         this.destinatarioDirectoRepository = destinatarioDirectoRepository;
         this.presintoUtil = presintoUtil;
+        this.agenciaScopeResolver = agenciaScopeResolver;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public Page<DespachoDTO> findAll(Pageable pageable, String tipoDestino, LocalDate fechaDesde, LocalDate fechaHasta, String search) {
@@ -67,41 +77,16 @@ public class DespachoService {
             inicio = fechaDesde.atStartOfDay();
             fin = fechaHasta.atTime(23, 59, 59, 999_000_000);
         }
-        boolean filtrarPorFecha = inicio != null && fin != null;
         String searchTrimmed = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
-        boolean hasSearch = searchTrimmed != null;
-
-        if (hasSearch) {
-            var spec = DespachoSpecs.withFilters(searchTrimmed, inicio, fin, tipoDestino);
-            return despachoRepository.findAll(spec, pageable).map(this::toDTO);
-        }
-
-        if (filtrarPorFecha) {
-            if (tipoDestino != null && !tipoDestino.isBlank()) {
-                if ("AGENCIA".equalsIgnoreCase(tipoDestino.trim())) {
-                    return despachoRepository.findByFechaDespachoBetweenAndAgenciaIsNotNull(inicio, fin, pageable).map(this::toDTO);
-                }
-                if ("DIRECTO".equalsIgnoreCase(tipoDestino.trim())) {
-                    return despachoRepository.findByFechaDespachoBetweenAndDestinatarioDirectoIsNotNull(inicio, fin, pageable).map(this::toDTO);
-                }
-            }
-            return despachoRepository.findByFechaDespachoBetween(inicio, fin, pageable).map(this::toDTO);
-        }
-
-        if (tipoDestino != null && !tipoDestino.isBlank()) {
-            if ("AGENCIA".equalsIgnoreCase(tipoDestino.trim())) {
-                return despachoRepository.findAllByAgenciaIsNotNull(pageable).map(this::toDTO);
-            }
-            if ("DIRECTO".equalsIgnoreCase(tipoDestino.trim())) {
-                return despachoRepository.findAllByDestinatarioDirectoIsNotNull(pageable).map(this::toDTO);
-            }
-        }
-        return despachoRepository.findAll(pageable).map(this::toDTO);
+        Long idAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        var spec = DespachoSpecs.withFilters(searchTrimmed, inicio, fin, tipoDestino, idAgencia);
+        return despachoRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
     public DespachoDTO findById(Long id) {
         Despacho despacho = despachoRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", id));
+        assertDespachoAccesible(despacho);
         return toDTO(despacho);
     }
 
@@ -113,7 +98,9 @@ public class DespachoService {
         if (ids.isEmpty()) {
             return List.of();
         }
+        Optional<Long> idAgenciaOpt = agenciaScopeResolver.idAgenciaRestringida();
         return despachoRepository.findAllByIdWithRelations(ids).stream()
+            .filter(d -> idAgenciaOpt.isEmpty() || despachoVisibleParaAgencia(d, idAgenciaOpt.get()))
             .map(this::toDTO)
             .collect(java.util.stream.Collectors.toList());
     }
@@ -124,12 +111,86 @@ public class DespachoService {
         }
         LocalDateTime inicio = fechaInicio.atStartOfDay();
         LocalDateTime fin = fechaFin.atTime(23, 59, 59, 999_000_000);
-        return despachoRepository.findByFechaDespachoBetween(inicio, fin).stream()
+        Long idAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        var spec = DespachoSpecs.withFilters(null, inicio, fin, null, idAgencia);
+        return despachoRepository.findAll(spec).stream()
             .map(this::toDTO)
             .collect(java.util.stream.Collectors.toList());
     }
 
+    /**
+     * Despacho visible para alcance de agencia si el usuario registrador pertenece a esa agencia.
+     */
+    private boolean despachoVisibleParaAgencia(Despacho despacho, Long idAgencia) {
+        return usuarioRepository.findByUsername(despacho.getUsuarioRegistro())
+                .filter(u -> u.getAgencia() != null && idAgencia.equals(u.getAgencia().getIdAgencia()))
+                .isPresent();
+    }
+
+    private void assertDespachoAccesible(Despacho despacho) {
+        agenciaScopeResolver.idAgenciaRestringida().ifPresent(idAg -> {
+            if (!despachoVisibleParaAgencia(despacho, idAg)) {
+                throw new AgenciaAccessDeniedException(construirMensajeAccesoDespacho(idAg, despacho));
+            }
+        });
+    }
+
+    /**
+     * Valida acceso al despacho por ID (p. ej. Sacas u otros módulos que referencian {@code idDespacho}).
+     */
+    public void ensureDespachoAccesible(Long idDespacho) {
+        Despacho despacho = despachoRepository.findById(idDespacho)
+                .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespacho));
+        assertDespachoAccesible(despacho);
+    }
+
+    /**
+     * Indica si el despacho es visible para el usuario autenticado según alcance por agencia (sin cargar de nuevo por ID).
+     */
+    public boolean isDespachoAccesiblePorAlcance(Despacho despacho) {
+        return agenciaScopeResolver.idAgenciaRestringida()
+                .map(idAg -> despachoVisibleParaAgencia(despacho, idAg))
+                .orElse(true);
+    }
+
+    private String construirMensajeAccesoDespacho(Long idAgenciaUsuario, Despacho despacho) {
+        var agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAgenciaUsuario).orElse(null), idAgenciaUsuario);
+        var agenciaDespacho = usuarioRepository.findByUsername(despacho.getUsuarioRegistro())
+                .map(Usuario::getAgencia)
+                .map(this::descripcionAgencia)
+                .orElse("agencia no identificada");
+        return "Tu usuario pertenece a la " + agenciaUsuario
+                + ". El despacho solicitado pertenece a " + agenciaDespacho
+                + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.";
+    }
+
+    private String descripcionAgencia(Agencia agencia) {
+        if (agencia == null) {
+            return "agencia no identificada";
+        }
+        if (agencia.getCodigo() != null && !agencia.getCodigo().isBlank()) {
+            return "agencia \"" + agencia.getNombre() + "\" (código " + agencia.getCodigo() + ")";
+        }
+        return "agencia \"" + agencia.getNombre() + "\"";
+    }
+
+    private String descripcionAgencia(Agencia agencia, Long idAgenciaFallback) {
+        if (agencia != null) {
+            return descripcionAgencia(agencia);
+        }
+        return idAgenciaFallback != null
+                ? "agencia con id " + idAgenciaFallback
+                : "agencia no identificada";
+    }
+
     public DespachoDTO create(DespachoDTO dto) {
+        agenciaScopeResolver.idAgenciaRestringida().ifPresent(ignored -> {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !auth.getName().isBlank()) {
+                dto.setUsuarioRegistro(auth.getName());
+            }
+        });
+
         // Validar que haya al menos una saca
         if (dto.getSacas() == null || dto.getSacas().isEmpty()) {
             throw new IllegalArgumentException("Debe haber al menos una saca en el despacho");
@@ -210,7 +271,11 @@ public class DespachoService {
         }
 
         crearYAsignarSacas(despachoGuardado, dto.getSacas());
-        return toDTO(despachoGuardado);
+        final Long idDespachoCreado = despachoGuardado.getIdDespacho();
+        Despacho recargado = despachoRepository.findById(idDespachoCreado)
+                .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespachoCreado));
+        assertDespachoAccesible(recargado);
+        return toDTO(recargado);
     }
 
     private String calcularCodigoPresinto(Despacho despacho) {
@@ -234,7 +299,8 @@ public class DespachoService {
     public DespachoDTO update(Long id, DespachoDTO dto) {
         Despacho despacho = despachoRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", id));
-        
+        assertDespachoAccesible(despacho);
+
         validarDespacho(dto);
         actualizarCamposBasicos(despacho, dto);
         actualizarAgencia(despacho, dto);
@@ -338,7 +404,14 @@ public class DespachoService {
 
     private void actualizarCamposBasicos(Despacho despacho, DespachoDTO dto) {
         despacho.setFechaDespacho(dto.getFechaDespacho());
-        despacho.setUsuarioRegistro(dto.getUsuarioRegistro());
+        if (agenciaScopeResolver.idAgenciaRestringida().isPresent()) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null && !auth.getName().isBlank()) {
+                despacho.setUsuarioRegistro(auth.getName());
+            }
+        } else {
+            despacho.setUsuarioRegistro(dto.getUsuarioRegistro());
+        }
         despacho.setObservaciones(dto.getObservaciones());
         despacho.setNumeroGuiaAgenciaDistribucion(dto.getNumeroGuiaAgenciaDistribucion());
     }
@@ -379,7 +452,8 @@ public class DespachoService {
         // Cargar despacho sin las colecciones anidadas para evitar MultipleBagFetchException
         Despacho despacho = despachoRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", id));
-        
+        assertDespachoAccesible(despacho);
+
         // Cargar sacas y paqueteSacas de forma separada para evitar MultipleBagFetchException
         if (despacho.getSacas() != null) {
             for (Saca saca : despacho.getSacas()) {
@@ -425,7 +499,8 @@ public class DespachoService {
     public void agregarSacas(Long idDespacho, List<Long> idSacas) {
         Despacho despacho = despachoRepository.findById(idDespacho)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespacho));
-        
+        assertDespachoAccesible(despacho);
+
         for (Long idSaca : idSacas) {
             com.candas.candas_backend.entity.Saca saca = sacaRepository.findById(idSaca)
                 .orElseThrow(() -> new ResourceNotFoundException("Saca", idSaca));
@@ -446,6 +521,7 @@ public class DespachoService {
 
         Despacho despacho = despachoRepository.findById(idDespacho)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespacho));
+        assertDespachoAccesible(despacho);
 
         Paquete paquetePadre = paqueteRepository.findByNumeroGuiaIgnoreCase(numeroNorm)
             .orElseThrow(() -> new BadRequestException("Guía padre no encontrada: " + numeroNorm));
@@ -513,7 +589,8 @@ public class DespachoService {
     public List<com.candas.candas_backend.dto.SacaDTO> obtenerSacas(Long idDespacho) {
         Despacho despacho = despachoRepository.findById(idDespacho)
             .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespacho));
-        
+        assertDespachoAccesible(despacho);
+
         // Cargar las sacas con sus paquetes usando fetch join
         List<com.candas.candas_backend.entity.Saca> sacasConPaquetes = sacaRepository.findByDespachoIdDespacho(idDespacho);
         
@@ -531,7 +608,7 @@ public class DespachoService {
                 dto.setFechaEnsacado(s.getFechaEnsacado());
                 
                 List<Paquete> paquetesOrdenados = s.getPaqueteSacas() != null ? s.getPaqueteSacas().stream()
-                    .sorted(Comparator.comparingInt(ps -> ps.getOrdenEnSaca() != null ? ps.getOrdenEnSaca() : 0))
+                    .sorted(Comparator.comparing(PaqueteSaca::getOrdenEnSaca, Comparator.nullsLast(Integer::compareTo)))
                     .map(PaqueteSaca::getPaquete)
                     .collect(Collectors.toList()) : new ArrayList<>();
                     
@@ -544,10 +621,10 @@ public class DespachoService {
 
     @Transactional
     public int marcarPaquetesComoDespachados(Long idDespacho) {
-        if (!despachoRepository.existsById(idDespacho)) {
-            throw new ResourceNotFoundException("Despacho", idDespacho);
-        }
-        
+        Despacho despachoEntidad = despachoRepository.findById(idDespacho)
+                .orElseThrow(() -> new ResourceNotFoundException("Despacho", idDespacho));
+        assertDespachoAccesible(despachoEntidad);
+
         List<Saca> sacas = sacaRepository.findByDespachoIdDespacho(idDespacho);
         int paquetesMarcados = 0;
         
@@ -653,7 +730,7 @@ public class DespachoService {
         sacaDTO.setNumeroManifiesto(despacho.getNumeroManifiesto());
         
         List<Paquete> paquetesOrdenados = s.getPaqueteSacas() != null ? s.getPaqueteSacas().stream()
-            .sorted(Comparator.comparingInt(ps -> ps.getOrdenEnSaca() != null ? ps.getOrdenEnSaca() : 0))
+            .sorted(Comparator.comparing(PaqueteSaca::getOrdenEnSaca, Comparator.nullsLast(Integer::compareTo)))
             .map(PaqueteSaca::getPaquete)
             .collect(Collectors.toList()) : new ArrayList<>();
             

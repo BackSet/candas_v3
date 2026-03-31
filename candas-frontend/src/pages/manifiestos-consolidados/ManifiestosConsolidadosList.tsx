@@ -42,6 +42,7 @@ import { Badge } from '@/components/ui/badge'
 import { LoadingState } from '@/components/states/LoadingState'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
+import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
 
 const formatearFecha = (fecha: string) => {
   const date = new Date(fecha)
@@ -148,8 +149,8 @@ export default function ManifiestosConsolidadosList() {
       } else {
         setMostrarDialogImpresion(true)
       }
-    } catch {
-      toast.error('Error al obtener los detalles del manifiesto')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Error al obtener los detalles del manifiesto'))
     }
   }
 
@@ -214,7 +215,13 @@ export default function ManifiestosConsolidadosList() {
               ) : error ? (
                 <TableRow>
                   <TableCell colSpan={6} className="p-8">
-                    <ErrorState title="Error al cargar manifiestos" />
+                    <ErrorState
+                      title="Error al cargar manifiestos"
+                      description={
+                        getInteragencyRestrictionMessage(error)
+                          ?? getApiErrorMessage(error, 'No se pudieron cargar los manifiestos.')
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               ) : manifiestosFiltrados.length === 0 ? (

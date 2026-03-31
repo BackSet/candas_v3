@@ -44,7 +44,7 @@ public final class ManifiestoConsolidadoSpecs {
             if (anio != null) {
                 predicates.add(cb.equal(root.get("anio"), anio));
             }
-            return predicates.isEmpty() ? null : cb.and(predicates.toArray(new Predicate[0]));
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 }

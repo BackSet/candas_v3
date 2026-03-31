@@ -13,6 +13,7 @@ import {
 // import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
+import { getInteragencyRestrictionMessage } from '@/lib/api/errors'
 
 interface AgregarPaquetesDialogProps {
   recepcionId: number
@@ -27,8 +28,11 @@ export default function AgregarPaquetesDialog({
 }: AgregarPaquetesDialogProps) {
   const [selectedPaquetes, setSelectedPaquetes] = useState<number[]>([])
   const [busqueda, setBusqueda] = useState('')
-  const { data, isLoading } = usePaquetes(0, 100)
+  const { data, isLoading, error } = usePaquetes(0, 100)
   const agregarMutation = useAgregarPaquetesLoteRecepcion()
+  const restrictionMessage =
+    getInteragencyRestrictionMessage(error) ??
+    getInteragencyRestrictionMessage(agregarMutation.error)
 
   const paquetesFiltrados = data?.content.filter((p) => {
     if (busqueda && !p.numeroGuia?.toLowerCase().includes(busqueda.toLowerCase()) &&
@@ -71,6 +75,11 @@ export default function AgregarPaquetesDialog({
             Selecciona los paquetes que deseas agregar a este lote de recepción
           </DialogDescription>
         </DialogHeader>
+        {restrictionMessage && (
+          <div className="mx-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {restrictionMessage}
+          </div>
+        )}
 
         <div className="flex-1 overflow-hidden flex flex-col space-y-4">
           <div className="relative">
@@ -86,6 +95,10 @@ export default function AgregarPaquetesDialog({
           <div className="flex-1 overflow-y-auto border border-border rounded-md p-4">
             {isLoading ? (
               <div className="text-center py-8">Cargando paquetes...</div>
+            ) : restrictionMessage ? (
+              <div className="text-center py-8 text-amber-700">
+                {restrictionMessage}
+              </div>
             ) : paquetesFiltrados.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No se encontraron paquetes
