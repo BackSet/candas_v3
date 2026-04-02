@@ -55,22 +55,7 @@ public class ManifiestoConsolidadoService {
     }
 
     public ManifiestoConsolidadoResumenDTO crearManifiestoConsolidado(ManifiestoConsolidadoDTO dto) {
-        agenciaScopeResolver.idAgenciaRestringida().ifPresent(idRestr -> {
-            if (dto.getIdDistribuidor() != null || dto.getIdDestinatarioDirecto() != null) {
-                String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idRestr).orElse(null), idRestr);
-                throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
-                        + ". Estás intentando generar un manifiesto fuera de tu alcance de agencia."
-                        + " No tienes acceso a estos datos mientras no inicies sesión con un usuario de la agencia correcta.");
-            }
-            if (dto.getIdAgencia() != null && !dto.getIdAgencia().equals(idRestr)) {
-                String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idRestr).orElse(null), idRestr);
-                String agenciaRecurso = descripcionAgencia(agenciaRepository.findById(dto.getIdAgencia()).orElse(null), dto.getIdAgencia());
-                throw new AgenciaAccessDeniedException("Tu usuario pertenece a la " + agenciaUsuario
-                        + ". Estás intentando generar un manifiesto para " + agenciaRecurso
-                        + ". No tienes acceso a estos datos mientras no inicies sesión con un usuario de esa agencia.");
-            }
-            dto.setIdAgencia(idRestr);
-        });
+        Long idAgenciaPropietariaScope = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
 
         Usuario usuarioActual = obtenerUsuarioActual();
         validarPeriodo(dto);
@@ -79,6 +64,7 @@ public class ManifiestoConsolidadoService {
 
         LocalDateTime[] rango = obtenerRangoFechas(dto.getFechaInicio(), dto.getFechaFin(), dto.getMes(), dto.getAnio());
         List<Despacho> despachos = obtenerDespachosEnRango(
+                idAgenciaPropietariaScope,
                 dto.getIdAgencia(), dto.getIdDistribuidor(), dto.getIdDestinatarioDirecto(),
                 rango[0], rango[1]);
         boolean agruparPorTipo = dto.getIdAgencia() == null && dto.getIdDistribuidor() == null && dto.getIdDestinatarioDirecto() == null;
@@ -215,7 +201,15 @@ public class ManifiestoConsolidadoService {
         }
 
         LocalDateTime[] rango = obtenerRangoFechas(fechaInicio, fechaFin, mes, anio);
-        List<Despacho> despachos = obtenerDespachosEnRango(idAgencia, idDistribuidor, idDestinatarioDirecto, rango[0], rango[1]);
+        Long idAgenciaPropietariaScope = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        List<Despacho> despachos = obtenerDespachosEnRango(
+                idAgenciaPropietariaScope,
+                idAgencia,
+                idDistribuidor,
+                idDestinatarioDirecto,
+                rango[0],
+                rango[1]
+        );
         boolean agruparPorTipo = idAgencia == null && idDistribuidor == null && idDestinatarioDirecto == null;
         ordenarDespachosParaManifiesto(despachos, agruparPorTipo);
         inicializarLazyDespachos(despachos);
@@ -279,17 +273,32 @@ public class ManifiestoConsolidadoService {
         return new LocalDateTime[] { inicio, fin };
     }
 
-    private List<Despacho> obtenerDespachosEnRango(Long idAgencia, Long idDistribuidor, Long idDestinatarioDirecto,
+    private List<Despacho> obtenerDespachosEnRango(Long idAgenciaPropietariaScope, Long idAgenciaDestino, Long idDistribuidor, Long idDestinatarioDirecto,
             LocalDateTime inicio, LocalDateTime fin) {
-        if (idAgencia != null) {
-            return despachoRepository.findByAgencia_IdAgenciaAndFechaDespachoBetween(idAgencia, inicio, fin);
+        if (idAgenciaPropietariaScope != null) {
+            if (idAgenciaDestino != null) {
+                return despachoRepository.findByAgenciaPropietaria_IdAgenciaAndAgencia_IdAgenciaAndFechaDespachoBetween(
+                        idAgenciaPropietariaScope, idAgenciaDestino, inicio, fin);
+            }
+            if (idDistribuidor != null) {
+                return despachoRepository.findByAgenciaPropietaria_IdAgenciaAndDistribuidor_IdDistribuidorAndFechaDespachoBetween(
+                        idAgenciaPropietariaScope, idDistribuidor, inicio, fin);
+            }
+            if (idDestinatarioDirecto != null) {
+                return despachoRepository.findByAgenciaPropietaria_IdAgenciaAndDestinatarioDirecto_IdDestinatarioDirectoAndFechaDespachoBetween(
+                        idAgenciaPropietariaScope, idDestinatarioDirecto, inicio, fin);
+            }
+            return despachoRepository.findByAgenciaPropietaria_IdAgenciaAndFechaDespachoBetween(idAgenciaPropietariaScope, inicio, fin);
+        }
+
+        if (idAgenciaDestino != null) {
+            return despachoRepository.findByAgencia_IdAgenciaAndFechaDespachoBetween(idAgenciaDestino, inicio, fin);
         }
         if (idDistribuidor != null) {
             return despachoRepository.findByDistribuidor_IdDistribuidorAndFechaDespachoBetween(idDistribuidor, inicio, fin);
         }
         if (idDestinatarioDirecto != null) {
-            return despachoRepository.findByDestinatarioDirecto_IdDestinatarioDirectoAndFechaDespachoBetween(
-                    idDestinatarioDirecto, inicio, fin);
+            return despachoRepository.findByDestinatarioDirecto_IdDestinatarioDirectoAndFechaDespachoBetween(idDestinatarioDirecto, inicio, fin);
         }
         return despachoRepository.findByFechaDespachoBetween(inicio, fin);
     }
