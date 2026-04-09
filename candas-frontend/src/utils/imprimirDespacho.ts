@@ -64,6 +64,34 @@ export function buildDocumentoManifiestoHTML(
     <style>
       ${PRINT_CSS_BASE}
       @page { size: A4 landscape; margin: 6mm; }
+      /* Ajustes compactos solo para despacho/manifiesto */
+      body { font-size: 7.2pt; line-height: 1.22; }
+      .doc-header { padding-bottom: 6px; margin-bottom: 8px; }
+      .header-left-group { gap: 10px; }
+      .doc-logo { height: 26px !important; max-height: 26px !important; max-width: 130px !important; }
+      .doc-title h1 { font-size: 11pt; margin: 0; }
+      .doc-title h2 { font-size: 7.6pt; }
+      .doc-meta { font-size: 7pt; gap: 1px; }
+      .meta-pills { margin: 0 0 8px; gap: 5px; }
+      .meta-pill { font-size: 6.7pt; padding: 1px 6px; }
+      .info-grid { gap: 7px 8px; margin-bottom: 8px; }
+      .info-label { font-size: 6.2pt; }
+      .info-value { font-size: 7.7pt; }
+      .warning-box { padding: 5px 8px; margin-bottom: 7px; font-size: 6.8pt; }
+      .section-title { font-size: 8.5pt; margin: 8px 0 5px; padding-bottom: 2px; }
+      .saca-block { margin-bottom: 7px; }
+      .saca-header { padding: 3px 0; margin-bottom: 2px; font-size: 7pt; }
+      .paquetes-table { font-size: 6.7pt; }
+      .paquetes-table th { padding: 3px 3px; font-size: 6pt; }
+      .paquetes-table td { padding: 2px 3px; line-height: 1.16; }
+      .col-guia { width: 9.5%; }
+      .col-dest { width: 15%; }
+      .col-dir { width: 22.5%; }
+      .col-city { width: 7.5%; }
+      .col-cant { width: 7%; }
+      .col-tel { width: 9.5%; }
+      .col-obs { width: 17%; }
+      .col-firma { width: 12%; }
     </style>
   </head>
   <body>
@@ -237,11 +265,8 @@ export async function generarManifiestoHTML(
         <div class="doc-meta">
            <div class="meta-item"><span class="meta-label">Total Sacas:</span> <span class="meta-value">${totalSacas}</span></div>
            <div class="meta-item"><span class="meta-label">Total Paquetes:</span> <span class="meta-value">${totalPaquetes}</span></div>
+           <div class="meta-item"><span class="meta-label">Presinto:</span> <span class="meta-value">${codigoPresinto}</span></div>
         </div>
-      </div>
-
-      <div class="meta-pills">
-        <span class="meta-pill">Presinto: <strong>${codigoPresinto}</strong></span>
       </div>
 
       <div class="info-grid">
@@ -342,9 +367,12 @@ export async function generarPDFDespacho(
   })
 
   // Constantes de diseño
-  const MARGIN_X = PDF_MARGINS.x
-  const MARGIN_Y = PDF_MARGINS.y
+  const MARGIN_X = Math.max(6, PDF_MARGINS.x - 2)
+  const MARGIN_Y = Math.max(6, PDF_MARGINS.y - 2)
   const PAGE_WIDTH = 297 - (MARGIN_X * 2)
+  const MAX_Y = 200
+  const LINE_HEIGHT_MM = 2.9
+  const ROW_TOP_PAD = 2.8
 
   // Helper para textos
   const text = (
@@ -387,28 +415,26 @@ export async function generarPDFDespacho(
 
   // Title Group (Next to logo)
   const titleX = MARGIN_X + (logoWidth > 0 ? logoWidth + 5 : 0)
-  text('Documento de Despacho', titleX, currentY + 5, PDF_FONTS.sizes.title, 'bold')
-  text(tituloOrigen, titleX, currentY + 10, PDF_FONTS.sizes.subtitle, 'normal', 'left', PDF_COLORS.text.secondary)
+  text('Documento de Despacho', titleX, currentY + 4.5, 12, 'bold')
+  text(tituloOrigen, titleX, currentY + 8.8, 8, 'normal', 'left', PDF_COLORS.text.secondary)
 
   // Meta Data (Right Aligned)
   const totalSacas = despacho.sacas?.length || 0
   const totalPaquetes = despacho.sacas?.reduce((acc, s) => acc + (s.idPaquetes?.length || 0), 0) || 0
 
-  text(`Total Sacas: ${totalSacas}`, MARGIN_X + PAGE_WIDTH, currentY + 5, PDF_FONTS.sizes.normal, 'bold', 'right')
-  text(`Total Paquetes: ${totalPaquetes}`, MARGIN_X + PAGE_WIDTH, currentY + 10, PDF_FONTS.sizes.normal, 'bold', 'right')
+  text(`Total Sacas: ${totalSacas}`, MARGIN_X + PAGE_WIDTH, currentY + 4.5, 7.4, 'bold', 'right')
+  text(`Total Paquetes: ${totalPaquetes}`, MARGIN_X + PAGE_WIDTH, currentY + 8.8, 7.4, 'bold', 'right')
+  text(`Presinto: ${codigoPresinto}`, MARGIN_X + PAGE_WIDTH, currentY + 13.1, 7.1, 'normal', 'right', PDF_COLORS.text.secondary)
 
   // Line under header
   currentY += 15
   doc.setDrawColor(PDF_COLORS.border.normal)
   doc.setLineWidth(0.5)
   doc.line(MARGIN_X, currentY, MARGIN_X + PAGE_WIDTH, currentY)
-  currentY += 5
-
-  text(`Presinto: ${codigoPresinto}`, MARGIN_X + PAGE_WIDTH, currentY, PDF_FONTS.sizes.small, 'normal', 'right', PDF_COLORS.text.secondary)
-  currentY += 5
+  currentY += 3.5
 
   // --- INFO GRID ---
-  const gridHeight = 22
+  const gridHeight = 18
   doc.setFillColor(PDF_COLORS.background.pill)
   doc.setDrawColor(PDF_COLORS.border.normal)
   doc.setLineWidth(0.2)
@@ -457,7 +483,7 @@ export async function generarPDFDespacho(
   text(distribuidor?.nombre || 'N/A', colX, gridStartY + 4, PDF_FONTS.sizes.subtitle, 'normal')
 
   // Row 2
-  const gridRow2Y = gridStartY + 10
+  const gridRow2Y = gridStartY + 8.5
   colX = MARGIN_X + 2
 
   text('DIRECCIÓN / UBICACIÓN', colX, gridRow2Y, PDF_FONTS.sizes.tiny, 'bold', 'left', PDF_COLORS.text.muted)
@@ -473,10 +499,10 @@ export async function generarPDFDespacho(
   text('GUÍA DISTRIBUCIÓN', colX, gridRow2Y, PDF_FONTS.sizes.tiny, 'bold', 'left', PDF_COLORS.text.muted)
   text(despacho.numeroGuiaAgenciaDistribucion || 'N/A', colX, gridRow2Y + 4, PDF_FONTS.sizes.subtitle, 'normal')
 
-  currentY += gridHeight + 5
+  currentY += gridHeight + 3
 
   // --- WARNING BOX ---
-  const warningHeight = 8
+  const warningHeight = 6
   doc.setFillColor(PDF_COLORS.background.warning)
   doc.setDrawColor(PDF_COLORS.warning.border)
   doc.rect(MARGIN_X, currentY, PAGE_WIDTH, warningHeight, 'FD')
@@ -484,20 +510,20 @@ export async function generarPDFDespacho(
   text(
     'Priorice la columna Observaciones para confirmar el destino. Si no hay observaciones, guíese por los datos de dirección regular.',
     MARGIN_X + (PAGE_WIDTH / 2),
-    currentY + 5,
-    PDF_FONTS.sizes.normal,
+    currentY + 4,
+    7.2,
     'normal',
     'center',
     PDF_COLORS.warning.text
   )
-  currentY += warningHeight + 8
+  currentY += warningHeight + 5
 
   // --- SECTION TITLE ---
   text('Detalle de Sacas', MARGIN_X, currentY, PDF_FONTS.sizes.section, 'bold')
   currentY += 2
   doc.setDrawColor(PDF_COLORS.border.normal)
   doc.line(MARGIN_X, currentY, MARGIN_X + PAGE_WIDTH, currentY)
-  currentY += 5
+  currentY += 3.5
 
   // --- SACAS LIST ---
   const sacas = despacho.sacas || []
@@ -525,6 +551,12 @@ export async function generarPDFDespacho(
       { t: 'FIRMA CONFORME', w: colFirma }
     ]
 
+    const minSacaBlockHeight = 15
+    if (currentY + minSacaBlockHeight > MAX_Y) {
+      doc.addPage()
+      currentY = MARGIN_Y
+    }
+
     let sacaHeaderY = currentY
     const drawSacaSectionHeaders = () => {
       sacaHeaderY = currentY
@@ -541,7 +573,7 @@ export async function generarPDFDespacho(
       doc.setTextColor(PDF_COLORS.text.secondary)
       doc.text(`Tamaño: ${saca.tamano || '-'} | Paquetes: ${paquetes.length}`, MARGIN_X + PAGE_WIDTH - 2, sacaHeaderY + 4.5, { align: 'right' })
       doc.setTextColor(PDF_COLORS.text.primary)
-      currentY += 7
+      currentY += 5.8
 
       let headerX = MARGIN_X + 2
       doc.setFont(PDF_FONTS.family, 'bold')
@@ -552,7 +584,7 @@ export async function generarPDFDespacho(
         headerX += c.w
       })
 
-      currentY += 6
+      currentY += 4.8
       doc.setDrawColor(PDF_COLORS.border.normal)
       doc.line(MARGIN_X, currentY - 1, MARGIN_X + PAGE_WIDTH, currentY - 1)
       doc.setFont(PDF_FONTS.family, 'normal')
@@ -562,8 +594,8 @@ export async function generarPDFDespacho(
     drawSacaSectionHeaders()
 
     if (paquetes.length === 0) {
-      doc.text('Sin paquetes', MARGIN_X + (PAGE_WIDTH / 2), currentY + 4, { align: 'center' })
-      currentY += 8
+      doc.text('Sin paquetes', MARGIN_X + (PAGE_WIDTH / 2), currentY + 3.2, { align: 'center' })
+      currentY += 6.2
     }
 
     for (const paq of paquetes) {
@@ -582,9 +614,9 @@ export async function generarPDFDespacho(
       const destLines = doc.splitTextToSize(String(d[1]), colDest - 2)
 
       const maxLines = Math.max(dirLines.length, obsLines.length, destLines.length, 1)
-      const rowHeight = Math.max(6, (maxLines * 3) + 2)
+      const rowHeight = Math.max(6, (maxLines * LINE_HEIGHT_MM) + 1.6)
 
-      if (currentY + rowHeight > 195) {
+      if (currentY + rowHeight > MAX_Y) {
         doc.rect(MARGIN_X, sacaHeaderY, PAGE_WIDTH, currentY - sacaHeaderY)
         doc.addPage()
         currentY = MARGIN_Y
@@ -593,24 +625,24 @@ export async function generarPDFDespacho(
 
       let x = MARGIN_X + 2
       doc.setFont('courier', 'normal')
-      doc.text(String(d[0]), x, currentY + 3)
+      doc.text(String(d[0]), x, currentY + ROW_TOP_PAD)
       x += colGuia
       doc.setFont(PDF_FONTS.family, 'normal')
 
-      doc.text(destLines, x, currentY + 3)
+      doc.text(destLines, x, currentY + ROW_TOP_PAD)
       x += colDest
-      doc.text(dirLines, x, currentY + 3)
+      doc.text(dirLines, x, currentY + ROW_TOP_PAD)
       x += colDir
-      doc.text(String(d[3]), x, currentY + 3)
+      doc.text(String(d[3]), x, currentY + ROW_TOP_PAD)
       x += colCity
-      doc.text(String(d[4]), x, currentY + 3)
+      doc.text(String(d[4]), x, currentY + ROW_TOP_PAD)
       x += colCant
-      doc.text(String(d[5]), x, currentY + 3)
+      doc.text(String(d[5]), x, currentY + ROW_TOP_PAD)
       x += colTel
 
       doc.setTextColor(PDF_COLORS.text.secondary)
       doc.setFont(PDF_FONTS.family, 'italic')
-      doc.text(obsLines, x, currentY + 3)
+      doc.text(obsLines, x, currentY + ROW_TOP_PAD)
       doc.setTextColor(PDF_COLORS.text.primary)
       doc.setFont(PDF_FONTS.family, 'normal')
 
@@ -621,7 +653,7 @@ export async function generarPDFDespacho(
 
     doc.setDrawColor(PDF_COLORS.border.normal)
     doc.rect(MARGIN_X, sacaHeaderY, PAGE_WIDTH, currentY - sacaHeaderY)
-    currentY += 8
+    currentY += 4.8
   }
 
   const nombreArchivo = `despacho-${despacho.numeroManifiesto || despacho.idDespacho}.pdf`

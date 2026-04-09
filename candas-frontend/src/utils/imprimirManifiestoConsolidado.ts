@@ -214,7 +214,7 @@ function generarHTMLDespachos(
 /** Genera HTML por despacho usando solo clases del documento de despacho: section-title (opcional), saca-block, saca-header, paquetes-table, col-*. */
 function generarHTMLDespacho(despacho: DespachoDetalle, mostrarAgencia: boolean): string {
   const fecha = new Date(despacho.fechaDespacho).toLocaleDateString('es-ES')
-  let html = `<div class="section-title" style="margin-top:10px">Manifiesto ${despacho.numeroManifiesto} — ${fecha}${mostrarAgencia ? ` — ${despacho.nombreAgencia || ''}` : ''}</div>`
+  let html = `<div class="section-title" style="margin-top:6px">Manifiesto ${despacho.numeroManifiesto} — ${fecha}${mostrarAgencia ? ` — ${despacho.nombreAgencia || ''}` : ''}</div>`
 
   if (despacho.sacas?.length) {
     for (const saca of despacho.sacas) {
@@ -319,9 +319,12 @@ export async function generarPDFManifiestoConsolidado(
 ) {
   const tituloOrigen = nombreAgenciaOrigen?.trim() || 'MV Services - Quito Sur'
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-  const MARGIN_X = PDF_MARGINS.x
-  const MARGIN_Y = PDF_MARGINS.y
+  const MARGIN_X = Math.max(6, PDF_MARGINS.x - 2)
+  const MARGIN_Y = Math.max(6, PDF_MARGINS.y - 2)
   const PAGE_WIDTH = 297 - MARGIN_X * 2
+  const MAX_Y = 200
+  const LINE_HEIGHT_MM = 2.9
+  const ROW_TOP_PAD = 2.8
 
   const text = (
     str: string,
@@ -353,16 +356,16 @@ export async function generarPDFManifiestoConsolidado(
   const tituloPrincipal =
     manifiesto.idAgencia == null ? 'MANIFIESTO CONSOLIDADO' : 'MANIFIESTO DE AGENCIA'
   const titleX = MARGIN_X + 18
-  text(tituloPrincipal, titleX, currentY + 5, PDF_FONTS.sizes.title, 'bold')
-  text(tituloOrigen, titleX, currentY + 10, PDF_FONTS.sizes.subtitle, 'normal', 'left', PDF_COLORS.text.secondary)
-  text(`Total Sacas: ${manifiesto.totales.totalSacas}`, MARGIN_X + PAGE_WIDTH, currentY + 5, PDF_FONTS.sizes.normal, 'bold', 'right')
-  text(`Total Paquetes: ${manifiesto.totales.totalPaquetes}`, MARGIN_X + PAGE_WIDTH, currentY + 10, PDF_FONTS.sizes.normal, 'bold', 'right')
+  text(tituloPrincipal, titleX, currentY + 4.5, 12, 'bold')
+  text(tituloOrigen, titleX, currentY + 8.8, 8, 'normal', 'left', PDF_COLORS.text.secondary)
+  text(`Total Sacas: ${manifiesto.totales.totalSacas}`, MARGIN_X + PAGE_WIDTH, currentY + 4.5, 7.4, 'bold', 'right')
+  text(`Total Paquetes: ${manifiesto.totales.totalPaquetes}`, MARGIN_X + PAGE_WIDTH, currentY + 8.8, 7.4, 'bold', 'right')
 
   currentY += 15
   doc.setDrawColor(PDF_COLORS.border.normal)
   doc.setLineWidth(0.5)
   doc.line(MARGIN_X, currentY, MARGIN_X + PAGE_WIDTH, currentY)
-  currentY += 5
+  currentY += 3.5
   const periodoTexto = formatearPeriodo(manifiesto)
   const fechaGeneracion = manifiesto.fechaGeneracion
     ? new Date(manifiesto.fechaGeneracion).toLocaleString('es-ES')
@@ -370,7 +373,7 @@ export async function generarPDFManifiestoConsolidado(
   text(`Generado: ${fechaGeneracion}`, MARGIN_X + PAGE_WIDTH, currentY, PDF_FONTS.sizes.small, 'normal', 'right', PDF_COLORS.text.secondary)
   currentY += 5
 
-  const gridHeight = 22
+  const gridHeight = 18
   doc.setFillColor(PDF_COLORS.background.pill)
   doc.setDrawColor(PDF_COLORS.border.normal)
   doc.rect(MARGIN_X, currentY, PAGE_WIDTH, gridHeight, 'FD')
@@ -396,28 +399,28 @@ export async function generarPDFManifiestoConsolidado(
   text('PERÍODO', colX, currentY + 4, PDF_FONTS.sizes.tiny, 'bold', 'left', PDF_COLORS.text.muted)
   doc.setFontSize(PDF_FONTS.sizes.normal)
   doc.text(periodoTexto, colX, currentY + 8, { maxWidth: colWidth - 2 })
-  currentY += gridHeight + 5
+  currentY += gridHeight + 3
 
-  const warningHeight = 8
+  const warningHeight = 6
   doc.setFillColor(PDF_COLORS.background.warning)
   doc.setDrawColor(PDF_COLORS.warning.border)
   doc.rect(MARGIN_X, currentY, PAGE_WIDTH, warningHeight, 'FD')
   text(
     'Priorice la columna Observaciones para confirmar el destino. Si no hay observaciones, guíese por los datos de dirección regular.',
     MARGIN_X + PAGE_WIDTH / 2,
-    currentY + 5,
-    PDF_FONTS.sizes.normal,
+    currentY + 4,
+    7.2,
     'normal',
     'center',
     PDF_COLORS.warning.text
   )
-  currentY += warningHeight + 8
+  currentY += warningHeight + 5
 
   text('Detalle de Sacas', MARGIN_X, currentY, PDF_FONTS.sizes.section, 'bold')
   currentY += 2
   doc.setDrawColor(PDF_COLORS.border.normal)
   doc.line(MARGIN_X, currentY, MARGIN_X + PAGE_WIDTH, currentY)
-  currentY += 5
+  currentY += 3.5
 
   const colGuia = 28
   const colDest = 42
@@ -450,11 +453,17 @@ export async function generarPDFManifiestoConsolidado(
       doc.setFont(PDF_FONTS.family, 'bold')
       doc.setFontSize(PDF_FONTS.sizes.subtitle)
       doc.text(`Manifiesto ${despacho.numeroManifiesto} — ${fechaDespacho}`, MARGIN_X, currentY)
-      currentY += 6
+      currentY += 4.5
     }
 
     const sacas = [...(despacho.sacas || [])].sort((a, b) => a.numeroOrden - b.numeroOrden)
     for (const saca of sacas) {
+      const minSacaBlockHeight = 15
+      if (currentY + minSacaBlockHeight > MAX_Y) {
+        doc.addPage('a4', 'landscape')
+        currentY = MARGIN_Y
+      }
+
       let sacaHeaderY = currentY
       const drawSacaSectionHeaders = () => {
         sacaHeaderY = currentY
@@ -477,19 +486,19 @@ export async function generarPDFManifiestoConsolidado(
           { align: 'right' }
         )
         doc.setTextColor(PDF_COLORS.text.primary)
-        currentY += 7
+        currentY += 5.8
 
         let headerX = MARGIN_X + 2
         doc.setFont(PDF_FONTS.family, 'bold')
-        doc.setFontSize(PDF_FONTS.sizes.tiny)
-        doc.setTextColor(PDF_COLORS.text.secondary)
+        doc.setFontSize(7)
+        doc.setTextColor(PDF_COLORS.text.primary)
         cols.forEach((c) => {
-          doc.text(c.t, headerX, currentY + 4)
+          doc.text(c.t, headerX, currentY + 3.6)
           headerX += c.w
         })
-        currentY += 6
+        currentY += 5.4
         doc.setDrawColor(PDF_COLORS.border.normal)
-        doc.line(MARGIN_X, currentY - 1, MARGIN_X + PAGE_WIDTH, currentY - 1)
+        doc.line(MARGIN_X, currentY - 0.8, MARGIN_X + PAGE_WIDTH, currentY - 0.8)
         doc.setFont(PDF_FONTS.family, 'normal')
         doc.setTextColor(PDF_COLORS.text.primary)
       }
@@ -498,8 +507,8 @@ export async function generarPDFManifiestoConsolidado(
 
       const paquetes = saca.paquetes || []
       if (paquetes.length === 0) {
-        doc.text('Sin paquetes', MARGIN_X + PAGE_WIDTH / 2, currentY + 4, { align: 'center' })
-        currentY += 8
+        doc.text('Sin paquetes', MARGIN_X + PAGE_WIDTH / 2, currentY + 3.2, { align: 'center' })
+        currentY += 6.2
       } else {
         for (const p of paquetes) {
           const d = [
@@ -515,8 +524,8 @@ export async function generarPDFManifiestoConsolidado(
           const obsLines = doc.splitTextToSize(String(d[6]), colObs - 2)
           const destLines = doc.splitTextToSize(String(d[1]), colDest - 2)
           const maxLines = Math.max(dirLines.length, obsLines.length, destLines.length, 1)
-          const rowHeight = Math.max(6, maxLines * 3 + 2)
-          if (currentY + rowHeight > 195) {
+          const rowHeight = Math.max(6, maxLines * LINE_HEIGHT_MM + 1.6)
+          if (currentY + rowHeight > MAX_Y) {
             doc.rect(MARGIN_X, sacaHeaderY, PAGE_WIDTH, currentY - sacaHeaderY)
             doc.addPage('a4', 'landscape')
             currentY = MARGIN_Y
@@ -525,22 +534,22 @@ export async function generarPDFManifiestoConsolidado(
 
           let x = MARGIN_X + 2
           doc.setFont('courier', 'normal')
-          doc.text(String(d[0]), x, currentY + 3)
+          doc.text(String(d[0]), x, currentY + ROW_TOP_PAD)
           x += colGuia
           doc.setFont(PDF_FONTS.family, 'normal')
-          doc.text(destLines, x, currentY + 3)
+          doc.text(destLines, x, currentY + ROW_TOP_PAD)
           x += colDest
-          doc.text(dirLines, x, currentY + 3)
+          doc.text(dirLines, x, currentY + ROW_TOP_PAD)
           x += colDir
-          doc.text(String(d[3]), x, currentY + 3)
+          doc.text(String(d[3]), x, currentY + ROW_TOP_PAD)
           x += colCity
-          doc.text(String(d[4]), x, currentY + 3)
+          doc.text(String(d[4]), x, currentY + ROW_TOP_PAD)
           x += colCant
-          doc.text(String(d[5]), x, currentY + 3)
+          doc.text(String(d[5]), x, currentY + ROW_TOP_PAD)
           x += colTel
           doc.setTextColor(PDF_COLORS.text.secondary)
           doc.setFont(PDF_FONTS.family, 'italic')
-          doc.text(obsLines, x, currentY + 3)
+          doc.text(obsLines, x, currentY + ROW_TOP_PAD)
           doc.setTextColor(PDF_COLORS.text.primary)
           doc.setFont(PDF_FONTS.family, 'normal')
           currentY += rowHeight
@@ -550,7 +559,7 @@ export async function generarPDFManifiestoConsolidado(
       }
       doc.setDrawColor(PDF_COLORS.border.normal)
       doc.rect(MARGIN_X, sacaHeaderY, PAGE_WIDTH, currentY - sacaHeaderY)
-      currentY += 8
+      currentY += 4.8
     }
   }
 
