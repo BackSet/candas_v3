@@ -547,16 +547,21 @@ export default function DespachosList() {
         return reemplazarVariables(plantilla, variables)
       }
 
-      // Fallback si no hay plantilla configurada
+      // Fallback si no hay plantilla configurada: versión corta y operativa
       const sacas = despacho.sacas || []
       const totalSacas = sacas.length
       const totalPaquetes = sacas.reduce((sum, saca) => sum + (saca.idPaquetes?.length || 0), 0)
       let mensaje = ''
-      mensaje += '*DESPACHO ENVIADO*\n'
-      mensaje += '━━━━━━━━━━━━━━━━━━━━\n\n'
+      mensaje += '*DESPACHO ENVIADO*\n\n'
       mensaje += `*Manifiesto:* ${despacho.numeroManifiesto || `ID: ${despacho.idDespacho}`}\n`
       if (despacho.fechaDespacho) {
         mensaje += `*Fecha:* ${formatearFechaCorta(despacho.fechaDespacho)}\n`
+      }
+      if (despacho.nombreAgenciaPropietaria) {
+        mensaje += `*Agencia propietaria:* ${despacho.nombreAgenciaPropietaria}\n`
+      }
+      if (despacho.codigoPresinto) {
+        mensaje += `*Presinto:* ${despacho.codigoPresinto}\n`
       }
       mensaje += '\n'
       if (despacho.idAgencia && agencia) {
@@ -566,25 +571,22 @@ export default function DespachosList() {
         mensaje += `*Destinatario:* ${despacho.despachoDirecto.destinatarioDirecto.nombreDestinatario}\n`
       }
       if (distribuidor?.nombre || despacho.numeroGuiaAgenciaDistribucion) {
-        mensaje += '\n'
         if (distribuidor?.nombre) mensaje += `*Distribuidor:* ${distribuidor.nombre}\n`
         if (despacho.numeroGuiaAgenciaDistribucion) mensaje += `*Guía:* ${despacho.numeroGuiaAgenciaDistribucion}\n`
       }
-      mensaje += '\n*RESUMEN*\n'
+      mensaje += '\n*Resumen operativo*\n'
       mensaje += `• ${totalSacas} ${totalSacas === 1 ? 'Saca' : 'Sacas'}\n`
       mensaje += `• ${totalPaquetes} ${totalPaquetes === 1 ? 'Paquete' : 'Paquetes'}\n\n`
       if (sacas.length > 0) {
-        mensaje += '*DETALLE*\n'
+        mensaje += '*Detalle de sacas*\n'
         const sacasOrdenadas = [...sacas].sort((a, b) => (a.numeroOrden ?? 0) - (b.numeroOrden ?? 0))
         sacasOrdenadas.forEach((saca, index) => {
           mensaje += `${index + 1}. Saca #${saca.numeroOrden ?? 'N/A'} (${saca.idPaquetes?.length ?? 0} paq)\n`
         })
         mensaje += '\n'
       }
-      mensaje += '*IMPORTANTE:*\n'
-      mensaje += `Al recibir la carga, por favor verifique que el número de paquetes recibidos corresponda con los ${totalPaquetes} paquetes enviados según este manifiesto.\n\n`
-      mensaje += '*NOTA:* El documento PDF del despacho está disponible para descarga.\n\n'
-      mensaje += '*¡Gracias por su confianza!*'
+      mensaje += '*Verificación de recepción:*\n'
+      mensaje += `Confirme que la carga recibida coincida con *${totalPaquetes}* paquete(s) reportado(s) en el manifiesto.`
       return mensaje
     } catch {
       return 'Error al generar el mensaje del despacho.'

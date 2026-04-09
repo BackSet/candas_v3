@@ -1,4 +1,5 @@
 import type { Paquete } from '@/types/paquete'
+import { PRINT_CSS_BASE } from './printTheme'
 
 /** Escapa HTML para evitar rotura en celdas. */
 function esc(str: string): string {
@@ -13,39 +14,31 @@ function esc(str: string): string {
  * Construye el HTML completo del documento de lote especial para impresión.
  * Misma implementación que buildDocumentoManifiestoHTML en imprimirDespacho: ventana con HTML + window.print().
  */
-export function buildDocumentoLoteEspecialHTML(contenido: string, titulo: string): string {
+export function buildDocumentoLoteEspecialHTML(
+  contenido: string,
+  titulo: string,
+  incluirScriptImpresion: boolean = true
+): string {
   return `<!DOCTYPE html>
 <html>
   <head>
     <title>${esc(titulo)}</title>
     <meta charset="UTF-8">
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+      ${PRINT_CSS_BASE}
       @page { size: A4 portrait; margin: 10mm; }
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: 'Inter', sans-serif; font-size: 8pt; line-height: 1.2; color: #111; background: #fff; }
-      html, body { height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
-      .doc-header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 5px; margin-bottom: 5px; border-bottom: 1px solid #000; }
-      .header-left-group { display: flex; align-items: center; gap: 15px; }
-      .doc-logo { height: 45px !important; max-height: 45px !important; width: auto !important; max-width: 200px !important; object-fit: contain !important; flex-shrink: 0 !important; }
-      .doc-title h1 { font-size: 11pt; font-weight: 700; text-transform: uppercase; margin: 0; letter-spacing: -0.3px; }
-      .doc-title h2 { font-size: 8pt; font-weight: 500; color: #555; margin: 0; text-transform: uppercase; }
-      .doc-tipo { font-size: 9pt; font-weight: 600; margin: 4px 0 0 0; color: #111; }
-      .doc-meta { text-align: right; font-size: 7pt; }
+      .doc-tipo { font-size: 9pt; font-weight: 600; margin: 4px 0 0 0; color: #171717; }
       .guias-columnas { column-width: 14em; column-gap: 1.2em; column-fill: auto; font-size: 8pt; margin-top: 8px; }
-      .guias-columnas .item { break-inside: avoid; padding: 4px 6px; margin-bottom: 2px; font-family: monospace; border-bottom: 1px solid #eee; }
-      .guias-columnas .item:nth-child(even) { background: #fafafa; }
+      .guias-columnas .item { break-inside: avoid; padding: 4px 6px; margin-bottom: 2px; font-family: monospace; border-bottom: 1px solid #e5e5e5; }
+      .guias-columnas .item:nth-child(even) { background: #f5f5f5; }
       .guias-columnas .item-guia { font-weight: 500; }
-      .guias-columnas .item-tipo { font-size: 7pt; color: #555; font-weight: normal; font-family: inherit; display: block; }
-      .guias-columnas-titulo { font-size: 7pt; font-weight: 600; color: #444; text-transform: uppercase; margin-bottom: 4px; padding-bottom: 2px; border-bottom: 1px solid #ccc; }
-      @media print {
-        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        html, body { height: auto; }
-      }
+      .guias-columnas .item-tipo { font-size: 7pt; color: #737373; font-weight: normal; font-family: inherit; display: block; }
+      .guias-columnas-titulo { font-size: 7pt; font-weight: 600; color: #525252; text-transform: uppercase; margin-bottom: 4px; padding-bottom: 2px; border-bottom: 1px solid #d4d4d4; }
     </style>
   </head>
   <body>
     ${contenido}
+    ${incluirScriptImpresion ? `
     <script>
       window.onload = function() {
         setTimeout(function() {
@@ -53,7 +46,7 @@ export function buildDocumentoLoteEspecialHTML(contenido: string, titulo: string
           window.onafterprint = function() { window.close(); };
         }, 500);
       };
-    </script>
+    </script>` : ''}
   </body>
 </html>`
 }

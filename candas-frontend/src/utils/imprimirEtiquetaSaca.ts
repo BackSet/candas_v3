@@ -3,6 +3,7 @@ import type { Despacho } from '@/types/despacho'
 import type { Agencia } from '@/types/agencia'
 import type { Distribuidor } from '@/types/distribuidor'
 import QRCode from 'qrcode'
+import { PRINT_CSS_BASE } from './printTheme'
 
 // Función auxiliar para generar HTML de una etiqueta individual
 export function generarEtiquetaHTML(
@@ -249,15 +250,14 @@ function buildEtiquetasNormalesDocument(etiquetasHTML: string, titulo: string): 
     <title>${titulo}</title>
     <meta charset="UTF-8">
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+      ${PRINT_CSS_BASE}
       @page { size: A4; margin: 0; }
-      * { box-sizing: border-box; }
-      body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #fff; }
+      body { margin: 0; padding: 0; background: #fff; }
       .etiquetas-container { display: flex; flex-direction: column; width: 100%; }
       .etiqueta-wrapper {
         width: 210mm;
         height: 49.5mm;
-        border-bottom: 1px dashed #ccc;
+        border-bottom: 1px dashed #e5e5e5;
         padding: 3mm 5mm;
         display: flex;
         align-items: center;
@@ -269,23 +269,23 @@ function buildEtiquetasNormalesDocument(etiquetasHTML: string, titulo: string): 
       .column-left { width: 40mm; display: flex; justify-content: center; align-items: center; }
       .qr-box img { width: 32mm; height: 32mm; display: block; }
       .column-center { flex: 1; padding: 0 5mm; display: flex; flex-direction: column; justify-content: center; }
-      .header-row { display: flex; align-items: center; border-bottom: 2px solid #000; margin-bottom: 3mm; padding-bottom: 1mm; gap: 3mm; }
+      .header-row { display: flex; align-items: center; border-bottom: 1px solid #f5f5f5; margin-bottom: 3mm; padding-bottom: 1mm; gap: 3mm; }
       .logo-img { height: 8mm !important; width: auto !important; object-fit: contain !important; }
-      .header-text { font-size: 10pt; font-weight: 700; text-transform: uppercase; line-height: 1; }
+      .header-text { font-size: 10pt; font-weight: 600; text-transform: uppercase; line-height: 1; color: #171717; }
       .info-group { display: flex; flex-direction: column; gap: 1.5mm; }
       .line { display: flex; align-items: baseline; gap: 2mm; font-size: 8.5pt; line-height: 1.1; }
-      .label { font-weight: 600; color: #555; font-size: 7.5pt; min-width: 18mm; text-transform: uppercase; }
-      .value { font-weight: 500; color: #000; }
-      .value.lg { font-weight: 700; font-size: 9.5pt; }
-      .font-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px; }
-      .splitter { height: 1px; background: #eee; margin: 1mm 0; }
+      .label { font-weight: 600; color: #737373; font-size: 7.5pt; min-width: 18mm; text-transform: uppercase; letter-spacing: 0.05em; }
+      .value { font-weight: 500; color: #171717; }
+      .value.lg { font-weight: 600; font-size: 9.5pt; }
+      .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: -0.5px; }
+      .splitter { height: 1px; background: #f5f5f5; margin: 1mm 0; }
       .column-right { width: 45mm; display: flex; justify-content: center; align-items: center; }
-      .counter-box { border: 2px solid #000; border-radius: 6px; width: 100%; padding: 3mm 0; text-align: center; }
-      .counter-main { font-size: 22pt; font-weight: 700; line-height: 1; margin-bottom: 1mm; }
-      .counter-sub { font-size: 10pt; font-weight: 500; color: #444; text-transform: uppercase; }
+      .counter-box { border: 1px solid #e5e5e5; border-radius: 6px; width: 100%; padding: 3mm 0; text-align: center; background: #fcfcfc; }
+      .counter-main { font-size: 22pt; font-weight: 700; line-height: 1; margin-bottom: 1mm; color: #171717; }
+      .counter-sub { font-size: 10pt; font-weight: 500; color: #737373; text-transform: uppercase; }
       .leyenda-manifiesto {
-        position: absolute; top: 2mm; right: 2mm; font-size: 7pt; font-weight: 700;
-        background: #000; color: #fff; padding: 1px 4px; border-radius: 2px; text-transform: uppercase;
+        position: absolute; top: 2mm; right: 2mm; font-size: 7pt; font-weight: 600;
+        background: #171717; color: #fff; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
       }
       @media print {
         .etiqueta-wrapper { page-break-inside: avoid; }

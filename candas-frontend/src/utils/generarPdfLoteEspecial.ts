@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import type { Paquete } from '@/types/paquete'
 import { instruccionDeObservaciones, observacionesParaDespacho } from '@/utils/observacionesDespacho'
+import { PDF_COLORS, PDF_FONTS, PDF_MARGINS } from './printTheme'
 
 const loadImage = (url: string): Promise<{ data: string; width: number; height: number }> => {
   return new Promise((resolve, reject) => {
@@ -43,7 +44,7 @@ export function filtrarPaquetesPorTipo(
 }
 
 // --- Constantes de layout ---
-const MARGIN = 12
+const MARGIN = PDF_MARGINS.x
 const PAGE_WIDTH = 210 - MARGIN * 2
 const PAGE_HEIGHT = 297
 const MAX_Y = PAGE_HEIGHT - MARGIN - 10
@@ -91,45 +92,45 @@ async function buildPdfLoteEspecial(
       doc.addImage(logoData.data, 'PNG', MARGIN, y, logoWidth, targetHeight)
     }
     const titleX = MARGIN + (logoWidth > 0 ? logoWidth + 5 : 0)
-    doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0)
-    doc.text('LOTE ESPECIAL', titleX, y + 5)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(85, 85, 85)
+    doc.setFontSize(PDF_FONTS.sizes.title)
+    doc.setFont(PDF_FONTS.family, 'bold')
+    doc.setTextColor(PDF_COLORS.text.primary)
+    doc.text('Lote Especial', titleX, y + 5)
+    doc.setFontSize(PDF_FONTS.sizes.subtitle)
+    doc.setFont(PDF_FONTS.family, 'normal')
+    doc.setTextColor(PDF_COLORS.text.secondary)
     doc.text(`Recepción: ${numeroRecepcion || '-'}`, titleX, y + 10)
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0)
+    doc.setFontSize(PDF_FONTS.sizes.normal)
+    doc.setFont(PDF_FONTS.family, 'bold')
+    doc.setTextColor(PDF_COLORS.text.primary)
     doc.text(`Tipo: ${tipo || 'TODOS'}`, MARGIN + PAGE_WIDTH, y + 5, { align: 'right' })
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(85, 85, 85)
+    doc.setFont(PDF_FONTS.family, 'normal')
+    doc.setTextColor(PDF_COLORS.text.secondary)
     doc.text(`Generado: ${fechaGeneracion}`, MARGIN + PAGE_WIDTH, y + 9, { align: 'right' })
     doc.text(`Total: ${paquetes.length} paquete${paquetes.length !== 1 ? 's' : ''}`, MARGIN + PAGE_WIDTH, y + 13, { align: 'right' })
     y += Math.max(targetHeight, 14) + 2
-    doc.setDrawColor(0)
-    doc.setLineWidth(0.5)
+    doc.setDrawColor(PDF_COLORS.border.normal)
+    doc.setLineWidth(0.4)
     doc.line(MARGIN, y, MARGIN + PAGE_WIDTH, y)
     y += 4
     return y
   }
 
   function dibujarCabeceraTabla(y: number): number {
-    doc.setFontSize(7.5)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(68, 68, 68)
+    doc.setFontSize(PDF_FONTS.sizes.small)
+    doc.setFont(PDF_FONTS.family, 'bold')
+    doc.setTextColor(PDF_COLORS.text.secondary)
     const cols = [
       { label: 'Nº GUÍA', x: MARGIN + 2 },
       { label: 'ETIQUETA', x: MARGIN + COL_GUIA_W + 2 },
       { label: 'INSTRUCCIÓN', x: MARGIN + COL_GUIA_W + COL_ETIQ_W + 2 },
       { label: 'OBSERVACIONES', x: MARGIN + COL_GUIA_W + COL_ETIQ_W + COL_INSTR_W + 2 },
     ]
-    doc.setFillColor(243, 244, 246)
+    doc.setFillColor(PDF_COLORS.background.pill)
     doc.rect(MARGIN, y - 3.5, PAGE_WIDTH, 6, 'F')
     cols.forEach((c) => doc.text(c.label, c.x, y))
     y += 4
-    doc.setDrawColor(200, 200, 200)
+    doc.setDrawColor(PDF_COLORS.border.normal)
     doc.setLineWidth(0.3)
     doc.line(MARGIN, y, MARGIN + PAGE_WIDTH, y)
     y += 2
@@ -138,9 +139,9 @@ async function buildPdfLoteEspecial(
 
   let y = dibujarEncabezado()
   y = dibujarCabeceraTabla(y)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7)
-  doc.setTextColor(0)
+  doc.setFont(PDF_FONTS.family, 'normal')
+  doc.setFontSize(PDF_FONTS.sizes.tiny)
+  doc.setTextColor(PDF_COLORS.text.primary)
   let rowIndex = 0
 
   for (const p of paquetes) {
@@ -148,46 +149,46 @@ async function buildPdfLoteEspecial(
       doc.addPage()
       y = dibujarEncabezado()
       y = dibujarCabeceraTabla(y)
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(7)
-      doc.setTextColor(0)
+      doc.setFont(PDF_FONTS.family, 'normal')
+      doc.setFontSize(PDF_FONTS.sizes.tiny)
+      doc.setTextColor(PDF_COLORS.text.primary)
       rowIndex = 0
     }
     if (rowIndex % 2 === 0) {
-      doc.setFillColor(250, 250, 250)
+      doc.setFillColor(PDF_COLORS.background.pill)
       doc.rect(MARGIN, y - 3, PAGE_WIDTH, LINE_HEIGHT, 'F')
     }
     const guia = (p.numeroGuia ?? '').substring(0, 20)
     const ref = (p.ref ?? '').substring(0, 12)
     const instr = (instruccionDeObservaciones(p.observaciones) ?? '').substring(0, 16)
     const obs = observacionesParaDespacho(p.observaciones).substring(0, 45)
-    doc.setTextColor(0)
+    doc.setTextColor(PDF_COLORS.text.primary)
     doc.setFont('courier', 'normal')
     doc.text(guia, MARGIN + 2, y)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(PDF_FONTS.family, 'normal')
     doc.text(ref, MARGIN + COL_GUIA_W + 2, y)
     if (instr) {
-      doc.setTextColor(146, 64, 14)
-      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(PDF_COLORS.warning.text)
+      doc.setFont(PDF_FONTS.family, 'bold')
       doc.text(instr, MARGIN + COL_GUIA_W + COL_ETIQ_W + 2, y)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(0)
+      doc.setFont(PDF_FONTS.family, 'normal')
+      doc.setTextColor(PDF_COLORS.text.primary)
     }
-    doc.setTextColor(100, 100, 100)
+    doc.setTextColor(PDF_COLORS.text.secondary)
     doc.text(obs, MARGIN + COL_GUIA_W + COL_ETIQ_W + COL_INSTR_W + 2, y)
-    doc.setTextColor(0)
+    doc.setTextColor(PDF_COLORS.text.primary)
     y += LINE_HEIGHT
     rowIndex++
   }
 
   y += 4
   if (y < MAX_Y) {
-    doc.setDrawColor(200, 200, 200)
+    doc.setDrawColor(PDF_COLORS.border.normal)
     doc.setLineWidth(0.2)
     doc.line(MARGIN, y, MARGIN + PAGE_WIDTH, y)
     y += 4
-    doc.setFontSize(7)
-    doc.setTextColor(130, 130, 130)
+    doc.setFontSize(PDF_FONTS.sizes.tiny)
+    doc.setTextColor(PDF_COLORS.text.muted)
     doc.text(`${paquetes.length} paquete${paquetes.length !== 1 ? 's' : ''} - Generado el ${fechaGeneracion}`, MARGIN, y)
   }
 

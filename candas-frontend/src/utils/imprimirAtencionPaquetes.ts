@@ -1,6 +1,7 @@
 import type { AtencionPaquete } from '@/types/atencion-paquete'
 import { getTipoProblemaLabel } from '@/types/atencion-paquete'
 import type { Paquete } from '@/types/paquete'
+import { PRINT_CSS_BASE } from './printTheme'
 
 /**
  * Genera un PDF imprimible con datos de paquetes y sus atenciones asociadas
@@ -182,101 +183,99 @@ export function imprimirAtencionPaquetes(
         <title>Reporte Atención Paquetes</title>
         <meta charset="UTF-8">
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-          
+          ${PRINT_CSS_BASE}
           @page {
             size: A4;
             margin: 15mm;
           }
-          * {
-            box-sizing: border-box;
-          }
-          body {
-            font-family: 'Inter', sans-serif;
-            font-size: 9pt;
-            color: #111;
-            line-height: 1.4;
-            background: #fff;
-          }
           
           .document-header {
-             border-bottom: 2px solid #000;
-             padding-bottom: 15px;
-             margin-bottom: 25px;
+             border-bottom: 1px solid #e5e5e5;
+             padding-bottom: 12px;
+             margin-bottom: 20px;
              display: flex;
              justify-content: space-between;
-             align-items: flex-end;
+             align-items: flex-start;
           }
           
           .doc-title h1 {
-             font-size: 18pt;
-             font-weight: 700;
-             margin: 0;
-             text-transform: uppercase;
-             letter-spacing: -0.5px;
+             font-size: 14pt;
+             font-weight: 600;
+             margin: 0 0 2px 0;
+             letter-spacing: -0.02em;
+             color: #171717;
           }
           .doc-title p {
-             font-size: 10pt;
-             color: #666;
-             margin: 5px 0 0 0;
+             font-size: 9pt;
+             color: #737373;
+             margin: 0;
+             font-weight: 500;
           }
           
           .doc-meta {
              text-align: right;
-             font-size: 9pt;
-             color: #444;
+             font-size: 8pt;
+             color: #737373;
+             display: flex;
+             flex-direction: column;
+             gap: 2px;
           }
 
           .summary-bar {
              display: flex;
-             gap: 20px;
+             gap: 16px;
              margin-bottom: 20px;
-             padding: 10px 15px;
-             background: #f9fafb;
-             border: 1px solid #e5e7eb;
-             border-radius: 6px;
-             font-size: 9pt;
+             padding: 8px 12px;
+             background: #f5f5f5;
+             border-radius: 4px;
+             font-size: 8pt;
+             color: #525252;
+          }
+          .summary-bar strong {
+             color: #171717;
+             font-weight: 500;
           }
           
           .card {
-             border: 1px solid #e5e7eb;
+             border: 1px solid #e5e5e5;
              border-radius: 6px;
-             margin-bottom: 20px;
+             margin-bottom: 16px;
              page-break-inside: avoid;
-             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+             background: #ffffff;
           }
           
           .card-header {
-             background: #f3f4f6;
-             border-bottom: 1px solid #e5e7eb;
-             padding: 8px 15px;
+             background: #fdfdfd;
+             border-bottom: 1px solid #e5e5e5;
+             padding: 8px 12px;
              display: flex;
              justify-content: space-between;
              align-items: center;
+             border-radius: 6px 6px 0 0;
           }
           
           .header-left {
              display: flex;
              align-items: center;
-             gap: 10px;
+             gap: 12px;
           }
           
           .index-badge {
-             font-weight: 700;
-             color: #6b7280;
-             font-size: 10pt;
+             font-weight: 600;
+             color: #737373;
+             font-size: 9pt;
           }
           
           .guia-text {
-             font-weight: 600;
-             font-family: monospace;
-             font-size: 11pt;
-             color: #111;
+             font-weight: 500;
+             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+             font-size: 9.5pt;
+             color: #171717;
           }
           
           .package-id {
-             font-size: 8pt;
-             color: #6b7280;
+             font-size: 7.5pt;
+             color: #a3a3a3;
           }
           
           .card-body {
@@ -286,21 +285,21 @@ export function imprimirAtencionPaquetes(
           }
           
           .section {
-             padding: 15px;
+             padding: 12px;
           }
           
           .border-l {
-             border-left: 1px solid #e5e7eb;
+             border-left: 1px solid #e5e5e5;
           }
           
           .section-title {
-             font-size: 8pt;
+             font-size: 7.5pt;
              text-transform: uppercase;
-             letter-spacing: 0.5px;
-             color: #6b7280;
+             letter-spacing: 0.05em;
+             color: #a3a3a3;
              font-weight: 600;
-             margin-bottom: 10px;
-             border-bottom: 1px solid #e5e7eb;
+             margin-bottom: 8px;
+             border-bottom: 1px solid #f5f5f5;
              padding-bottom: 4px;
           }
           
@@ -309,15 +308,17 @@ export function imprimirAtencionPaquetes(
           }
           
           .label {
-             font-size: 7.5pt;
-             color: #6b7280;
-             font-weight: 500;
-             margin-bottom: 1px;
+             font-size: 7pt;
+             color: #a3a3a3;
+             font-weight: 600;
+             text-transform: uppercase;
+             letter-spacing: 0.05em;
+             margin-bottom: 2px;
           }
           
           .value {
-             font-size: 9pt;
-             color: #111;
+             font-size: 8.5pt;
+             color: #171717;
              font-weight: 400;
           }
           
@@ -328,44 +329,34 @@ export function imprimirAtencionPaquetes(
           .grid-2 {
              display: grid;
              grid-template-columns: 1fr 1fr;
-             gap: 10px;
+             gap: 8px;
           }
           
           .badge {
              display: inline-block;
              padding: 2px 6px;
              border-radius: 4px;
-             font-size: 7.5pt;
-             font-weight: 600;
+             font-size: 7pt;
+             font-weight: 500;
              text-transform: uppercase;
           }
           
           .warning-box {
              background: #fffbeb;
              padding: 8px;
-             border: 1px solid #fecaca;
-             border-radius: 4px;
+             border-left: 2px solid #f59e0b;
+             border-radius: 0 4px 4px 0;
           }
           
           .bg-gray {
-             background: #f9fafb;
+             background: #f5f5f5;
              padding: 8px;
              border-radius: 4px;
-             border: 1px solid #e5e7eb;
           }
           
-          .mt-2 { margin-top: 10px; }
-          .font-mono { font-family: monospace; }
-          .text-sm { font-size: 8.5pt; }
-
-          .doc-logo {
-            height: 45px !important;
-            max-height: 45px !important;
-            width: auto !important;
-            max-width: 200px !important;
-            object-fit: contain !important;
-            flex-shrink: 0 !important;
-          }
+          .mt-2 { margin-top: 8px; }
+          .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+          .text-sm { font-size: 8pt; }
 
           @media print {
              .card { break-inside: avoid; }
@@ -378,14 +369,20 @@ export function imprimirAtencionPaquetes(
            <div class="header-left">
               <img src="/logo.png" class="doc-logo" alt="Logo" />
               <div class="doc-title">
-                  <h1>Reporte de Atención</h1>
-                  <p>Listado de incidencias y resoluciones</p>
+                  <h1>Atención de Paquetes</h1>
+                  <p>Documento operativo de incidencias y resoluciones</p>
               </div>
            </div>
            <div class="doc-meta">
               <div>Generado el: ${fecha}</div>
               <div>Total Registros: ${atenciones.length}</div>
            </div>
+        </div>
+
+        <div class="summary-bar">
+          <div><strong>Formato:</strong> Operativo</div>
+          <div><strong>Documento:</strong> Atención Paquetes</div>
+          <div><strong>Registros:</strong> ${atenciones.length}</div>
         </div>
         
         ${itemsHTML}

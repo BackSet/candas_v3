@@ -1,18 +1,14 @@
 import type { Paquete } from '@/types/paquete'
+import { PRINT_CSS_BASE } from './printTheme'
 
 // Estilos compartidos para impresión
 const STYLES = `
+  ${PRINT_CSS_BASE}
   @page {
     size: A4;
     margin: 0;
   }
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
     background-color: #fff;
@@ -28,7 +24,7 @@ const STYLES = `
   .etiqueta-wrapper {
     width: 210mm;
     height: 49.5mm; /* 297mm / 6 */
-    border-bottom: 1px dashed #ccc;
+    border-bottom: 1px dashed #e5e5e5;
     padding: 4mm 8mm;
     display: flex;
     flex-direction: row;
@@ -48,10 +44,10 @@ const STYLES = `
     top: 3mm;
     right: 8mm;
     font-size: 10pt;
-    font-weight: 700;
-    color: #444;
+    font-weight: 600;
+    color: #525252;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
   }
 
   /* Left Column: Barcode & Guide */
@@ -62,7 +58,7 @@ const STYLES = `
     justify-content: center;
     align-items: center;
     padding-right: 4mm;
-    border-right: 1px solid #eee;
+    border-right: 1px solid #f5f5f5;
   }
   .barcode-container {
     width: 100%;
@@ -77,16 +73,16 @@ const STYLES = `
   }
   .numero-guia {
     font-size: 24pt;
-    font-weight: 800;
-    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     text-align: center;
-    color: #000;
-    letter-spacing: -0.5px;
+    color: #171717;
+    letter-spacing: -0.02em;
     line-height: 1;
   }
   .numero-master {
      font-size: 8pt;
-     color: #666;
+     color: #737373;
      margin-top: 2mm;
   }
 
@@ -103,16 +99,17 @@ const STYLES = `
   
   .destinatario-label {
     font-size: 7pt;
-    color: #888;
+    color: #a3a3a3;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
     margin-bottom: 0.5mm;
+    font-weight: 600;
   }
   
   .destinatario-nombre {
     font-size: 11pt;
-    font-weight: 700;
-    color: #000;
+    font-weight: 600;
+    color: #171717;
     margin-bottom: 1mm;
     line-height: 1.2;
     text-transform: uppercase;
@@ -121,7 +118,7 @@ const STYLES = `
   .destinatario-direccion {
     font-size: 9pt;
     line-height: 1.3;
-    color: #333;
+    color: #404040;
     margin-bottom: 2mm;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -131,36 +128,31 @@ const STYLES = `
   
   .destinatario-contacto {
     font-size: 9pt;
-    color: #000;
+    color: #171717;
     margin-bottom: 2mm;
     font-weight: 500;
   }
   
   .destinatario-ubicacion {
     font-size: 10pt;
-    font-weight: 700;
-    color: #000;
+    font-weight: 600;
+    color: #171717;
     text-transform: uppercase;
     margin-top: auto;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #f5f5f5;
     padding-top: 1mm;
     width: 100%;
   }
   
   .destinatario-ci {
     font-size: 8pt;
-    color: #666;
+    color: #737373;
     margin-top: 1mm;
   }
 
   @media print {
-    * {
-      print-color-adjust: exact !important;
-      -webkit-print-color-adjust: exact !important;
-    }
-    body { margin: 0; }
     .etiqueta-wrapper {
-        border-bottom: 1px dashed #ccc;
+        border-bottom: 1px dashed #e5e5e5;
     }
   }
 `

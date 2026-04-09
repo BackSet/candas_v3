@@ -1,3 +1,5 @@
+import { PRINT_CSS_BASE } from './printTheme'
+
 interface EscaneoResultado {
   numeroGuia: string
   etiqueta: string | null
@@ -134,30 +136,17 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
         <title>Escaneos de Guías - ${fecha}</title>
         <meta charset="UTF-8">
         <style>
+          ${PRINT_CSS_BASE}
           @page {
             size: A4;
             margin: 12mm 12mm;
-          }
-          * {
-            box-sizing: border-box;
-            print-color-adjust: exact !important;
-            -webkit-print-color-adjust: exact !important;
-          }
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            margin: 0; 
-            padding: 0; 
-            font-size: 10pt; 
-            line-height: 1.5; 
-            color: #37352f; 
-            background-color: #ffffff;
           }
           
           /* Header */
           .header { 
             margin-bottom: 24px; 
             padding-bottom: 12px;
-            border-bottom: 1px solid #e9e9e7;
+            border-bottom: 1px solid #e5e5e5;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
@@ -165,33 +154,36 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
           .header-left {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 16px;
           }
           .doc-logo {
-            height: 45px !important;
-            max-height: 45px !important;
+            height: 32px !important;
+            max-height: 32px !important;
             width: auto !important;
-            max-width: 200px !important;
+            max-width: 160px !important;
             object-fit: contain !important;
             flex-shrink: 0 !important;
           }
           .title-group h1 { 
             margin: 0; 
-            font-size: 18pt; 
+            font-size: 14pt; 
             font-weight: 600; 
-            color: #37352f; 
-            letter-spacing: -0.5px;
+            color: #171717; 
+            letter-spacing: -0.02em;
           }
           .title-group h2 { 
-            margin: 4px 0 0 0; 
+            margin: 2px 0 0 0; 
             font-size: 9pt; 
-            color: #787774; 
-            font-weight: 400; 
+            color: #737373; 
+            font-weight: 500; 
           }
           .meta-info {
             text-align: right;
             font-size: 8pt;
-            color: #9b9a97;
+            color: #737373;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
           }
 
           /* General Layout */
@@ -201,68 +193,59 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
           .section-title {
             font-size: 10pt;
             font-weight: 600;
-            color: #37352f;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: #171717;
             margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-          .section-title::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background-color: #e9e9e7;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e5e5e5;
           }
           
           /* Info Grid (Stats) */
           .stats-grid { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 12px; 
+            gap: 16px; 
             margin-bottom: 24px;
           }
           .stat-card { 
             padding: 12px;
-            border: 1px solid #e9e9e7;
-            border-radius: 4px;
-            background-color: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            background-color: #ffffff;
           }
           .stat-label { 
-            font-size: 8pt; 
-            color: #787774; 
+            font-size: 7.5pt; 
+            color: #737373; 
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
             margin-bottom: 4px;
+            font-weight: 600;
           }
           .stat-value {
-            font-size: 16pt;
+            font-size: 14pt;
             font-weight: 500;
-            color: #37352f;
+            color: #171717;
           }
-          .stat-value.highlight { color: #37352f; }
+          .stat-value.highlight { color: #171717; }
 
           /* Unified Summary */
           .single-summary {
             display: flex;
             align-items: center;
             gap: 16px;
-            padding: 16px;
-            background: #f9fafb;
-            border: 1px solid #e9e9e7;
-            border-radius: 8px;
+            padding: 12px 16px;
+            background: #f5f5f5;
+            border-radius: 6px;
             margin-bottom: 24px;
           }
           .single-badge {
-            font-size: 14pt;
+            font-size: 11pt;
             font-weight: 600;
             padding: 4px 12px;
-            border-radius: 6px;
+            border-radius: 4px;
           }
           .single-count {
-            font-size: 14pt;
-            color: #37352f;
+            font-size: 11pt;
+            color: #171717;
           }
 
           /* Groups Summary */
@@ -276,41 +259,43 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
             align-items: center;
             gap: 8px;
             padding: 4px 8px;
-            border: 1px solid #e9e9e7;
+            border: 1px solid #e5e5e5;
             border-radius: 4px;
-            background-color: #f7f7f5;
-            font-size: 9pt;
+            background-color: #fcfcfc;
+            font-size: 8.5pt;
           }
           .resumen-count {
             font-weight: 500;
-            color: #787774;
+            color: #737373;
           }
 
           /* Table */
           .table-container {
-            border: 1px solid #e9e9e7;
-            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
             overflow: hidden;
+            background: #ffffff;
           }
           table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9pt;
+            font-size: 8.5pt;
           }
           th {
-            padding: 10px 12px;
+            padding: 8px 12px;
             text-align: left;
-            font-weight: 500;
-            font-size: 8pt;
+            font-weight: 600;
+            font-size: 7.5pt;
             text-transform: uppercase;
-            color: #787774;
-            background-color: #f7f7f5;
-            border-bottom: 1px solid #e9e9e7;
+            color: #737373;
+            background-color: #fcfcfc;
+            border-bottom: 1px solid #e5e5e5;
+            letter-spacing: 0.02em;
           }
           td {
             padding: 8px 12px;
-            border-bottom: 1px solid #e9e9e7;
-            color: #37352f;
+            border-bottom: 1px solid #f5f5f5;
+            color: #404040;
           }
           tr:last-child td {
             border-bottom: none;
@@ -318,10 +303,8 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
           
           /* Cell Styles */
           .guia-cell {
-            font-family: 'SF Mono', 'Segoe UI Mono', 'Roboto Mono', monospace;
-            color: #37352f;
-            padding: 8px 12px;
-            border-bottom: 1px solid #e9e9e7;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            color: #171717;
             font-weight: 500;
           }
           .badge-etiqueta {
@@ -329,41 +312,27 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
             align-items: center;
             padding: 2px 6px;
             border-radius: 4px;
-            font-size: 8pt;
+            font-size: 7.5pt;
             font-weight: 500;
-            line-height: normal;
           }
           .sin-etiqueta {
-            color: #9b9a97;
+            color: #a3a3a3;
             font-style: italic;
-          }
-          .estado-encontrado {
-            color: #2e7c31; /* Green roughly */
-            font-weight: 500;
-            font-size: 8pt;
-          }
-          .estado-no-encontrado {
-            color: #d32f2f; /* Red roughly */
-            font-weight: 500;
-            font-size: 8pt;
           }
 
           /* Footer */
           .footer {
             margin-top: 32px;
             padding-top: 12px;
-            border-top: 1px solid #e9e9e7;
+            border-top: 1px solid #e5e5e5;
             text-align: center;
-            font-size: 8pt;
-            color: #9b9a97;
+            font-size: 7.5pt;
+            color: #a3a3a3;
           }
 
           @media print {
             .header, .stats-grid, .section {
               break-inside: avoid;
-            }
-            .stat-card {
-              border: 1px solid #e9e9e7 !important;
             }
           }
         </style>
@@ -374,7 +343,7 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
             <img src="/logo.png" class="doc-logo" alt="Logo" onerror="this.style.display='none'" />
             <div class="title-group">
               <h1>Escaneos de Guías</h1>
-              <h2>Reporte de Escaneo y Etiquetado</h2>
+              <h2>Documento operativo de escaneo y etiquetado</h2>
             </div>
           </div>
           <div class="meta-info">

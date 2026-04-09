@@ -5,9 +5,10 @@ const COURIER = 'PEDIDOS EXPRESS'
 const IDENTIFICADOR_MVS = 'MVS'
 
 const ZEBRA_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
   @page { size: 101mm 152mm; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Arial', sans-serif; background: #fff; color: #000; }
+  body { font-family: 'Inter', Arial, sans-serif; background: #fff; color: #000; }
   .zebra-paquete-label {
     width: 101mm;
     min-height: 152mm;
