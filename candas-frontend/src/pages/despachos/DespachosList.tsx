@@ -159,7 +159,9 @@ function DespachoRowActions({
 export default function DespachosList() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const { data: agenciaUsuario } = useAgencia(user?.idAgencia)
+  const activeAgencyId = useAuthStore((s) => s.activeAgencyId)
+  const agenciaOrigenId = activeAgencyId ?? user?.idAgencia
+  const { data: agenciaUsuario } = useAgencia(agenciaOrigenId ?? undefined)
   const nombreAgenciaOrigen = agenciaUsuario?.nombre ?? undefined
 
   const { stored, setFilters, setPage, setSearch } = usePersistedListFilters<{

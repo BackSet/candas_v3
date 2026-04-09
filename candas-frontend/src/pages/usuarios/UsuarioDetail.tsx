@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useUsuario, useRolesUsuario, useDeleteUsuario } from '@/hooks/useUsuarios'
+import { useQueries } from '@tanstack/react-query'
+import { useUsuario, useRolesUsuario, useDeleteUsuario, useAgenciasUsuario } from '@/hooks/useUsuarios'
 import { useRoles } from '@/hooks/useRoles'
-import { useAgencia } from '@/hooks/useAgencias'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -13,13 +14,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Edit, Trash2, ArrowLeft, UserCog, Mail, Calendar, Hash, Shield, User, Building2 } from 'lucide-react'
+import { Edit, Trash2, UserCog, Mail, Calendar, Hash, Shield, User, Building2 } from 'lucide-react'
 import AsignarRolesDialog from './AsignarRolesDialog'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { LoadingState } from '@/components/states/LoadingState'
 import { EmptyState } from '@/components/states/EmptyState'
+import { agenciaService } from '@/lib/api/agencia.service'
+
+const AGENCY_TONE_CLASSES = [
+  'border-sky-300/70 bg-sky-50 text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/35 dark:text-sky-200',
+  'border-emerald-300/70 bg-emerald-50 text-emerald-800 dark:border-emerald-700/60 dark:bg-emerald-950/35 dark:text-emerald-200',
+  'border-violet-300/70 bg-violet-50 text-violet-800 dark:border-violet-700/60 dark:bg-violet-950/35 dark:text-violet-200',
+  'border-amber-300/70 bg-amber-50 text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/35 dark:text-amber-200',
+  'border-rose-300/70 bg-rose-50 text-rose-800 dark:border-rose-700/60 dark:bg-rose-950/35 dark:text-rose-200',
+]
 
 export default function UsuarioDetail() {
   const navigate = useNavigate()
@@ -29,11 +39,35 @@ export default function UsuarioDetail() {
 
   const { data: usuario, isLoading } = useUsuario(id ? Number(id) : undefined)
   const { data: rolesIds } = useRolesUsuario(id ? Number(id) : undefined)
+  const { data: agenciasIdsUsuario } = useAgenciasUsuario(id ? Number(id) : undefined)
   const { data: rolesData } = useRoles(0, 100)
-  const { data: agencia } = useAgencia(usuario?.idAgencia)
   const deleteMutation = useDeleteUsuario()
 
   const roles = rolesData?.content.filter((r) => rolesIds?.includes(r.idRol!)) || []
+  const agenciasAsignadasIds = Array.from(
+    new Set(
+      (
+        agenciasIdsUsuario
+        ?? usuario?.idAgencias
+        ?? (usuario?.idAgencia != null ? [usuario.idAgencia] : [])
+      ).filter((idAgencia): idAgencia is number => idAgencia != null)
+    )
+  )
+  const agenciasAsignadasQueries = useQueries({
+    queries: agenciasAsignadasIds.map((idAgencia) => ({
+      queryKey: ['agencia', idAgencia],
+      queryFn: () => agenciaService.findById(idAgencia),
+      staleTime: 60000,
+    })),
+  })
+  const agenciasAsignadas = agenciasAsignadasQueries
+    .map((query, index) => ({
+      id: agenciasAsignadasIds[index],
+      nombre: query.data?.nombre ?? `Agencia #${agenciasAsignadasIds[index]}`,
+    }))
+    .filter((agenciaAsignada) => agenciaAsignada.id != null)
+  const agenciasCargando = agenciasAsignadasQueries.some((query) => query.isLoading)
+  const agenciasConError = agenciasAsignadasQueries.some((query) => query.isError)
 
   const handleDelete = async () => {
     if (id) {
@@ -178,14 +212,36 @@ export default function UsuarioDetail() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Agencia</span>
                     <div className="flex items-center gap-2">
-                      <Building2 className="h-3.5 w-3.5 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-foreground">
-                        {usuario.idAgencia != null
-                          ? (agencia?.nombre ?? `Agencia #${usuario.idAgencia}`)
-                          : 'No asociada'}
-                      </p>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Agencias asociadas</span>
+                      <Badge variant="secondary" className="h-5 rounded-md px-1.5 text-[10px] bg-primary/10 text-primary dark:bg-primary/20">
+                        {agenciasAsignadasIds.length}
+                      </Badge>
+                    </div>
+                    <div className="rounded-xl border border-border/50 bg-background/80 p-3 shadow-sm">
+                      {agenciasCargando ? (
+                        <p className="text-xs text-muted-foreground">Cargando agencias asociadas...</p>
+                      ) : agenciasConError ? (
+                        <p className="text-xs text-destructive font-medium">No se pudieron cargar todas las agencias asociadas.</p>
+                      ) : agenciasAsignadas.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {agenciasAsignadas.map((agenciaAsignada, index) => (
+                            <div
+                              key={agenciaAsignada.id}
+                              className={cn(
+                                'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs',
+                                'font-semibold shadow-[0_1px_0_rgba(0,0,0,0.02)]',
+                                AGENCY_TONE_CLASSES[index % AGENCY_TONE_CLASSES.length]
+                              )}
+                            >
+                              <Building2 className="h-3 w-3" />
+                              <span>{agenciaAsignada.nombre}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">Sin agencias asociadas.</p>
+                      )}
                     </div>
                   </div>
                 </div>

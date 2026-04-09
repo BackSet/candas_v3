@@ -58,7 +58,9 @@ export default function SeleccionarTipoImpresionDialog({
   manifiesto,
 }: SeleccionarTipoImpresionDialogProps) {
   const user = useAuthStore((s) => s.user)
-  const { data: agenciaUsuario } = useAgencia(user?.idAgencia)
+  const activeAgencyId = useAuthStore((s) => s.activeAgencyId)
+  const agenciaOrigenId = activeAgencyId ?? user?.idAgencia
+  const { data: agenciaUsuario } = useAgencia(agenciaOrigenId ?? undefined)
   const nombreAgenciaOrigen = agenciaUsuario?.nombre ?? undefined
 
   const handleImprimir = (tipo: TipoFiltro) => {
