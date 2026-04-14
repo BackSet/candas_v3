@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useDespacho, useCreateDespacho, useUpdateDespacho, useSacasDespacho } from '@/hooks/useDespachos'
 import { usePaquete } from '@/hooks/usePaquetes'
 import { paqueteService } from '@/lib/api/paquete.service'
+import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
 import { useAgencias, useAgencia, useSearchAgencias, useCreateAgencia } from '@/hooks/useAgencias'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
 import { usePaquetes } from '@/hooks/usePaquetes'
@@ -48,6 +49,13 @@ const DESPACHO_DRAFT_KEY = 'despacho-new'
 interface DespachoDraftData {
   pasoActual: number
   tipoEnvio: 'agencia' | 'directo'
+  destinatarioOrigenDirecto?: 'existente' | 'desde_paquete'
+  idPaqueteOrigenDestinatario?: string
+  desdePaqueteNombre?: string
+  desdePaqueteTelefono?: string
+  desdePaqueteDireccion?: string
+  desdePaqueteCanton?: string
+  desdePaqueteCodigo?: string
   sacas: SacaFormData[]
   formValues: Partial<DespachoFormData>
 }
@@ -195,6 +203,13 @@ export default function DespachoForm() {
   const [showPaqueteRapidoDialog, setShowPaqueteRapidoDialog] = useState(false)
   const [sacaSeleccionadaParaPaquetes, setSacaSeleccionadaParaPaquetes] = useState<number | null>(null)
   const [paquetesAgregados, setPaquetesAgregados] = useState<Map<number, Paquete>>(new Map())
+  const [destinatarioOrigenDirecto, setDestinatarioOrigenDirecto] = useState<'existente' | 'desde_paquete'>('existente')
+  const [idPaqueteOrigenDestinatario, setIdPaqueteOrigenDestinatario] = useState('')
+  const [desdePaqueteNombre, setDesdePaqueteNombre] = useState('')
+  const [desdePaqueteTelefono, setDesdePaqueteTelefono] = useState('')
+  const [desdePaqueteDireccion, setDesdePaqueteDireccion] = useState('')
+  const [desdePaqueteCanton, setDesdePaqueteCanton] = useState('')
+  const [desdePaqueteCodigo, setDesdePaqueteCodigo] = useState('')
 
   const {
     data: despacho,
@@ -264,6 +279,13 @@ export default function DespachoForm() {
     const minutesAgo = Math.round((Date.now() - draft.savedAt) / 60000)
     if (d.pasoActual) setPasoActual(d.pasoActual)
     if (d.tipoEnvio) setTipoEnvio(d.tipoEnvio)
+    if (d.destinatarioOrigenDirecto) setDestinatarioOrigenDirecto(d.destinatarioOrigenDirecto)
+    if (d.idPaqueteOrigenDestinatario) setIdPaqueteOrigenDestinatario(d.idPaqueteOrigenDestinatario)
+    if (d.desdePaqueteNombre) setDesdePaqueteNombre(d.desdePaqueteNombre)
+    if (d.desdePaqueteTelefono) setDesdePaqueteTelefono(d.desdePaqueteTelefono)
+    if (d.desdePaqueteDireccion) setDesdePaqueteDireccion(d.desdePaqueteDireccion)
+    if (d.desdePaqueteCanton) setDesdePaqueteCanton(d.desdePaqueteCanton)
+    if (d.desdePaqueteCodigo) setDesdePaqueteCodigo(d.desdePaqueteCodigo)
     if (d.sacas?.length) setSacas(d.sacas)
     if (d.formValues) {
       const fv = d.formValues
@@ -292,6 +314,13 @@ export default function DespachoForm() {
     const draftData: DespachoDraftData = {
       pasoActual,
       tipoEnvio,
+      destinatarioOrigenDirecto,
+      idPaqueteOrigenDestinatario,
+      desdePaqueteNombre,
+      desdePaqueteTelefono,
+      desdePaqueteDireccion,
+      desdePaqueteCanton,
+      desdePaqueteCodigo,
       sacas,
       formValues: {
         fechaDespacho: formValues.fechaDespacho,
@@ -304,7 +333,7 @@ export default function DespachoForm() {
       },
     }
     saveDraft(DESPACHO_DRAFT_KEY, draftData as unknown as Record<string, unknown>)
-  }, [isEdit, pasoActual, tipoEnvio, sacas, formValues.observaciones, formValues.codigoPresinto, formValues.idAgencia, formValues.idDestinatarioDirecto, formValues.idDistribuidor, formValues.numeroGuiaAgenciaDistribucion, formValues.fechaDespacho, saveDraft])
+  }, [isEdit, pasoActual, tipoEnvio, destinatarioOrigenDirecto, idPaqueteOrigenDestinatario, desdePaqueteNombre, desdePaqueteTelefono, desdePaqueteDireccion, desdePaqueteCanton, desdePaqueteCodigo, sacas, formValues.observaciones, formValues.codigoPresinto, formValues.idAgencia, formValues.idDestinatarioDirecto, formValues.idDistribuidor, formValues.numeroGuiaAgenciaDistribucion, formValues.fechaDespacho, saveDraft])
 
   const cantidadesPaquetesStr = useMemo(() =>
     sacas.map(s => s.idPaquetes.length).join(','),
@@ -376,6 +405,7 @@ export default function DespachoForm() {
         setTipoEnvio('agencia')
       } else if (despacho.idDestinatarioDirecto || despacho.despachoDirecto) {
         setTipoEnvio('directo')
+        setDestinatarioOrigenDirecto('existente')
         if (despacho.despachoDirecto?.destinatarioDirecto) {
           const destinatario = despacho.despachoDirecto.destinatarioDirecto
           setDestinatarioSeleccionado(destinatario)
@@ -557,6 +587,48 @@ export default function DespachoForm() {
     return todosLosPaquetes.filter(p => p.idPaquete && ids.has(p.idPaquete))
   }, [sacas, todosLosPaquetes])
 
+  const selectedPackagesForDestinatario = useMemo(
+    () => paquetesEnSacas.filter((p): p is Paquete & { idPaquete: number } => p.idPaquete != null),
+    [paquetesEnSacas]
+  )
+
+  const paquetesReferenciaDestinatarioOpciones = useMemo<ComboboxOption<Paquete>[]>(() => {
+    return selectedPackagesForDestinatario.map((p) => {
+      const nombre = (p.nombreClienteDestinatario ?? 'Sin nombre').trim()
+      const telefono = (p.telefonoDestinatario ?? '').trim()
+      const telefonoSoloDigitos = telefono.replace(/\D/g, '')
+      const direccion = [p.direccionDestinatarioCompleta, p.provinciaDestinatario].filter(Boolean).join(' · ')
+      return {
+        value: p.idPaquete,
+        label: `${nombre} | ${telefono}`.trim() || `Paquete #${p.idPaquete}`,
+        description: [telefonoSoloDigitos, direccion].filter(Boolean).join(' ').toLowerCase() || undefined,
+        data: p,
+      }
+    })
+  }, [selectedPackagesForDestinatario])
+
+  const paqueteOrigenDestinatario = useMemo(() => {
+    if (!idPaqueteOrigenDestinatario) return null
+    return selectedPackagesForDestinatario.find((p) => p.idPaquete === Number(idPaqueteOrigenDestinatario)) ?? null
+  }, [idPaqueteOrigenDestinatario, selectedPackagesForDestinatario])
+
+  useEffect(() => {
+    if (!paqueteOrigenDestinatario) {
+      setDesdePaqueteNombre('')
+      setDesdePaqueteTelefono('')
+      setDesdePaqueteDireccion('')
+      setDesdePaqueteCanton('')
+      setDesdePaqueteCodigo('')
+      return
+    }
+    const paquete = paqueteOrigenDestinatario
+    setDesdePaqueteNombre((paquete.nombreClienteDestinatario ?? '').trim())
+    setDesdePaqueteTelefono((paquete.telefonoDestinatario ?? '').trim())
+    setDesdePaqueteDireccion((paquete.direccionDestinatarioCompleta ?? paquete.direccionDestinatario ?? '').trim())
+    setDesdePaqueteCanton((paquete.cantonDestinatario ?? paquete.provinciaDestinatario ?? '').trim())
+    setDesdePaqueteCodigo(generarCodigo10Digitos())
+  }, [paqueteOrigenDestinatario])
+
   const buscarPaquetePorGuia = async (guia: string): Promise<Paquete | null> => {
     const guiaNorm = guia.trim().toUpperCase()
     let p = paquetesDisponibles.find(x =>
@@ -593,7 +665,7 @@ export default function DespachoForm() {
             icon: <Sparkles className="h-4 w-4 text-primary" />
           })
         }
-      } else if (tipoEnvio === 'directo' && !idDestinatarioDirecto && todosDestinatariosDirectos) {
+      } else if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'existente' && !idDestinatarioDirecto && todosDestinatariosDirectos) {
         const clienteCoincidente = todosDestinatariosDirectos.find(
           (d) => d.canton?.toUpperCase() === valorBuscar && d.activo !== false
         )
@@ -606,7 +678,7 @@ export default function DespachoForm() {
         }
       }
     }
-  }, [pasoActual, provinciaOCantonPredominante, tipoEnvio, idAgencia, idDestinatarioDirecto, agenciasData, todosDestinatariosDirectos, setValue])
+  }, [pasoActual, provinciaOCantonPredominante, tipoEnvio, destinatarioOrigenDirecto, idAgencia, idDestinatarioDirecto, agenciasData, todosDestinatariosDirectos, setValue])
 
   const agenciasOpciones = useMemo<ComboboxOption[]>(() => {
     const agencias = busquedaAgencia.length > 0 ? (agenciasResultados || []) : (agenciasData?.content || [])
@@ -640,6 +712,23 @@ export default function DespachoForm() {
   }, [busquedaDestinatarioDirecto, destinatariosDirectosResultados, todosDestinatariosDirectos, provinciaOCantonPredominante])
 
   const { data: destinatarioDirectoData } = useDestinatarioDirecto(idDestinatarioDirecto)
+  const destinatarioResumen = destinatarioOrigenDirecto === 'desde_paquete'
+    ? {
+      nombreDestinatario: desdePaqueteNombre,
+      telefonoDestinatario: desdePaqueteTelefono,
+      direccionDestinatario: desdePaqueteDireccion,
+      canton: desdePaqueteCanton,
+      codigo: desdePaqueteCodigo,
+      nombreEmpresa: undefined as string | undefined,
+    }
+    : {
+      nombreDestinatario: (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreDestinatario,
+      telefonoDestinatario: (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.telefonoDestinatario,
+      direccionDestinatario: (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.direccionDestinatario,
+      canton: (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.canton,
+      codigo: (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.codigo,
+      nombreEmpresa: (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreEmpresa,
+    }
 
   const paquetesFaltantes = useMemo(() => idsPaquetesEnSacas.filter(id => !paquetesDeSacas.has(id)), [idsPaquetesEnSacas, paquetesDeSacas])
 
@@ -919,23 +1008,49 @@ export default function DespachoForm() {
     if (tipoEnvio === 'agencia' && !data.idAgencia) {
       toast.error('Selecciona una agencia'); return
     }
-    if (tipoEnvio === 'directo' && !data.idDestinatarioDirecto) {
+    if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'existente' && !data.idDestinatarioDirecto) {
       toast.error('Selecciona un destinatario'); return
     }
-
-    const despachoData: Despacho = {
-      fechaDespacho: new Date(data.fechaDespacho).toISOString(),
-      usuarioRegistro: data.usuarioRegistro,
-      observaciones: data.observaciones || undefined,
-      codigoPresinto: data.codigoPresinto?.trim() || undefined,
-      idAgencia: tipoEnvio === 'agencia' ? data.idAgencia : undefined,
-      idDistribuidor: data.idDistribuidor,
-      numeroGuiaAgenciaDistribucion: data.numeroGuiaAgenciaDistribucion || undefined,
-      idDestinatarioDirecto: tipoEnvio === 'directo' ? data.idDestinatarioDirecto : undefined,
-      sacas: sacas.map(s => ({ tamano: s.tamano, idPaquetes: s.idPaquetes })),
+    if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'desde_paquete' && !idPaqueteOrigenDestinatario) {
+      toast.error('Selecciona un paquete de referencia para el destinatario')
+      return
     }
 
     try {
+      let idDestinatarioDirectoPayload = tipoEnvio === 'directo' ? data.idDestinatarioDirecto : undefined
+      if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'desde_paquete') {
+        if (!desdePaqueteNombre.trim()) {
+          toast.error('El paquete seleccionado no tiene nombre de destinatario válido')
+          return
+        }
+        const nuevoDestinatario = await destinatarioDirectoService.create({
+          nombreDestinatario: desdePaqueteNombre.trim(),
+          telefonoDestinatario: desdePaqueteTelefono.trim() || '—',
+          direccionDestinatario: desdePaqueteDireccion.trim() || undefined,
+          canton: desdePaqueteCanton.trim() || undefined,
+          codigo: desdePaqueteCodigo.trim() || undefined,
+          activo: true,
+        })
+        idDestinatarioDirectoPayload = nuevoDestinatario.idDestinatarioDirecto
+        if (idDestinatarioDirectoPayload) {
+          setValue('idDestinatarioDirecto', idDestinatarioDirectoPayload)
+        }
+        setDestinatarioSeleccionado(nuevoDestinatario)
+      }
+
+      const despachoData: Despacho = {
+        fechaDespacho: new Date(data.fechaDespacho).toISOString(),
+        usuarioRegistro: data.usuarioRegistro,
+        observaciones: data.observaciones || undefined,
+        codigoPresinto: data.codigoPresinto?.trim() || undefined,
+        idAgencia: tipoEnvio === 'agencia' ? data.idAgencia : undefined,
+        idDistribuidor: data.idDistribuidor,
+        numeroGuiaAgenciaDistribucion: data.numeroGuiaAgenciaDistribucion || undefined,
+        idDestinatarioDirecto: idDestinatarioDirectoPayload,
+        idPaqueteOrigenDestinatario: undefined,
+        sacas: sacas.map(s => ({ tamano: s.tamano, idPaquetes: s.idPaquetes })),
+      }
+
       if (isEdit) await updateMutation.mutateAsync({ id: Number(id), dto: despachoData })
       else {
         const res = await createMutation.mutateAsync(despachoData)
@@ -1021,10 +1136,14 @@ export default function DespachoForm() {
                   <span>Destino: {agenciaSeleccionada.nombre}</span>
                 </>
               )}
-              {pasoActual === 4 && tipoEnvio === 'directo' && (destinatarioDirectoData || destinatarioDirectoSeleccionado) && (
+              {pasoActual === 4 && tipoEnvio === 'directo' && (
                 <>
                   <span> · </span>
-                  <span>Destino: {(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreDestinatario ?? 'Cliente directo'}</span>
+                  <span>
+                    Destino: {destinatarioOrigenDirecto === 'existente'
+                      ? ((destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreDestinatario ?? 'Cliente directo')
+                      : (desdePaqueteNombre || 'Cliente desde paquete')}
+                  </span>
                 </>
               )}
             </div>
@@ -1245,7 +1364,18 @@ export default function DespachoForm() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button type="button"
-                    onClick={() => { setTipoEnvio('agencia'); setValue('idDestinatarioDirecto', undefined); setDestinatarioSeleccionado(null) }}
+                    onClick={() => {
+                      setTipoEnvio('agencia')
+                      setDestinatarioOrigenDirecto('existente')
+                      setValue('idDestinatarioDirecto', undefined)
+                      setDestinatarioSeleccionado(null)
+                      setIdPaqueteOrigenDestinatario('')
+                      setDesdePaqueteNombre('')
+                      setDesdePaqueteTelefono('')
+                      setDesdePaqueteDireccion('')
+                      setDesdePaqueteCanton('')
+                      setDesdePaqueteCodigo('')
+                    }}
                     className={`p-4 rounded-xl border-2 text-left transition-colors duration-150 flex flex-col items-center justify-center gap-2 ${tipoEnvio === 'agencia' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
                   >
                     <Truck className={`h-8 w-8 ${tipoEnvio === 'agencia' ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -1253,7 +1383,10 @@ export default function DespachoForm() {
                     <span className="text-xs text-muted-foreground">Envío a sucursal</span>
                   </button>
                   <button type="button"
-                    onClick={() => { setTipoEnvio('directo'); setValue('idAgencia', undefined) }}
+                    onClick={() => {
+                      setTipoEnvio('directo')
+                      setValue('idAgencia', undefined)
+                    }}
                     className={`p-4 rounded-xl border-2 text-left transition-colors duration-150 flex flex-col items-center justify-center gap-2 ${tipoEnvio === 'directo' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
                   >
                     <User className={`h-8 w-8 ${tipoEnvio === 'directo' ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -1290,29 +1423,94 @@ export default function DespachoForm() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex gap-2 items-end flex-wrap">
-                      <div className="flex-1 min-w-[200px] space-y-2">
-                        <Label className="text-sm font-medium">Buscar Cliente</Label>
-                        <Combobox
-                          options={destinatariosOpciones}
-                          value={idDestinatarioDirecto || null}
-                          onValueChange={(v) => {
-                            setValue('idDestinatarioDirecto', v ? Number(v) : undefined)
-                            if (v) {
-                              const d = destinatariosDirectosResultados?.find(x => x.idDestinatarioDirecto === v) || todosDestinatariosDirectos?.find(x => x.idDestinatarioDirecto === v)
-                              if (d) setDestinatarioSeleccionado(d)
-                            } else setDestinatarioSeleccionado(null)
-                          }}
-                          placeholder="Nombre, teléfono..."
-                          onSearchChange={setBusquedaDestinatarioDirecto}
-                          searchValue={busquedaDestinatarioDirecto}
-                        />
-                      </div>
-                      <Button type="button" variant="outline" className="h-9 w-9 p-0 rounded-md" onClick={() => destinatarioManager.setShowCrearClienteDialog(true)}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Origen del destinatario</Label>
+                      <Select
+                        value={destinatarioOrigenDirecto}
+                        onValueChange={(value) => {
+                          const origen = value as 'existente' | 'desde_paquete'
+                          setDestinatarioOrigenDirecto(origen)
+                          setValue('idDestinatarioDirecto', undefined)
+                          setDestinatarioSeleccionado(null)
+                          setIdPaqueteOrigenDestinatario('')
+                          if (origen === 'existente') {
+                            setDesdePaqueteNombre('')
+                            setDesdePaqueteTelefono('')
+                            setDesdePaqueteDireccion('')
+                            setDesdePaqueteCanton('')
+                            setDesdePaqueteCodigo('')
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="existente">Destinatario existente</SelectItem>
+                          <SelectItem value="desde_paquete">Desde datos de un paquete</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    {(destinatarioDirectoData || destinatarioDirectoSeleccionado) && (
+
+                    {destinatarioOrigenDirecto === 'existente' ? (
+                      <div className="flex gap-2 items-end flex-wrap">
+                        <div className="flex-1 min-w-[200px] space-y-2">
+                          <Label className="text-sm font-medium">Buscar destinatario</Label>
+                          <Combobox
+                            options={destinatariosOpciones}
+                            value={idDestinatarioDirecto || null}
+                            onValueChange={(v) => {
+                              setValue('idDestinatarioDirecto', v ? Number(v) : undefined)
+                              if (v) {
+                                const d = destinatariosDirectosResultados?.find(x => x.idDestinatarioDirecto === v) || todosDestinatariosDirectos?.find(x => x.idDestinatarioDirecto === v)
+                                if (d) setDestinatarioSeleccionado(d)
+                              } else setDestinatarioSeleccionado(null)
+                            }}
+                            placeholder="Nombre, teléfono..."
+                            onSearchChange={setBusquedaDestinatarioDirecto}
+                            searchValue={busquedaDestinatarioDirecto}
+                          />
+                        </div>
+                        <Button type="button" variant="outline" className="h-9 w-9 p-0 rounded-md" onClick={() => destinatarioManager.setShowCrearClienteDialog(true)}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Paquete de referencia</Label>
+                          <Combobox
+                            options={paquetesReferenciaDestinatarioOpciones}
+                            value={idPaqueteOrigenDestinatario ? Number(idPaqueteOrigenDestinatario) : null}
+                            onValueChange={(v) => setIdPaqueteOrigenDestinatario(v ? String(v) : '')}
+                            placeholder="Buscar por nombre, teléfono o dirección..."
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs font-medium">Nombre</Label>
+                            <Input value={desdePaqueteNombre} onChange={(e) => setDesdePaqueteNombre(e.target.value)} placeholder="Nombre del destinatario" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-medium">Teléfono</Label>
+                            <Input value={desdePaqueteTelefono} onChange={(e) => setDesdePaqueteTelefono(e.target.value)} placeholder="Teléfono" />
+                          </div>
+                          <div className="space-y-1 md:col-span-2">
+                            <Label className="text-xs font-medium">Dirección</Label>
+                            <Input value={desdePaqueteDireccion} onChange={(e) => setDesdePaqueteDireccion(e.target.value)} placeholder="Dirección" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-medium">Cantón</Label>
+                            <Input value={desdePaqueteCanton} onChange={(e) => setDesdePaqueteCanton(e.target.value)} placeholder="Cantón" />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-medium">Código</Label>
+                            <Input value={desdePaqueteCodigo} onChange={(e) => setDesdePaqueteCodigo(e.target.value)} placeholder="Código interno" className="font-mono" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {(destinatarioOrigenDirecto === 'existente' && (destinatarioDirectoData || destinatarioDirectoSeleccionado)) && (
                       <div className="p-4 rounded-lg bg-muted/30 border border-border text-sm space-y-1">
                         <p className="font-medium">{(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreDestinatario}</p>
                         <p className="text-muted-foreground">{(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.telefonoDestinatario}</p>
@@ -1429,7 +1627,7 @@ export default function DespachoForm() {
                   </div>
 
                   {/* Información de destino */}
-                  {(tipoEnvio === 'agencia' && agenciaSeleccionada) || (tipoEnvio === 'directo' && (destinatarioDirectoData || destinatarioDirectoSeleccionado)) ? (
+                  {(tipoEnvio === 'agencia' && agenciaSeleccionada) || (tipoEnvio === 'directo' && !!destinatarioResumen.nombreDestinatario) ? (
                     <div className="pt-4 border-t border-primary/20">
                       <span className="text-xs text-muted-foreground uppercase tracking-wide block mb-2">
                         {tipoEnvio === 'agencia' ? 'Agencia' : 'Destinatario Directo'}
@@ -1440,7 +1638,7 @@ export default function DespachoForm() {
                           <p className="text-sm font-medium">
                             {tipoEnvio === 'agencia'
                               ? agenciaSeleccionada?.nombre
-                              : (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreDestinatario}
+                              : destinatarioResumen.nombreDestinatario}
                           </p>
                           {tipoEnvio === 'agencia' && agenciaSeleccionada?.codigo && (
                             <div className="mt-2">
@@ -1468,20 +1666,20 @@ export default function DespachoForm() {
                           <p className="text-sm font-medium">
                             {tipoEnvio === 'agencia'
                               ? (agenciaSeleccionada?.telefonos?.find(t => t.principal)?.numero || agenciaSeleccionada?.telefonos?.[0]?.numero || 'N/A')
-                              : (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.telefonoDestinatario || 'N/A'}
+                              : destinatarioResumen.telefonoDestinatario || 'N/A'}
                           </p>
                         </div>
-                        {tipoEnvio === 'directo' && ((destinatarioDirectoData || destinatarioDirectoSeleccionado)?.codigo || (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreEmpresa) && (
+                        {tipoEnvio === 'directo' && (destinatarioResumen.codigo || destinatarioResumen.nombreEmpresa) && (
                           <>
-                            {(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.codigo && (
+                            {destinatarioResumen.codigo && (
                               <div className="mt-2">
                                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Código</span>
                                 <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 shadow-sm">
                                   <span className="font-mono text-base font-semibold text-foreground select-all tabular-nums">
-                                    {(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.codigo}
+                                    {destinatarioResumen.codigo}
                                   </span>
                                   <CopyActionButton
-                                    textToCopy={(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.codigo ?? ''}
+                                    textToCopy={destinatarioResumen.codigo ?? ''}
                                     successMessage="Código copiado"
                                     errorMessage="No se pudo copiar el código"
                                     title="Copiar código"
@@ -1493,10 +1691,10 @@ export default function DespachoForm() {
                                 </div>
                               </div>
                             )}
-                            {(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreEmpresa && (
+                            {destinatarioResumen.nombreEmpresa && (
                               <div>
                                 <span className="text-xs text-muted-foreground">Nombre empresa:</span>
-                                <p className="text-sm text-muted-foreground">{(destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreEmpresa}</p>
+                                <p className="text-sm text-muted-foreground">{destinatarioResumen.nombreEmpresa}</p>
                               </div>
                             )}
                           </>

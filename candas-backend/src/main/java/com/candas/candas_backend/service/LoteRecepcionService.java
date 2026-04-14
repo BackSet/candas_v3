@@ -150,6 +150,7 @@ public class LoteRecepcionService {
     }
 
     public LoteRecepcionDTO create(LoteRecepcionDTO dto) {
+        Optional<Long> idAgenciaScopeCreacion = agenciaScopeResolver.requireAgenciaOrigenActivaParaCreacion();
         LoteRecepcion loteRecepcion = new LoteRecepcion();
         
         // Generar número de recepción si no se proporciona
@@ -160,8 +161,8 @@ public class LoteRecepcionService {
             loteRecepcion.setNumeroRecepcion(dto.getNumeroRecepcion().trim());
         }
         
-        // Patrón de agencia activa: si viene por header, manda sobre el DTO.
-        Long idAgenciaActiva = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        // Patrón de agencia origen activa: si viene por header, manda sobre el DTO.
+        Long idAgenciaActiva = idAgenciaScopeCreacion.orElse(null);
         if (idAgenciaActiva != null) {
             if (dto.getIdAgencia() != null && !idAgenciaActiva.equals(dto.getIdAgencia())) {
                 String agenciaUsuario = descripcionAgencia(agenciaRepository.findById(idAgenciaActiva).orElse(null), idAgenciaActiva);

@@ -27,7 +27,7 @@ import java.util.Set;
 public class AgenciaScopeResolver {
 
     private static final String ROLE_ADMIN = "ROLE_ADMIN";
-    public static final String HEADER_AGENCIA_ACTIVA = "X-Agencia-Activa-Id";
+    public static final String HEADER_AGENCIA_ORIGEN_ACTIVA = "X-Agencia-Origen-Activa-Id";
 
     private final UsuarioRepository usuarioRepository;
     private final AgenciaRepository agenciaRepository;
@@ -51,11 +51,11 @@ public class AgenciaScopeResolver {
         boolean esAdmin = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(ROLE_ADMIN::equals);
-        Long idAgenciaHeader = leerAgenciaActivaDesdeHeader();
+        Long idAgenciaHeader = leerAgenciaOrigenActivaDesdeHeader();
         if (esAdmin) {
             if (idAgenciaHeader != null) {
                 if (!agenciaRepository.existsById(idAgenciaHeader)) {
-                    throw new AgenciaAccessDeniedException("La agencia activa seleccionada no existe.");
+                    throw new AgenciaAccessDeniedException("La agencia origen activa seleccionada no existe.");
                 }
                 return Optional.of(idAgenciaHeader);
             }
@@ -102,7 +102,36 @@ public class AgenciaScopeResolver {
         if (agenciasHabilitadas.size() == 1) {
             return Optional.of(agenciasHabilitadas.iterator().next());
         }
-        throw new AgenciaAccessDeniedException("Debes seleccionar una agencia activa para continuar.");
+        throw new AgenciaAccessDeniedException("Debes seleccionar una agencia origen activa para continuar.");
+    }
+
+    /**
+     * Para operaciones de creación, exige que usuarios no-admin seleccionen explícitamente
+     * una agencia origen activa mediante el header correspondiente.
+     * ADMIN conserva la exención: puede operar sin header.
+     */
+    public Optional<Long> requireAgenciaOrigenActivaParaCreacion() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Optional.empty();
+        }
+        if ("anonymousUser".equals(authentication.getPrincipal())) {
+            return Optional.empty();
+        }
+
+        boolean esAdmin = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(ROLE_ADMIN::equals);
+        Long idAgenciaHeader = leerAgenciaOrigenActivaDesdeHeader();
+
+        if (esAdmin && idAgenciaHeader == null) {
+            return Optional.empty();
+        }
+        if (!esAdmin && idAgenciaHeader == null) {
+            throw new AgenciaAccessDeniedException("Debes seleccionar una agencia origen activa para continuar.");
+        }
+
+        return idAgenciaRestringida();
     }
 
     public List<Long> agenciasHabilitadasUsuarioActual() {
@@ -127,19 +156,19 @@ public class AgenciaScopeResolver {
                 .orElse(List.of());
     }
 
-    private Long leerAgenciaActivaDesdeHeader() {
+    private Long leerAgenciaOrigenActivaDesdeHeader() {
         ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null || attrs.getRequest() == null) {
             return null;
         }
-        String valor = attrs.getRequest().getHeader(HEADER_AGENCIA_ACTIVA);
+        String valor = attrs.getRequest().getHeader(HEADER_AGENCIA_ORIGEN_ACTIVA);
         if (valor == null || valor.isBlank()) {
             return null;
         }
         try {
-            return Long.parseLong(valor.trim());
+            return Long.valueOf(valor.trim());
         } catch (NumberFormatException ex) {
-            throw new AgenciaAccessDeniedException("Header X-Agencia-Activa-Id inválido.");
+            throw new AgenciaAccessDeniedException("Header X-Agencia-Origen-Activa-Id inválido.");
         }
     }
 }

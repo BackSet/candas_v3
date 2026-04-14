@@ -19,7 +19,7 @@ export function AssignedAgencyNotice({ className }: AssignedAgencyNoticeProps) {
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide">Agencia de asignacion</p>
-            <p className="text-sm">No hay una agencia activa seleccionada. Cambiala desde el header.</p>
+            <p className="text-sm">No hay una agencia origen activa seleccionada. Cambiala desde el header.</p>
           </div>
         </div>
       </div>
@@ -33,7 +33,7 @@ export function AssignedAgencyNotice({ className }: AssignedAgencyNoticeProps) {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Agencia de asignacion</p>
           <p className="text-sm font-medium text-foreground">{agencia?.label ?? `#${activeAgencyId}`}</p>
-          <p className="text-xs text-muted-foreground">Se define por el entorno activo en el header.</p>
+          <p className="text-xs text-muted-foreground">Se define por la agencia origen activa en el header.</p>
         </div>
       </div>
     </div>

@@ -16,8 +16,9 @@ export interface Despacho {
   idDistribuidor?: number
   nombreDistribuidor?: string // Nombre del distribuidor para mostrar en listas
   numeroGuiaAgenciaDistribucion?: string
-  idDestinatarioDirecto?: number // Para crear/editar
-  /** Crear destinatario desde el cliente del paquete; se ignora si se envía idDestinatarioDirecto */
+  /** Destinatario directo para crear/editar cuando el destino no es agencia. */
+  idDestinatarioDirecto?: number
+  /** Alternativa para generar destinatario desde datos del paquete; se ignora si se envía idDestinatarioDirecto. */
   idPaqueteOrigenDestinatario?: number
   despachoDirecto?: DespachoDirecto // Para lectura
   codigoPresinto?: string // Código del presinto (etiqueta Zebra/normal); opcional, puede enviarse al crear/editar o generarse en backend

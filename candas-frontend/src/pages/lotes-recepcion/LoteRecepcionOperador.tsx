@@ -88,6 +88,7 @@ import { useDespachoMasivoSession, useUpdateDespachoMasivoSession } from '@/hook
 import type { DespachoMasivoSessionPayload, DespachoMasivoSessionPaqueteItem } from '@/types/despacho-masivo-session'
 import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
 import type { TelefonoFormItem } from '@/schemas/agencia'
+import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
 
 // Types for local state (Mock for "Despacho" scanning session)
 interface ScannedPackage {
@@ -421,6 +422,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
     const [nuevaAgenciaTelefonos, setNuevaAgenciaTelefonos] = useState<TelefonoFormItem[]>([
         { numero: '', principal: true },
     ])
+
     const [nuevaAgenciaEmail, setNuevaAgenciaEmail] = useState('')
     const [nuevaAgenciaNombrePersonal, setNuevaAgenciaNombrePersonal] = useState('')
     const [nuevaAgenciaHorarioAtencion, setNuevaAgenciaHorarioAtencion] = useState('')
@@ -915,6 +917,16 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
     }
 
     const executeBulkDespacho = async () => {
+        try {
+            assertAgenciaOrigenActivaSeleccionadaParaCreacion()
+        } catch (error: unknown) {
+            const message = error instanceof Error
+                ? error.message
+                : 'Debes seleccionar una agencia origen activa para continuar.'
+            toast.error(message)
+            return
+        }
+
         // 1. Parse distribution
         const groups = sacaDistribution.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0)
 
@@ -951,7 +963,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     ? !!bulkIdDestino
                     : bulkDestinatarioOrigen === 'EXISTENTE'
                         ? !!bulkIdDestino
-                        : !!bulkIdPaqueteOrigenDestinatario
+                        : !!bulkIdPaqueteOrigenDestinatario && !!bulkDesdePaqueteNombre.trim()
                 if (!destinoValido || !bulkIdDistribuidor) {
                     toast.error(
                         bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE'
@@ -1819,7 +1831,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     sacaDistribution.split(',').reduce((a, b) => a + (parseInt(b.trim(), 10) || 0), 0) !== selectedPackageIds.size ||
                     (bulkTipoDestino === 'AGENCIA' && !bulkIdDestino) ||
                     (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'EXISTENTE' && !bulkIdDestino) ||
-                    (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && (!bulkIdPaqueteOrigenDestinatario || !bulkDesdePaqueteCodigo))
+                    (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && (!bulkIdPaqueteOrigenDestinatario || !bulkDesdePaqueteCodigo || !bulkDesdePaqueteNombre.trim()))
                 }
             />
 

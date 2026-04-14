@@ -74,6 +74,7 @@ import { getApiErrorMessage } from '@/lib/api/errors'
 import { hasDespacho, buildClienteDestinoFromPaquete, SIN_ETIQUETA_KEY, VARIAS_LISTAS_KEY } from './loteEspecialOperadorUtils'
 import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
 import type { TelefonoFormItem } from '@/schemas/agencia'
+import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
 
 export interface LoteEspecialOperadorProps {
   embedded?: boolean
@@ -553,6 +554,13 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
   }
 
   const executeBulkDespacho = async () => {
+    try {
+      assertAgenciaOrigenActivaSeleccionadaParaCreacion()
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, 'Debes seleccionar una agencia origen activa para continuar.'))
+      return
+    }
+
     const groups = sacaDistribution
       .split(',')
       .map((s) => parseInt(s.trim(), 10))
@@ -573,7 +581,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         ? !!bulkIdDestino
         : bulkDestinatarioOrigen === 'EXISTENTE'
           ? !!bulkIdDestino
-          : !!bulkIdPaqueteOrigenDestinatario
+          : !!bulkIdPaqueteOrigenDestinatario && !!bulkDesdePaqueteNombre.trim()
     if (!destinoValido || !bulkIdDistribuidor) {
       toast.error(
         bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE'
@@ -666,6 +674,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
   const [imprimiendo, setImprimiendo] = useState(false)
   const [asignarEtiquetaPaquete, setAsignarEtiquetaPaquete] = useState<Paquete | null>(null)
   const [asignarEtiquetaValor, setAsignarEtiquetaValor] = useState('')
+
   const [paqueteParaAtencion, setPaqueteParaAtencion] = useState<Paquete | null>(null)
   const [showAgregarAtencionDialog, setShowAgregarAtencionDialog] = useState(false)
 
@@ -1468,7 +1477,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
           sacaDistribution.split(',').reduce((a, b) => a + (parseInt(b.trim(), 10) || 0), 0) !== selectedPackageIds.size ||
           (bulkTipoDestino === 'AGENCIA' && !bulkIdDestino) ||
           (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'EXISTENTE' && !bulkIdDestino) ||
-          (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && (!bulkIdPaqueteOrigenDestinatario || !bulkDesdePaqueteCodigo))
+          (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && (!bulkIdPaqueteOrigenDestinatario || !bulkDesdePaqueteCodigo || !bulkDesdePaqueteNombre.trim()))
         }
       />
 

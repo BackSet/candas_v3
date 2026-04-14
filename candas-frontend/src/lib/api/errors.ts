@@ -18,6 +18,10 @@ export type ApiError = {
  * Extrae el mensaje de error de una respuesta API o devuelve el fallback.
  */
 export function getApiErrorMessage(error: unknown, fallback: string): string {
+  const genericErrorMessage =
+    error instanceof Error && typeof error.message === 'string' && error.message.trim().length > 0
+      ? error.message
+      : undefined
   const data = (error as ApiError)?.response?.data
   const validationMessage =
     data?.errors && Object.keys(data.errors).length > 0
@@ -25,7 +29,7 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
           .map(([field, message]) => `${field}: ${message}`)
           .join(' | ')
       : undefined
-  const message = data?.message ?? data?.detail ?? data?.reason ?? validationMessage ?? data?.error
+  const message = data?.message ?? data?.detail ?? data?.reason ?? validationMessage ?? data?.error ?? genericErrorMessage
   return typeof message === 'string' && message.trim().length > 0
     ? message
     : fallback

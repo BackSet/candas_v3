@@ -55,7 +55,7 @@ public class ManifiestoConsolidadoService {
     }
 
     public ManifiestoConsolidadoResumenDTO crearManifiestoConsolidado(ManifiestoConsolidadoDTO dto) {
-        Long idAgenciaPropietariaScope = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        Long idAgenciaPropietariaScope = agenciaScopeResolver.requireAgenciaOrigenActivaParaCreacion().orElse(null);
 
         Usuario usuarioActual = obtenerUsuarioActual();
         validarPeriodo(dto);

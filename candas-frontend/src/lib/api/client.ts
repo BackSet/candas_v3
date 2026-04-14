@@ -49,7 +49,7 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
     if (activeAgencyId != null) {
-      config.headers['X-Agencia-Activa-Id'] = String(activeAgencyId)
+      config.headers['X-Agencia-Origen-Activa-Id'] = String(activeAgencyId)
     }
 
     return config

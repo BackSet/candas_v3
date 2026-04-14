@@ -56,11 +56,12 @@ public class AtencionPaqueteService {
     }
 
     public AtencionPaqueteDTO create(AtencionPaqueteDTO dto) {
+        Optional<Long> idAgenciaScopeCreacion = agenciaScopeResolver.requireAgenciaOrigenActivaParaCreacion();
         Paquete paquete = paqueteRepository.findByIdWithAlcanceAtencion(dto.getIdPaquete())
                 .orElseThrow(() -> new ResourceNotFoundException("Paquete", dto.getIdPaquete()));
         assertPaqueteEnAlcanceAtencion(paquete);
         AtencionPaquete atencion = toEntity(dto, paquete);
-        resolverAgenciaPropietariaActual().ifPresent(atencion::setAgenciaPropietaria);
+        idAgenciaScopeCreacion.flatMap(agenciaRepository::findById).ifPresent(atencion::setAgenciaPropietaria);
         atencion.setFechaSolicitud(LocalDateTime.now());
         atencion.setEstado(EstadoAtencion.PENDIENTE);
         atencion.setActiva(true);
@@ -236,8 +237,4 @@ public class AtencionPaqueteService {
         return atencion;
     }
 
-    private Optional<com.candas.candas_backend.entity.Agencia> resolverAgenciaPropietariaActual() {
-        return agenciaScopeResolver.idAgenciaRestringida()
-                .flatMap(agenciaRepository::findById);
-    }
 }

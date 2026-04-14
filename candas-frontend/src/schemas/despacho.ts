@@ -6,10 +6,13 @@ export const despachoSchema = z.object({
   usuarioRegistro: z.string().min(1, 'El usuario de registro es requerido'),
   observaciones: z.string().optional(),
   codigoPresinto: z.string().optional(),
-  idAgencia: z.number().optional(),
-  idDistribuidor: z.number().optional(),
+  idAgencia: z.number().int().positive().optional(),
+  idDistribuidor: z.number().int().positive().optional(),
   numeroGuiaAgenciaDistribucion: z.string().optional(),
-  idDestinatarioDirecto: z.number().optional(),
+  idDestinatarioDirecto: z.number().int().positive().optional(),
+  idPaqueteOrigenDestinatario: z.number().int().positive().optional(),
+  tipoEnvio: z.enum(['agencia', 'directo']).optional(),
+  destinatarioOrigen: z.enum(['existente', 'desde_paquete']).optional(),
 })
 
 export type DespachoFormData = z.infer<typeof despachoSchema>
@@ -44,6 +47,7 @@ export function despachoFormDataToDto(data: DespachoFormData): Partial<Despacho>
     idDistribuidor: data.idDistribuidor,
     numeroGuiaAgenciaDistribucion: data.numeroGuiaAgenciaDistribucion?.trim() || undefined,
     idDestinatarioDirecto: data.idDestinatarioDirecto,
+    idPaqueteOrigenDestinatario: data.idPaqueteOrigenDestinatario,
   }
 }
 
@@ -62,5 +66,6 @@ export function despachoToFormData(despacho: Despacho): DespachoFormData {
     idDestinatarioDirecto:
       despacho.idDestinatarioDirecto ||
       despacho.despachoDirecto?.destinatarioDirecto?.idDestinatarioDirecto,
+    idPaqueteOrigenDestinatario: despacho.idPaqueteOrigenDestinatario,
   }
 }

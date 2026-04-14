@@ -4,11 +4,10 @@ import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Despacho } from '@/types/despacho'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
+import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
 
 function assertAgenciaActivaSeleccionada() {
-  if (useAuthStore.getState().activeAgencyId == null) {
-    throw new Error('Debes seleccionar una agencia activa para continuar.')
-  }
+  assertAgenciaOrigenActivaSeleccionadaParaCreacion()
 }
 
 export function useDespachos(

@@ -182,6 +182,7 @@ public class DespachoService {
     }
 
     public DespachoDTO create(DespachoDTO dto) {
+        Optional<Long> idAgenciaPropietariaCreacion = agenciaScopeResolver.requireAgenciaOrigenActivaParaCreacion();
         validarDespacho(dto);
 
         Despacho despacho = toEntity(dto);
@@ -192,7 +193,7 @@ public class DespachoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Agencia", dto.getIdAgencia()));
             despacho.setAgencia(agencia);
         }
-        resolverAgenciaPropietariaActual().ifPresent(despacho::setAgenciaPropietaria);
+        idAgenciaPropietariaCreacion.flatMap(agenciaRepository::findById).ifPresent(despacho::setAgenciaPropietaria);
 
         // Buscar o crear distribuidor
         if (dto.getIdDistribuidor() != null) {

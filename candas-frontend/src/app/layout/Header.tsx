@@ -148,7 +148,7 @@ export function Header() {
                       <p className="text-sm font-semibold text-foreground truncate">{user.username}</p>
                       <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
                       <p className="text-[11px] text-muted-foreground truncate mt-1">
-                        Agencia activa: {agenciaActivaLabel}
+                        Agencia origen activa: {agenciaActivaLabel}
                       </p>
                       {user.roles && user.roles.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
