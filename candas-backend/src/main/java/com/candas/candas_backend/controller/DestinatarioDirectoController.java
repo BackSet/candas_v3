@@ -5,6 +5,8 @@ import com.candas.candas_backend.service.DestinatarioDirectoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,9 +28,19 @@ public class DestinatarioDirectoController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar destinatarios directos", description = "Obtiene una lista de todos los destinatarios directos activos")
+    @Operation(summary = "Listar destinatarios directos", description = "Lista paginada con filtros opcionales: search (nombre, teléfono, dirección, código), activo.")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.DESTINATARIOS_DIRECTOS_LISTAR + "') or hasAuthority('" + PermissionConstants.DESTINATARIOS_DIRECTOS_VER + "')")
-    public ResponseEntity<List<DestinatarioDirectoDTO>> findAll() {
+    public ResponseEntity<Page<DestinatarioDirectoDTO>> findAll(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean activo) {
+        return ResponseEntity.ok(destinatarioDirectoService.findAllPaginado(pageable, search, activo));
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "Listar todos los destinatarios directos activos (sin paginación)", description = "Útil para llenar selects/autocompletes.")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.DESTINATARIOS_DIRECTOS_LISTAR + "') or hasAuthority('" + PermissionConstants.DESTINATARIOS_DIRECTOS_VER + "')")
+    public ResponseEntity<List<DestinatarioDirectoDTO>> findAllNoPaginado() {
         return ResponseEntity.ok(destinatarioDirectoService.findAll());
     }
 

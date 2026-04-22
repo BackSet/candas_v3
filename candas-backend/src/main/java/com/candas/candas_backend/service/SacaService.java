@@ -6,6 +6,7 @@ import com.candas.candas_backend.entity.PaqueteSaca;
 import com.candas.candas_backend.entity.PaqueteSacaId;
 import com.candas.candas_backend.entity.Saca;
 import com.candas.candas_backend.entity.enums.EstadoPaquete;
+import com.candas.candas_backend.entity.enums.TamanoSaca;
 import com.candas.candas_backend.exception.AgenciaAccessDeniedException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.DespachoRepository;
@@ -54,10 +55,17 @@ public class SacaService {
     }
 
     public Page<SacaDTO> findAll(Pageable pageable) {
-        return agenciaScopeResolver.idAgenciaRestringida()
-                .map(idAg -> sacaRepository.findAll(SacaSpecs.despachoRegistradorEnAgencia(idAg), pageable))
-                .orElseGet(() -> sacaRepository.findAll(pageable))
-                .map(this::toDTO);
+        return findAll(pageable, null, null, null);
+    }
+
+    public Page<SacaDTO> findAll(Pageable pageable, String search, Long idDespacho, TamanoSaca tamano) {
+        Long idAg = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        boolean sinFiltros = (search == null || search.isBlank()) && idDespacho == null && tamano == null;
+        if (sinFiltros && idAg == null) {
+            return sacaRepository.findAll(pageable).map(this::toDTO);
+        }
+        var spec = SacaSpecs.withFilters(search, idDespacho, tamano, idAg);
+        return sacaRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
     public SacaDTO findById(Long id) {

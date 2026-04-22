@@ -30,7 +30,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Loader2, Trash2, RefreshCw, Download, Search, ClipboardList } from 'lucide-react'
 import type { Paquete } from '@/types/paquete'
 
@@ -78,7 +78,7 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
       const list = await listasEtiquetadasService.getAllEtiquetas()
       setEtiquetas(list ?? [])
     } catch (error: any) {
-      toast.error('Error al cargar las etiquetas')
+      notify.error('Error al cargar las etiquetas')
     } finally {
       setCargandoEtiquetas(false)
     }
@@ -90,7 +90,7 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
       const guiasList = await listasEtiquetadasService.findByEtiqueta(etiqueta)
       setGuias(guiasList ?? [])
     } catch (error: any) {
-      toast.error('Error al cargar las guías')
+      notify.error('Error al cargar las guías')
     } finally {
       setCargandoGuias(false)
     }
@@ -137,8 +137,9 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
   }, [guias, busquedaGuia, filtroReceptado, fechaDesde, fechaHasta])
 
   const handleExportar = async () => {
+    setExportando(true)
+    const toastId = notify.start('Generando Excel...')
     try {
-      setExportando(true)
       const blob = await listasEtiquetadasService.exportExcel(etiquetaSeleccionada || undefined)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -146,9 +147,9 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
       a.download = `listas-etiquetadas${etiquetaSeleccionada ? `-${etiquetaSeleccionada}` : ''}.xlsx`
       a.click()
       URL.revokeObjectURL(url)
-      toast.success('Excel descargado')
+      notify.finish(toastId, 'Excel descargado')
     } catch (error: any) {
-      toast.error(error?.message || 'Error al exportar')
+      notify.fail(toastId, error?.message || 'Error al exportar')
     } finally {
       setExportando(false)
     }
@@ -169,7 +170,7 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
       .filter(Boolean)
     const numerosUnicos = Array.from(new Set(lineas))
     if (numerosUnicos.length === 0) {
-      toast.error('No se encontraron números de guía en la lista')
+      notify.error('No se encontraron números de guía en la lista')
       return
     }
     const mapaGuiaAId = new Map(guias.map(g => [g.numeroGuia?.toUpperCase() ?? '', g.idPaquete!]))
@@ -182,11 +183,11 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
     setMostrarPegarLista(false)
     setListaPegadaTexto('')
     if (idsEncontrados.length === 0) {
-      toast.warning('Ninguna guía de la lista pertenece a esta etiqueta')
+      notify.warning('Ninguna guía de la lista pertenece a esta etiqueta')
     } else if (idsEncontrados.length < numerosUnicos.length) {
-      toast.info(`${idsEncontrados.length} guía(s) seleccionadas. ${numerosUnicos.length - idsEncontrados.length} no encontradas en esta etiqueta.`)
+      notify.info(`${idsEncontrados.length} guía(s) seleccionadas. ${numerosUnicos.length - idsEncontrados.length} no encontradas en esta etiqueta.`)
     } else {
-      toast.success(`${idsEncontrados.length} guía(s) seleccionadas`)
+      notify.success(`${idsEncontrados.length} guía(s) seleccionadas`)
     }
   }
 

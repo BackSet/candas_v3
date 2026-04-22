@@ -17,6 +17,7 @@ public interface AgenciaRepository extends JpaRepository<Agencia, Long>, JpaSpec
             "OR LOWER(COALESCE(a.codigo, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
             "OR LOWER(COALESCE(a.email, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
             "OR LOWER(COALESCE(a.canton, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "OR LOWER(COALESCE(a.provincia, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
             "OR LOWER(COALESCE(ta.numero, '')) LIKE LOWER(CONCAT('%', :query, '%')))", nativeQuery = true)
     List<Long> searchIds(@Param("query") String query);
 

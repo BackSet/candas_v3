@@ -22,9 +22,9 @@ import { TipoDestino } from '@/types/paquete'
 import type { Agencia } from '@/types/agencia'
 import type { GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
 import { generarExcelClementinaHijos } from '@/utils/generarExcelLoteRecepcion'
-import { FileSpreadsheet, Download } from 'lucide-react'
+import { FileSpreadsheet, Download, Loader2 } from 'lucide-react'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 interface PaquetesPorGrupoPersonalizado {
   [grupoPersonalizado: string]: Paquete[]
@@ -128,29 +128,30 @@ export default function ExportarClementinaHijosDialog({
   const handleGenerar = () => {
     // Validar campo
     if (!fechaHora) {
-      toast.error('Por favor, completa la fecha y la hora')
+      notify.error('Por favor, completa la fecha y la hora')
       return
     }
 
     // Extraer fecha y hora del valor datetime-local
     const [fecha, hora] = fechaHora.split('T')
     if (!fecha || !hora) {
-      toast.error('Por favor, completa la fecha y la hora correctamente')
+      notify.error('Por favor, completa la fecha y la hora correctamente')
       return
     }
 
     if (paquetesAExportar.length === 0) {
-      toast.error('No hay paquetes que coincidan con los filtros seleccionados')
+      notify.error('No hay paquetes que coincidan con los filtros seleccionados')
       return
     }
 
     // Validar que si es AGENCIA, se haya seleccionado una agencia
     if (tipoDestino === TipoDestino.AGENCIA && !idAgencia) {
-      toast.error('Por favor, selecciona una agencia')
+      notify.error('Por favor, selecciona una agencia')
       return
     }
 
     setIsGenerating(true)
+    const id = notify.start('Generando Excel de CLEMENTINA hijos…')
 
     try {
       generarExcelClementinaHijos(
@@ -164,10 +165,13 @@ export default function ExportarClementinaHijosDialog({
         paqueteAGrupoPersonalizado
       )
 
-      toast.success(`Excel de CLEMENTINA hijos generado exitosamente con ${paquetesAExportar.length} paquete(s)`)
+      notify.finish(
+        id,
+        `Excel generado exitosamente con ${paquetesAExportar.length} paquete(s)`
+      )
       onOpenChange(false)
-    } catch (error: any) {
-      toast.error(error.message || 'Error al generar el archivo Excel')
+    } catch (error: unknown) {
+      notify.fail(id, error, 'No se pudo generar el archivo Excel')
     } finally {
       setIsGenerating(false)
     }
@@ -266,8 +270,8 @@ export default function ExportarClementinaHijosDialog({
           >
             {isGenerating ? (
               <>
-                <span className="animate-spin mr-2">⏳</span>
-                Generando...
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generando…
               </>
             ) : (
               <>

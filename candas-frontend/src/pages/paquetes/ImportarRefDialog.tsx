@@ -14,7 +14,7 @@ import { paqueteService, type ImportResult } from '@/lib/api/paquete.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import { Tag, AlertCircle, Loader2 } from 'lucide-react'
 import { ResultStatsGrid } from '@/components/dialogs/ResultStatsGrid'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import {
   Table,
   TableBody,
@@ -52,7 +52,7 @@ export default function ImportarRefDialog({
   const handleSubmit = async () => {
     const pares = parsePares()
     if (pares.length === 0) {
-      toast.error('Ingresa al menos un número de guía en la lista de paquetes.')
+      notify.error('Ingresa al menos un número de guía en la lista de paquetes.')
       return
     }
 
@@ -64,16 +64,16 @@ export default function ImportarRefDialog({
       setResultado(res)
 
       if (res.registrosExitosos > 0) {
-        toast.success(`Importación completada: ${res.registrosExitosos} REF actualizados`)
+        notify.success(`Importación completada: ${res.registrosExitosos} REF actualizados`)
       }
       if (res.registrosFallidos > 0) {
-        toast.warning(`${res.registrosFallidos} registros con error.`)
+        notify.warning(`${res.registrosFallidos} registros con error.`)
       }
       if (onImportSuccess) {
         onImportSuccess()
       }
     } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Error al importar REF.'))
+      notify.error(err, 'Error al importar REF.')
     } finally {
       setIsLoading(false)
     }

@@ -2,7 +2,7 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { useLoteRecepcion } from '@/hooks/useLotesRecepcion'
 import { LoteEspecialDetailContent } from './LoteEspecialDetailContent'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
-import { LoadingState } from '@/components/states'
+import { DetailSkeleton } from '@/components/states'
 
 /** Vista de detalle de lote especial. Redirige a lotes-recepcion para unificar URL; renderiza contenido compartido. */
 export default function LoteEspecialDetail() {
@@ -20,7 +20,7 @@ export default function LoteEspecialDetail() {
   if (isLoading) {
     return (
       <DetailPageLayout title="Cargando..." backUrl="/lotes-recepcion" maxWidth="2xl">
-        <LoadingState />
+        <DetailSkeleton />
       </DetailPageLayout>
     )
   }

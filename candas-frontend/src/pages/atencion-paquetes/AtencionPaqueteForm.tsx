@@ -1,9 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
+import { useForm, type FieldValues, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -14,30 +12,31 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAtencionPaquete, useCreateAtencionPaquete, useUpdateAtencionPaquete } from '@/hooks/useAtencionPaquetes'
-import { EstadoAtencion, TipoProblemaAtencion, TIPO_PROBLEMA_ATENCION_LABELS, type AtencionPaquete } from '@/types/atencion-paquete'
+import { EstadoAtencion, TipoProblemaAtencion, TIPO_PROBLEMA_ATENCION_LABELS } from '@/types/atencion-paquete'
 import { usePaquetes, usePaquetePorNumeroGuia, usePaquete } from '@/hooks/usePaquetes'
-import { Search, ArrowLeft, Save, Package, Check } from 'lucide-react'
+import { Search, Package, Check, AlertCircle, ClipboardCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { LoadingState } from '@/components/states'
 import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
-
-const atencionPaqueteSchema = z.object({
-  idPaquete: z.number().min(1, 'El paquete es requerido'),
-  motivo: z.string().min(1, 'El motivo es requerido'),
-  tipoProblema: z.nativeEnum(TipoProblemaAtencion),
-  estado: z.nativeEnum(EstadoAtencion),
-  observacionesResolucion: z.string().optional(),
-})
-
-type AtencionPaqueteFormData = z.infer<typeof atencionPaqueteSchema>
+import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
+import {
+  atencionPaqueteSchema,
+  type AtencionPaqueteFormData,
+  atencionPaqueteFormDataToDto,
+  atencionPaqueteToFormData,
+} from '@/schemas/atencion-paquete'
 
 export default function AtencionPaqueteForm() {
   const navigate = useNavigate()
   const { id } = useParams({ strict: false })
   const isEdit = !!id
 
-  const { data: atencion, isLoading: loadingAtencion } = useAtencionPaquete(id ? Number(id) : undefined)
-  const { data: paquetesData } = usePaquetes(0, 100)
+  const {
+    data: atencion,
+    isLoading: loadingAtencion,
+    error: loadError,
+    refetch,
+  } = useAtencionPaquete(id ? Number(id) : undefined)
+  const { data: paquetesData } = usePaquetes({ page: 0, size: 100 })
   const { data: paqueteAsociado } = usePaquete(isEdit && atencion?.idPaquete ? atencion.idPaquete : undefined)
   const createMutation = useCreateAtencionPaquete()
   const updateMutation = useUpdateAtencionPaquete()
@@ -47,34 +46,30 @@ export default function AtencionPaqueteForm() {
     busquedaPaquete && busquedaPaquete.length >= 10 ? busquedaPaquete : undefined
   )
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<AtencionPaqueteFormData>({
+  const form = useForm<AtencionPaqueteFormData>({
     resolver: zodResolver(atencionPaqueteSchema),
     defaultValues: {
       estado: EstadoAtencion.PENDIENTE,
       tipoProblema: TipoProblemaAtencion.OTRO,
     },
   })
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    reset,
+  } = form
 
   useEffect(() => {
     if (atencion) {
-      setValue('motivo', atencion.motivo)
-      setValue('tipoProblema', atencion.tipoProblema)
-      setValue('estado', atencion.estado)
-      setValue('observacionesResolucion', atencion.observacionesResolucion || '')
+      reset(atencionPaqueteToFormData(atencion))
     }
-  }, [atencion, setValue])
+  }, [atencion, reset])
 
   const onSubmit = async (data: AtencionPaqueteFormData) => {
-    const atencionData: AtencionPaquete = {
-      ...data,
-      observacionesResolucion: data.observacionesResolucion || undefined,
-    }
+    const atencionData = atencionPaqueteFormDataToDto(data)
     try {
       if (isEdit) {
         await updateMutation.mutateAsync({ id: Number(id), dto: atencionData })
@@ -82,13 +77,17 @@ export default function AtencionPaqueteForm() {
         await createMutation.mutateAsync(atencionData)
       }
       navigate({ to: '/atencion-paquetes' })
-    } catch { /* hook */ }
+    } catch {
+      // Error ya manejado en el hook
+    }
   }
 
   const paquetes = useMemo(() => {
     const paquetesLista = paquetesData?.content || []
     const paquetesUnicos = new Map<number, typeof paquetesLista[0]>()
-    paquetesLista.forEach(p => { if (p.idPaquete) paquetesUnicos.set(p.idPaquete, p) })
+    paquetesLista.forEach((p) => {
+      if (p.idPaquete) paquetesUnicos.set(p.idPaquete, p)
+    })
     if (paqueteAsociado && !paquetesUnicos.has(paqueteAsociado.idPaquete!)) {
       paquetesUnicos.set(paqueteAsociado.idPaquete!, paqueteAsociado)
     }
@@ -100,7 +99,7 @@ export default function AtencionPaqueteForm() {
 
   useEffect(() => {
     if (isEdit && atencion?.idPaquete && paquetes.length > 0) {
-      const paqueteExiste = paquetes.some(p => p.idPaquete === atencion.idPaquete)
+      const paqueteExiste = paquetes.some((p) => p.idPaquete === atencion.idPaquete)
       if (paqueteExiste && watch('idPaquete') !== atencion.idPaquete) {
         setValue('idPaquete', atencion.idPaquete)
       }
@@ -110,187 +109,210 @@ export default function AtencionPaqueteForm() {
   const paquetesFiltrados = useMemo(() => {
     if (!busquedaPaquete.trim()) return paquetes
     const busquedaLower = busquedaPaquete.toLowerCase().trim()
-    return paquetes.filter((p) =>
-      p.numeroGuia?.toLowerCase().includes(busquedaLower) ||
-      p.idPaquete?.toString().includes(busquedaLower)
+    return paquetes.filter(
+      (p) =>
+        p.numeroGuia?.toLowerCase().includes(busquedaLower) ||
+        p.idPaquete?.toString().includes(busquedaLower)
     )
   }, [paquetes, busquedaPaquete])
 
   useEffect(() => {
     if (paquetePorGuia && !isEdit) {
-      setValue('idPaquete', paquetePorGuia.idPaquete!)
+      setValue('idPaquete', paquetePorGuia.idPaquete!, { shouldDirty: true })
     }
   }, [paquetePorGuia, isEdit, setValue])
 
-  if (isEdit && loadingAtencion) {
-    return <LoadingState label="Cargando..." className="min-h-[50vh]" />
-  }
+  const isLoading = isEdit && loadingAtencion
+  const isSaving = createMutation.isPending || updateMutation.isPending
+  const idPaqueteSeleccionado = watch('idPaquete')
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/30">
-        <div className="w-full px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate({ to: '/atencion-paquetes' })} type="button" className="text-muted-foreground hover:text-foreground rounded-lg">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">
-                {isEdit ? 'Editar Atención' : 'Nueva Solicitud'}
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                {isEdit ? 'Modifica los detalles del incidente' : 'Registra un nuevo incidente con un paquete'}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate({ to: '/atencion-paquetes' })} type="button" className="rounded-lg">
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="rounded-lg">
-              <Save className="h-4 w-4 mr-2" />
-              {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : 'Guardar'}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 p-8 max-w-3xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <AssignedAgencyNotice />
-
-        {/* Section 1: Package Selection */}
-        <section className="space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Paquete Afectado</h3>
-            <p className="text-xs text-muted-foreground mt-1">Busca el paquete por número de guía o ID</p>
-          </div>
-          <div className="rounded-2xl border border-border/30 bg-background/50 backdrop-blur-sm p-6 space-y-6 shadow-sm">
-            <div className="space-y-2">
-              <label htmlFor="idPaquete" className="text-sm font-medium">Buscar Paquete</label>
-              <div className="relative group">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/50 pointer-events-none group-focus-within:text-primary transition-colors" />
-                <Input
-                  placeholder="Escanear guía o buscar..."
-                  value={busquedaPaquete}
-                  onChange={(e) => setBusquedaPaquete(e.target.value)}
-                  className="pl-9 bg-background rounded-xl border-border/40 focus-visible:ring-primary/20 focus-visible:border-primary/40 transition-all"
-                  autoFocus={!isEdit}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Seleccionar de Resultados</label>
-              <Select
-                value={watch('idPaquete') ? watch('idPaquete').toString() : ''}
-                onValueChange={(value) => {
-                  if (value) { setValue('idPaquete', Number(value)); setBusquedaPaquete('') }
-                }}
-              >
-                <SelectTrigger className={cn("bg-background rounded-xl border-border/40", errors.idPaquete && "border-destructive focus:ring-destructive/20")}>
-                  <SelectValue placeholder="Selecciona un paquete..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {paquetesFiltrados.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      {busquedaPaquete ? 'No se encontraron paquetes' : 'Escribe para buscar...'}
-                    </div>
-                  ) : (
-                    paquetesFiltrados.map((p) => (
-                      <SelectItem key={p.idPaquete} value={p.idPaquete!.toString()}>
-                        <div className="flex items-center gap-2">
-                          <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="font-mono">{p.numeroGuia}</span>
-                          <span className="text-muted-foreground text-xs">#{p.idPaquete}</span>
-                        </div>
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              {errors.idPaquete && <p className="text-xs text-destructive mt-1">{errors.idPaquete.message}</p>}
-              {paquetePorGuia && busquedaPaquete.length >= 10 && (
-                <div className="flex items-center gap-2 text-xs text-emerald-600 mt-2 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-900/30 dark:text-emerald-400">
-                  <Check className="h-3.5 w-3.5" />
-                  Paquete encontrado: <span className="font-mono font-semibold">{paquetePorGuia.numeroGuia}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Section 2: Incident Details */}
-        <section className="space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Detalles del Incidente</h3>
-          </div>
-          <div className="rounded-2xl border border-border/30 bg-background/50 backdrop-blur-sm p-6 space-y-6 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tipo de Problema <span className="text-destructive">*</span></label>
-                <Select
-                  value={watch('tipoProblema') || ''}
-                  onValueChange={(value) => setValue('tipoProblema', value as TipoProblemaAtencion)}
-                >
-                  <SelectTrigger className={cn("rounded-xl border-border/40", errors.tipoProblema && "border-destructive")}>
-                    <SelectValue placeholder="Seleccionar tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(TipoProblemaAtencion).map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>{TIPO_PROBLEMA_ATENCION_LABELS[tipo]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.tipoProblema && <p className="text-xs text-destructive">{errors.tipoProblema.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Estado Inicial</label>
-                <Select value={watch('estado')} onValueChange={(value) => setValue('estado', value as EstadoAtencion)}>
-                  <SelectTrigger className="rounded-xl border-border/40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(EstadoAtencion).map((estado) => (
-                      <SelectItem key={estado} value={estado}>{estado}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Motivo detallado <span className="text-destructive">*</span></label>
-              <Textarea
-                {...register('motivo')}
-                placeholder="Describe detalladamente el problema con el paquete..."
-                className={cn("min-h-[120px] resize-y rounded-xl border-border/40", errors.motivo && "border-destructive")}
+    <FormPageLayout
+      title={isEdit ? 'Editar Atención' : 'Nueva Solicitud'}
+      subtitle={isEdit ? 'Modifica los detalles del incidente' : 'Registra un nuevo incidente con un paquete'}
+      backUrl="/atencion-paquetes"
+      formId="atencion-paquete-form"
+      isLoading={isLoading}
+      loadError={loadError}
+      onRetry={() => void refetch()}
+      isSubmitting={isSaving}
+      errors={errors as unknown as Record<string, unknown>}
+      form={form as unknown as UseFormReturn<FieldValues>}
+      width="lg"
+      subheader={<AssignedAgencyNotice />}
+    >
+      <form id="atencion-paquete-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <FormSection
+          title="Paquete afectado"
+          description="Busca el paquete por número de guía o selecciónalo de la lista."
+          icon={Package}
+          cols={2}
+        >
+          <FieldRow label="Buscar paquete" htmlFor="busquedaPaquete" span="full">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                id="busquedaPaquete"
+                placeholder="Escanear guía o buscar..."
+                value={busquedaPaquete}
+                onChange={(e) => setBusquedaPaquete(e.target.value)}
+                className="pl-9"
+                autoFocus={!isEdit}
               />
-              {errors.motivo && <p className="text-xs text-destructive">{errors.motivo.message}</p>}
             </div>
-          </div>
-        </section>
+          </FieldRow>
 
-        {/* Section 3: Resolution (edit only) */}
-        {isEdit && (
-          <section className="space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Resolución</h3>
-            </div>
-            <div className="rounded-2xl border border-border/30 bg-background/50 backdrop-blur-sm p-6 border-l-4 border-l-primary/20 shadow-sm">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Observaciones de Resolución</label>
-                <Textarea
-                  {...register('observacionesResolucion')}
-                  placeholder="Opcional: Detalles sobre cómo se resolvió..."
-                  className="min-h-[100px] rounded-xl border-border/40"
-                />
+          <FieldRow
+            label="Paquete seleccionado"
+            required
+            htmlFor="idPaquete"
+            error={errors.idPaquete}
+            span="full"
+          >
+            <Select
+              value={idPaqueteSeleccionado ? idPaqueteSeleccionado.toString() : ''}
+              onValueChange={(value) => {
+                if (value) {
+                  setValue('idPaquete', Number(value), { shouldValidate: true, shouldDirty: true })
+                  setBusquedaPaquete('')
+                }
+              }}
+            >
+              <SelectTrigger
+                id="idPaquete"
+                className={cn(errors.idPaquete && 'border-destructive')}
+              >
+                <SelectValue placeholder="Selecciona un paquete..." />
+              </SelectTrigger>
+              <SelectContent>
+                {paquetesFiltrados.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    {busquedaPaquete ? 'No se encontraron paquetes' : 'Escribe para buscar...'}
+                  </div>
+                ) : (
+                  paquetesFiltrados.map((p) => (
+                    <SelectItem key={p.idPaquete} value={p.idPaquete!.toString()}>
+                      <div className="flex items-center gap-2">
+                        <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="font-mono">{p.numeroGuia}</span>
+                        <span className="text-muted-foreground text-xs">#{p.idPaquete}</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </FieldRow>
+
+          {paquetePorGuia && busquedaPaquete.length >= 10 && (
+            <FieldRow span="full">
+              <div className="flex items-center gap-2 text-xs text-emerald-600 p-2.5 bg-emerald-50 rounded-md border border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-900/30 dark:text-emerald-400">
+                <Check className="h-3.5 w-3.5" />
+                Paquete encontrado:{' '}
+                <span className="font-mono font-semibold">{paquetePorGuia.numeroGuia}</span>
               </div>
-            </div>
-          </section>
+            </FieldRow>
+          )}
+        </FormSection>
+
+        <FormSection
+          title="Detalles del incidente"
+          description="Clasifica el problema y describe el motivo con detalle."
+          icon={AlertCircle}
+          cols={2}
+        >
+          <FieldRow
+            label="Tipo de problema"
+            required
+            htmlFor="tipoProblema"
+            error={errors.tipoProblema}
+          >
+            <Select
+              value={watch('tipoProblema') || ''}
+              onValueChange={(value) =>
+                setValue('tipoProblema', value as TipoProblemaAtencion, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }
+            >
+              <SelectTrigger
+                id="tipoProblema"
+                className={cn(errors.tipoProblema && 'border-destructive')}
+              >
+                <SelectValue placeholder="Seleccionar tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(TipoProblemaAtencion).map((tipo) => (
+                  <SelectItem key={tipo} value={tipo}>
+                    {TIPO_PROBLEMA_ATENCION_LABELS[tipo]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldRow>
+
+          <FieldRow label="Estado inicial" htmlFor="estado">
+            <Select
+              value={watch('estado')}
+              onValueChange={(value) =>
+                setValue('estado', value as EstadoAtencion, { shouldDirty: true })
+              }
+            >
+              <SelectTrigger id="estado">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(EstadoAtencion).map((estado) => (
+                  <SelectItem key={estado} value={estado}>
+                    {estado}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldRow>
+
+          <FieldRow
+            label="Motivo detallado"
+            required
+            htmlFor="motivo"
+            error={errors.motivo}
+            span="full"
+          >
+            <Textarea
+              id="motivo"
+              {...register('motivo')}
+              placeholder="Describe detalladamente el problema con el paquete..."
+              className={cn(
+                'min-h-[120px] resize-y',
+                errors.motivo && 'border-destructive'
+              )}
+            />
+          </FieldRow>
+        </FormSection>
+
+        {isEdit && (
+          <FormSection
+            title="Resolución"
+            description="Notas internas sobre cómo se resolvió el incidente."
+            icon={ClipboardCheck}
+            cols={1}
+          >
+            <FieldRow
+              label="Observaciones de resolución"
+              htmlFor="observacionesResolucion"
+              span="full"
+            >
+              <Textarea
+                id="observacionesResolucion"
+                {...register('observacionesResolucion')}
+                placeholder="Opcional: detalles sobre cómo se resolvió..."
+                className="min-h-[100px] resize-y"
+              />
+            </FieldRow>
+          </FormSection>
         )}
-      </div>
-    </form>
+      </form>
+    </FormPageLayout>
   )
 }

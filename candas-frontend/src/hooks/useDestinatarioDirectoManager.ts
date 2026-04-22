@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { useSearchDestinatariosDirectos, useCreateDestinatarioDirecto } from './useDestinatariosDirectos'
 import type { DestinatarioDirecto } from '@/types/destinatario-directo'
 import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
@@ -30,12 +30,12 @@ export function useDestinatarioDirectoManager(
 
   const handleCrearCliente = async () => {
     if (!nuevoClienteNombre.trim()) {
-      toast.error('El nombre del cliente es requerido')
+      notify.error('El nombre del cliente es requerido')
       return
     }
 
     if (!nuevoClienteTelefono.trim()) {
-      toast.error('El teléfono del cliente es requerido')
+      notify.error('El teléfono del cliente es requerido')
       return
     }
 
@@ -64,7 +64,7 @@ export function useDestinatarioDirectoManager(
         onDestinatarioSeleccionado(nuevoCliente)
       }
       
-      toast.success('Destinatario directo creado exitosamente')
+      notify.success('Destinatario directo creado exitosamente')
     } catch (error) {
       // Error ya manejado en el hook
     }

@@ -1,11 +1,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
+import { useForm, type FieldValues, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { CheckboxIndicator } from '@/components/ui/checkbox'
 import {
@@ -18,26 +16,28 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useRol, useCreateRol, useUpdateRol, useAsignarPermisosRol, usePermisosRol } from '@/hooks/useRoles'
 import { usePermisos } from '@/hooks/usePermisos'
-import type { Rol } from '@/types/rol'
-import { Search, Key, Folder, Shield, Save, ArrowLeft, FileText } from 'lucide-react'
+import { Search, Key, Folder, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
-
-const rolSchema = z.object({
-  nombre: z.string().min(1, 'El nombre es requerido'),
-  descripcion: z.string().optional(),
-  activo: z.boolean().optional(),
-})
-
-type RolFormData = z.infer<typeof rolSchema>
+import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
+import {
+  rolSchema,
+  type RolFormData,
+  rolFormDataToDto,
+  rolToFormData,
+} from '@/schemas/rol'
 
 export default function RolForm() {
   const navigate = useNavigate()
   const { id } = useParams({ strict: false })
   const isEdit = !!id
 
-  const { data: rol, isLoading: loadingRol } = useRol(id ? Number(id) : undefined)
-  const { data: permisosData } = usePermisos(0, 100)
+  const {
+    data: rol,
+    isLoading: loadingRol,
+    error: loadError,
+    refetch,
+  } = useRol(id ? Number(id) : undefined)
+  const { data: permisosData } = usePermisos({ page: 0, size: 100 })
   const { data: permisosActuales } = usePermisosRol(id ? Number(id) : undefined)
   const createMutation = useCreateRol()
   const updateMutation = useUpdateRol()
@@ -46,26 +46,26 @@ export default function RolForm() {
   const [selectedPermisos, setSelectedPermisos] = useState<number[]>([])
   const [busquedaPermisos, setBusquedaPermisos] = useState('')
 
+  const form = useForm<RolFormData>({
+    resolver: zodResolver(rolSchema),
+    defaultValues: {
+      activo: true,
+    },
+  })
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
     watch,
-  } = useForm<RolFormData>({
-    resolver: zodResolver(rolSchema),
-    defaultValues: {
-      activo: true,
-    },
-  })
+    reset,
+  } = form
 
   useEffect(() => {
     if (rol) {
-      setValue('nombre', rol.nombre)
-      setValue('descripcion', rol.descripcion || '')
-      setValue('activo', rol.activo ?? true)
+      reset(rolToFormData(rol))
     }
-  }, [rol, setValue])
+  }, [rol, reset])
 
   const permisosActualesMemo = useMemo(() => {
     if (!permisosActuales || !Array.isArray(permisosActuales)) return null
@@ -130,10 +130,7 @@ export default function RolForm() {
   }
 
   const onSubmit = async (data: RolFormData) => {
-    const rolData: Rol = {
-      ...data,
-      descripcion: data.descripcion || undefined,
-    }
+    const rolData = rolFormDataToDto(data)
 
     try {
       let rolId: number
@@ -151,148 +148,109 @@ export default function RolForm() {
       })
 
       navigate({ to: '/roles' })
-    } catch { /* hook */ }
+    } catch {
+      // Error ya manejado en el hook
+    }
   }
 
+  const isLoading = isEdit && loadingRol
   const isSaving = createMutation.isPending || updateMutation.isPending || asignarPermisosMutation.isPending
 
-  if (isEdit && loadingRol) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/20 border-t-violet-500 animate-spin" />
-        <span className="text-sm text-muted-foreground">Cargando formulario...</span>
-      </div>
-    )
-  }
-
   return (
-    <StandardPageLayout
+    <FormPageLayout
       title={isEdit ? 'Editar Rol' : 'Nuevo Rol'}
       subtitle={isEdit ? 'Modificar datos y permisos del rol' : 'Crear nuevo rol en el sistema'}
-      icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-violet-500/5 flex items-center justify-center"><Shield className="h-4 w-4 text-violet-600 dark:text-violet-400" /></div>}
-      actions={
-        <div className="flex flex-wrap gap-2 justify-end">
-          <Button type="button" variant="ghost" size="sm" onClick={() => navigate({ to: '/roles' })} disabled={isSaving} className="h-8 text-xs rounded-lg">
-            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-            Volver
-          </Button>
-          <Button type="button" size="sm" disabled={isSaving} onClick={() => handleSubmit(onSubmit)()} className="h-8 text-xs rounded-lg shadow-sm">
-            {isSaving ? 'Guardando...' : (
-              <>
-                <Save className="h-3.5 w-3.5 mr-1.5" />
-                Guardar
-              </>
-            )}
-          </Button>
-        </div>
-      }
+      backUrl="/roles"
+      formId="rol-form"
+      isLoading={isLoading}
+      loadError={loadError}
+      onRetry={() => void refetch()}
+      isSubmitting={isSaving}
+      errors={errors as unknown as Record<string, unknown>}
+      form={form as unknown as UseFormReturn<FieldValues>}
+      width="lg"
     >
-      {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <form id="rol-form" onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-8">
+      <form id="rol-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <FormSection
+          title="Datos del rol"
+          description="Nombre, descripción y estado del rol."
+          icon={FileText}
+          cols={2}
+        >
+          <FieldRow
+            label="Nombre"
+            required
+            htmlFor="nombre"
+            error={errors.nombre}
+          >
+            <Input
+              id="nombre"
+              {...register('nombre')}
+              className={cn(errors.nombre && 'border-destructive')}
+              placeholder="ej. ADMIN"
+            />
+          </FieldRow>
 
-          {/* Basic Info Card */}
-          <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-border/30 bg-muted/10">
-              <div className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <FileText className="h-3.5 w-3.5 text-violet-500" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Datos Generales</h3>
-                  <p className="text-xs text-muted-foreground">Nombre, descripción y estado del rol</p>
-                </div>
-              </div>
+          <FieldRow label="Estado" htmlFor="activo">
+            <Select
+              value={watch('activo') ? 'true' : 'false'}
+              onValueChange={(value) => setValue('activo', value === 'true', { shouldDirty: true })}
+            >
+              <SelectTrigger id="activo" className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Activo</SelectItem>
+                <SelectItem value="false">Inactivo</SelectItem>
+              </SelectContent>
+            </Select>
+          </FieldRow>
+
+          <FieldRow label="Descripción" htmlFor="descripcion" span="full">
+            <Textarea
+              id="descripcion"
+              {...register('descripcion')}
+              placeholder="Descripción del rol..."
+              rows={3}
+            />
+          </FieldRow>
+        </FormSection>
+
+        <FormSection
+          title="Permisos asignados"
+          description={
+            selectedPermisos.length > 0
+              ? `${selectedPermisos.length} permiso${selectedPermisos.length > 1 ? 's' : ''} seleccionado${selectedPermisos.length > 1 ? 's' : ''}`
+              : 'Ningún permiso seleccionado'
+          }
+          icon={Key}
+          cols={1}
+          actions={
+            Object.keys(permisosPorRecurso).length > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleSelectAllPermisos}
+                className="h-7 text-[10px] rounded-lg"
+              >
+                {selectedPermisos.length === permisosFiltrados.length ? 'Deseleccionar' : 'Seleccionar Todos'}
+              </Button>
+            ) : null
+          }
+        >
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+              <Input
+                placeholder="Buscar permiso..."
+                value={busquedaPermisos}
+                onChange={(e) => setBusquedaPermisos(e.target.value)}
+                className="pl-9 h-8 text-xs"
+              />
             </div>
 
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="nombre" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Nombre <span className="text-destructive">*</span></Label>
-                <div className="relative">
-                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                  <Input
-                    id="nombre"
-                    {...register('nombre')}
-                    className={cn("h-9 pl-9 bg-muted/30 border-border/30 rounded-lg focus:bg-background focus:border-primary/40 transition-all text-sm", errors.nombre && "border-red-500/50")}
-                    placeholder="ej. ADMIN"
-                  />
-                </div>
-                {errors.nombre && <p className="text-[10px] text-red-500">{errors.nombre.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Estado</Label>
-                <Select
-                  value={watch('activo') ? 'true' : 'false'}
-                  onValueChange={(value) => setValue('activo', value === 'true')}
-                >
-                  <SelectTrigger className="h-9 bg-muted/30 border-border/30 rounded-lg focus:ring-0 focus:bg-background focus:border-primary/40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="true">Activo</SelectItem>
-                    <SelectItem value="false">Inactivo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="descripcion" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Descripción</Label>
-                <Textarea
-                  id="descripcion"
-                  {...register('descripcion')}
-                  placeholder="Descripción del rol..."
-                  rows={3}
-                  className="bg-muted/30 border-border/30 rounded-lg focus:bg-background focus:border-primary/40 transition-all text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Permissions Card */}
-          <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-border/30 bg-muted/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-7 w-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <Key className="h-3.5 w-3.5 text-blue-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Permisos Asignados</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedPermisos.length > 0
-                        ? `${selectedPermisos.length} permiso${selectedPermisos.length > 1 ? 's' : ''} seleccionado${selectedPermisos.length > 1 ? 's' : ''}`
-                        : 'Ningún permiso seleccionado'}
-                    </p>
-                  </div>
-                </div>
-                {Object.keys(permisosPorRecurso).length > 0 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSelectAllPermisos}
-                    className="h-7 text-[10px] rounded-lg"
-                  >
-                    {selectedPermisos.length === permisosFiltrados.length ? 'Deseleccionar' : 'Seleccionar Todos'}
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="p-4 border-b border-border/20">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                <Input
-                  placeholder="Buscar permiso..."
-                  value={busquedaPermisos}
-                  onChange={(e) => setBusquedaPermisos(e.target.value)}
-                  className="pl-9 h-8 bg-muted/30 border-border/30 text-xs rounded-lg"
-                />
-              </div>
-            </div>
-
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[400px] rounded-lg border border-border/40">
               <div className="p-4 space-y-4">
                 {Object.keys(permisosPorRecurso).length === 0 ? (
                   <div className="py-10 text-center text-muted-foreground">
@@ -337,8 +295,8 @@ export default function RolForm() {
                                   }
                                 }}
                                 className={cn(
-                                  "flex items-start gap-3 p-2.5 rounded-xl hover:bg-muted/50 cursor-pointer transition-all duration-150 select-none border border-transparent",
-                                  isSelected && "bg-primary/5 hover:bg-primary/10 border-primary/20"
+                                  'flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-all duration-150 select-none border border-transparent',
+                                  isSelected && 'bg-primary/5 hover:bg-primary/10 border-primary/20'
                                 )}
                               >
                                 <CheckboxIndicator checked={isSelected} className="mt-0.5" />
@@ -365,7 +323,7 @@ export default function RolForm() {
             </ScrollArea>
 
             {permisosFiltrados.length > 0 && (
-              <div className="px-6 py-3 border-t border-border/20 bg-muted/5 flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
                 <span>
                   {selectedPermisos.length > 0 ? (
                     <span className="font-medium text-foreground">
@@ -379,8 +337,8 @@ export default function RolForm() {
               </div>
             )}
           </div>
-        </form>
-      </div>
-    </StandardPageLayout>
+        </FormSection>
+      </form>
+    </FormPageLayout>
   )
 }

@@ -28,7 +28,7 @@ export default function RolDetail() {
 
   const { data: rol, isLoading } = useRol(id ? Number(id) : undefined)
   const { data: permisosIds } = usePermisosRol(id ? Number(id) : undefined)
-  const { data: permisosData } = usePermisos(0, 100)
+  const { data: permisosData } = usePermisos({ page: 0, size: 100 })
   const deleteMutation = useDeleteRol()
 
   const permisos = permisosData?.content.filter((p) => permisosIds?.includes(p.idPermiso!)) || []

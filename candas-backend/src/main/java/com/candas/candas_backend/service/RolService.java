@@ -7,6 +7,7 @@ import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.PermisoRepository;
 import com.candas.candas_backend.repository.RolPermisoRepository;
 import com.candas.candas_backend.repository.RolRepository;
+import com.candas.candas_backend.repository.spec.RolSpecs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,15 @@ public class RolService {
     }
 
     public Page<RolDTO> findAll(Pageable pageable) {
-        return rolRepository.findAll(pageable).map(this::toDTO);
+        return findAll(pageable, null, null);
+    }
+
+    public Page<RolDTO> findAll(Pageable pageable, String search, Boolean activo) {
+        boolean sinFiltros = (search == null || search.isBlank()) && activo == null;
+        if (sinFiltros) {
+            return rolRepository.findAll(pageable).map(this::toDTO);
+        }
+        return rolRepository.findAll(RolSpecs.withFilters(search, activo), pageable).map(this::toDTO);
     }
 
     public RolDTO findById(Long id) {

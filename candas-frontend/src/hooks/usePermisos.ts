@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { permisoService } from '@/lib/api/permiso.service'
+import { permisoService, type PermisoListParams } from '@/lib/api/permiso.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Permiso } from '@/types/permiso'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
-export function usePermisos(page: number = 0, size: number = 20) {
+export function usePermisos(params: PermisoListParams = {}) {
+  const { page = 0, size = 20, search, recurso, accion } = params
   return useQuery({
-    queryKey: ['permisos', page, size],
-    queryFn: () => permisoService.findAll(page, size),
+    queryKey: ['permisos', page, size, search, recurso, accion],
+    queryFn: () => permisoService.findAll({ page, size, search, recurso, accion }),
   })
 }
 
@@ -26,10 +27,10 @@ export function useCreatePermiso() {
     mutationFn: (dto: Permiso) => permisoService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permisos'] })
-      toast.success('Permiso creado exitosamente')
+      notify.success('Permiso creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el permiso'))
+      notify.error(error, 'Error al crear el permiso')
     },
   })
 }
@@ -43,10 +44,10 @@ export function useUpdatePermiso() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['permisos'] })
       queryClient.invalidateQueries({ queryKey: ['permiso', variables.id] })
-      toast.success('Permiso actualizado exitosamente')
+      notify.success('Permiso actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el permiso'))
+      notify.error(error, 'Error al actualizar el permiso')
     },
   })
 }
@@ -58,10 +59,10 @@ export function useDeletePermiso() {
     mutationFn: (id: number) => permisoService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permisos'] })
-      toast.success('Permiso eliminado exitosamente')
+      notify.success('Permiso eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el permiso'))
+      notify.error(error, 'Error al eliminar el permiso')
     },
   })
 }

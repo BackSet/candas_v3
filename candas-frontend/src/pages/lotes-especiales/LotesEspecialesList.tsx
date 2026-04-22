@@ -1,18 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useLotesEspeciales, useDeleteLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { useQuery } from '@tanstack/react-query'
-import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
 import { Button } from '@/components/ui/button'
-import { ListToolbar } from '@/components/list/ListToolbar'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -34,32 +23,89 @@ import {
   Plus,
   MoreHorizontal,
   Tag,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
-import { ErrorState, LoadingState } from '@/components/states'
+import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ErrorState } from '@/components/states'
+import { EmptyState } from '@/components/states/EmptyState'
 import { ListPagination } from '@/components/list/ListPagination'
+import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { FilterBar, SelectFilter, DateRangeFilter } from '@/components/filters'
+import { useListFilters } from '@/hooks/useListFilters'
+import { useAgencias } from '@/hooks/useSelectOptions'
+import type { LoteRecepcion } from '@/types/lote-recepcion'
+import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
+
+interface LotesEspecialesFiltersState extends Record<string, string | number | undefined> {
+  page: number
+  size: number
+  search: string
+  idAgencia: number | undefined
+  fechaDesde: string
+  fechaHasta: string
+}
+
+const LOTES_ESPECIALES_FILTERS_DEFAULTS: LotesEspecialesFiltersState = {
+  page: 0,
+  size: 20,
+  search: '',
+  idAgencia: undefined,
+  fechaDesde: '',
+  fechaHasta: '',
+}
 
 export default function LotesEspecialesList() {
   const navigate = useNavigate()
-  const [page, setPage] = useState(0)
-  const [busqueda, setBusqueda] = useState('')
-  const [loteAEliminar, setLoteAEliminar] = useState<number | null>(null)
+  const { data: agenciasOptions = [] } = useAgencias()
 
-  const { data, isLoading, error } = useLotesEspeciales(page, 20)
-  const deleteMutation = useDeleteLoteRecepcion()
-
-  const { data: lotesBusqueda, isLoading: loadingBusqueda } = useQuery({
-    queryKey: ['lotes-especiales', 'search', busqueda],
-    queryFn: () => loteRecepcionService.searchEspeciales(busqueda.trim()),
-    enabled: busqueda.trim().length > 0,
-    staleTime: 30000,
+  const filtros = useListFilters<LotesEspecialesFiltersState>({
+    storageKey: 'lotes-especiales',
+    defaults: LOTES_ESPECIALES_FILTERS_DEFAULTS,
+    buildChips: (values, { removeFilter }) => {
+      const chips: Array<{ key: string; label: string; onRemove: () => void }> = []
+      if (values.search) {
+        chips.push({
+          key: 'search',
+          label: `Buscar: "${values.search}"`,
+          onRemove: () => removeFilter('search'),
+        })
+      }
+      if (values.idAgencia != null) {
+        const ag = agenciasOptions.find((a) => a.value === values.idAgencia)
+        chips.push({
+          key: 'idAgencia',
+          label: `Agencia: ${ag?.label ?? values.idAgencia}`,
+          onRemove: () => removeFilter('idAgencia'),
+        })
+      }
+      if (values.fechaDesde || values.fechaHasta) {
+        const desde = values.fechaDesde || '...'
+        const hasta = values.fechaHasta || '...'
+        chips.push({
+          key: 'fechaRango',
+          label: `Fecha: ${desde} → ${hasta}`,
+          onRemove: () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' }),
+        })
+      }
+      return chips
+    },
   })
 
-  const lotesFiltrados = useMemo(() => {
-    if (busqueda.trim().length > 0) return lotesBusqueda || []
-    return data?.content || []
-  }, [busqueda, lotesBusqueda, data])
+  const { page, size, search, idAgencia, fechaDesde, fechaHasta } = filtros.values
+
+  const [loteAEliminar, setLoteAEliminar] = useState<number | null>(null)
+
+  const { data, isLoading, error } = useLotesEspeciales({
+    page,
+    size,
+    search: search || undefined,
+    idAgencia,
+    fechaDesde: fechaDesde || undefined,
+    fechaHasta: fechaHasta || undefined,
+  })
+  const deleteMutation = useDeleteLoteRecepcion()
+
+  const lotesFiltrados = data?.content || []
 
   const handleDelete = async () => {
     if (loteAEliminar) {
@@ -67,13 +113,113 @@ export default function LotesEspecialesList() {
         await deleteMutation.mutateAsync(loteAEliminar)
         setLoteAEliminar(null)
       } catch {
-        // Error ya manejado en el hook
+        // ya manejado en el hook
       }
     }
   }
 
+  const columns = useMemo<DataTableColumn<LoteRecepcion>[]>(() => [
+    {
+      id: 'numero',
+      header: 'Número',
+      width: '220px',
+      accessor: (l) => (
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-mono text-[11px] text-muted-foreground">#{l.idLoteRecepcion}</span>
+          <span className="text-xs font-medium text-foreground truncate" title={l.numeroRecepcion ?? undefined}>
+            {l.numeroRecepcion || 'Sin número'}
+          </span>
+        </div>
+      ),
+      sortValue: (l) => l.numeroRecepcion ?? `#${l.idLoteRecepcion}`,
+    },
+    {
+      id: 'fecha',
+      header: 'Fecha',
+      width: '130px',
+      accessor: (l) => (
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {l.fechaRecepcion
+            ? new Date(l.fechaRecepcion).toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })
+            : '—'}
+        </span>
+      ),
+      sortValue: (l) => (l.fechaRecepcion ? new Date(l.fechaRecepcion) : null),
+    },
+    {
+      id: 'estado',
+      header: 'Despachados / Pendientes',
+      width: '180px',
+      accessor: (l) => {
+        const desp = l.paquetesDespachados ?? 0
+        const pend = l.paquetesPendientes ?? 0
+        return (
+          <div className="flex items-center gap-3 text-xs">
+            <span className="flex items-center gap-1.5 text-success">
+              <span className="w-1.5 h-1.5 rounded-full bg-success" />
+              {desp}
+            </span>
+            <span className="flex items-center gap-1.5 text-warning">
+              <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+              {pend}
+            </span>
+          </div>
+        )
+      },
+      sortValue: (l) => l.paquetesPendientes ?? 0,
+    },
+    {
+      id: 'total',
+      header: 'Total paq.',
+      align: 'right',
+      width: '110px',
+      defaultHidden: true,
+      accessor: (l) => (
+        <span className="text-xs font-medium text-foreground tabular-nums">
+          {l.totalPaquetes ?? 0}
+        </span>
+      ),
+      sortValue: (l) => l.totalPaquetes ?? 0,
+    },
+    {
+      id: 'agencia',
+      header: 'Agencia',
+      defaultHidden: true,
+      accessor: (l) =>
+        l.nombreAgencia ? (
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <span className="text-xs text-foreground truncate" title={l.nombreAgencia}>
+              {l.nombreAgencia}
+            </span>
+            {l.cantonAgencia ? (
+              <span className="text-[11px] text-muted-foreground truncate">{l.cantonAgencia}</span>
+            ) : null}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
+        ),
+      sortValue: (l) => l.nombreAgencia ?? '',
+    },
+    {
+      id: 'usuario',
+      header: 'Usuario',
+      defaultHidden: true,
+      accessor: (l) => (
+        <span className="text-xs text-muted-foreground">{l.usuarioRegistro || '—'}</span>
+      ),
+      sortValue: (l) => l.usuarioRegistro ?? '',
+    },
+  ], [])
+
+  const isLoadingData = isLoading
+  const hayFiltros = filtros.hasActiveFilters
+
   return (
-    <StandardPageLayout
+    <ListPageLayout
       title="Lotes especiales"
       icon={<Tag className="h-4 w-4" />}
       actions={
@@ -82,146 +228,116 @@ export default function LotesEspecialesList() {
           Nuevo
         </Button>
       }
-    >
-      <ListToolbar
-        search={busqueda}
-        onSearchChange={setBusqueda}
-        searchPlaceholder="Buscar..."
-        withBottomBorder={false}
-      />
-
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
-        <div className="rounded-md border border-border bg-card shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
-          {(isLoading || loadingBusqueda) ? (
-            <div className="p-12">
-              <LoadingState label="Cargando..." />
-            </div>
-          ) : error ? (
-            <div className="p-6">
-              <ErrorState title="Error al cargar los datos" icon={<AlertCircle className="h-5 w-5" />} />
-            </div>
-          ) : (
-            <div className="flex-1 min-h-0 overflow-auto">
-              <Table className="notion-table">
-              <TableHeader className="bg-muted/40 border-b border-border">
-                <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="w-[180px] h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Número</TableHead>
-                  <TableHead className="min-w-[200px] h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Detalles</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Fecha</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Estado</TableHead>
-                  <TableHead className="text-right h-9 pr-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lotesFiltrados.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Tag className="h-8 w-8 text-muted-foreground/30" />
-                        <p>No hay lotes especiales</p>
-                        <Button variant="outline" size="sm" onClick={() => navigate({ to: '/lotes-especiales/new' })}>
-                          Crear el primero
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  lotesFiltrados.map((lote) => {
-                    const totalPaquetes = lote.totalPaquetes || 0
-                    const paquetesDespachados = lote.paquetesDespachados || 0
-                    const paquetesPendientes = lote.paquetesPendientes || 0
-                    return (
-                      <TableRow key={lote.idLoteRecepcion} className="group hover:bg-muted/50 border-b border-border/50 last:border-0 h-10">
-                        <TableCell className="font-medium py-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-muted-foreground">#{lote.idLoteRecepcion}</span>
-                            <span className="text-sm text-foreground">{lote.numeroRecepcion || 'Sin número'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <div className="flex flex-col gap-0.5">
-                            {lote.nombreAgencia ? (
-                              <div className="flex items-center gap-1.5 text-sm">
-                                <span>{lote.nombreAgencia}</span>
-                                {lote.cantonAgencia && <span className="text-muted-foreground text-xs">({lote.cantonAgencia})</span>}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-sm italic">-</span>
-                            )}
-                            <div className="text-xs text-muted-foreground">{lote.usuarioRegistro || '-'}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <span className="text-sm text-muted-foreground">
-                            {lote.fechaRecepcion
-                              ? new Date(lote.fechaRecepcion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-                              : '-'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <div className="flex items-center gap-3 text-xs">
-                            <span className="flex items-center gap-1.5" title="Total">
-                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                              {totalPaquetes}
-                            </span>
-                            {paquetesDespachados > 0 && (
-                              <span className="flex items-center gap-1.5 text-green-600" title="Despachados">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                {paquetesDespachados}
-                              </span>
-                            )}
-                            {paquetesPendientes > 0 && (
-                              <span className="flex items-center gap-1.5 text-amber-600" title="Pendientes">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                {paquetesPendientes}
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right py-2 pr-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem onClick={() => navigate({ to: `/lotes-especiales/${lote.idLoteRecepcion}` })}>
-                                <Eye className="h-3.5 w-3.5 mr-2" /> Abrir
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => navigate({ to: `/lotes-especiales/${lote.idLoteRecepcion}/edit` })}>
-                                <Edit className="h-3.5 w-3.5 mr-2" /> Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => setLoteAEliminar(lote.idLoteRecepcion!)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-        </div>
-        {!isLoading && !loadingBusqueda && busqueda.trim().length === 0 && (
-          <ListPagination
-            page={data?.number || 0}
-            totalPages={data?.totalPages || 0}
-            totalItems={data?.totalElements}
-            size={20}
-            onPageChange={setPage}
-            className="shrink-0"
+      filterBar={
+        <FilterBar
+          searchValue={search}
+          onSearchChange={(v) => filtros.setFilter('search', v)}
+          searchPlaceholder="Buscar por número o usuario..."
+          chips={filtros.activeChips}
+          onClearAll={filtros.clearAll}
+        >
+          <SelectFilter
+            value={idAgencia != null ? String(idAgencia) : 'all'}
+            onChange={(v) => filtros.setFilter('idAgencia', v === 'all' ? undefined : Number(v))}
+            options={[
+              { value: 'all', label: 'Todas las agencias' },
+              ...agenciasOptions.map((a) => ({
+                value: String(a.value),
+                label: a.label,
+                description: a.description,
+              })),
+            ]}
+            ariaLabel="Agencia"
+            triggerClassName="w-[220px]"
+            searchable
+            searchPlaceholder="Buscar por agencia, cantón o provincia..."
           />
-        )}
-      </div>
-
+          <DateRangeFilter
+            desde={fechaDesde}
+            hasta={fechaHasta}
+            onChange={({ desde, hasta }) => filtros.setFilters({ fechaDesde: desde, fechaHasta: hasta })}
+          />
+        </FilterBar>
+      }
+      table={
+        error && !isLoadingData ? (
+          <ErrorState
+            title="Error al cargar los datos"
+            description={
+              getInteragencyRestrictionMessage(error)
+                ?? getApiErrorMessage(error, 'No se pudieron cargar los lotes especiales.')
+            }
+            icon={<AlertCircle className="h-5 w-5" />}
+          />
+        ) : (
+          <DataTable<LoteRecepcion>
+            data={lotesFiltrados}
+            columns={columns}
+            rowKey={(l) => l.idLoteRecepcion!}
+            storageKey="lotes-especiales"
+            isLoading={isLoadingData}
+            emptyState={
+              <EmptyState
+                title="No hay lotes especiales"
+                description={
+                  hayFiltros
+                    ? 'No hay resultados para los filtros seleccionados'
+                    : 'Aún no se han registrado lotes especiales'
+                }
+                icon={<Tag className="h-10 w-10 text-muted-foreground/50" />}
+                action={
+                  !hayFiltros && (
+                    <Button onClick={() => navigate({ to: '/lotes-especiales/new' })} variant="outline" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Crear el primero
+                    </Button>
+                  )
+                }
+              />
+            }
+            rowActions={(l) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    aria-label="Acciones de fila"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate({ to: `/lotes-especiales/${l.idLoteRecepcion}` })}>
+                    <Eye className="h-3.5 w-3.5 mr-2" /> Abrir
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate({ to: `/lotes-especiales/${l.idLoteRecepcion}/edit` })}>
+                    <Edit className="h-3.5 w-3.5 mr-2" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setLoteAEliminar(l.idLoteRecepcion!)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          />
+        )
+      }
+      footer={
+        <ListPagination
+          page={data?.number || 0}
+          totalPages={data?.totalPages || 0}
+          totalItems={data?.totalElements}
+          size={size}
+          onPageChange={(p) => filtros.setFilter('page', p)}
+          alwaysShow
+          className="border-t-0 pt-0"
+        />
+      }
+    >
       <Dialog open={!!loteAEliminar} onOpenChange={(open) => !open && setLoteAEliminar(null)}>
         <DialogContent>
           <DialogHeader>
@@ -231,15 +347,23 @@ export default function LotesEspecialesList() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLoteAEliminar(null)} disabled={deleteMutation.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => setLoteAEliminar(null)}
+              disabled={deleteMutation.isPending}
+            >
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
               {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </StandardPageLayout>
+    </ListPageLayout>
   )
 }

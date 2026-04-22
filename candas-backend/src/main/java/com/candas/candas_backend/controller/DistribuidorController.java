@@ -28,10 +28,13 @@ public class DistribuidorController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar distribuidores", description = "Obtiene una lista paginada de todos los distribuidores")
+    @Operation(summary = "Listar distribuidores", description = "Lista paginada con filtros opcionales: search (nombre, código, email), activa.")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.DISTRIBUIDORES_LISTAR + "') or hasAuthority('" + PermissionConstants.DISTRIBUIDORES_VER + "')")
-    public ResponseEntity<Page<DistribuidorDTO>> findAll(Pageable pageable) {
-        return ResponseEntity.ok(distribuidorService.findAll(pageable));
+    public ResponseEntity<Page<DistribuidorDTO>> findAll(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean activa) {
+        return ResponseEntity.ok(distribuidorService.findAll(pageable, search, activa));
     }
 
     @GetMapping("/search")

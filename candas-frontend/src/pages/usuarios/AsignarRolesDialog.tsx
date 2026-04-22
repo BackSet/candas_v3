@@ -28,7 +28,7 @@ export default function AsignarRolesDialog({
 }: AsignarRolesDialogProps) {
   const [selectedRoles, setSelectedRoles] = useState<number[]>([])
   const [busqueda, setBusqueda] = useState('')
-  const { data: rolesData } = useRoles(0, 100)
+  const { data: rolesData } = useRoles({ page: 0, size: 100 })
   const { data: rolesActuales } = useRolesUsuario(usuarioId)
   const asignarMutation = useAsignarRolesUsuario()
 

@@ -35,19 +35,20 @@ import {
   MapPin,
   Package,
   FileDown,
+  Loader2,
 } from 'lucide-react'
 import ImportarPaquetesDialog from './ImportarPaquetesDialog'
 import { DateTimePicker } from '@/components/ui/date-time-picker'
 import { generarExcelTrackingSistemaExterno, generarExcelPorTipo, MSG_SIN_PAQUETES_TRACKING, type TipoExportacionTracking, type SubTipoClementinaTracking } from '@/utils/generarExcelLoteRecepcion'
 import { TipoPaquete } from '@/types/paquete'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
 import { Property } from '@/components/detail/InfoCard'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { QuickActions } from '@/components/detail/QuickActions'
-import { EmptyState, LoadingState } from '@/components/states'
+import { EmptyState, DetailSkeleton } from '@/components/states'
 import { ErrorState } from '@/components/states/ErrorState'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
@@ -68,10 +69,11 @@ export default function LoteRecepcionDetail() {
   const [trackingDate, setTrackingDate] = useState<Date | null>(new Date())
   const [tipoExportacionTracking, setTipoExportacionTracking] = useState<TipoExportacionTracking>('NORMAL')
   const [subTipoClementinaTracking, setSubTipoClementinaTracking] = useState<SubTipoClementinaTracking>('hijas')
+  const [exportandoExcel, setExportandoExcel] = useState<string | null>(null)
 
   const { data: loteRecepcion, isLoading, error } = useLoteRecepcion(id ? Number(id) : undefined)
   const { data: paquetes } = usePaquetesLoteRecepcion(id ? Number(id) : undefined)
-  const { data: agenciasData } = useAgencias(0, 1000) // Para el diálogo de exportación Excel
+  const { data: agenciasData } = useAgencias({ page: 0, size: 1000 }) // Para el diálogo de exportación Excel
   const deleteMutation = useDeleteLoteRecepcion()
 
   const canEditLote = useHasPermission(PERMISSIONS.LOTES_RECEPCION.EDITAR)
@@ -121,7 +123,11 @@ export default function LoteRecepcionDetail() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Cargando lote..." />
+    return (
+      <DetailPageLayout title="Cargando lote..." backUrl="/lotes-recepcion" maxWidth="xl">
+        <DetailSkeleton />
+      </DetailPageLayout>
+    )
   }
 
   if (!loteRecepcion) {
@@ -174,25 +180,27 @@ export default function LoteRecepcionDetail() {
   }
 
   // Handler para exportar tracking (desde el diálogo: usa fecha, hora y modo elegidos)
-  const handleExportarTracking = () => {
+  const handleExportarTracking = async () => {
     if (!paquetes || paquetes.length === 0) {
-      toast.error('No hay paquetes para exportar')
+      notify.error('No hay paquetes para exportar')
       return
     }
     if (!trackingDate) {
-      toast.error('Indica fecha y hora para el tracking')
+      notify.error('Indica fecha y hora para el tracking')
       return
     }
 
     const fechaStr = trackingDate.toISOString().split('T')[0]
     const horaStr = `${String(trackingDate.getHours()).padStart(2, '0')}:${String(trackingDate.getMinutes()).padStart(2, '0')}`
 
+    setExportandoExcel('tracking')
+    const id = notify.start('Generando Excel de tracking…')
     try {
       const opts = {
         tipoExportacion: tipoExportacionTracking,
         ...(tipoExportacionTracking === 'CLEMENTINA' ? { subTipoClementina: subTipoClementinaTracking } : {}),
       }
-      generarExcelTrackingSistemaExterno(paquetes, fechaStr, horaStr, loteRecepcion?.numeroRecepcion, opts)
+      await generarExcelTrackingSistemaExterno(paquetes, fechaStr, horaStr, loteRecepcion?.numeroRecepcion, opts)
       let total: number
       if (tipoExportacionTracking === 'NORMAL') {
         total = paquetesNormales.length
@@ -211,51 +219,62 @@ export default function LoteRecepcionDetail() {
       } else {
         total = paquetes.length
       }
-      toast.success(`Excel de tracking generado exitosamente con ${total} paquete(s)`)
+      notify.finish(id, `Excel de tracking generado exitosamente con ${total} paquete(s)`)
       setShowTrackingDialog(false)
-    } catch (error: any) {
-      const msg = error?.message || 'Error al generar el archivo Excel'
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : ''
       if (msg === MSG_SIN_PAQUETES_TRACKING) {
-        toast.warning(msg)
+        notify.dismiss(id)
+        notify.warning(msg)
       } else {
-        toast.error(msg)
+        notify.fail(id, error, 'No se pudo generar el archivo Excel de tracking')
       }
+    } finally {
+      setExportandoExcel(null)
     }
   }
 
   // Handler para exportar por tipo
-  const handleExportarPorTipo = (tipo: TipoPaquete) => {
+  const handleExportarPorTipo = async (tipo: TipoPaquete) => {
     if (!paquetes || paquetes.length === 0) {
-      toast.error('No hay paquetes para exportar')
+      notify.error('No hay paquetes para exportar')
       return
     }
 
+    const accionId = `tipo-${tipo}`
+    setExportandoExcel(accionId)
+    const id = notify.start(`Generando Excel de tipo ${tipo}…`)
     const { fecha, hora } = obtenerFechaHoraActual()
     try {
-      generarExcelPorTipo(paquetes, tipo, fecha, hora, loteRecepcion?.numeroRecepcion)
-      toast.success(`Excel de tipo ${tipo} generado exitosamente`)
-    } catch (error: any) {
-      toast.error(error.message || 'Error al generar el archivo Excel')
+      await generarExcelPorTipo(paquetes, tipo, fecha, hora, loteRecepcion?.numeroRecepcion)
+      notify.finish(id, `Excel de tipo ${tipo} generado exitosamente`)
+    } catch (error: unknown) {
+      notify.fail(id, error, 'No se pudo generar el archivo Excel')
+    } finally {
+      setExportandoExcel(null)
     }
   }
 
   // Handler para exportar por destino (opcionalmente filtrado por idAgencia cuando destino es AGENCIA)
-  const handleExportarPorDestino = (
+  const handleExportarPorDestino = async (
     destino: 'AGENCIA' | 'DOMICILIO',
     opts?: { filtroDomicilio?: 'TODOS' | 'CON_DESTINATARIO' | 'SIN_DESTINATARIO'; idAgencia?: number }
   ) => {
     if (!paquetes || paquetes.length === 0) {
-      toast.error('No hay paquetes para exportar')
+      notify.error('No hay paquetes para exportar')
       return
     }
 
+    const accionId = `destino-${destino}-${opts?.idAgencia ?? 'todas'}`
+    setExportandoExcel(accionId)
+    const id = notify.start(`Generando Excel de destino ${destino}…`)
     const { fecha, hora } = obtenerFechaHoraActual()
     const idAgencia = destino === 'AGENCIA' ? opts?.idAgencia : undefined
     const agencias = agenciasData?.content ?? []
     try {
-      generarExcelPorTipo(
+      await generarExcelPorTipo(
         paquetes,
-        destino as any,
+        destino as TipoPaquete,
         fecha,
         hora,
         loteRecepcion?.numeroRecepcion,
@@ -270,9 +289,11 @@ export default function LoteRecepcionDetail() {
       const msg = destino === 'AGENCIA' && idAgencia
         ? `Excel de agencia generado exitosamente`
         : `Excel de destino ${destino} generado exitosamente`
-      toast.success(msg)
-    } catch (error: any) {
-      toast.error(error.message || 'Error al generar el archivo Excel')
+      notify.finish(id, msg)
+    } catch (error: unknown) {
+      notify.fail(id, error, 'No se pudo generar el archivo Excel')
+    } finally {
+      setExportandoExcel(null)
     }
   }
 
@@ -534,11 +555,27 @@ export default function LoteRecepcionDetail() {
           </div>
 
           <DialogFooter className="shrink-0 p-6 pt-0 flex gap-3 border-t border-border/50">
-            <Button variant="ghost" onClick={() => setShowTrackingDialog(false)} className="flex-1 hover:bg-muted">
+            <Button
+              variant="ghost"
+              onClick={() => setShowTrackingDialog(false)}
+              className="flex-1 hover:bg-muted"
+              disabled={exportandoExcel === 'tracking'}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleExportarTracking} className="flex-1 shadow-lg shadow-primary/20">
-              Generar Excel
+            <Button
+              onClick={handleExportarTracking}
+              className="flex-1 shadow-lg shadow-primary/20"
+              disabled={exportandoExcel === 'tracking'}
+            >
+              {exportandoExcel === 'tracking' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generando…
+                </>
+              ) : (
+                'Generar Excel'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -45,15 +45,24 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long>, JpaSpec
             "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })
     Page<Paquete> findByNumeroGuiaContainingIgnoreCase(String numeroGuia, Pageable pageable);
 
-    /** Lista paginada con filtros opcionales: búsqueda por guía, estado y tipo. Parámetros null = sin filtrar. */
+    /** Lista paginada con filtros opcionales: búsqueda por guía, estado, tipo, agencia destino, lote y rango de fechaRegistro. Parámetros null = sin filtrar. */
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
             "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })
     @Query("SELECT p FROM Paquete p WHERE "
-            + "(:search IS NULL OR :search = '' OR LOWER(p.numeroGuia) LIKE LOWER(CONCAT('%', :search, '%'))) AND "
+            + "(:search IS NULL OR :search = '' OR LOWER(p.numeroGuia) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(COALESCE(p.ref, '')) LIKE LOWER(CONCAT('%', :search, '%'))) AND "
             + "(:estado IS NULL OR p.estado = :estado) AND "
-            + "(:tipo IS NULL OR p.tipoPaquete = :tipo)")
+            + "(:tipo IS NULL OR p.tipoPaquete = :tipo) AND "
+            + "(:idAgencia IS NULL OR (p.agenciaDestino IS NOT NULL AND p.agenciaDestino.idAgencia = :idAgencia)) AND "
+            + "(:idLote IS NULL OR (p.loteRecepcion IS NOT NULL AND p.loteRecepcion.idLoteRecepcion = :idLote)) AND "
+            + "(CAST(:fechaDesde AS timestamp) IS NULL OR p.fechaRegistro >= :fechaDesde) AND "
+            + "(CAST(:fechaHasta AS timestamp) IS NULL OR p.fechaRegistro <= :fechaHasta)")
     Page<Paquete> findAllFiltered(@Param("search") String search, @Param("estado") EstadoPaquete estado,
-            @Param("tipo") TipoPaquete tipo, Pageable pageable);
+            @Param("tipo") TipoPaquete tipo,
+            @Param("idAgencia") Long idAgencia,
+            @Param("idLote") Long idLote,
+            @Param("fechaDesde") java.time.LocalDateTime fechaDesde,
+            @Param("fechaHasta") java.time.LocalDateTime fechaHasta,
+            Pageable pageable);
 
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
             "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })

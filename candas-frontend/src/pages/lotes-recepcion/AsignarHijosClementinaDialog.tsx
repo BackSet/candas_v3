@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Search, Package, Hash } from 'lucide-react'
 import { TipoPaquete } from '@/types/paquete'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 interface AsignarHijosClementinaDialogProps {
   loteRecepcionId: number
@@ -37,7 +37,7 @@ export default function AsignarHijosClementinaDialog({
   const [buscandoPorGuia, setBuscandoPorGuia] = useState(false)
   const [tabActivo, setTabActivo] = useState('seleccionar')
   const { data: paquetePadre } = usePaquete(idPaquetePadre)
-  const { data, isLoading } = usePaquetes(0, 100)
+  const { data, isLoading } = usePaquetes({ page: 0, size: 100 })
   const agregarMutation = useAgregarHijosClementinaALote()
   const agregarPorGuiaMutation = useAgregarHijoClementinaPorGuiaALote()
 
@@ -86,7 +86,7 @@ export default function AsignarHijosClementinaDialog({
 
   const handleAsociarPorGuia = async () => {
     if (!numeroGuia.trim()) {
-      toast.error('Por favor ingresa un número de guía')
+      notify.error('Por favor ingresa un número de guía')
       return
     }
 

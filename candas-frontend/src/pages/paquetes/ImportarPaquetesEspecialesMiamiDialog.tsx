@@ -16,7 +16,7 @@ import type { ListasEtiquetadasBatchResult } from '@/types/listas-etiquetadas'
 import { useQuery } from '@tanstack/react-query'
 import { Tag, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { parseGuiasUnicas } from '@/utils/parseGuias'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import {
   Table,
   TableBody,
@@ -54,12 +54,12 @@ export default function ImportarPaquetesEspecialesMiamiDialog({
   const handleSubmit = async () => {
     const guias = parseGuiasUnicas(numerosGuiaText)
     if (guias.length === 0) {
-      toast.error('Ingresa al menos un número de guía')
+      notify.error('Ingresa al menos un número de guía')
       return
     }
     const etiquetaTrim = etiqueta.trim()
     if (!etiquetaTrim) {
-      toast.error('La etiqueta es obligatoria')
+      notify.error('La etiqueta es obligatoria')
       return
     }
 
@@ -73,13 +73,13 @@ export default function ImportarPaquetesEspecialesMiamiDialog({
         instruccion: instruccion?.trim() || undefined,
       })
       setResultado(res)
-      toast.success(`Procesados ${res.totalProcesados} paquetes`)
+      notify.success(`Procesados ${res.totalProcesados} paquetes`)
       if (onImportSuccess) onImportSuccess()
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         'Error al importar'
-      toast.error(msg)
+      notify.error(msg)
     } finally {
       setIsLoading(false)
     }

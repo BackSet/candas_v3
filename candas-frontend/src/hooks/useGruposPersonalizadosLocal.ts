@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 export interface GrupoPersonalizadoLocal {
   id: string
@@ -115,7 +115,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     } catch (error) {
       console.error('Error al guardar grupos personalizados:', error)
-      toast.error('Error al guardar el grupo')
+      notify.error('Error al guardar el grupo')
     }
   }, [loteRecepcionId])
 
@@ -138,7 +138,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
   // Crear grupo
   const crearGrupo = useCallback((grupo: Omit<GrupoPersonalizadoLocal, 'id'>) => {
     if (!loteRecepcionId) {
-      toast.error('No se puede crear grupo sin lote de recepción')
+      notify.error('No se puede crear grupo sin lote de recepción')
       return
     }
 
@@ -165,14 +165,14 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     // Refrescar grupos
     refrescarGrupos()
     
-    toast.success('Grupo creado exitosamente')
+    notify.success('Grupo creado exitosamente')
     return nuevoGrupo
   }, [loteRecepcionId, obtenerEstructura, guardarGrupos])
 
   // Eliminar grupo
   const eliminarGrupo = useCallback((id: string) => {
     if (!loteRecepcionId) {
-      toast.error('No se puede eliminar grupo sin lote de recepción')
+      notify.error('No se puede eliminar grupo sin lote de recepción')
       return
     }
 
@@ -200,9 +200,9 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     if (encontrado) {
       guardarGrupos(estructura)
       refrescarGrupos()
-      toast.success('Grupo eliminado exitosamente')
+      notify.success('Grupo eliminado exitosamente')
     } else {
-      toast.error('Grupo no encontrado')
+      notify.error('Grupo no encontrado')
     }
   }, [loteRecepcionId, obtenerEstructura, guardarGrupos])
 
@@ -215,7 +215,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
   // Agregar paquetes a un grupo existente
   const agregarPaquetesAGrupo = useCallback((grupoId: string, idPaquetes: number[]) => {
     if (!loteRecepcionId) {
-      toast.error('No se puede agregar paquetes sin lote de recepción')
+      notify.error('No se puede agregar paquetes sin lote de recepción')
       return
     }
 
@@ -240,7 +240,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     }
 
     if (!grupoEncontrado) {
-      toast.error('Grupo no encontrado')
+      notify.error('Grupo no encontrado')
       return
     }
 
@@ -249,7 +249,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     const nuevosIds = idPaquetes.filter(id => !idsExistentes.has(id))
     
     if (nuevosIds.length === 0) {
-      toast.info('Todos los paquetes ya están en el grupo')
+      notify.info('Todos los paquetes ya están en el grupo')
       return
     }
 
@@ -258,13 +258,13 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     
     guardarGrupos(estructura)
     refrescarGrupos()
-    toast.success(`${nuevosIds.length} paquete(s) agregado(s) al grupo`)
+    notify.success(`${nuevosIds.length} paquete(s) agregado(s) al grupo`)
   }, [loteRecepcionId, obtenerEstructura, guardarGrupos, refrescarGrupos])
 
   // Mover un paquete de un grupo a otro
   const moverPaqueteAGrupo = useCallback((paqueteId: number, grupoIdDestino: string, provincia: string, canton: string) => {
     if (!loteRecepcionId) {
-      toast.error('No se puede mover paquete sin lote de recepción')
+      notify.error('No se puede mover paquete sin lote de recepción')
       return
     }
 
@@ -307,7 +307,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
     // Buscar grupo destino
     const grupoDestino = estructura[provincia][canton][grupoIdDestino]
     if (!grupoDestino) {
-      toast.error('Grupo destino no encontrado')
+      notify.error('Grupo destino no encontrado')
       return
     }
 
@@ -318,7 +318,7 @@ export function useGruposPersonalizadosLocal(loteRecepcionId?: number) {
 
     guardarGrupos(estructura)
     refrescarGrupos()
-    toast.success('Paquete movido exitosamente')
+    notify.success('Paquete movido exitosamente')
   }, [loteRecepcionId, obtenerEstructura, guardarGrupos, refrescarGrupos])
 
   return {

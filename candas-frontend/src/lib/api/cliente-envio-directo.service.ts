@@ -5,7 +5,7 @@ import type { ClienteEnvioDirecto } from '@/types/cliente-envio-directo'
 export const clienteEnvioDirectoService = {
   async getAll(): Promise<ClienteEnvioDirecto[]> {
     const response = await apiClient.get<ClienteEnvioDirecto[]>(
-      API_ENDPOINTS.DESTINATARIOS_DIRECTOS.BASE
+      API_ENDPOINTS.DESTINATARIOS_DIRECTOS.ALL
     )
     return response.data
   },

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { useQueryClient } from '@tanstack/react-query'
 import { useBuscarOCrearDistribuidor, useCreateDistribuidor } from './useDistribuidores'
 
@@ -14,7 +14,7 @@ export function useDistribuidorManager(onDistribuidorCreado?: (idDistribuidor: n
 
   const handleCrearDistribuidor = async () => {
     if (!nuevoDistribuidorNombre.trim()) {
-      toast.error('El nombre del distribuidor es requerido')
+      notify.error('El nombre del distribuidor es requerido')
       return
     }
 
@@ -22,7 +22,7 @@ export function useDistribuidorManager(onDistribuidorCreado?: (idDistribuidor: n
     if (nuevoDistribuidorEmail && nuevoDistribuidorEmail.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(nuevoDistribuidorEmail.trim())) {
-        toast.error('El email proporcionado no es válido')
+        notify.error('El email proporcionado no es válido')
         return
       }
     }
@@ -53,7 +53,7 @@ export function useDistribuidorManager(onDistribuidorCreado?: (idDistribuidor: n
       setNuevoDistribuidorNombre('')
       setNuevoDistribuidorCodigo('')
       setNuevoDistribuidorEmail('')
-      toast.success('Distribuidor creado y seleccionado exitosamente')
+      notify.success('Distribuidor creado y seleccionado exitosamente')
     } catch {
       // Error ya manejado en el hook
     }

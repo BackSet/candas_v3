@@ -19,8 +19,8 @@ import {
 import { TipoDestino, type Paquete } from '@/types/paquete'
 import { useUpdatePaquete } from '@/hooks/usePaquetes'
 import { useAgencias as useAgenciasApi } from '@/hooks/useAgencias'
-import { useDestinatariosDirectos } from '@/hooks/useDestinatariosDirectos'
-import { toast } from 'sonner'
+import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
+import { notify } from '@/lib/notify'
 import { useQueryClient } from '@tanstack/react-query'
 
 interface CambiarTipoDestinoDialogProps {
@@ -40,8 +40,8 @@ export default function CambiarTipoDestinoDialog({
   const [nuevoIdAgenciaDestino, setNuevoIdAgenciaDestino] = useState<number | null>(null)
   const [nuevoIdDestinatarioDirecto, setNuevoIdDestinatarioDirecto] = useState<number | null>(null)
   const updatePaqueteMutation = useUpdatePaquete()
-  const { data: agenciasPage, isLoading: loadingAgencias } = useAgenciasApi(0, 1000)
-  const { data: destinatarios = [], isLoading: loadingDestinatarios } = useDestinatariosDirectos()
+  const { data: agenciasPage, isLoading: loadingAgencias } = useAgenciasApi({ page: 0, size: 1000 })
+  const { data: destinatarios = [], isLoading: loadingDestinatarios } = useDestinatariosDirectosAll()
   const queryClient = useQueryClient()
 
   const agencias = useMemo(() => {
@@ -109,7 +109,7 @@ export default function CambiarTipoDestinoDialog({
 
     // Validar que si el tipo es AGENCIA, se debe seleccionar una agencia
     if (nuevoTipoDestino === TipoDestino.AGENCIA && !nuevoIdAgenciaDestino) {
-      toast.error('Debe seleccionar una agencia cuando el tipo destino es AGENCIA')
+      notify.error('Debe seleccionar una agencia cuando el tipo destino es AGENCIA')
       return
     }
 
@@ -141,7 +141,7 @@ export default function CambiarTipoDestinoDialog({
 
       // Asegurar que el objeto tenga al menos un campo para que el backend lo acepte
       if (!dataToUpdate.tipoDestino) {
-        toast.error('Debe seleccionar un tipo destino')
+        notify.error('Debe seleccionar un tipo destino')
         return
       }
 
@@ -157,11 +157,11 @@ export default function CambiarTipoDestinoDialog({
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion'], exact: false })
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
 
-      toast.success('Tipo destino actualizado correctamente')
+      notify.success('Tipo destino actualizado correctamente')
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
-      toast.error('Error al actualizar el tipo destino')
+      notify.error('Error al actualizar el tipo destino')
     }
   }
 

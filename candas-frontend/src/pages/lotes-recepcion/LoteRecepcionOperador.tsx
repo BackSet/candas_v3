@@ -27,10 +27,13 @@ import {
     MoreHorizontal,
     ChevronsUpDown,
     Plus,
-    Trash2
+    Trash2,
+    ClipboardPaste,
+    Loader2,
+    AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import {
     Table,
     TableBody,
@@ -63,7 +66,7 @@ import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionD
 import CambiarTipoMasivoDialog from '@/components/lotes-recepcion/CambiarTipoMasivoDialog'
 import { useAgencias, useCreateAgencia } from '@/hooks/useAgencias'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
-import { useDestinatariosDirectos } from '@/hooks/useDestinatariosDirectos'
+import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
 import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
 import { LoadingState } from '@/components/states'
 import { TipoPaquete, TipoDestino, type Paquete } from '@/types/paquete'
@@ -223,14 +226,14 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
     // Data Fetching
     const { data: paquetes, isLoading } = usePaquetesLoteRecepcion(id ? Number(id) : undefined)
-    const { data: agenciasResponse } = useAgencias(0, 100)
-    const { data: distribuidoresResponse } = useDistribuidores(0, 100)
+    const { data: agenciasResponse } = useAgencias({ page: 0, size: 100 })
+    const { data: distribuidoresResponse } = useDistribuidores({ page: 0, size: 100 })
 
     const agencias = agenciasResponse?.content || []
     const distribuidores = distribuidoresResponse?.content || []
             const { data: session } = useDespachoMasivoSession({ refetchInterval: false })
     const updateDespachoMasivoSession = useUpdateDespachoMasivoSession()
-    const { data: destinatariosDirectos = [] } = useDestinatariosDirectos()
+    const { data: destinatariosDirectos = [] } = useDestinatariosDirectosAll()
     const updatePaqueteMutation = useUpdatePaquete()
 
     const [listFilter, setListFilter] = useState<'PENDIENTES' | 'PROCESADOS'>('PENDIENTES')
@@ -363,6 +366,24 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
     /** Diálogo de confirmación cuando el paquete escaneado ya tiene tipo asignado (el operario decide si añadir igual). */
     const [pendingTypeConfirm, setPendingTypeConfirm] = useState<{ paquete: Paquete; mode: ModoClasificacion } | null>(null)
 
+    /**
+     * Pegar lista de guías para el modo activo.
+     * Permite procesar muchas guías de una vez como alternativa al escaneo individual.
+     */
+    interface PasteListBatchResult {
+        total: number
+        agregados: number
+        yaEstaban: string[]
+        noEncontrados: string[]
+        conflictosOtroModo: { guia: string; otroModo: ModoClasificacion }[]
+        otrosErrores: string[]
+        modo: 'DESPACHO' | ModoClasificacion
+    }
+    const [showPasteListDialog, setShowPasteListDialog] = useState(false)
+    const [pasteListText, setPasteListText] = useState('')
+    const [pasteListProcessing, setPasteListProcessing] = useState(false)
+    const [pasteListResult, setPasteListResult] = useState<PasteListBatchResult | null>(null)
+
     // Bulk Dispatch Dialog State
     const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false)
     const [sacaDistribution, setSacaDistribution] = useState('')
@@ -431,12 +452,12 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
     const handleCrearAgencia = async () => {
         const nombre = nuevaAgenciaNombre.trim()
         if (!nombre) {
-            toast.error('El nombre de la agencia es obligatorio')
+            notify.error('El nombre de la agencia es obligatorio')
             return
         }
         const telefonosValidos = nuevaAgenciaTelefonos.filter((t) => t.numero.trim() !== '')
         if (telefonosValidos.length === 0) {
-            toast.error('Debe ingresar al menos un número de teléfono')
+            notify.error('Debe ingresar al menos un número de teléfono')
             return
         }
         if (!telefonosValidos.some((t) => t.principal)) {
@@ -654,7 +675,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             const agenciaCoincidente = agencias.find((a) => a.canton?.toUpperCase() === valorBuscar)
             if (agenciaCoincidente?.idAgencia) {
                 setBulkIdDestino(String(agenciaCoincidente.idAgencia))
-                toast.info(`Se ha seleccionado automáticamente la agencia en ${agenciaCoincidente.canton ?? cantonPredominante}`, {
+                notify.info(`Se ha seleccionado automáticamente la agencia en ${agenciaCoincidente.canton ?? cantonPredominante}`, {
                     duration: 3000,
                     icon: <Sparkles className="h-4 w-4 text-primary" />
                 })
@@ -663,7 +684,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             const destCoincidente = destinatariosDirectos.find((d) => d.canton?.toUpperCase() === valorBuscar && d.activo !== false)
             if (destCoincidente?.idDestinatarioDirecto) {
                 setBulkIdDestino(String(destCoincidente.idDestinatarioDirecto))
-                toast.info(`Se ha seleccionado automáticamente el destinatario de ${destCoincidente.canton ?? cantonPredominante}`, {
+                notify.info(`Se ha seleccionado automáticamente el destinatario de ${destCoincidente.canton ?? cantonPredominante}`, {
                     duration: 3000,
                     icon: <Sparkles className="h-4 w-4 text-primary" />
                 })
@@ -907,10 +928,10 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             clearTypedQueue(mode)
             queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', loteId] })
             queryClient.invalidateQueries({ queryKey: ['lote-recepcion', loteId] })
-            toast.success(`${list.length} paquete(s) guardados en el lote (${mode})`)
+            notify.success(`${list.length} paquete(s) guardados en el lote (${mode})`)
         } catch (err) {
             console.error(err)
-            toast.error('Error al guardar en el lote')
+            notify.error('Error al guardar en el lote')
         } finally {
             setPuttingInLoteMode(null)
         }
@@ -923,7 +944,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             const message = error instanceof Error
                 ? error.message
                 : 'Debes seleccionar una agencia origen activa para continuar.'
-            toast.error(message)
+            notify.error(message)
             return
         }
 
@@ -931,19 +952,19 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
         const groups = sacaDistribution.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0)
 
         if (groups.length === 0) {
-            toast.error("Ingrese una distribución válida (ej: '5, 5')")
+            notify.error("Ingrese una distribución válida (ej: '5, 5')")
             return
         }
 
         // 2. Validate sum (usar orden tipiado para distribución)
         const totalInGroups = groups.reduce((a, b) => a + b, 0)
         if (totalInGroups !== selectedPackageIdsOrder.length) {
-            toast.error(`La suma de los grupos (${totalInGroups}) no coincide con los paquetes seleccionados (${selectedPackageIdsOrder.length})`)
+            notify.error(`La suma de los grupos (${totalInGroups}) no coincide con los paquetes seleccionados (${selectedPackageIdsOrder.length})`)
             return
         }
 
         try {
-            toast.info("Iniciando creación masiva...")
+            notify.info("Iniciando creación masiva...")
 
             // Orden de ingreso (reverse del estado UI: más reciente primero → primero escaneado primero)
             const ordenParaSacas = [...selectedPackageIdsOrder].reverse()
@@ -965,7 +986,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         ? !!bulkIdDestino
                         : !!bulkIdPaqueteOrigenDestinatario && !!bulkDesdePaqueteNombre.trim()
                 if (!destinoValido || !bulkIdDistribuidor) {
-                    toast.error(
+                    notify.error(
                         bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE'
                             ? "Seleccione el paquete de referencia para el destinatario y el Distribuidor"
                             : "Seleccione Destino (Agencia o Destinatario directo) y Distribuidor en el diálogo"
@@ -979,7 +1000,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     idDestinatarioDirectoPayload = Number(bulkIdDestino)
                 } else if (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && bulkIdPaqueteOrigenDestinatario) {
                     if (!bulkDesdePaqueteNombre.trim()) {
-                        toast.error('El paquete seleccionado no tiene nombre de destinatario válido')
+                        notify.error('El paquete seleccionado no tiene nombre de destinatario válido')
                         return
                     }
                     const nuevoDest = await destinatarioDirectoService.create({
@@ -1051,11 +1072,11 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         peso: 0
                     })
                     currentIndex += qty
-                    toast.success(`Saca ${i + 1}/${groups.length} creada con ${qty} paquetes`)
+                    notify.success(`Saca ${i + 1}/${groups.length} creada con ${qty} paquetes`)
                 }
             }
 
-            toast.success("Despacho masivo completado exitosamente")
+            notify.success("Despacho masivo completado exitosamente")
             setCurrentDespacho(prev => ({
                 ...prev,
                 sacas: [...prev.sacas, ...newSacasState]
@@ -1077,7 +1098,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
         } catch (error: unknown) {
             console.error(error)
-            toast.error("Error durante el proceso masivo")
+            notify.error("Error durante el proceso masivo")
         }
     }
 
@@ -1096,7 +1117,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             // 1. Search Package
             const paquete = await paqueteService.findByNumeroGuia(guia)
             if (!paquete || !paquete.idPaquete) {
-                toast.error(`Paquete ${guia} no encontrado`)
+                notify.error(`Paquete ${guia} no encontrado`)
                 return
             }
 
@@ -1114,7 +1135,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     observacion: paquete.observaciones?.trim() || undefined
                 }
                 if (selectedPackageIds.has(id)) {
-                    toast.info('Ya tipiado en despacho')
+                    notify.info('Ya tipiado en despacho')
                     setLastScanned(lastScannedPayload)
                     setInputValue('')
                     return
@@ -1122,7 +1143,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 setScannedPackagesForDespacho(prev => [paquete, ...prev.filter(p => p.idPaquete !== id)])
                 setSelectedPackageIds(prev => new Set(prev).add(id))
                 setSelectedPackageIdsOrder(prev => [id, ...prev.filter(x => x !== id)])
-                toast.success(`Paquete ${paquete.numeroGuia || guia} añadido al despacho`)
+                notify.success(`Paquete ${paquete.numeroGuia || guia} añadido al despacho`)
                 setLastScanned(lastScannedPayload)
             } else {
                 // 3. Classification Mode: validar una guía solo en una cola, avisar si tiene tipo
@@ -1132,7 +1153,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 )
                 const alreadyInMode = otherModes.find(m => typedPackagesByMode[m].some(p => p.idPaquete === paquete.idPaquete))
                 if (alreadyInMode) {
-                    toast.error(`La guía ${paquete.numeroGuia || guia} ya está en la cola de ${alreadyInMode}. Sáquela de esa cola si desea añadirla aquí.`)
+                    notify.error(`La guía ${paquete.numeroGuia || guia} ya está en la cola de ${alreadyInMode}. Sáquela de esa cola si desea añadirla aquí.`)
                     return
                 }
                 const tipoP = paquete.tipoPaquete != null ? String(paquete.tipoPaquete).toUpperCase() : ''
@@ -1159,19 +1180,19 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 }
                 const alreadyInCurrentMode = typedPackagesByMode[mode].some(p => p.idPaquete === paquete.idPaquete)
                 if (alreadyInCurrentMode) {
-                    toast.info(`Ya tipiado en ${scanMode.charAt(0) + scanMode.slice(1).toLowerCase()}`)
+                    notify.info(`Ya tipiado en ${scanMode.charAt(0) + scanMode.slice(1).toLowerCase()}`)
                     setLastScanned(lastScannedPayloadClass)
                     setInputValue('')
                     return
                 }
                 addToTypedQueue(mode, paquete)
-                toast.success(`Paquete ${paquete.numeroGuia || guia} añadido a ${scanMode}`)
+                notify.success(`Paquete ${paquete.numeroGuia || guia} añadido a ${scanMode}`)
                 setLastScanned(lastScannedPayloadClass)
             }
             setInputValue('')
         } catch (error) {
             console.error(error)
-            toast.error(`Error procesando paquete ${guia}`)
+            notify.error(`Error procesando paquete ${guia}`)
         }
     }
 
@@ -1179,6 +1200,202 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
         if (e.key === 'Enter') {
             processPackage(inputValue)
         }
+    }
+
+    /**
+     * Líneas únicas (uppercase, sin espacios) detectadas en el texto pegado.
+     * Acepta separadores: salto de línea, coma, punto y coma, tab y espacios.
+     */
+    const pasteListGuias = useMemo(() => {
+        if (!pasteListText) return [] as string[]
+        const tokens = pasteListText
+            .split(/[\n,;\s\t]+/)
+            .map((s) => s.trim().toUpperCase())
+            .filter(Boolean)
+        return Array.from(new Set(tokens))
+    }, [pasteListText])
+
+    /**
+     * Procesa la lista pegada en lote para el modo activo.
+     * Reutiliza la misma validación que el escaneo individual y muestra al final
+     * un resumen: agregados, ya estaban, no encontrados, conflictos.
+     */
+    const processPasteList = async () => {
+        if (pasteListGuias.length === 0) return
+        setPasteListProcessing(true)
+        setPasteListResult(null)
+
+        const result: PasteListBatchResult = {
+            total: pasteListGuias.length,
+            agregados: 0,
+            yaEstaban: [],
+            noEncontrados: [],
+            conflictosOtroModo: [],
+            otrosErrores: [],
+            modo: scanMode,
+        }
+
+        const isModoDespacho = scanMode === 'DESPACHO'
+        const otherModesForCurrent: ModoClasificacion[] = isModoDespacho
+            ? []
+            : (['DOMICILIO', 'CLEMENTINA', 'SEPARAR', 'CADENITA'] as const).filter(
+                  (m): m is ModoClasificacion => m !== scanMode,
+              )
+
+        // Acumuladores locales para emitir un único setState por colección al final.
+        const nuevosParaDespacho: Paquete[] = []
+        const nuevosIdsDespacho: number[] = []
+        const nuevosPorModo: Record<ModoClasificacion, Paquete[]> = {
+            DOMICILIO: [],
+            CLEMENTINA: [],
+            SEPARAR: [],
+            CADENITA: [],
+        }
+
+        const CONCURRENCY = 6
+        const queue = [...pasteListGuias]
+        let ultimoPaqueteOk: Paquete | null = null
+
+        const worker = async () => {
+            while (queue.length > 0) {
+                const guia = queue.shift()
+                if (!guia) break
+                try {
+                    const paquete = await paqueteService.findByNumeroGuia(guia)
+                    if (!paquete?.idPaquete) {
+                        result.noEncontrados.push(guia)
+                        continue
+                    }
+                    const id = paquete.idPaquete
+
+                    if (isModoDespacho) {
+                        const yaEstaba =
+                            selectedPackageIds.has(id) || nuevosIdsDespacho.includes(id)
+                        if (yaEstaba) {
+                            result.yaEstaban.push(paquete.numeroGuia ?? guia)
+                            continue
+                        }
+                        nuevosParaDespacho.push(paquete)
+                        nuevosIdsDespacho.push(id)
+                        result.agregados++
+                        ultimoPaqueteOk = paquete
+                    } else {
+                        const mode = scanMode as ModoClasificacion
+                        const conflictoEnOtro = otherModesForCurrent.find((m) =>
+                            typedPackagesByMode[m].some((p) => p.idPaquete === id),
+                        )
+                        if (conflictoEnOtro) {
+                            result.conflictosOtroModo.push({
+                                guia: paquete.numeroGuia ?? guia,
+                                otroModo: conflictoEnOtro,
+                            })
+                            continue
+                        }
+                        const yaEnEsteModo =
+                            typedPackagesByMode[mode].some((p) => p.idPaquete === id) ||
+                            nuevosPorModo[mode].some((p) => p.idPaquete === id)
+                        if (yaEnEsteModo) {
+                            result.yaEstaban.push(paquete.numeroGuia ?? guia)
+                            continue
+                        }
+                        nuevosPorModo[mode].push(paquete)
+                        result.agregados++
+                        ultimoPaqueteOk = paquete
+                    }
+                } catch (err) {
+                    // findByNumeroGuia devuelve 404 para guías inexistentes
+                    const status = (err as { response?: { status?: number } })?.response?.status
+                    if (status === 404) {
+                        result.noEncontrados.push(guia)
+                    } else {
+                        result.otrosErrores.push(guia)
+                    }
+                }
+            }
+        }
+
+        const workers = Array.from(
+            { length: Math.min(CONCURRENCY, pasteListGuias.length) },
+            () => worker(),
+        )
+        await Promise.all(workers)
+
+        // Aplicar cambios de estado en una sola tanda.
+        if (isModoDespacho && nuevosParaDespacho.length > 0) {
+            setScannedPackagesForDespacho((prev) => [
+                ...nuevosParaDespacho,
+                ...prev.filter((p) => !nuevosIdsDespacho.includes(p.idPaquete!)),
+            ])
+            setSelectedPackageIds((prev) => {
+                const s = new Set(prev)
+                nuevosIdsDespacho.forEach((id) => s.add(id))
+                return s
+            })
+            setSelectedPackageIdsOrder((prev) => [
+                ...nuevosIdsDespacho,
+                ...prev.filter((x) => !nuevosIdsDespacho.includes(x)),
+            ])
+        } else if (!isModoDespacho) {
+            const mode = scanMode as ModoClasificacion
+            const lista = nuevosPorModo[mode]
+            if (lista.length > 0) {
+                setTypedPackagesByMode((prev) => ({
+                    ...prev,
+                    [mode]: [
+                        ...lista,
+                        ...prev[mode].filter(
+                            (p) => !lista.some((n) => n.idPaquete === p.idPaquete),
+                        ),
+                    ],
+                }))
+            }
+        }
+
+        // Reflejar el último paquete agregado como feedback visual del operador.
+        if (ultimoPaqueteOk) {
+            setLastScanned({
+                id: String(ultimoPaqueteOk.idPaquete),
+                guia: ultimoPaqueteOk.numeroGuia ?? '',
+                timestamp: new Date(),
+                destinoType: isModoDespacho
+                    ? 'DESPACHO'
+                    : scanMode === 'DOMICILIO'
+                        ? 'DOMICILIO'
+                        : 'AGENCIA',
+                tipoPaquete: isModoDespacho ? undefined : (scanMode as TipoPaquete),
+                ref: ultimoPaqueteOk.ref?.trim() || undefined,
+                clienteDestino: buildClienteDestinoFromPaquete(ultimoPaqueteOk),
+                observacion: ultimoPaqueteOk.observaciones?.trim() || undefined,
+            })
+        }
+
+        setPasteListProcessing(false)
+        setPasteListResult(result)
+
+        // Toast resumen (al final, para no sobrecargar al operario).
+        const partes: string[] = []
+        if (result.agregados > 0) partes.push(`${result.agregados} agregados`)
+        if (result.yaEstaban.length > 0) partes.push(`${result.yaEstaban.length} ya estaban`)
+        if (result.noEncontrados.length > 0)
+            partes.push(`${result.noEncontrados.length} no encontrados`)
+        if (result.conflictosOtroModo.length > 0)
+            partes.push(`${result.conflictosOtroModo.length} en otro modo`)
+        if (result.otrosErrores.length > 0)
+            partes.push(`${result.otrosErrores.length} con error`)
+
+        if (result.agregados > 0) {
+            notify.success(`Lista procesada: ${partes.join(' · ')}`)
+        } else if (result.noEncontrados.length === result.total) {
+            notify.warning(`No se encontró ninguna de las ${result.total} guías pegadas`)
+        } else {
+            notify.info(`Lista procesada: ${partes.join(' · ')}`)
+        }
+    }
+
+    const resetPasteListDialog = () => {
+        setPasteListText('')
+        setPasteListResult(null)
+        setPasteListProcessing(false)
     }
 
     if (isLoading) {
@@ -1232,7 +1449,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                 </Tabs>
                             </div>
 
-                            <CardContent className="p-8">
+                            <CardContent className="p-8 space-y-4">
                                 <div className="relative">
                                     <ScanLine className="absolute left-6 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground" />
                                     <Input
@@ -1254,6 +1471,35 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                         <QrCode className="h-4 w-4" />
                                         <span>ENTER</span>
                                     </div>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-xs text-muted-foreground hidden sm:block">
+                                        ¿Tienes una lista de guías?{' '}
+                                        <span className="text-foreground font-medium">
+                                            Pégalas todas a la vez
+                                        </span>{' '}
+                                        en lugar de escanearlas una por una.
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            resetPasteListDialog()
+                                            setShowPasteListDialog(true)
+                                        }}
+                                        className={cn(
+                                            "h-9 gap-2 ml-auto shrink-0 border-dashed",
+                                            scanMode === 'DESPACHO' && "border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/40",
+                                            scanMode === 'DOMICILIO' && "border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950/40",
+                                            scanMode === 'CLEMENTINA' && "border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-300 dark:hover:bg-orange-950/40",
+                                            scanMode === 'SEPARAR' && "border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40",
+                                            scanMode === 'CADENITA' && "border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-800 dark:text-violet-300 dark:hover:bg-violet-950/40",
+                                        )}
+                                    >
+                                        <ClipboardPaste className="h-4 w-4" />
+                                        Pegar lista de guías
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -2099,7 +2345,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                 if (!pendingTypeConfirm) return
                                 const { paquete, mode } = pendingTypeConfirm
                                 addToTypedQueue(mode, paquete)
-                                toast.success(`Paquete ${paquete.numeroGuia || paquete.idPaquete} añadido a ${mode}`)
+                                notify.success(`Paquete ${paquete.numeroGuia || paquete.idPaquete} añadido a ${mode}`)
                                 setLastScanned({
                                     id: String(paquete.idPaquete),
                                     guia: paquete.numeroGuia ?? '',
@@ -2116,6 +2362,237 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         >
                             Confirmar
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Diálogo: pegar lista de guías para procesarlas en lote */}
+            <Dialog
+                open={showPasteListDialog}
+                onOpenChange={(open) => {
+                    setShowPasteListDialog(open)
+                    if (!open) {
+                        // Pequeño delay para no notar el reset durante el cierre
+                        setTimeout(() => resetPasteListDialog(), 200)
+                    }
+                }}
+            >
+                <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+                    <DialogHeader className="px-6 pt-6 pb-4 border-b border-border bg-muted/30">
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "p-2.5 rounded-xl shrink-0",
+                                scanMode === 'DESPACHO' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
+                                scanMode === 'DOMICILIO' && "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400",
+                                scanMode === 'CLEMENTINA' && "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400",
+                                scanMode === 'SEPARAR' && "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400",
+                                scanMode === 'CADENITA' && "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400",
+                            )}>
+                                <ClipboardPaste className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                                <DialogTitle className="text-lg">
+                                    Pegar lista de guías
+                                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                        · Modo {scanMode.charAt(0) + scanMode.slice(1).toLowerCase()}
+                                    </span>
+                                </DialogTitle>
+                                <DialogDescription className="text-xs mt-1">
+                                    Pega aquí las guías que quieres procesar en lote (una por línea, o separadas por coma o espacio).
+                                    El sistema buscará cada guía y agregará las encontradas a{' '}
+                                    {scanMode === 'DESPACHO' ? 'la cola de despacho' : `la cola ${scanMode.charAt(0) + scanMode.slice(1).toLowerCase()}`}.
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="paste-list-textarea" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Guías a procesar
+                                </Label>
+                                <span className="text-xs text-muted-foreground tabular-nums">
+                                    {pasteListGuias.length > 0 ? (
+                                        <>
+                                            <span className="font-semibold text-foreground">{pasteListGuias.length}</span>
+                                            {' guía'}{pasteListGuias.length === 1 ? '' : 's'}{' detectada'}{pasteListGuias.length === 1 ? '' : 's'}
+                                        </>
+                                    ) : (
+                                        '0 guías'
+                                    )}
+                                </span>
+                            </div>
+                            <Textarea
+                                id="paste-list-textarea"
+                                value={pasteListText}
+                                onChange={(e) => {
+                                    setPasteListText(e.target.value)
+                                    if (pasteListResult) setPasteListResult(null)
+                                }}
+                                placeholder={'Ej:\nGUIA-001\nGUIA-002\nGUIA-003\n...'}
+                                rows={10}
+                                className="font-mono text-sm resize-y min-h-[200px]"
+                                disabled={pasteListProcessing}
+                            />
+                            <p className="text-[11px] text-muted-foreground">
+                                Las guías se normalizan a mayúsculas y se eliminan duplicados automáticamente.
+                            </p>
+                        </div>
+
+                        {pasteListResult && (
+                            <div className="rounded-lg border border-border bg-card overflow-hidden">
+                                <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                    <span className="text-sm font-semibold">
+                                        Resumen del procesamiento
+                                    </span>
+                                    <span className="ml-auto text-xs text-muted-foreground">
+                                        Total: {pasteListResult.total}
+                                    </span>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        <div className="rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30 px-3 py-2">
+                                            <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
+                                                Agregados
+                                            </div>
+                                            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                                                {pasteListResult.agregados}
+                                            </div>
+                                        </div>
+                                        <div className="rounded-md border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 px-3 py-2">
+                                            <div className="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">
+                                                Ya estaban
+                                            </div>
+                                            <div className="text-xl font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                                                {pasteListResult.yaEstaban.length}
+                                            </div>
+                                        </div>
+                                        <div className="rounded-md border border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/30 px-3 py-2">
+                                            <div className="text-[10px] uppercase tracking-wider text-rose-700 dark:text-rose-400 font-semibold">
+                                                No encontrados
+                                            </div>
+                                            <div className="text-xl font-bold text-rose-700 dark:text-rose-300 tabular-nums">
+                                                {pasteListResult.noEncontrados.length}
+                                            </div>
+                                        </div>
+                                        <div className="rounded-md border border-border bg-muted/40 px-3 py-2">
+                                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                                Otros
+                                            </div>
+                                            <div className="text-xl font-bold text-foreground tabular-nums">
+                                                {pasteListResult.conflictosOtroModo.length + pasteListResult.otrosErrores.length}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {pasteListResult.noEncontrados.length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-400">
+                                                <AlertCircle className="h-3.5 w-3.5" />
+                                                Guías no encontradas ({pasteListResult.noEncontrados.length})
+                                            </div>
+                                            <div className="rounded-md border border-rose-200 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/20 max-h-28 overflow-y-auto p-2 font-mono text-[11px] text-rose-900 dark:text-rose-300">
+                                                {pasteListResult.noEncontrados.join(', ')}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {pasteListResult.yaEstaban.length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                                <AlertCircle className="h-3.5 w-3.5" />
+                                                Ya estaban en la cola ({pasteListResult.yaEstaban.length})
+                                            </div>
+                                            <div className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20 max-h-24 overflow-y-auto p-2 font-mono text-[11px] text-amber-900 dark:text-amber-300">
+                                                {pasteListResult.yaEstaban.join(', ')}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {pasteListResult.conflictosOtroModo.length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 dark:text-orange-400">
+                                                <AlertCircle className="h-3.5 w-3.5" />
+                                                En otra cola ({pasteListResult.conflictosOtroModo.length})
+                                            </div>
+                                            <div className="rounded-md border border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/20 max-h-24 overflow-y-auto p-2 text-[11px] text-orange-900 dark:text-orange-300 space-y-0.5">
+                                                {pasteListResult.conflictosOtroModo.map((c, i) => (
+                                                    <div key={`${c.guia}-${i}`} className="font-mono">
+                                                        {c.guia} <span className="text-orange-600/80">→ {c.otroModo}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {pasteListResult.otrosErrores.length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                                                <AlertCircle className="h-3.5 w-3.5" />
+                                                Errores de red u otros ({pasteListResult.otrosErrores.length})
+                                            </div>
+                                            <div className="rounded-md border border-border bg-muted/30 max-h-24 overflow-y-auto p-2 font-mono text-[11px] text-muted-foreground">
+                                                {pasteListResult.otrosErrores.join(', ')}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="px-6 py-4 border-t border-border gap-2 sm:gap-2">
+                        {pasteListResult ? (
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        // Permitir pegar otra lista sin cerrar el diálogo
+                                        resetPasteListDialog()
+                                    }}
+                                >
+                                    Pegar otra lista
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => setShowPasteListDialog(false)}
+                                >
+                                    Listo
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowPasteListDialog(false)}
+                                    disabled={pasteListProcessing}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={processPasteList}
+                                    disabled={pasteListProcessing || pasteListGuias.length === 0}
+                                    className="min-w-[180px]"
+                                >
+                                    {pasteListProcessing ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Procesando…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ClipboardPaste className="h-4 w-4 mr-2" />
+                                            Procesar {pasteListGuias.length || ''} guía{pasteListGuias.length === 1 ? '' : 's'}
+                                        </>
+                                    )}
+                                </Button>
+                            </>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

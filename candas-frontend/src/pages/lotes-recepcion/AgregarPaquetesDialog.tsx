@@ -28,7 +28,7 @@ export default function AgregarPaquetesDialog({
 }: AgregarPaquetesDialogProps) {
   const [selectedPaquetes, setSelectedPaquetes] = useState<number[]>([])
   const [busqueda, setBusqueda] = useState('')
-  const { data, isLoading, error } = usePaquetes(0, 100)
+  const { data, isLoading, error } = usePaquetes({ page: 0, size: 100 })
   const agregarMutation = useAgregarPaquetesLoteRecepcion()
   const restrictionMessage =
     getInteragencyRestrictionMessage(error) ??

@@ -1,3 +1,5 @@
+import type { PageResponse } from './paquete'
+
 export interface DestinatarioDirecto {
   idDestinatarioDirecto?: number
   nombreDestinatario: string
@@ -10,3 +12,5 @@ export interface DestinatarioDirecto {
   fechaRegistro?: string
   activo?: boolean
 }
+
+export type DestinatarioDirectoPage = PageResponse<DestinatarioDirecto>

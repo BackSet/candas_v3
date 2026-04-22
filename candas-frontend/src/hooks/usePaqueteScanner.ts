@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
 
 export function usePaqueteScanner(
@@ -41,7 +41,7 @@ export function usePaqueteScanner(
         }, 500)
       } else if (busqueda.length >= 10) {
         // Código escaneado pero no encontrado
-        toast.error(`No se encontró un paquete con el código: ${busqueda}`)
+        notify.error(`No se encontró un paquete con el código: ${busqueda}`)
         setTimeout(() => {
           setBusqueda('')
           setUltimoCodigoEscaneado('')
@@ -69,7 +69,7 @@ export function usePaqueteScanner(
         onPaqueteEncontrado(paqueteEncontrado)
         setBusqueda('')
       } else {
-        toast.error('No se encontró un paquete con ese código')
+        notify.error('No se encontró un paquete con ese código')
       }
     }
   }

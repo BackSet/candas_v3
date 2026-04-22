@@ -4,17 +4,23 @@ import type { Agencia, AgenciaPage } from '@/types/agencia'
 
 export type { Agencia, AgenciaPage } from '@/types/agencia'
 
+export interface AgenciaFindAllParams {
+  page?: number
+  size?: number
+  search?: string
+  nombre?: string
+  codigo?: string
+  activa?: boolean
+}
+
 export const agenciaService = {
-  async findAll(
-    page: number = 0,
-    size: number = 20,
-    params?: { search?: string; nombre?: string; codigo?: string; activa?: boolean }
-  ): Promise<AgenciaPage> {
+  async findAll(params: AgenciaFindAllParams = {}): Promise<AgenciaPage> {
+    const { page = 0, size = 20, search, nombre, codigo, activa } = params
     const queryParams: Record<string, string | number | boolean> = { page, size }
-    if (params?.search) queryParams.search = params.search
-    if (params?.nombre) queryParams.nombre = params.nombre
-    if (params?.codigo) queryParams.codigo = params.codigo
-    if (params?.activa !== undefined) queryParams.activa = params.activa
+    if (search && search.trim()) queryParams.search = search.trim()
+    if (nombre && nombre.trim()) queryParams.nombre = nombre.trim()
+    if (codigo && codigo.trim()) queryParams.codigo = codigo.trim()
+    if (activa !== undefined) queryParams.activa = activa
     const response = await apiClient.get<AgenciaPage>(
       API_ENDPOINTS.AGENCIAS.BASE,
       { params: queryParams }

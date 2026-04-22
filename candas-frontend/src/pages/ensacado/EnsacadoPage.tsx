@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { PaqueteInfoCard } from './PaqueteInfoCard'
 import type { PaqueteEnsacadoInfo } from '@/types/ensacado'
 import { useBuscarPaquete, useMarcarEnsacado, useActualizarUltimaBusqueda, useInfoDespacho, esGuiaValidaParaBuscar } from '@/hooks/useEnsacado'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Scan, X, Loader2, AlertCircle, ArrowLeft, Smartphone, Package, CheckCircle2 } from 'lucide-react'
 import { VistaEnsacadoSoloLectura } from './VistaEnsacadoSoloLectura'
 import { Link } from '@tanstack/react-router'
@@ -87,7 +87,7 @@ function EnsacadoPage() {
     if (ultimoIdMarcadoRef.current === paqueteInfo.idPaquete) return
 
     if (paqueteInfo.yaEnsacado) {
-      toast.warning('Este paquete ya está ensacado')
+      notify.warning('Este paquete ya está ensacado')
       setUltimoPaqueteMostrado(paqueteInfo)
       setNumeroGuia('')
       setNumeroGuiaDebounced('')

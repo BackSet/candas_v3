@@ -50,10 +50,21 @@ public class PaqueteService {
     }
 
     public Page<PaqueteDTO> findAll(String search, EstadoPaquete estado, TipoPaquete tipo, Pageable pageable) {
+        return findAll(search, estado, tipo, null, null, null, null, pageable);
+    }
+
+    public Page<PaqueteDTO> findAll(
+            String search,
+            EstadoPaquete estado,
+            TipoPaquete tipo,
+            Long idAgencia,
+            Long idLote,
+            LocalDateTime fechaDesde,
+            LocalDateTime fechaHasta,
+            Pageable pageable) {
         String searchTrimmed = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
-        EstadoPaquete estadoFilter = (estado != null) ? estado : null;
-        TipoPaquete tipoFilter = (tipo != null) ? tipo : null;
-        return paqueteRepository.findAllFiltered(searchTrimmed, estadoFilter, tipoFilter, pageable)
+        return paqueteRepository
+                .findAllFiltered(searchTrimmed, estado, tipo, idAgencia, idLote, fechaDesde, fechaHasta, pageable)
                 .map(paqueteMapper::toDTO);
     }
 

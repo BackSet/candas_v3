@@ -7,6 +7,15 @@ import type {
   CrearManifiestoConsolidadoDTO,
 } from '@/types/manifiesto-consolidado'
 
+export interface ManifiestoConsolidadoFindAllParams {
+  page?: number
+  size?: number
+  search?: string
+  idAgencia?: number
+  mes?: number
+  anio?: number
+}
+
 export const manifiestoConsolidadoService = {
   async crearManifiestoConsolidado(dto: CrearManifiestoConsolidadoDTO): Promise<ManifiestoConsolidadoResumen> {
     const response = await apiClient.post<ManifiestoConsolidadoResumen>(
@@ -16,11 +25,17 @@ export const manifiestoConsolidadoService = {
     return response.data
   },
 
-  async findAll(page: number = 0, size: number = 20): Promise<ManifiestoConsolidadoPage> {
+  async findAll(params: ManifiestoConsolidadoFindAllParams = {}): Promise<ManifiestoConsolidadoPage> {
+    const { page = 0, size = 20, search, idAgencia, mes, anio } = params
+    const query: Record<string, string | number> = { page, size }
+    if (search?.trim()) query.search = search.trim()
+    if (idAgencia != null) query.idAgencia = idAgencia
+    if (mes != null) query.mes = mes
+    if (anio != null) query.anio = anio
     const response = await apiClient.get<ManifiestoConsolidadoPage>(
       API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BASE,
       {
-        params: { page, size },
+        params: query,
       }
     )
     return response.data

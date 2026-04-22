@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { paqueteService, type ImportResult } from '@/lib/api/paquete.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import { Upload, FileSpreadsheet, AlertCircle, Loader2, AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import {
   Table,
   TableBody,
@@ -48,7 +48,7 @@ export default function ImportarActualizarPaquetesDialog({
         .toLowerCase()
 
       if (!validExtensions.includes(fileExtension)) {
-        toast.error('Por favor, selecciona un archivo Excel (.xlsx o .xls)')
+        notify.error('Por favor, selecciona un archivo Excel (.xlsx o .xls)')
         return
       }
 
@@ -59,7 +59,7 @@ export default function ImportarActualizarPaquetesDialog({
 
   const handleSubmit = async () => {
     if (!file) {
-      toast.error('Por favor, selecciona un archivo')
+      notify.error('Por favor, selecciona un archivo')
       return
     }
 
@@ -71,18 +71,18 @@ export default function ImportarActualizarPaquetesDialog({
       setResultado(resultado)
 
       if (resultado.registrosExitosos > 0) {
-        toast.success(`Importación completada: ${resultado.registrosExitosos} paquetes actualizados/creados`)
+        notify.success(`Importación completada: ${resultado.registrosExitosos} paquetes actualizados/creados`)
       }
 
       if (resultado.registrosFallidos > 0) {
-        toast.warning(`${resultado.registrosFallidos} registros con error.`)
+        notify.warning(`${resultado.registrosFallidos} registros con error.`)
       }
 
       if (onImportSuccess) {
         onImportSuccess()
       }
     } catch (error: any) {
-      toast.error(getApiErrorMessage(error, 'Error al importar el archivo.'))
+      notify.error(error, 'Error al importar el archivo.')
     } finally {
       setIsLoading(false)
     }

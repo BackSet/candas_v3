@@ -2,22 +2,6 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useAgencias, useDeleteAgencia } from '@/hooks/useAgencias'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -34,47 +18,133 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Eye, Edit, Trash2, Plus, Building2, MoreHorizontal, MapPin } from 'lucide-react'
+import {
+  Eye,
+  Edit,
+  Trash2,
+  Plus,
+  Building2,
+  MoreHorizontal,
+  MapPin,
+} from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
-import { cn } from '@/lib/utils'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { ListPageLayout } from '@/app/layout/ListPageLayout'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPagination } from '@/components/list/ListPagination'
-import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
-import { LoadingState } from '@/components/states/LoadingState'
-import { ErrorState } from '@/components/states/ErrorState'
-import { Label } from '@/components/ui/label'
-import { usePersistedListFilters } from '@/hooks/usePersistedListFilters'
+import { ErrorState } from '@/components/states'
+import { useListFilters } from '@/hooks/useListFilters'
+import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { FilterBar, SelectFilter } from '@/components/filters'
+import type { Agencia } from '@/types/agencia'
+import { getApiErrorMessage } from '@/lib/api/errors'
 
-const LIST_KEY = 'agencias' as const
+interface AgenciasFiltersState extends Record<string, string | number | undefined> {
+  page: number
+  size: number
+  search: string
+  activa: 'all' | 'true' | 'false'
+}
+
+const AGENCIAS_FILTERS_DEFAULTS: AgenciasFiltersState = {
+  page: 0,
+  size: 20,
+  search: '',
+  activa: 'all',
+}
+
+function AgenciaRowActions({
+  onVer,
+  onEditar,
+  onEliminar,
+}: {
+  onVer: () => void
+  onEditar: () => void
+  onEliminar: () => void
+}) {
+  return (
+    <ProtectedByPermission
+      permissions={[
+        PERMISSIONS.AGENCIAS.VER,
+        PERMISSIONS.AGENCIAS.EDITAR,
+        PERMISSIONS.AGENCIAS.ELIMINAR,
+      ]}
+    >
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            aria-label="Acciones de fila"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.VER}>
+            <DropdownMenuItem onClick={onVer}>
+              <Eye className="h-3.5 w-3.5 mr-2" /> Detalles
+            </DropdownMenuItem>
+          </ProtectedByPermission>
+          <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.EDITAR}>
+            <DropdownMenuItem onClick={onEditar}>
+              <Edit className="h-3.5 w-3.5 mr-2" /> Editar
+            </DropdownMenuItem>
+          </ProtectedByPermission>
+          <DropdownMenuSeparator />
+          <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.ELIMINAR}>
+            <DropdownMenuItem
+              onClick={onEliminar}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
+            </DropdownMenuItem>
+          </ProtectedByPermission>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </ProtectedByPermission>
+  )
+}
 
 export default function AgenciasList() {
   const navigate = useNavigate()
-  const { stored, setFilters, setPage, setSearch } = usePersistedListFilters<{
-    page?: number
-    size?: number
-    search?: string
-    nombre?: string
-    codigo?: string
-    activa?: string
-  }>(LIST_KEY)
-  const { page = 0, size = 20, search: busqueda = '', nombre = '', codigo = '', activa: activaStore = '' } = { ...stored }
-  const setBusqueda = (v: string) => setSearch(v)
+  const filtros = useListFilters<AgenciasFiltersState>({
+    storageKey: 'agencias',
+    defaults: AGENCIAS_FILTERS_DEFAULTS,
+    buildChips: (values, { removeFilter }) => {
+      const chips = []
+      if (values.search) {
+        chips.push({
+          key: 'search',
+          label: `Buscar: "${values.search}"`,
+          onRemove: () => removeFilter('search'),
+        })
+      }
+      if (values.activa !== 'all') {
+        chips.push({
+          key: 'activa',
+          label: values.activa === 'true' ? 'Activas' : 'Inactivas',
+          onRemove: () => removeFilter('activa'),
+        })
+      }
+      return chips
+    },
+  })
+  const { page, size, search, activa } = filtros.values
+  const activaBool = activa === 'all' ? undefined : activa === 'true'
+
   const [agenciaAEliminar, setAgenciaAEliminar] = useState<number | null>(null)
 
-  const filters = useMemo(() => {
-    const f: { search?: string; nombre?: string; codigo?: string; activa?: boolean } = {}
-    if (busqueda?.trim()) f.search = busqueda.trim()
-    if (nombre?.trim()) f.nombre = nombre.trim()
-    if (codigo?.trim()) f.codigo = codigo.trim()
-    if (activaStore === 'true') f.activa = true
-    if (activaStore === 'false') f.activa = false
-    return Object.keys(f).length > 0 ? f : undefined
-  }, [busqueda, nombre, codigo, activaStore])
-
-  const { data, isLoading, error } = useAgencias(page, size, filters)
+  const { data, isLoading, error } = useAgencias({
+    page,
+    size,
+    search: search || undefined,
+    activa: activaBool,
+  })
   const deleteMutation = useDeleteAgencia()
 
   const handleDelete = async () => {
@@ -88,222 +158,197 @@ export default function AgenciasList() {
     }
   }
 
-  // Un solo listado paginado con filtros en backend
   const agenciasFiltradas = data?.content ?? []
-  const totalPages = data?.totalPages || 0
-  const currentPage = data?.number ?? 0
 
-  const applyAdvancedFilters = (vals: { nombre?: string; codigo?: string; activa?: string }) => {
-    setFilters({ ...vals, page: 0 })
-  }
-  const clearAdvancedFilters = () => {
-    setFilters({ nombre: '', codigo: '', activa: '', page: 0 })
-  }
+  const columns = useMemo<DataTableColumn<Agencia>[]>(
+    () => [
+      {
+        id: 'codigo',
+        header: 'Código',
+        width: '110px',
+        accessor: (a) => (
+          <span className="font-mono text-xs text-muted-foreground">
+            {a.codigo || '—'}
+          </span>
+        ),
+        sortValue: (a) => a.codigo ?? '',
+      },
+      {
+        id: 'nombre',
+        header: 'Agencia',
+        accessor: (a) => (
+          <span
+            className="text-xs font-medium text-foreground truncate block"
+            title={a.nombre}
+          >
+            {a.nombre}
+          </span>
+        ),
+        sortValue: (a) => a.nombre ?? '',
+      },
+      {
+        id: 'estado',
+        header: 'Estado',
+        width: '110px',
+        accessor: (a) => (
+          <StatusBadge
+            label={a.activa !== false ? 'Activa' : 'Inactiva'}
+            variant={a.activa !== false ? 'active' : 'inactive'}
+          />
+        ),
+        sortValue: (a) => (a.activa !== false ? 1 : 0),
+      },
+      {
+        id: 'canton',
+        header: 'Cantón',
+        accessor: (a) => (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+            {a.canton ? <MapPin className="h-3 w-3 shrink-0" /> : null}
+            <span className="truncate" title={a.canton ?? undefined}>
+              {a.canton || '—'}
+            </span>
+          </div>
+        ),
+        sortValue: (a) => a.canton ?? '',
+      },
+      {
+        id: 'contacto',
+        header: 'Contacto',
+        defaultHidden: true,
+        accessor: (a) => {
+          const telefonoPrincipal =
+            a.telefonos?.find((t) => t.principal)?.numero ||
+            a.telefonos?.[0]?.numero
+          const valor = a.email || telefonoPrincipal || '—'
+          return (
+            <span
+              className="text-xs text-muted-foreground truncate block"
+              title={valor}
+            >
+              {valor}
+            </span>
+          )
+        },
+        sortValue: (a) =>
+          a.email ||
+          a.telefonos?.find((t) => t.principal)?.numero ||
+          a.telefonos?.[0]?.numero ||
+          '',
+      },
+    ],
+    []
+  )
+
+  const totalPages = data?.totalPages ?? 0
+  const currentPage = data?.number ?? 0
+  const hayFiltros = filtros.hasActiveFilters
 
   return (
-    <StandardPageLayout
+    <ListPageLayout
       title="Agencias"
       icon={<Building2 className="h-4 w-4" />}
+      className="py-2 animate-in fade-in duration-500"
       actions={
         <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.CREAR}>
-          <Button onClick={() => navigate({ to: '/agencias/new' })} size="sm" className="h-8 shadow-sm text-xs">
+          <Button
+            onClick={() => navigate({ to: '/agencias/new' })}
+            size="sm"
+            className="h-8 shadow-sm"
+          >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Nuevo
           </Button>
         </ProtectedByPermission>
       }
-    >
-
-      <ListToolbar
-        search={busqueda}
-        onSearchChange={setBusqueda}
-        searchPlaceholder="Buscar por nombre, código, ubicación..."
-        withBottomBorder={false}
-        advancedFilters={
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
-            <div className="space-y-1.5">
-              <Label>Nombre</Label>
-              <Input
-                placeholder="Nombre agencia"
-                value={nombre}
-                onChange={(e) => setFilters({ nombre: e.target.value })}
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Código</Label>
-              <Input
-                placeholder="Código"
-                value={codigo}
-                onChange={(e) => setFilters({ codigo: e.target.value })}
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Estado</Label>
-              <Select
-                value={activaStore || 'all'}
-                onValueChange={(v) => setFilters({ activa: v === 'all' ? '' : v })}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="true">Activas</SelectItem>
-                  <SelectItem value="false">Inactivas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" className="h-9" onClick={clearAdvancedFilters}>
-                Limpiar
-              </Button>
-              <Button type="button" size="sm" className="h-9" onClick={() => applyAdvancedFilters({ nombre, codigo, activa: activaStore })}>
-                Aplicar
-              </Button>
-            </div>
-          </div>
-        }
-      />
-
-      {/* Content + pagination wrapper */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
-        {/* Main Content - Notion Table View */}
-        <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
-          <div className="flex-1 min-h-0 relative w-full overflow-auto">
-            <Table className="notion-table">
-              <TableHeader className="bg-muted/40 border-b border-border sticky top-0 z-10 backdrop-blur-sm">
-                <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground pl-4">Agencia</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Código</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Contacto</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Cantón</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Estado</TableHead>
-                  <TableHead className="h-9 text-right pr-4 w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(isLoading) ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-8">
-                      <LoadingState label="Cargando agencias..." />
-                    </TableCell>
-                  </TableRow>
-                ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-8">
-                      <ErrorState title="Error al cargar agencias" />
-                    </TableCell>
-                  </TableRow>
-                ) : agenciasFiltradas.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-64">
-                      <EmptyState
-                        title="No se encontraron agencias"
-                        description={
-                          filters
-                            ? 'No hay resultados con los filtros aplicados'
-                            : "No hay agencias registradas"
-                        }
-                        icon={<Building2 className="h-10 w-10 text-muted-foreground/50" />}
-                        action={
-                          !filters && (
-                            <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.CREAR}>
-                              <Button onClick={() => navigate({ to: '/agencias/new' })} variant="outline" size="sm">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Crear Agencia
-                              </Button>
-                            </ProtectedByPermission>
-                          )
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  agenciasFiltradas.map((agencia) => (
-                    <TableRow key={agencia.idAgencia} className="group hover:bg-muted/50 border-b border-border/50 last:border-0 h-9">
-                      <TableCell className="font-medium text-xs pl-4 py-1.5 align-top">
-                        {agencia.nombre}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs py-1.5 text-muted-foreground">{agencia.codigo || '-'}</TableCell>
-                      <TableCell className="text-xs py-1.5 align-top">
-                        <div className="flex flex-col gap-0.5">
-                          {agencia.email && <span className="text-foreground">{agencia.email}</span>}
-                          {agencia.telefonos && agencia.telefonos.length > 0 && (
-                            <span className={cn("text-muted-foreground", agencia.email && "text-[10px]")}>
-                              {agencia.telefonos.find(t => t.principal)?.numero || agencia.telefonos[0].numero}
-                            </span>
-                          )}
-                          {!agencia.email && (!agencia.telefonos || agencia.telefonos.length === 0) && (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs py-1.5 align-top">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          {agencia.canton && <MapPin className="h-3 w-3" />}
-                          <span>{agencia.canton || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-1.5 align-top">
-                        <StatusBadge
-                          label={agencia.activa !== false ? 'Activa' : 'Inactiva'}
-                          variant={agencia.activa !== false ? 'active' : 'inactive'}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right py-1.5 pr-3">
-                        <ProtectedByPermission permissions={[PERMISSIONS.AGENCIAS.VER, PERMISSIONS.AGENCIAS.EDITAR, PERMISSIONS.AGENCIAS.ELIMINAR]}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.VER}>
-                              <DropdownMenuItem onClick={() => navigate({ to: `/agencias/${agencia.idAgencia}` })}>
-                                <Eye className="h-3.5 w-3.5 mr-2" /> Detalles
-                              </DropdownMenuItem>
-                            </ProtectedByPermission>
-                            <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.EDITAR}>
-                              <DropdownMenuItem onClick={() => navigate({ to: `/agencias/${agencia.idAgencia}/edit` })}>
-                                <Edit className="h-3.5 w-3.5 mr-2" /> Editar
-                              </DropdownMenuItem>
-                            </ProtectedByPermission>
-                            <DropdownMenuSeparator />
-                            <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.ELIMINAR}>
-                              <DropdownMenuItem onClick={() => setAgenciaAEliminar(agencia.idAgencia!)} className="text-destructive focus:text-destructive">
-                                <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
-                              </DropdownMenuItem>
-                            </ProtectedByPermission>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        </ProtectedByPermission>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-        </div>
-        {!isLoading && (
-          <ListPagination
-            page={currentPage}
-            totalPages={totalPages}
-            totalItems={data?.totalElements}
-            size={size}
-            onPageChange={setPage}
-            className="shrink-0"
+      filterBar={
+        <FilterBar
+          searchValue={search}
+          onSearchChange={(v) => filtros.setFilter('search', v)}
+          searchPlaceholder="Buscar por nombre, código, cantón..."
+          chips={filtros.activeChips}
+          onClearAll={filtros.clearAll}
+        >
+          <SelectFilter
+            value={activa}
+            onChange={(v) => filtros.setFilter('activa', v as AgenciasFiltersState['activa'])}
+            options={[
+              { value: 'all', label: 'Todas' },
+              { value: 'true', label: 'Activas' },
+              { value: 'false', label: 'Inactivas' },
+            ]}
+            ariaLabel="Estado de la agencia"
           />
-        )}
-      </div>
-
-      <Dialog open={!!agenciaAEliminar} onOpenChange={(open) => !open && setAgenciaAEliminar(null)}>
+        </FilterBar>
+      }
+      table={
+        error && !isLoading ? (
+          <ErrorState
+            title="Error al cargar agencias"
+            description={getApiErrorMessage(
+              error,
+              'No se pudieron cargar las agencias.'
+            )}
+          />
+        ) : (
+          <DataTable<Agencia>
+            data={agenciasFiltradas}
+            columns={columns}
+            rowKey={(a) => a.idAgencia!}
+            storageKey="agencias"
+            isLoading={isLoading}
+            emptyState={
+              <EmptyState
+                title="No se encontraron agencias"
+                description={
+                  hayFiltros
+                    ? 'No hay resultados para los filtros seleccionados'
+                    : 'No hay agencias registradas'
+                }
+                icon={<Building2 className="h-10 w-10 text-muted-foreground/50" />}
+                action={
+                  !hayFiltros && (
+                    <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.CREAR}>
+                      <Button
+                        onClick={() => navigate({ to: '/agencias/new' })}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Crear Agencia
+                      </Button>
+                    </ProtectedByPermission>
+                  )
+                }
+              />
+            }
+            rowActions={(a) => (
+              <AgenciaRowActions
+                onVer={() => navigate({ to: `/agencias/${a.idAgencia}` })}
+                onEditar={() =>
+                  navigate({ to: `/agencias/${a.idAgencia}/edit` })
+                }
+                onEliminar={() => setAgenciaAEliminar(a.idAgencia!)}
+              />
+            )}
+          />
+        )
+      }
+      footer={
+        <ListPagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalItems={data?.totalElements}
+          size={size}
+          onPageChange={(p) => filtros.setFilter('page', p)}
+          alwaysShow
+          className="border-t-0 pt-0"
+        />
+      }
+    >
+      <Dialog
+        open={!!agenciaAEliminar}
+        onOpenChange={(open) => !open && setAgenciaAEliminar(null)}
+      >
         <DialogContent>
           <DialogHeader className="bg-destructive/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
             <div className="flex items-center gap-3">
@@ -313,21 +358,30 @@ export default function AgenciasList() {
               <div>
                 <DialogTitle>Confirmar Eliminación</DialogTitle>
                 <DialogDescription>
-                  ¿Estás seguro de que deseas eliminar esta agencia? Esta acción no se puede deshacer.
+                  ¿Estás seguro de que deseas eliminar esta agencia? Esta acción
+                  no se puede deshacer.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAgenciaAEliminar(null)} disabled={deleteMutation.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => setAgenciaAEliminar(null)}
+              disabled={deleteMutation.isPending}
+            >
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
               {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </StandardPageLayout>
+    </ListPageLayout>
   )
 }

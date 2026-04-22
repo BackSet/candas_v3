@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clienteEnvioDirectoService } from '@/lib/api/cliente-envio-directo.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { ClienteEnvioDirecto } from '@/types/cliente-envio-directo'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 export function useClientesEnvioDirecto() {
   return useQuery({
@@ -34,10 +34,10 @@ export function useCreateClienteEnvioDirecto() {
     mutationFn: (dto: ClienteEnvioDirecto) => clienteEnvioDirectoService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientes-envio-directo'] })
-      toast.success('Cliente de envío directo creado exitosamente')
+      notify.success('Cliente de envío directo creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el cliente de envío directo'))
+      notify.error(error, 'Error al crear el cliente de envío directo')
     },
   })
 }
@@ -51,10 +51,10 @@ export function useUpdateClienteEnvioDirecto() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clientes-envio-directo'] })
       queryClient.invalidateQueries({ queryKey: ['cliente-envio-directo', variables.id] })
-      toast.success('Cliente de envío directo actualizado exitosamente')
+      notify.success('Cliente de envío directo actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el cliente de envío directo'))
+      notify.error(error, 'Error al actualizar el cliente de envío directo')
     },
   })
 }

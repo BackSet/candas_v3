@@ -16,7 +16,7 @@ import ResolverDialog from './ResolverDialog'
 import { cn } from '@/lib/utils'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
-import { EmptyState, LoadingState } from '@/components/states'
+import { EmptyState, DetailSkeleton } from '@/components/states'
 import { ErrorState } from '@/components/states/ErrorState'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
@@ -41,7 +41,15 @@ export default function AtencionPaqueteDetail() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Cargando información..." />
+    return (
+      <DetailPageLayout
+        title="Cargando información..."
+        backUrl="/atencion-paquetes"
+        maxWidth="xl"
+      >
+        <DetailSkeleton />
+      </DetailPageLayout>
+    )
   }
 
   if (!atencion) {

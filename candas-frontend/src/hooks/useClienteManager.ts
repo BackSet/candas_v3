@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { useClientes, useCreateCliente } from './useClientes'
 import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { clienteService } from '@/lib/api/cliente.service'
@@ -22,7 +22,7 @@ export function useClienteManager(
   const [nuevoClienteTelefono, setNuevoClienteTelefono] = useState('')
 
   // Obtener todos los clientes (solo cuando no hay búsqueda activa)
-  const { data: clientesData, isLoading: loadingClientes } = useClientes(0, 1000)
+  const { data: clientesData, isLoading: loadingClientes } = useClientes({ page: 0, size: 1000 })
   
   // Búsqueda en el backend cuando hay una búsqueda activa
   const { data: clientesBusqueda, isLoading: loadingBusqueda } = useQuery({
@@ -55,7 +55,7 @@ export function useClienteManager(
 
   const handleSeleccionarCliente = (cliente: Cliente) => {
     if (!cliente.idCliente) {
-      toast.error('Error: El cliente no tiene un ID válido')
+      notify.error('Error: El cliente no tiene un ID válido')
       return
     }
     setClienteSeleccionado(cliente)
@@ -67,7 +67,7 @@ export function useClienteManager(
 
   const handleCrearCliente = async () => {
     if (!nuevoClienteNombre.trim()) {
-      toast.error('El nombre del cliente es requerido')
+      notify.error('El nombre del cliente es requerido')
       return
     }
 

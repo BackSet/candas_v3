@@ -19,9 +19,9 @@ import {
 import { TipoDestino, type Paquete } from '@/types/paquete'
 import { Badge } from '@/components/ui/badge'
 import { useUpdatePaquete } from '@/hooks/usePaquetes'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { useAgencias } from '@/hooks/useAgencias'
-import { useDestinatariosDirectos } from '@/hooks/useDestinatariosDirectos'
+import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
 
 interface CambiarTipoDestinoMasivoDialogProps {
   open: boolean
@@ -40,8 +40,8 @@ export default function CambiarTipoDestinoMasivoDialog({
   const [nuevoIdAgenciaDestino, setNuevoIdAgenciaDestino] = useState<number | null>(null)
   const [nuevoIdDestinatarioDirecto, setNuevoIdDestinatarioDirecto] = useState<number | null>(null)
   const updatePaqueteMutation = useUpdatePaquete()
-  const { data: agenciasPage, isLoading: loadingAgencias } = useAgencias(0, 1000)
-  const { data: destinatarios = [], isLoading: loadingDestinatarios } = useDestinatariosDirectos()
+  const { data: agenciasPage, isLoading: loadingAgencias } = useAgencias({ page: 0, size: 1000 })
+  const { data: destinatarios = [], isLoading: loadingDestinatarios } = useDestinatariosDirectosAll()
 
   // Resetear estado cuando se abre el diálogo
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function CambiarTipoDestinoMasivoDialog({
       nuevoTipoDestino === '' || nuevoTipoDestino === null ? undefined : (nuevoTipoDestino as TipoDestino)
 
     if (nuevoTipoDestino === TipoDestino.AGENCIA && !nuevoIdAgenciaDestino) {
-      toast.error('Debe seleccionar una agencia destino')
+      notify.error('Debe seleccionar una agencia destino')
       return
     }
 
@@ -155,12 +155,12 @@ export default function CambiarTipoDestinoMasivoDialog({
 
       await Promise.all(promises)
 
-      toast.success(`Se actualizó el destino de ${ids.length} paquete${ids.length !== 1 ? 's' : ''}`)
+      notify.success(`Se actualizó el destino de ${ids.length} paquete${ids.length !== 1 ? 's' : ''}`)
 
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
-      toast.error('No se pudo actualizar el destino de los paquetes')
+      notify.error('No se pudo actualizar el destino de los paquetes')
     }
   }
 

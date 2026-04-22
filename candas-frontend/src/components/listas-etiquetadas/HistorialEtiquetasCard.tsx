@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
 import { Loader2, Search, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, AlertTriangle, ShieldAlert, CheckCircle2, Send } from 'lucide-react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
 import { Badge } from '@/components/ui/badge'
 import { obtenerColorEtiqueta } from '@/utils/coloresEtiquetas'
@@ -55,7 +55,7 @@ export default function HistorialEtiquetasCard() {
             setRawList(list ?? [])
         } catch (error) {
             console.error('Error al cargar historial:', error)
-            toast.error('Error al cargar el historial')
+            notify.error('Error al cargar el historial')
         } finally {
             setLoading(false)
         }

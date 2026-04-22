@@ -19,7 +19,7 @@ import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
 import { Property } from '@/components/detail/InfoCard'
 import { QuickActions } from '@/components/detail/QuickActions'
-import { LoadingState } from '@/components/states'
+import { DetailSkeleton } from '@/components/states'
 import { ErrorState } from '@/components/states/ErrorState'
 import { useHasPermission } from '@/hooks/useHasRole'
 import { PERMISSIONS } from '@/types/permissions'
@@ -52,7 +52,11 @@ export default function DespachoDetail() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Cargando despacho..." />
+    return (
+      <DetailPageLayout title="Cargando despacho..." backUrl="/despachos" maxWidth="xl">
+        <DetailSkeleton />
+      </DetailPageLayout>
+    )
   }
 
   if (!despacho) {

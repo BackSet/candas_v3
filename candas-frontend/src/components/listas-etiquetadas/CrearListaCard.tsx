@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Loader2, Plus, AlertTriangle, ShieldAlert, BadgeHelp, Info } from 'lucide-react'
 import {
   Select,
@@ -25,12 +25,12 @@ export default function CrearListaCard() {
 
   const handleCrear = async () => {
     if (!etiqueta.trim()) {
-      toast.error('Debes ingresar un nombre de etiqueta')
+      notify.error('Debes ingresar un nombre de etiqueta')
       return
     }
 
     if (!numerosGuia.trim()) {
-      toast.error('Debes ingresar al menos un número de guía')
+      notify.error('Debes ingresar al menos un número de guía')
       return
     }
 
@@ -46,7 +46,7 @@ export default function CrearListaCard() {
     )
 
     if (guias.length === 0) {
-      toast.error('No se encontraron números de guía válidos')
+      notify.error('No se encontraron números de guía válidos')
       return
     }
 
@@ -54,7 +54,7 @@ export default function CrearListaCard() {
     const guiasSinDuplicados = Array.from(new Set(guias))
     if (guiasSinDuplicados.length !== guias.length) {
       const duplicados = guias.filter((g, index) => guias.indexOf(g) !== index)
-      toast.error(`Se encontraron números de guía duplicados en la lista: ${duplicados.join(', ')}. Por favor, elimina los duplicados antes de continuar.`)
+      notify.error(`Se encontraron números de guía duplicados en la lista: ${duplicados.join(', ')}. Por favor, elimina los duplicados antes de continuar.`)
       return
     }
 
@@ -76,12 +76,12 @@ export default function CrearListaCard() {
       mensaje += '.'
 
       if (variasCount > 0) {
-        toast.warning(
+        notify.warning(
           `${variasCount} guía(s) están en varias listas. Indique a qué lista pertenece cada una en la pestaña "Guías en varias listas".`
         )
       }
 
-      toast.success(mensaje)
+      notify.success(mensaje)
 
       // Limpiar formulario
       setEtiqueta('')
@@ -91,11 +91,11 @@ export default function CrearListaCard() {
       const errorMessage = getApiErrorMessage(error, 'Error al crear la lista')
       // Si el backend indica que la guía ya está en otras listas, el mensaje ya incluye la sección "Guías en varias listas"
       if (errorMessage.includes('ya está registrada en la(s) lista(s)') || errorMessage.includes('Guías en varias listas')) {
-        toast.error(errorMessage)
+        notify.error(errorMessage)
       } else if (errorMessage.includes('duplicado') || errorMessage.includes('duplicados')) {
-        toast.error(`No se pueden guardar números de guía duplicados: ${errorMessage}`)
+        notify.error(`No se pueden guardar números de guía duplicados: ${errorMessage}`)
       } else {
-        toast.error(errorMessage)
+        notify.error(errorMessage)
       }
     } finally {
       setCreando(false)

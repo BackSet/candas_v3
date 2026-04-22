@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 interface GruposPersonalizadosPanelProps {
   loteRecepcionId?: number

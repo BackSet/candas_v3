@@ -10,7 +10,7 @@ import { paqueteService } from '@/lib/api/paquete.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { PaqueteSimplificado } from '@/types/paquete'
 import type { Paquete } from '@/types/paquete'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Loader2, Plus, Trash2, X } from 'lucide-react'
 
 interface PaqueteTemporal {
@@ -68,7 +68,7 @@ export default function AgregarPaqueteSimplificadoDialog({
 
   const handleAgregar = async () => {
     if (!numeroGuia.trim()) {
-      toast.error('Debes ingresar un número de guía')
+      notify.error('Debes ingresar un número de guía')
       return
     }
 
@@ -76,7 +76,7 @@ export default function AgregarPaqueteSimplificadoDialog({
 
     // Verificar si ya está en la lista temporal
     if (paquetesTemporales.some(p => p.numeroGuia === numeroGuiaNormalizado)) {
-      toast.warning('Este número de guía ya está en la lista')
+      notify.warning('Este número de guía ya está en la lista')
       return
     }
 
@@ -99,7 +99,7 @@ export default function AgregarPaqueteSimplificadoDialog({
 
   const handleAgregarMultiples = async () => {
     if (!listadoGuias.trim()) {
-      toast.error('Debes ingresar al menos un número de guía')
+      notify.error('Debes ingresar al menos un número de guía')
       return
     }
 
@@ -110,7 +110,7 @@ export default function AgregarPaqueteSimplificadoDialog({
       .filter(g => g.length > 0)
 
     if (rawGuias.length === 0) {
-      toast.error('No se encontraron números de guía válidos')
+      notify.error('No se encontraron números de guía válidos')
       return
     }
 
@@ -123,7 +123,7 @@ export default function AgregarPaqueteSimplificadoDialog({
     )
 
     if (guiasNuevas.length === 0) {
-      toast.warning('Todos los números de guía ya están en la lista')
+      notify.warning('Todos los números de guía ya están en la lista')
       return
     }
 
@@ -138,7 +138,7 @@ export default function AgregarPaqueteSimplificadoDialog({
     setListadoGuias('')
     setObservaciones('')
     
-    toast.success(`${nuevosPaquetes.length} número(s) de guía agregado(s)`)
+    notify.success(`${nuevosPaquetes.length} número(s) de guía agregado(s)`)
   }
 
   const handleEliminarTemporal = (index: number) => {
@@ -147,7 +147,7 @@ export default function AgregarPaqueteSimplificadoDialog({
 
   const handleGuardar = async () => {
     if (paquetesTemporales.length === 0) {
-      toast.error('No hay paquetes para crear')
+      notify.error('No hay paquetes para crear')
       return
     }
 
@@ -163,7 +163,7 @@ export default function AgregarPaqueteSimplificadoDialog({
       // Crear paquetes en el backend
       const paquetesCreados = await paqueteService.createSimplificadoBatch(dtos)
 
-      toast.success(`${paquetesCreados.length} paquete(s) creado(s) exitosamente`)
+      notify.success(`${paquetesCreados.length} paquete(s) creado(s) exitosamente`)
       
       // Notificar al componente padre
       onPaquetesCreados(paquetesCreados)
@@ -171,7 +171,7 @@ export default function AgregarPaqueteSimplificadoDialog({
       // Cerrar el diálogo
       onOpenChange(false)
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, 'Error al crear los paquetes'))
+      notify.error(error, 'Error al crear los paquetes')
     } finally {
       setCreando(false)
     }

@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Loader2, RefreshCw, ListFilter } from 'lucide-react'
 import type { GuiaListaEtiquetadaConsultaDTO } from '@/types/listas-etiquetadas'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,7 @@ export default function GuiasEnVariasListasCard() {
       const data = await listasEtiquetadasService.getGuiasEnVariasListas()
       setGuias(data ?? [])
     } catch {
-      toast.error('Error al cargar guías en varias listas')
+      notify.error('Error al cargar guías en varias listas')
       setGuias([])
     } finally {
       setCargando(false)
@@ -48,10 +48,10 @@ export default function GuiasEnVariasListasCard() {
     setAsignando(numeroGuia)
     try {
       await listasEtiquetadasService.elegirEtiqueta(numeroGuia, etiqueta)
-      toast.success(`Guía ${numeroGuia} asignada a la lista ${etiqueta}.`)
+      notify.success(`Guía ${numeroGuia} asignada a la lista ${etiqueta}.`)
       await cargar()
     } catch {
-      toast.error('Error al asignar la lista')
+      notify.error('Error al asignar la lista')
     } finally {
       setAsignando(null)
     }

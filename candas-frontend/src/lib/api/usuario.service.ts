@@ -2,13 +2,26 @@ import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
 import type { Usuario, UsuarioPage } from '@/types/usuario'
 
+export interface UsuarioListParams {
+  page?: number
+  size?: number
+  search?: string
+  username?: string
+  email?: string
+  activo?: boolean
+}
+
 export const usuarioService = {
-  async findAll(page: number = 0, size: number = 20): Promise<UsuarioPage> {
+  async findAll(params: UsuarioListParams = {}): Promise<UsuarioPage> {
+    const { page = 0, size = 20, search, username, email, activo } = params
+    const query: Record<string, string | number | boolean> = { page, size }
+    if (search && search.trim()) query.search = search.trim()
+    if (username && username.trim()) query.username = username.trim()
+    if (email && email.trim()) query.email = email.trim()
+    if (typeof activo === 'boolean') query.activo = activo
     const response = await apiClient.get<UsuarioPage>(
       API_ENDPOINTS.USUARIOS.BASE,
-      {
-        params: { page, size },
-      }
+      { params: query }
     )
     return response.data
   },

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Loader2, ArrowLeft, CheckCircle2, XCircle, Download, Printer, History, Hash, Trash2, AlertTriangle, Tag } from 'lucide-react'
 import { obtenerColorEtiqueta } from '@/utils/coloresEtiquetas'
 import { useNavigate } from '@tanstack/react-router'
@@ -100,7 +100,7 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
     const existe = historial.some(item => item.numeroGuia.toUpperCase() === guiaNormalizada)
 
     if (existe) {
-      toast.info(`La guía ${guiaNormalizada} ya fue escaneada anteriormente`, {
+      notify.info(`La guía ${guiaNormalizada} ya fue escaneada anteriormente`, {
         duration: 2000,
       })
       // Actualizar el resultado actual con el existente
@@ -123,7 +123,7 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
       const dto = mapa[guiaNormalizada]
 
       if (!dto) {
-        toast.error(`La guía ${guiaNormalizada} no está registrada en el sistema de etiquetado`)
+        notify.error(`La guía ${guiaNormalizada} no está registrada en el sistema de etiquetado`)
         setResultadoActual({ numeroGuia: guiaNormalizada, etiqueta: null, fecha: new Date() })
         setBuscando(false)
         setNumeroGuia('')
@@ -168,7 +168,7 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
       setNumeroGuia('')
       setTimeout(() => inputRef.current?.focus(), 100)
     } catch (error: any) {
-      toast.error('Error al buscar la etiqueta')
+      notify.error('Error al buscar la etiqueta')
     } finally {
       setBuscando(false)
     }
@@ -190,11 +190,11 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
         nuevo[etiquetaElegida] = (nuevo[etiquetaElegida] || 0) + 1
         return nuevo
       })
-      toast.success(`Guía ${num} asignada a ${etiquetaElegida} y marcada como receptada`)
+      notify.success(`Guía ${num} asignada a ${etiquetaElegida} y marcada como receptada`)
       setNumeroGuia('')
       setTimeout(() => inputRef.current?.focus(), 100)
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || 'Error al elegir etiqueta')
+      notify.error(err?.response?.data?.message || err?.message || 'Error al elegir etiqueta')
     } finally {
       setBuscando(false)
     }
@@ -202,20 +202,32 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
 
   const colorActual = resultadoActual ? obtenerColorEtiqueta(resultadoActual.etiqueta) : null
 
+  const [exportandoExcel, setExportandoExcel] = useState(false)
+  const [imprimiendo, setImprimiendo] = useState(false)
+
   const handleExportarExcel = () => {
+    setExportandoExcel(true)
+    const toastId = notify.start('Generando Excel...')
     try {
       generarExcelEscaneos(historial)
-      toast.success(`Excel exportado exitosamente con ${historial.length} escaneo(s)`)
+      notify.finish(toastId, `Excel exportado con ${historial.length} escaneo(s)`)
     } catch (error: any) {
-      toast.error(error.message || 'Error al exportar el archivo Excel')
+      notify.fail(toastId, error.message || 'Error al exportar el archivo Excel')
+    } finally {
+      setExportandoExcel(false)
     }
   }
 
   const handleImprimir = () => {
+    setImprimiendo(true)
+    const toastId = notify.start('Preparando impresión...')
     try {
       imprimirEscaneos(historial)
+      notify.finish(toastId, 'Ventana de impresión abierta')
     } catch (error: any) {
-      toast.error(error.message || 'Error al imprimir')
+      notify.fail(toastId, error.message || 'Error al imprimir')
+    } finally {
+      setImprimiendo(false)
     }
   }
 
@@ -255,7 +267,7 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
 
       return nuevo
     })
-    toast.success('Paquete eliminado del historial')
+    notify.success('Paquete eliminado del historial')
   }
 
   return (
@@ -284,12 +296,32 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
           </div>
           {historial.length > 0 && (
             <>
-              <Button variant="outline" size="sm" onClick={handleExportarExcel} className="h-8 text-xs gap-2 hidden sm:flex">
-                <Download className="h-3.5 w-3.5" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportarExcel}
+                disabled={exportandoExcel}
+                className="h-8 text-xs gap-2 hidden sm:flex"
+              >
+                {exportandoExcel ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
                 Excel
               </Button>
-              <Button variant="outline" size="sm" onClick={handleImprimir} className="h-8 text-xs gap-2 hidden sm:flex">
-                <Printer className="h-3.5 w-3.5" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleImprimir}
+                disabled={imprimiendo}
+                className="h-8 text-xs gap-2 hidden sm:flex"
+              >
+                {imprimiendo ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Printer className="h-3.5 w-3.5" />
+                )}
                 Imprimir
               </Button>
             </>

@@ -11,8 +11,9 @@ import type { ManifiestoConsolidadoDetalle } from '@/types/manifiesto-consolidad
 import { imprimirManifiestoConsolidado, generarPDFManifiestoConsolidado } from '@/utils/imprimirManifiestoConsolidado'
 import { useAuthStore } from '@/stores/authStore'
 import { useAgencia } from '@/hooks/useAgencias'
-import { Printer, Download, Building2, Users, LayoutList } from 'lucide-react'
-import { toast } from 'sonner'
+import { Printer, Download, Building2, Users, LayoutList, Loader2 } from 'lucide-react'
+import { notify } from '@/lib/notify'
+import { useState } from 'react'
 
 type TipoFiltro = 'todos' | 'agencias' | 'destinatarios-directos'
 
@@ -63,18 +64,37 @@ export default function SeleccionarTipoImpresionDialog({
   const { data: agenciaUsuario } = useAgencia(agenciaOrigenId ?? undefined)
   const nombreAgenciaOrigen = agenciaUsuario?.nombre ?? undefined
 
-  const handleImprimir = (tipo: TipoFiltro) => {
-    imprimirManifiestoConsolidado(manifiesto, tipo, nombreAgenciaOrigen)
-    onOpenChange(false)
+  const [imprimiendoTipo, setImprimiendoTipo] = useState<TipoFiltro | null>(null)
+  const [descargandoTipo, setDescargandoTipo] = useState<TipoFiltro | null>(null)
+  const procesando = imprimiendoTipo !== null || descargandoTipo !== null
+
+  const handleImprimir = async (tipo: TipoFiltro) => {
+    if (procesando) return
+    setImprimiendoTipo(tipo)
+    const id = notify.start('Preparando impresión del manifiesto…')
+    try {
+      await imprimirManifiestoConsolidado(manifiesto, tipo, nombreAgenciaOrigen)
+      notify.finish(id, 'Documento enviado a impresión')
+      onOpenChange(false)
+    } catch (error) {
+      notify.fail(id, error, 'No se pudo preparar la impresión del manifiesto')
+    } finally {
+      setImprimiendoTipo(null)
+    }
   }
 
   const handleDescargar = async (tipo: TipoFiltro) => {
+    if (procesando) return
+    setDescargandoTipo(tipo)
+    const id = notify.start('Generando PDF del manifiesto…')
     try {
       await generarPDFManifiestoConsolidado(manifiesto, tipo, nombreAgenciaOrigen)
-      toast.success('PDF descargado correctamente')
+      notify.finish(id, 'PDF descargado correctamente')
       onOpenChange(false)
-    } catch {
-      toast.error('Error al generar el PDF')
+    } catch (error) {
+      notify.fail(id, error, 'No se pudo generar el PDF')
+    } finally {
+      setDescargandoTipo(null)
     }
   }
 
@@ -106,17 +126,23 @@ export default function SeleccionarTipoImpresionDialog({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {OPCIONES.map((opcion) => {
                 const Icon = opcion.icon
+                const cargando = imprimiendoTipo === opcion.value
                 return (
                   <Button
                     key={`imprimir-${opcion.value}`}
                     type="button"
                     variant="outline"
-                    className="h-auto py-3.5 px-4 min-w-0 whitespace-normal flex flex-col items-start gap-2 text-left rounded-xl border-border/40 hover:border-primary/30 hover:bg-muted/20 transition-all duration-200"
+                    disabled={procesando}
+                    className="h-auto py-3.5 px-4 min-w-0 whitespace-normal flex flex-col items-start gap-2 text-left rounded-xl border-border/40 hover:border-primary/30 hover:bg-muted/20 transition-all duration-200 disabled:opacity-60"
                     onClick={() => handleImprimir(opcion.value)}
                   >
                     <span className="w-full flex items-center gap-2.5 text-sm font-semibold">
                       <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${opcion.color}`}>
-                        <Icon className="h-3.5 w-3.5" />
+                        {cargando ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Icon className="h-3.5 w-3.5" />
+                        )}
                       </div>
                       {opcion.label}
                     </span>
@@ -141,17 +167,23 @@ export default function SeleccionarTipoImpresionDialog({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {OPCIONES.map((opcion) => {
                 const Icon = opcion.icon
+                const cargando = descargandoTipo === opcion.value
                 return (
                   <Button
                     key={`descargar-${opcion.value}`}
                     type="button"
                     variant="outline"
-                    className="h-auto py-3.5 px-4 min-w-0 whitespace-normal flex flex-col items-start gap-2 text-left rounded-xl border-border/40 hover:border-primary/30 hover:bg-muted/20 transition-all duration-200"
+                    disabled={procesando}
+                    className="h-auto py-3.5 px-4 min-w-0 whitespace-normal flex flex-col items-start gap-2 text-left rounded-xl border-border/40 hover:border-primary/30 hover:bg-muted/20 transition-all duration-200 disabled:opacity-60"
                     onClick={() => handleDescargar(opcion.value)}
                   >
                     <span className="w-full flex items-center gap-2.5 text-sm font-semibold">
                       <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${opcion.color}`}>
-                        <Icon className="h-3.5 w-3.5" />
+                        {cargando ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Icon className="h-3.5 w-3.5" />
+                        )}
                       </div>
                       {opcion.label}
                     </span>

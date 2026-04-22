@@ -177,6 +177,7 @@ export function Sidebar() {
                   const linkContent = (
                     <Link
                       to={item.href}
+                      preload="intent"
                       className={cn(
                         "mx-1 flex items-center rounded-lg text-[13px] font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground",
                         sidebarCollapsed ? "justify-center h-8 w-8 mx-auto p-0" : "px-3 py-1.5 gap-2.5",

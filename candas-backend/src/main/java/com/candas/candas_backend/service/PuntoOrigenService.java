@@ -4,6 +4,7 @@ import com.candas.candas_backend.dto.PuntoOrigenDTO;
 import com.candas.candas_backend.entity.PuntoOrigen;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.PuntoOrigenRepository;
+import com.candas.candas_backend.repository.spec.PuntoOrigenSpecs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,15 @@ public class PuntoOrigenService {
     }
 
     public Page<PuntoOrigenDTO> findAll(Pageable pageable) {
-        return puntoOrigenRepository.findAll(pageable).map(this::toDTO);
+        return findAll(pageable, null, null);
+    }
+
+    public Page<PuntoOrigenDTO> findAll(Pageable pageable, String search, Boolean activo) {
+        boolean sinFiltros = (search == null || search.isBlank()) && activo == null;
+        if (sinFiltros) {
+            return puntoOrigenRepository.findAll(pageable).map(this::toDTO);
+        }
+        return puntoOrigenRepository.findAll(PuntoOrigenSpecs.withFilters(search, activo), pageable).map(this::toDTO);
     }
 
     public PuntoOrigenDTO findById(Long id) {

@@ -4,6 +4,9 @@ import com.candas.candas_backend.dto.DestinatarioDirectoDTO;
 import com.candas.candas_backend.entity.DestinatarioDirecto;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.DestinatarioDirectoRepository;
+import com.candas.candas_backend.repository.spec.DestinatarioDirectoSpecs;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,16 @@ public class DestinatarioDirectoService {
         return destinatarioDirectoRepository.findByActivoTrue().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Page<DestinatarioDirectoDTO> findAllPaginado(Pageable pageable, String search, Boolean activo) {
+        boolean sinFiltros = (search == null || search.isBlank()) && activo == null;
+        if (sinFiltros) {
+            return destinatarioDirectoRepository.findAll(pageable).map(this::toDTO);
+        }
+        return destinatarioDirectoRepository
+                .findAll(DestinatarioDirectoSpecs.withFilters(search, activo), pageable)
+                .map(this::toDTO);
     }
 
     public DestinatarioDirectoDTO findById(Long id) {

@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScanLine, Loader2, List } from 'lucide-react'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
-import { LoadingState } from '@/components/states'
-import { toast } from 'sonner'
+import { DetailSkeleton } from '@/components/states'
+import { notify } from '@/lib/notify'
 import type { GuiaListaEtiquetadaConsultaDTO } from '@/types/listas-etiquetadas'
 
 export default function LoteEspecialTipeo() {
@@ -33,12 +33,12 @@ export default function LoteEspecialTipeo() {
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', id] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion', id] })
       setTipiarGuia('')
-      toast.success('Paquete marcado como receptado')
+      notify.success('Paquete marcado como receptado')
       inputRef.current?.focus()
     },
     onError: (err: unknown) => {
       const msg = getApiErrorMessage(err, 'Error al marcar')
-      toast.error(msg)
+      notify.error(msg)
     },
   })
 
@@ -82,7 +82,7 @@ export default function LoteEspecialTipeo() {
   if (isLoading || !lote) {
     return (
       <DetailPageLayout title="Cargando..." backUrl="/lotes-recepcion" maxWidth="2xl">
-        <LoadingState />
+        <DetailSkeleton />
       </DetailPageLayout>
     )
   }

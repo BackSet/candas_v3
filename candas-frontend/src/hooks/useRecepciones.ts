@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { recepcionService } from '@/lib/api/recepcion.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Recepcion } from '@/types/recepcion'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 export function useRecepciones(page: number = 0, size: number = 20) {
   return useQuery({
@@ -38,7 +38,7 @@ export function useCreateRecepcion() {
       return data
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear la recepción'))
+      notify.error(error, 'Error al crear la recepción')
     },
   })
 }
@@ -52,10 +52,10 @@ export function useUpdateRecepcion() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recepciones'] })
       queryClient.invalidateQueries({ queryKey: ['recepcion', variables.id] })
-      toast.success('Recepción actualizada exitosamente')
+      notify.success('Recepción actualizada exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar la recepción'))
+      notify.error(error, 'Error al actualizar la recepción')
     },
   })
 }
@@ -67,10 +67,10 @@ export function useDeleteRecepcion() {
     mutationFn: (id: number) => recepcionService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recepciones'] })
-      toast.success('Recepción eliminada exitosamente')
+      notify.success('Recepción eliminada exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar la recepción'))
+      notify.error(error, 'Error al eliminar la recepción')
     },
   })
 }
@@ -85,10 +85,10 @@ export function useAgregarPaquetesRecepcion() {
       queryClient.invalidateQueries({ queryKey: ['recepciones'] })
       queryClient.invalidateQueries({ queryKey: ['recepcion', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['recepcion-paquetes', variables.id] })
-      toast.success('Paquetes agregados exitosamente')
+      notify.success('Paquetes agregados exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al agregar los paquetes'))
+      notify.error(error, 'Error al agregar los paquetes')
     },
   })
 }

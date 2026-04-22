@@ -20,9 +20,10 @@ import { Checkbox } from '@/components/ui/checkbox'
 import type { Paquete } from '@/types/paquete'
 import { TipoPaquete, TipoDestino } from '@/types/paquete'
 import { generarExcelTrackingSistemaExterno, generarExcelPorTipo } from '@/utils/generarExcelLoteRecepcion'
-import { FileSpreadsheet, AlertCircle, Download, Package, MapPin } from 'lucide-react'
+import { FileSpreadsheet, AlertCircle, Download, Package, MapPin, Loader2 } from 'lucide-react'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
-import { toast } from 'sonner'
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
+import { notify } from '@/lib/notify'
 import type { Agencia } from '@/types/agencia'
 import type { DestinatarioDirecto } from '@/types/destinatario-directo'
 
@@ -151,24 +152,25 @@ export default function GenerarExcelDialog({
   const handleGenerar = () => {
     // Validar campo
     if (!fechaHora) {
-      toast.error('Por favor, completa la fecha y la hora')
+      notify.error('Por favor, completa la fecha y la hora')
       return
     }
 
     // Extraer fecha y hora del valor datetime-local
     const [fecha, hora] = fechaHora.split('T')
     if (!fecha || !hora) {
-      toast.error('Por favor, completa la fecha y la hora correctamente')
+      notify.error('Por favor, completa la fecha y la hora correctamente')
       return
     }
 
     // Verificar que haya paquetes con número de guía
     if (paquetesAExportar.length === 0) {
-      toast.error('No hay paquetes con número de guía para generar el Excel con los filtros seleccionados')
+      notify.error('No hay paquetes con número de guía para generar el Excel con los filtros seleccionados')
       return
     }
 
     setIsGenerating(true)
+    const toastId = notify.start('Generando Excel...')
 
     try {
       if (tipoExportacion === 'tracking-externo') {
@@ -178,7 +180,7 @@ export default function GenerarExcelDialog({
         const total = incluirClementinaHijosTracking
           ? paquetesAExportar.length
           : paquetesAExportar.filter(p => !p.idPaquetePadre).length
-        toast.success(`Excel generado con ${total} paquete(s)`)
+        notify.finish(toastId, `Excel generado con ${total} paquete(s)`)
       } else if (tipoExportacion === 'clementina' || tipoExportacion === 'separar' || tipoExportacion === 'cadenita') {
         generarExcelPorTipo(
           paquetes,
@@ -193,7 +195,7 @@ export default function GenerarExcelDialog({
           agencias,
           destinatarios
         )
-        toast.success(`Excel generado con ${paquetesAExportar.length} paquete(s)`)
+        notify.finish(toastId, `Excel generado con ${paquetesAExportar.length} paquete(s)`)
       } else if (tipoExportacion === 'agencia') {
         const idAgencia = idAgenciaExportar ? Number(idAgenciaExportar) : undefined
         generarExcelPorTipo(
@@ -209,7 +211,7 @@ export default function GenerarExcelDialog({
           agencias,
           destinatarios
         )
-        toast.success(`Excel generado con ${paquetesAExportar.length} paquete(s)`)
+        notify.finish(toastId, `Excel generado con ${paquetesAExportar.length} paquete(s)`)
       } else if (tipoExportacion === 'domicilio') {
         const idDestinatario = idDestinatarioExportar ? Number(idDestinatarioExportar) : undefined
         generarExcelPorTipo(
@@ -226,11 +228,11 @@ export default function GenerarExcelDialog({
           destinatarios,
           { filtroDomicilio }
         )
-        toast.success(`Excel generado con ${paquetesAExportar.length} paquete(s)`)
+        notify.finish(toastId, `Excel generado con ${paquetesAExportar.length} paquete(s)`)
       }
       onOpenChange(false)
     } catch (error: any) {
-      toast.error(error.message || 'Error al generar el archivo Excel')
+      notify.fail(toastId, error.message || 'Error al generar el archivo Excel')
     } finally {
       setIsGenerating(false)
     }
@@ -335,47 +337,44 @@ export default function GenerarExcelDialog({
                   <label htmlFor="agencia" className="text-sm font-medium flex items-center gap-2">
                     <MapPin className="h-4 w-4" /> Agencia
                   </label>
-                  <Select
-                    value={idAgenciaExportar || 'all'}
-                    onValueChange={(value) => setIdAgenciaExportar(value === 'all' ? '' : value)}
-                  >
-                    <SelectTrigger id="agencia" className="bg-muted/40">
-                      <SelectValue placeholder="Todas las agencias" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas las agencias</SelectItem>
-                      {agenciasDisponibles.map(agencia => (
-                        <SelectItem key={agencia.idAgencia} value={agencia.idAgencia!.toString()}>
-                          {agencia.nombre} {agencia.canton && `(${agencia.canton})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    id="agencia"
+                    options={agenciasDisponibles.map<ComboboxOption>((a) => ({
+                      value: a.idAgencia!,
+                      label: a.nombre ?? '',
+                      description: [a.canton, a.provincia]
+                        .filter((p): p is string => !!p && p.trim().length > 0)
+                        .join(' • ') || undefined,
+                    }))}
+                    value={idAgenciaExportar ? Number(idAgenciaExportar) : null}
+                    onValueChange={(v) => setIdAgenciaExportar(v == null ? '' : String(v))}
+                    placeholder="Todas las agencias"
+                    searchPlaceholder="Buscar por agencia, cantón o provincia..."
+                    triggerClassName="bg-muted/40"
+                    clearable
+                  />
                 </div>
               )}
 
               {tipoExportacion === 'domicilio' && destinatariosDisponibles.length > 0 && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                   <label htmlFor="destinatario" className="text-sm font-medium">Destinatario Directo</label>
-                  <Select
-                    value={idDestinatarioExportar || 'all'}
-                    onValueChange={(value) => setIdDestinatarioExportar(value === 'all' ? '' : value)}
-                  >
-                    <SelectTrigger id="destinatario" className="bg-muted/40">
-                      <SelectValue placeholder="Todos los destinatarios" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los destinatarios</SelectItem>
-                      {destinatariosDisponibles.map(destinatario => (
-                        <SelectItem
-                          key={destinatario.idDestinatarioDirecto}
-                          value={destinatario.idDestinatarioDirecto!.toString()}
-                        >
-                          {destinatario.nombreDestinatario}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    id="destinatario"
+                    options={destinatariosDisponibles.map<ComboboxOption>((d) => ({
+                      value: d.idDestinatarioDirecto!,
+                      label: d.nombreDestinatario ?? '',
+                      description: [d.canton, d.provincia]
+                        .filter((p): p is string => !!p && p.trim().length > 0)
+                        .join(' • ') || undefined,
+                    }))}
+                    value={idDestinatarioExportar ? Number(idDestinatarioExportar) : null}
+                    onValueChange={(v) => setIdDestinatarioExportar(v == null ? '' : String(v))}
+                    placeholder="Todos los destinatarios"
+                    searchPlaceholder="Buscar por destinatario, cantón o provincia..."
+                    triggerClassName="bg-muted/40"
+                    clearable
+                  />
                 </div>
               )}
 
@@ -417,7 +416,9 @@ export default function GenerarExcelDialog({
             className="gap-2"
           >
             {isGenerating ? (
-              <>Generando...</>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Generando...
+              </>
             ) : (
               <>
                 <Download className="h-4 w-4" /> Generar Excel

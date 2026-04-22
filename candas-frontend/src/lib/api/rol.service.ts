@@ -2,13 +2,22 @@ import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
 import type { Rol, RolPage } from '@/types/rol'
 
+export interface RolListParams {
+  page?: number
+  size?: number
+  search?: string
+  activo?: boolean
+}
+
 export const rolService = {
-  async findAll(page: number = 0, size: number = 20): Promise<RolPage> {
+  async findAll(params: RolListParams = {}): Promise<RolPage> {
+    const { page = 0, size = 20, search, activo } = params
+    const query: Record<string, string | number | boolean> = { page, size }
+    if (search && search.trim()) query.search = search.trim()
+    if (typeof activo === 'boolean') query.activo = activo
     const response = await apiClient.get<RolPage>(
       API_ENDPOINTS.ROLES.BASE,
-      {
-        params: { page, size },
-      }
+      { params: query }
     )
     return response.data
   },

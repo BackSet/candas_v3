@@ -29,7 +29,7 @@ export default function AgregarSacasDialog({
 }: AgregarSacasDialogProps) {
   const [selectedSacas, setSelectedSacas] = useState<number[]>([])
   const [busqueda, setBusqueda] = useState('')
-  const { data, isLoading } = useSacas(0, 100)
+  const { data, isLoading } = useSacas({ page: 0, size: 100 })
   const agregarMutation = useAgregarSacasDespacho()
 
   const sacasFiltradas = data?.content.filter((s) => {

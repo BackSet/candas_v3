@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Loader2, Link2 } from 'lucide-react'
 import { paqueteService } from '@/lib/api/paquete.service'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
 
 interface AgregarCadenitaFormDialogProps {
@@ -38,17 +38,17 @@ export default function AgregarCadenitaFormDialog({
       const hijos = await paqueteService.findHijosCadenita(valor)
       
       if (hijos.length === 0) {
-        toast.warning('No se encontraron guías hijas tipo CADENITA para esta guía padre')
+        notify.warning('No se encontraron guías hijas tipo CADENITA para esta guía padre')
         return
       }
 
       onPaquetesEncontrados(hijos)
       setGuiaPadre('')
       onOpenChange(false)
-      toast.success(`${hijos.length} guías hijas encontradas`)
+      notify.success(`${hijos.length} guías hijas encontradas`)
     } catch (error) {
       console.error(error)
-      toast.error('Error al buscar guías hijas. Verifica el número de guía.')
+      notify.error('Error al buscar guías hijas. Verifica el número de guía.')
     } finally {
       setLoading(false)
     }

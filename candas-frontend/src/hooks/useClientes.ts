@@ -3,14 +3,30 @@ import { clienteService } from '@/lib/api/cliente.service'
 import type { Cliente } from '@/types/cliente'
 import { showMutationError, showMutationSuccess } from '@/hooks/mutationFeedback'
 
-export function useClientes(
-  page: number = 0,
-  size: number = 20,
-  filters?: { search?: string; nombre?: string; documento?: string; email?: string; activo?: boolean }
-) {
+export interface UseClientesParams {
+  page?: number
+  size?: number
+  search?: string
+  nombre?: string
+  documento?: string
+  email?: string
+  activo?: boolean
+}
+
+export function useClientes(params: UseClientesParams = {}) {
+  const { page = 0, size = 20, search, nombre, documento, email, activo } = params
   return useQuery({
-    queryKey: ['clientes', page, size, filters],
-    queryFn: () => clienteService.findAll(page, size, filters),
+    queryKey: [
+      'clientes',
+      page,
+      size,
+      search ?? null,
+      nombre ?? null,
+      documento ?? null,
+      email ?? null,
+      activo ?? null,
+    ],
+    queryFn: () => clienteService.findAll({ page, size, search, nombre, documento, email, activo }),
   })
 }
 

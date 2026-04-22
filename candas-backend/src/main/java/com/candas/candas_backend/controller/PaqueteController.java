@@ -52,15 +52,39 @@ public class PaqueteController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.PAQUETES_LISTAR + "') or hasAuthority('" + PermissionConstants.PAQUETES_VER + "')")
-    @Operation(summary = "Listar paquetes", description = "Obtiene una lista paginada de paquetes con filtros opcionales: búsqueda por guía, estado y tipo.")
+    @Operation(summary = "Listar paquetes", description = "Lista paginada con filtros opcionales: search (guía o REF), estado, tipo, idAgencia (destino), idLote, fechaDesde/fechaHasta (yyyy-MM-dd).")
     public ResponseEntity<Page<PaqueteDTO>> findAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) Long idAgencia,
+            @RequestParam(required = false) Long idLote,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
             Pageable pageable) {
         EstadoPaquete estadoEnum = parseEstado(estado);
         TipoPaquete tipoEnum = parseTipo(tipo);
-        return ResponseEntity.ok(paqueteService.findAll(search, estadoEnum, tipoEnum, pageable));
+        java.time.LocalDateTime desde = parseFechaInicio(fechaDesde);
+        java.time.LocalDateTime hasta = parseFechaFin(fechaHasta);
+        return ResponseEntity.ok(paqueteService.findAll(search, estadoEnum, tipoEnum, idAgencia, idLote, desde, hasta, pageable));
+    }
+
+    private static java.time.LocalDateTime parseFechaInicio(String fecha) {
+        if (fecha == null || fecha.isBlank()) return null;
+        try {
+            return java.time.LocalDate.parse(fecha.trim()).atStartOfDay();
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private static java.time.LocalDateTime parseFechaFin(String fecha) {
+        if (fecha == null || fecha.isBlank()) return null;
+        try {
+            return java.time.LocalDate.parse(fecha.trim()).atTime(23, 59, 59);
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
     }
 
     private static EstadoPaquete parseEstado(String estado) {

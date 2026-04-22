@@ -35,17 +35,43 @@ public class LoteRecepcionController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar lotes de recepción", description = "Obtiene una lista paginada. Opcional tipoLote=NORMAL|ESPECIAL, search (número recepción o usuario).")
+    @Operation(summary = "Listar lotes de recepción",
+            description = "Lista paginada con filtros opcionales: tipoLote=NORMAL|ESPECIAL, search (número recepción o usuario), idAgencia, fechaDesde/fechaHasta (yyyy-MM-dd).")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.LOTES_RECEPCION_LISTAR + "') or hasAuthority('" + PermissionConstants.LOTES_RECEPCION_VER + "')")
     public ResponseEntity<Page<LoteRecepcionDTO>> findAll(
             Pageable pageable,
             @RequestParam(required = false) String tipoLote,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long idAgencia,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta) {
         TipoLote t = parseTipoLote(tipoLote);
-        if (search != null && !search.isBlank() || t != null) {
-            return ResponseEntity.ok(loteRecepcionService.findAll(pageable, search, t));
+        java.time.LocalDateTime desde = parseFechaInicio(fechaDesde);
+        java.time.LocalDateTime hasta = parseFechaFin(fechaHasta);
+        boolean tieneFiltros = (search != null && !search.isBlank()) || t != null || idAgencia != null
+                || desde != null || hasta != null;
+        if (tieneFiltros) {
+            return ResponseEntity.ok(loteRecepcionService.findAll(pageable, search, t, idAgencia, desde, hasta));
         }
         return ResponseEntity.ok(loteRecepcionService.findAll(pageable));
+    }
+
+    private static java.time.LocalDateTime parseFechaInicio(String fecha) {
+        if (fecha == null || fecha.isBlank()) return null;
+        try {
+            return java.time.LocalDate.parse(fecha.trim()).atStartOfDay();
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private static java.time.LocalDateTime parseFechaFin(String fecha) {
+        if (fecha == null || fecha.isBlank()) return null;
+        try {
+            return java.time.LocalDate.parse(fecha.trim()).atTime(23, 59, 59);
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
     }
 
     private static TipoLote parseTipoLote(String tipoLote) {

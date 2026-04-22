@@ -28,10 +28,13 @@ public class PuntoOrigenController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar puntos de origen", description = "Obtiene una lista paginada de todos los puntos de origen")
+    @Operation(summary = "Listar puntos de origen", description = "Lista paginada con filtros opcionales: search, activo.")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.PUNTOS_ORIGEN_LISTAR + "') or hasAuthority('" + PermissionConstants.PUNTOS_ORIGEN_VER + "')")
-    public ResponseEntity<Page<PuntoOrigenDTO>> findAll(Pageable pageable) {
-        return ResponseEntity.ok(puntoOrigenService.findAll(pageable));
+    public ResponseEntity<Page<PuntoOrigenDTO>> findAll(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean activo) {
+        return ResponseEntity.ok(puntoOrigenService.findAll(pageable, search, activo));
     }
 
     @GetMapping("/search")

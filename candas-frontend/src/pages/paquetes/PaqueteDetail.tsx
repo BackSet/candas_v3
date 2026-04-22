@@ -60,7 +60,7 @@ import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { Property } from '@/components/detail/InfoCard'
 import { SectionTitle } from '@/components/ui/section-title'
 import { StatusBadge } from '@/components/detail/StatusBadge'
-import { EmptyState, LoadingState } from '@/components/states'
+import { EmptyState, DetailSkeleton } from '@/components/states'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { getEstadoPaqueteBadgeVariant } from '@/utils/paqueteEstado'
@@ -92,7 +92,11 @@ export default function PaqueteDetail() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Cargando paquete..." />
+    return (
+      <DetailPageLayout title="Cargando paquete..." backUrl="/paquetes" maxWidth="xl">
+        <DetailSkeleton />
+      </DetailPageLayout>
+    )
   }
 
   if (!paquete) {

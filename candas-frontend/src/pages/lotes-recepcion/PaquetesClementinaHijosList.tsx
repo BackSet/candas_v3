@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table'
 import { Copy, Check, Download, MapPin, Package, Edit, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useGruposPersonalizadosLocal } from '@/hooks/useGruposPersonalizadosLocal'
@@ -102,7 +102,7 @@ export default function PaquetesClementinaHijosList({
   const [showExportarDialog, setShowExportarDialog] = useState(false)
 
   // Obtener agencias para el diálogo de exportación
-  const { data: agenciasData } = useAgencias(0, 1000)
+  const { data: agenciasData } = useAgencias({ page: 0, size: 1000 })
 
   // Cargar grupos personalizados desde localStorage
   const { grupos: gruposPersonalizados, refrescarGrupos } = useGruposPersonalizadosLocal(loteRecepcionId)
@@ -261,7 +261,7 @@ export default function PaquetesClementinaHijosList({
 
     const listas = generarListas(paquetes, secuencia)
     if (listas === null) {
-      toast.error('La suma de los números excede el total de paquetes disponibles')
+      notify.error('La suma de los números excede el total de paquetes disponibles')
       return
     }
 
@@ -284,7 +284,7 @@ export default function PaquetesClementinaHijosList({
         nuevo.set(grupoKey, true)
         return nuevo
       })
-      toast.success(`Lista de ${lista.length} paquete(s) copiada al portapapeles`)
+      notify.success(`Lista de ${lista.length} paquete(s) copiada al portapapeles`)
 
       setTimeout(() => {
         setCopiadoPorGrupo(prev => {
@@ -294,7 +294,7 @@ export default function PaquetesClementinaHijosList({
         })
       }, 2000)
     } else {
-      toast.error('Error al copiar la lista')
+      notify.error('Error al copiar la lista')
     }
   }
 
@@ -373,7 +373,7 @@ export default function PaquetesClementinaHijosList({
   // Handler para exportar CLEMENTINA hijos (abre el diálogo)
   const handleExportarClementinaHijos = () => {
     if (!paquetes || paquetes.length === 0) {
-      toast.error('No hay paquetes para exportar')
+      notify.error('No hay paquetes para exportar')
       return
     }
     setShowExportarDialog(true)

@@ -1,17 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useSacas, useDeleteSaca } from '@/hooks/useSacas'
-import { useQuery } from '@tanstack/react-query'
-import { sacaService } from '@/lib/api/saca.service'
 import { Button } from '@/components/ui/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -31,201 +21,305 @@ import {
 import { Eye, Edit, Trash2, Plus, ShoppingBag, MoreHorizontal } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
-import { cn } from '@/lib/utils'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { ListPageLayout } from '@/app/layout/ListPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
-import { useFiltersStore } from '@/stores/filtersStore'
-import { ListToolbar } from '@/components/list/ListToolbar'
 import { EmptyState } from '@/components/states/EmptyState'
-import { LoadingState } from '@/components/states/LoadingState'
-import { ErrorState } from '@/components/states/ErrorState'
+import { ErrorState } from '@/components/states'
+import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { FilterBar, SelectFilter } from '@/components/filters'
+import { useListFilters } from '@/hooks/useListFilters'
+import { TamanoSaca, type Saca } from '@/types/saca'
 import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
 
-const LIST_KEY = 'sacas' as const
+const TAMANO_LABELS: Record<string, string> = {
+  [TamanoSaca.INDIVIDUAL]: 'Individual',
+  [TamanoSaca.PEQUENO]: 'Pequeño',
+  [TamanoSaca.MEDIANO]: 'Mediano',
+  [TamanoSaca.GRANDE]: 'Grande',
+}
+
+interface SacasFiltersState extends Record<string, string | number | undefined> {
+  page: number
+  size: number
+  search: string
+  tamano: string
+  idDespacho: string
+}
+
+const SACAS_FILTERS_DEFAULTS: SacasFiltersState = {
+  page: 0,
+  size: 20,
+  search: '',
+  tamano: 'all',
+  idDespacho: '',
+}
+
+function SacaRowActions({
+  onVer,
+  onEditar,
+  onEliminar,
+}: {
+  onVer: () => void
+  onEditar: () => void
+  onEliminar: () => void
+}) {
+  return (
+    <ProtectedByPermission permissions={[PERMISSIONS.SACAS.VER, PERMISSIONS.SACAS.EDITAR, PERMISSIONS.SACAS.ELIMINAR]}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Acciones de fila"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <ProtectedByPermission permission={PERMISSIONS.SACAS.VER}>
+            <DropdownMenuItem onClick={onVer}>
+              <Eye className="h-3.5 w-3.5 mr-2" /> Detalles
+            </DropdownMenuItem>
+          </ProtectedByPermission>
+          <ProtectedByPermission permission={PERMISSIONS.SACAS.EDITAR}>
+            <DropdownMenuItem onClick={onEditar}>
+              <Edit className="h-3.5 w-3.5 mr-2" /> Editar
+            </DropdownMenuItem>
+          </ProtectedByPermission>
+          <DropdownMenuSeparator />
+          <ProtectedByPermission permission={PERMISSIONS.SACAS.ELIMINAR}>
+            <DropdownMenuItem onClick={onEliminar} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
+            </DropdownMenuItem>
+          </ProtectedByPermission>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </ProtectedByPermission>
+  )
+}
 
 export default function SacasList() {
   const navigate = useNavigate()
-  const stored = useFiltersStore((state) => state.filters[LIST_KEY])
-  const setFiltersAction = useFiltersStore((state) => state.setFilters)
-  const { page = 0, size = 20, search: busqueda = '' } = { ...stored }
-  const setPage = (p: number) => setFiltersAction(LIST_KEY, { page: p })
-  const setBusqueda = (v: string) => setFiltersAction(LIST_KEY, { search: v, page: 0 })
+
+  const filtros = useListFilters<SacasFiltersState>({
+    storageKey: 'sacas',
+    defaults: SACAS_FILTERS_DEFAULTS,
+    buildChips: (values, { removeFilter }) => {
+      const chips: Array<{ key: string; label: string; onRemove: () => void }> = []
+      if (values.search) {
+        chips.push({
+          key: 'search',
+          label: `Buscar: "${values.search}"`,
+          onRemove: () => removeFilter('search'),
+        })
+      }
+      if (values.tamano && values.tamano !== 'all') {
+        chips.push({
+          key: 'tamano',
+          label: `Tamaño: ${TAMANO_LABELS[values.tamano] ?? values.tamano}`,
+          onRemove: () => removeFilter('tamano'),
+        })
+      }
+      if (values.idDespacho) {
+        chips.push({
+          key: 'idDespacho',
+          label: `Despacho: #${values.idDespacho}`,
+          onRemove: () => removeFilter('idDespacho'),
+        })
+      }
+      return chips
+    },
+  })
+
+  const { page, size, search, tamano, idDespacho } = filtros.values
+
+  const idDespachoNumber =
+    idDespacho && /^\d+$/.test(String(idDespacho)) ? Number(idDespacho) : undefined
+
   const [sacaAEliminar, setSacaAEliminar] = useState<number | null>(null)
 
-  const { data, isLoading, error } = useSacas(page, size)
-  const deleteMutation = useDeleteSaca()
-
-  // Búsqueda en el backend cuando hay una búsqueda activa
-  const { data: sacasBusqueda, isLoading: loadingBusqueda } = useQuery({
-    queryKey: ['sacas', 'search', busqueda],
-    queryFn: () => sacaService.search(busqueda.trim()),
-    enabled: busqueda.trim().length > 0,
-    staleTime: 30000,
+  const { data, isLoading, error } = useSacas({
+    page,
+    size,
+    search: search || undefined,
+    tamano: tamano !== 'all' ? tamano : undefined,
+    idDespacho: idDespachoNumber,
   })
+  const deleteMutation = useDeleteSaca()
 
   const handleDelete = async () => {
     if (sacaAEliminar) {
       try {
         await deleteMutation.mutateAsync(sacaAEliminar)
         setSacaAEliminar(null)
-      } catch (error) {
-        // Error ya manejado en el hook
-      }
+      } catch { /* hook */ }
     }
   }
 
-  // Usar resultados de búsqueda del backend si hay búsqueda activa, sino usar datos paginados
-  const sacasFiltradas = useMemo(() => {
-    if (busqueda.trim().length > 0) {
-      return sacasBusqueda || []
-    }
-    return data?.content || []
-  }, [busqueda, sacasBusqueda, data])
+  const sacas = data?.content ?? []
+  const totalPages = data?.totalPages ?? 0
+  const currentPage = data?.number ?? 0
 
-  const totalPages = data?.totalPages || 0
-  const currentPage = data?.number || 0
+  const columns = useMemo<DataTableColumn<Saca>[]>(() => [
+    {
+      id: 'codigoQr',
+      header: 'Código QR',
+      accessor: (s) => (
+        <span className="font-mono text-xs text-foreground truncate" title={s.codigoQr ?? undefined}>
+          {s.codigoQr || '—'}
+        </span>
+      ),
+      sortValue: (s) => s.codigoQr ?? '',
+    },
+    {
+      id: 'orden',
+      header: 'Orden',
+      width: '90px',
+      accessor: (s) => (
+        <span className="font-mono text-xs tabular-nums text-foreground">
+          {s.numeroOrden ?? '—'}
+        </span>
+      ),
+      sortValue: (s) => s.numeroOrden ?? 0,
+    },
+    {
+      id: 'tamano',
+      header: 'Tamaño',
+      width: '120px',
+      accessor: (s) => <span className="text-xs font-medium text-foreground">{TAMANO_LABELS[s.tamano] ?? s.tamano}</span>,
+      sortValue: (s) => s.tamano ?? '',
+    },
+    {
+      id: 'peso',
+      header: 'Peso (kg)',
+      width: '110px',
+      align: 'right',
+      accessor: (s) => (
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {s.pesoTotal ?? '—'}
+        </span>
+      ),
+      sortValue: (s) => s.pesoTotal ?? 0,
+    },
+    {
+      id: 'manifiesto',
+      header: 'Manifiesto',
+      accessor: (s) => (
+        <span className="font-mono text-[11px] text-primary truncate" title={s.numeroManifiesto ?? undefined}>
+          {s.numeroManifiesto || '—'}
+        </span>
+      ),
+      sortValue: (s) => s.numeroManifiesto ?? '',
+    },
+  ], [])
+
+  const hayFiltros = filtros.hasActiveFilters
 
   return (
-    <StandardPageLayout
+    <ListPageLayout
       title="Sacas"
       icon={<ShoppingBag className="h-4 w-4" />}
       actions={
         <ProtectedByPermission permission={PERMISSIONS.SACAS.CREAR}>
-          <Button onClick={() => navigate({ to: '/sacas/new' })} size="sm" className="h-8 shadow-sm text-xs">
+          <Button onClick={() => navigate({ to: '/sacas/new' })} size="sm" className="h-8 shadow-sm">
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Nuevo
           </Button>
         </ProtectedByPermission>
       }
-    >
-
-      <ListToolbar
-        search={busqueda}
-        onSearchChange={setBusqueda}
-        searchPlaceholder="Buscar por código QR..."
-        withBottomBorder={false}
-      />
-
-      {/* Content + pagination wrapper */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
-        {/* Main Content - Notion Table View */}
-        <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
-          <div className="flex-1 min-h-0 relative w-full overflow-auto">
-            <Table className="notion-table">
-              <TableHeader className="bg-muted/40 border-b border-border sticky top-0 z-10 backdrop-blur-sm">
-                <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground pl-4">Código QR</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Orden</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Tamaño</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Peso (kg)</TableHead>
-                  <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Manifiesto</TableHead>
-                  <TableHead className="h-9 text-right pr-4 w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(isLoading || loadingBusqueda) ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-8">
-                      <LoadingState label="Cargando sacas..." />
-                    </TableCell>
-                  </TableRow>
-                ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-8">
-                      <ErrorState
-                        title="Error al cargar sacas"
-                        description={
-                          getInteragencyRestrictionMessage(error)
-                            ?? getApiErrorMessage(error, 'No se pudieron cargar las sacas.')
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : sacasFiltradas.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-64">
-                      <EmptyState
-                        title="No se encontraron sacas"
-                        description={
-                          busqueda
-                            ? `No hay resultados para "${busqueda}"`
-                            : "No hay sacas registradas"
-                        }
-                        icon={<ShoppingBag className="h-10 w-10 text-muted-foreground/50" />}
-                        action={
-                          !busqueda && (
-                            <ProtectedByPermission permission={PERMISSIONS.SACAS.CREAR}>
-                              <Button onClick={() => navigate({ to: '/sacas/new' })} variant="outline" size="sm">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Crear Saca
-                              </Button>
-                            </ProtectedByPermission>
-                          )
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  sacasFiltradas.map((saca) => (
-                    <TableRow key={saca.idSaca} className="group hover:bg-muted/50 border-b border-border/50 last:border-0 h-9">
-                      <TableCell className="font-mono text-xs pl-4 py-1.5">{saca.codigoQr}</TableCell>
-                      <TableCell className="font-mono text-xs py-1.5">{saca.numeroOrden}</TableCell>
-                      <TableCell className="text-xs py-1.5 font-medium">{saca.tamano}</TableCell>
-                      <TableCell className="text-xs py-1.5 tabular-nums text-muted-foreground">{saca.pesoTotal || '-'}</TableCell>
-                      <TableCell className="font-mono text-[10px] py-1.5 text-primary hover:underline cursor-pointer">
-                        {saca.numeroManifiesto || '-'}
-                      </TableCell>
-                      <TableCell className="text-right py-1.5 pr-3">
-                        <ProtectedByPermission permissions={[PERMISSIONS.SACAS.VER, PERMISSIONS.SACAS.EDITAR, PERMISSIONS.SACAS.ELIMINAR]}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <ProtectedByPermission permission={PERMISSIONS.SACAS.VER}>
-                              <DropdownMenuItem onClick={() => navigate({ to: `/sacas/${saca.idSaca}` })}>
-                                <Eye className="h-3.5 w-3.5 mr-2" /> Detalles
-                              </DropdownMenuItem>
-                            </ProtectedByPermission>
-                            <ProtectedByPermission permission={PERMISSIONS.SACAS.EDITAR}>
-                              <DropdownMenuItem onClick={() => navigate({ to: `/sacas/${saca.idSaca}/edit` })}>
-                                <Edit className="h-3.5 w-3.5 mr-2" /> Editar
-                              </DropdownMenuItem>
-                            </ProtectedByPermission>
-                            <DropdownMenuSeparator />
-                            <ProtectedByPermission permission={PERMISSIONS.SACAS.ELIMINAR}>
-                              <DropdownMenuItem onClick={() => setSacaAEliminar(saca.idSaca!)} className="text-destructive focus:text-destructive">
-                                <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
-                              </DropdownMenuItem>
-                            </ProtectedByPermission>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        </ProtectedByPermission>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-        </div>
-        {busqueda.trim().length === 0 && (
-          <ListPagination
-            page={currentPage}
-            totalPages={totalPages}
-            totalItems={data?.totalElements}
-            size={size}
-            onPageChange={setPage}
-            className="shrink-0"
+      filterBar={
+        <FilterBar
+          searchValue={search}
+          onSearchChange={(v) => filtros.setFilter('search', v)}
+          searchPlaceholder="Buscar por código QR o manifiesto..."
+          chips={filtros.activeChips}
+          onClearAll={filtros.clearAll}
+        >
+          <SelectFilter
+            value={tamano}
+            onChange={(v) => filtros.setFilter('tamano', v)}
+            options={[
+              { value: 'all', label: 'Todos los tamaños' },
+              { value: TamanoSaca.INDIVIDUAL, label: 'Individual' },
+              { value: TamanoSaca.PEQUENO, label: 'Pequeño' },
+              { value: TamanoSaca.MEDIANO, label: 'Mediano' },
+              { value: TamanoSaca.GRANDE, label: 'Grande' },
+            ]}
+            ariaLabel="Tamaño de saca"
           />
-        )}
-      </div>
-
+          <input
+            type="number"
+            min={1}
+            value={idDespacho}
+            onChange={(e) => filtros.setFilter('idDespacho', e.target.value)}
+            placeholder="ID Despacho"
+            className="h-9 w-32 rounded-md border border-input bg-background px-3 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            aria-label="Filtrar por id de despacho"
+          />
+        </FilterBar>
+      }
+      table={
+        error && !isLoading ? (
+          <ErrorState
+            title="Error al cargar sacas"
+            description={
+              getInteragencyRestrictionMessage(error)
+                ?? getApiErrorMessage(error, 'No se pudieron cargar las sacas.')
+            }
+          />
+        ) : (
+          <DataTable<Saca>
+            data={sacas}
+            columns={columns}
+            rowKey={(s) => s.idSaca!}
+            storageKey="sacas"
+            isLoading={isLoading}
+            emptyState={
+              <EmptyState
+                title="No se encontraron sacas"
+                description={
+                  hayFiltros
+                    ? 'No hay resultados para los filtros seleccionados'
+                    : 'No hay sacas registradas'
+                }
+                icon={<ShoppingBag className="h-10 w-10 text-muted-foreground/50" />}
+                action={
+                  !hayFiltros ? (
+                    <ProtectedByPermission permission={PERMISSIONS.SACAS.CREAR}>
+                      <Button onClick={() => navigate({ to: '/sacas/new' })} variant="outline" size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Crear Saca
+                      </Button>
+                    </ProtectedByPermission>
+                  ) : undefined
+                }
+              />
+            }
+            rowActions={(s) => (
+              <SacaRowActions
+                onVer={() => navigate({ to: `/sacas/${s.idSaca}` })}
+                onEditar={() => navigate({ to: `/sacas/${s.idSaca}/edit` })}
+                onEliminar={() => setSacaAEliminar(s.idSaca!)}
+              />
+            )}
+          />
+        )
+      }
+      footer={
+        <ListPagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalItems={data?.totalElements}
+          size={size}
+          onPageChange={(p) => filtros.setFilter('page', p)}
+          alwaysShow
+          className="border-t-0 pt-0"
+        />
+      }
+    >
       <Dialog open={!!sacaAEliminar} onOpenChange={(open) => !open && setSacaAEliminar(null)}>
         <DialogContent>
           <DialogHeader>
@@ -244,6 +338,6 @@ export default function SacasList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </StandardPageLayout>
+    </ListPageLayout>
   )
 }

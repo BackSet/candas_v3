@@ -7,21 +7,26 @@ export type TipoDestinoDespacho = 'all' | 'agencia' | 'directo'
 
 export const despachoService = {
   async findAll(
-    page: number = 0,
-    size: number = 20,
-    tipoDestino: TipoDestinoDespacho = 'all',
-    fechaDesde?: string,
-    fechaHasta?: string
+    params: {
+      page?: number
+      size?: number
+      tipoDestino?: TipoDestinoDespacho
+      fechaDesde?: string
+      fechaHasta?: string
+      search?: string
+    } = {}
   ): Promise<DespachoPage> {
-    const params: Record<string, string | number> = { page, size }
+    const { page = 0, size = 20, tipoDestino = 'all', fechaDesde, fechaHasta, search } = params
+    const query: Record<string, string | number> = { page, size }
     if (tipoDestino && tipoDestino !== 'all') {
-      params.tipoDestino = tipoDestino === 'agencia' ? 'AGENCIA' : 'DIRECTO'
+      query.tipoDestino = tipoDestino === 'agencia' ? 'AGENCIA' : 'DIRECTO'
     }
-    if (fechaDesde) params.fechaDesde = fechaDesde
-    if (fechaHasta) params.fechaHasta = fechaHasta
+    if (fechaDesde) query.fechaDesde = fechaDesde
+    if (fechaHasta) query.fechaHasta = fechaHasta
+    if (search && search.trim()) query.search = search.trim()
     const response = await apiClient.get<DespachoPage>(
       API_ENDPOINTS.DESPACHOS.BASE,
-      { params }
+      { params: query }
     )
     return response.data
   },

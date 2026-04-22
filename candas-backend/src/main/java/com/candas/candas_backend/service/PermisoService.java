@@ -4,6 +4,7 @@ import com.candas.candas_backend.dto.PermisoDTO;
 import com.candas.candas_backend.entity.Permiso;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.PermisoRepository;
+import com.candas.candas_backend.repository.spec.PermisoSpecs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,17 @@ public class PermisoService {
     }
 
     public Page<PermisoDTO> findAll(Pageable pageable) {
-        return permisoRepository.findAll(pageable).map(this::toDTO);
+        return findAll(pageable, null, null, null);
+    }
+
+    public Page<PermisoDTO> findAll(Pageable pageable, String search, String recurso, String accion) {
+        boolean sinFiltros = (search == null || search.isBlank())
+                && (recurso == null || recurso.isBlank())
+                && (accion == null || accion.isBlank());
+        if (sinFiltros) {
+            return permisoRepository.findAll(pageable).map(this::toDTO);
+        }
+        return permisoRepository.findAll(PermisoSpecs.withFilters(search, recurso, accion), pageable).map(this::toDTO);
     }
 
     public PermisoDTO findById(Long id) {

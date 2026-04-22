@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Loader2, Scan, CheckCircle2, XCircle, Trash2, Download, Printer } from 'lucide-react'
 import { generarExcelEscaneos } from '@/utils/generarExcelEscaneos'
 import { imprimirEscaneos } from '@/utils/imprimirEscaneos'
@@ -65,7 +65,7 @@ export default function EscanearGuiaCard() {
         console.error('Error al cargar historial', error)
       }
       if (!silent) {
-        toast.error('No se pudo cargar el historial reciente')
+        notify.error('No se pudo cargar el historial reciente')
       }
     }
   }
@@ -140,7 +140,7 @@ export default function EscanearGuiaCard() {
     const existe = historial.some(item => item.numeroGuia.toUpperCase() === guiaNormalizada)
 
     if (existe) {
-      toast.info(`La guía ${guiaNormalizada} ya fue escaneada anteriormente`, {
+      notify.info(`La guía ${guiaNormalizada} ya fue escaneada anteriormente`, {
         duration: 2000,
       })
       // Actualizar el resultado actual con el existente
@@ -164,7 +164,7 @@ export default function EscanearGuiaCard() {
       // 1. Consultar primero si la guía tiene varias etiquetas
       const dto = await listasEtiquetadasService.consultarGuia(guiaNormalizada)
       if (!dto) {
-        toast.error(`La guía ${guia} no está registrada en el sistema de etiquetado`)
+        notify.error(`La guía ${guia} no está registrada en el sistema de etiquetado`)
         setResultadoActual({ numeroGuia: guiaNormalizada, etiqueta: null, fecha: new Date(), instruccion: null, estado: null })
         setBuscando(false)
         setNumeroGuia('')
@@ -197,14 +197,14 @@ export default function EscanearGuiaCard() {
       await cargarHistorial(true)
 
       if (tieneInstruccion && (resultado.observaciones ?? '').includes('RETENER')) {
-        toast.error(`⚠️ ALERTA: RETENER ESTE PAQUETE! (${etiqueta})`, {
+        notify.error(`⚠️ ALERTA: RETENER ESTE PAQUETE! (${etiqueta})`, {
           duration: 5000,
           style: { border: '2px solid red', padding: '16px', fontWeight: 'bold' }
         })
       } else if (tieneInstruccion) {
-        toast.warning(`⚠️ ATENCIÓN: Instrucción especial (${etiqueta})`, { duration: 4000 })
+        notify.warning(`⚠️ ATENCIÓN: Instrucción especial (${etiqueta})`, { duration: 4000 })
       } else {
-        toast.success(`Guía ${guia} procesada: ${etiqueta}`, { duration: 2000 })
+        notify.success(`Guía ${guia} procesada: ${etiqueta}`, { duration: 2000 })
       }
 
       setTimeout(() => {
@@ -213,7 +213,7 @@ export default function EscanearGuiaCard() {
       }, 500)
     } catch (error: any) {
       console.error(error)
-      toast.error(`La guía ${guia} no está registrada en el sistema de etiquetado`)
+      notify.error(`La guía ${guia} no está registrada en el sistema de etiquetado`)
       setResultadoActual({
         numeroGuia: guiaNormalizada,
         etiqueta: null,
@@ -242,11 +242,11 @@ export default function EscanearGuiaCard() {
       })
       setPendienteElegirEtiqueta(null)
       await cargarHistorial(true)
-      toast.success(`Guía ${num} asignada a ${etiquetaElegida} y marcada como receptada`)
+      notify.success(`Guía ${num} asignada a ${etiquetaElegida} y marcada como receptada`)
       setNumeroGuia('')
       setTimeout(() => inputRef.current?.focus(), 100)
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || 'Error al elegir etiqueta')
+      notify.error(err?.response?.data?.message || err?.message || 'Error al elegir etiqueta')
     } finally {
       setBuscando(false)
     }
@@ -262,7 +262,7 @@ export default function EscanearGuiaCard() {
     // Solo limpia localmente la vista, no borra del backend
     setHistorial([])
     setResultadoActual(null)
-    toast.info('Vista de historial limpiada')
+    notify.info('Vista de historial limpiada')
   }
 
   const eliminarDelHistorial = (numeroGuia: string, index: number) => {
@@ -281,7 +281,7 @@ export default function EscanearGuiaCard() {
 
       return nuevo
     })
-    toast.success('Paquete eliminado del historial')
+    notify.success('Paquete eliminado del historial')
   }
 
   const handleToggleGrupo = (grupo: string) => {
@@ -296,42 +296,52 @@ export default function EscanearGuiaCard() {
     })
   }
 
+  const [exportandoExcel, setExportandoExcel] = useState(false)
+  const [imprimiendo, setImprimiendo] = useState(false)
+
   const handleExportarExcel = () => {
-    // Filtrar historial según grupos seleccionados
     const historialFiltrado = historial.filter(item => {
       const grupo = item.etiqueta || 'Sin etiqueta'
       return gruposSeleccionados.has(grupo)
     })
 
     if (historialFiltrado.length === 0) {
-      toast.error('No hay escaneos seleccionados para exportar')
+      notify.error('No hay escaneos seleccionados para exportar')
       return
     }
 
+    setExportandoExcel(true)
+    const toastId = notify.start('Generando Excel...')
     try {
       generarExcelEscaneos(historial, Array.from(gruposSeleccionados))
-      toast.success(`Excel exportado exitosamente con ${historialFiltrado.length} escaneo(s)`)
+      notify.finish(toastId, `Excel exportado con ${historialFiltrado.length} escaneo(s)`)
     } catch (error: any) {
-      toast.error(error.message || 'Error al exportar el archivo Excel')
+      notify.fail(toastId, error.message || 'Error al exportar el archivo Excel')
+    } finally {
+      setExportandoExcel(false)
     }
   }
 
   const handleImprimir = () => {
-    // Filtrar historial según grupos seleccionados
     const historialFiltrado = historial.filter(item => {
       const grupo = item.etiqueta || 'Sin etiqueta'
       return gruposSeleccionados.has(grupo)
     })
 
     if (historialFiltrado.length === 0) {
-      toast.error('No hay escaneos seleccionados para imprimir')
+      notify.error('No hay escaneos seleccionados para imprimir')
       return
     }
 
+    setImprimiendo(true)
+    const toastId = notify.start('Preparando impresión...')
     try {
       imprimirEscaneos(historial, Array.from(gruposSeleccionados))
+      notify.finish(toastId, 'Ventana de impresión abierta')
     } catch (error: any) {
-      toast.error(error.message || 'Error al imprimir')
+      notify.fail(toastId, error.message || 'Error al imprimir')
+    } finally {
+      setImprimiendo(false)
     }
   }
 
@@ -582,9 +592,13 @@ export default function EscanearGuiaCard() {
                       size="sm"
                       onClick={handleExportarExcel}
                       className="gap-2"
-                      disabled={gruposSeleccionados.size === 0}
+                      disabled={gruposSeleccionados.size === 0 || exportandoExcel}
                     >
-                      <Download className="h-4 w-4" />
+                      {exportandoExcel ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                       Exportar Excel
                     </Button>
                     <Button
@@ -592,9 +606,13 @@ export default function EscanearGuiaCard() {
                       size="sm"
                       onClick={handleImprimir}
                       className="gap-2"
-                      disabled={gruposSeleccionados.size === 0}
+                      disabled={gruposSeleccionados.size === 0 || imprimiendo}
                     >
-                      <Printer className="h-4 w-4" />
+                      {imprimiendo ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Printer className="h-4 w-4" />
+                      )}
                       Imprimir
                     </Button>
                     <Button

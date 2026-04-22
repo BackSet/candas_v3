@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button'
 import type { ManifiestoConsolidadoDetalle } from '@/types/manifiesto-consolidado'
 import { generarExcelDestinatariosDirectos } from '@/utils/generarExcelManifiestoConsolidado'
 import GenerarExcelDialog from './GenerarExcelDialog'
-import { FileSpreadsheet, Table2, Users } from 'lucide-react'
-import { toast } from 'sonner'
+import { FileSpreadsheet, Table2, Users, Loader2 } from 'lucide-react'
+import { notify } from '@/lib/notify'
 
 interface ExportarExcelDialogProps {
   manifiesto: ManifiestoConsolidadoDetalle
@@ -25,15 +25,20 @@ export default function ExportarExcelDialog({
   onOpenChange,
 }: ExportarExcelDialogProps) {
   const [mostrarGenerarExcel, setMostrarGenerarExcel] = useState(false)
+  const [generandoDestinatarios, setGenerandoDestinatarios] = useState(false)
 
-  const handleExcelDestinatarios = () => {
+  const handleExcelDestinatarios = async () => {
+    if (generandoDestinatarios) return
+    setGenerandoDestinatarios(true)
+    const id = notify.start('Generando Excel de destinatarios directos…')
     try {
-      generarExcelDestinatariosDirectos(manifiesto)
-      toast.success('Excel de destinatarios directos descargado')
+      await generarExcelDestinatariosDirectos(manifiesto)
+      notify.finish(id, 'Excel de destinatarios directos descargado')
       onOpenChange(false)
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Error al generar el Excel'
-      toast.error(msg)
+      notify.fail(id, error, 'No se pudo generar el Excel de destinatarios directos')
+    } finally {
+      setGenerandoDestinatarios(false)
     }
   }
 
@@ -79,12 +84,17 @@ export default function ExportarExcelDialog({
               <Button
                 type="button"
                 variant="outline"
-                className="h-auto py-4 px-4 min-w-0 whitespace-normal flex flex-col items-start gap-2 text-left rounded-xl border-border/40 hover:border-primary/30 hover:bg-muted/20 transition-all duration-200"
+                disabled={generandoDestinatarios}
+                className="h-auto py-4 px-4 min-w-0 whitespace-normal flex flex-col items-start gap-2 text-left rounded-xl border-border/40 hover:border-primary/30 hover:bg-muted/20 transition-all duration-200 disabled:opacity-60"
                 onClick={handleExcelDestinatarios}
               >
                 <span className="w-full flex items-center gap-2.5 text-sm font-semibold">
                   <div className="h-7 w-7 rounded-lg bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
-                    <Users className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                    {generandoDestinatarios ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-600 dark:text-violet-400" />
+                    ) : (
+                      <Users className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                    )}
                   </div>
                   Destinatarios Directos
                 </span>

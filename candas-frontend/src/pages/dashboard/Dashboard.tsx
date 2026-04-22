@@ -20,10 +20,10 @@ import { LoadingState } from '@/components/states/LoadingState'
 export default function Dashboard() {
   const navigate = useNavigate()
 
-  const { data: paquetesData, isLoading: loadingPaquetes, refetch: refetchPaquetes } = usePaquetes(0, 1000)
+  const { data: paquetesData, isLoading: loadingPaquetes, refetch: refetchPaquetes } = usePaquetes({ page: 0, size: 1000 })
   const { data: atencionesPendientes, isLoading: loadingAtenciones, refetch: refetchAtenciones } = useAtencionPaquetesPendientes()
-  const { data: despachosData, isLoading: loadingDespachos, refetch: refetchDespachos } = useDespachos(0, 10)
-  const { data: lotesRecepcionData, isLoading: loadingLotes, refetch: refetchLotes } = useLotesRecepcion(0, 10)
+  const { data: despachosData, isLoading: loadingDespachos, refetch: refetchDespachos } = useDespachos({ page: 0, size: 10 })
+  const { data: lotesRecepcionData, isLoading: loadingLotes, refetch: refetchLotes } = useLotesRecepcion({ page: 0, size: 10 })
 
   // Refrescar datos al montar el dashboard para mostrar información actualizada
   useEffect(() => {

@@ -1,19 +1,47 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { paqueteService } from '@/lib/api/paquete.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
+import { paqueteService, type PaqueteFindAllParams } from '@/lib/api/paquete.service'
 import type { Paquete, EstadoPaquete, TipoPaquete } from '@/types/paquete'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
-export function usePaquetes(
-  page: number = 0,
-  size: number = 20,
-  search?: string,
-  estado?: string,
-  tipo?: string
-) {
+export type UsePaquetesParams = PaqueteFindAllParams
+
+export function usePaquetes(params: UsePaquetesParams = {}) {
+  const {
+    page = 0,
+    size = 20,
+    search,
+    estado,
+    tipo,
+    idAgencia,
+    idLote,
+    fechaDesde,
+    fechaHasta,
+  } = params
   return useQuery({
-    queryKey: ['paquetes', page, size, search, estado, tipo],
-    queryFn: () => paqueteService.findAll(page, size, search, estado, tipo),
+    queryKey: [
+      'paquetes',
+      page,
+      size,
+      search,
+      estado,
+      tipo,
+      idAgencia,
+      idLote,
+      fechaDesde,
+      fechaHasta,
+    ],
+    queryFn: () =>
+      paqueteService.findAll({
+        page,
+        size,
+        search,
+        estado,
+        tipo,
+        idAgencia,
+        idLote,
+        fechaDesde,
+        fechaHasta,
+      }),
   })
 }
 
@@ -40,10 +68,10 @@ export function useCreatePaquete() {
     mutationFn: (dto: Paquete) => paqueteService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
-      toast.success('Paquete creado exitosamente')
+      notify.success('Paquete creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el paquete'))
+      notify.error(error, 'No se pudo crear el paquete')
     },
   })
 }
@@ -57,17 +85,15 @@ export function useUpdatePaquete() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['paquete', variables.id] })
-      // Invalidar queries de recepciones para actualizar estadísticas
       queryClient.invalidateQueries({ queryKey: ['recepciones'] })
       queryClient.invalidateQueries({ queryKey: ['recepcion'] })
       queryClient.invalidateQueries({ queryKey: ['recepcion-paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes'] })
-      // Invalidar todas las queries que puedan contener este paquete
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion'] })
-      toast.success('Paquete actualizado exitosamente')
+      notify.success('Paquete actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el paquete'))
+      notify.error(error, 'No se pudo actualizar el paquete')
     },
   })
 }
@@ -79,10 +105,10 @@ export function useDeletePaquete() {
     mutationFn: (id: number) => paqueteService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
-      toast.success('Paquete eliminado exitosamente')
+      notify.success('Paquete eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el paquete'))
+      notify.error(error, 'No se pudo eliminar el paquete')
     },
   })
 }
@@ -97,10 +123,10 @@ export function useSepararPaquete() {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['paquete', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['paquetes-hijos', variables.id] })
-      toast.success('Paquete separado exitosamente')
+      notify.success('Paquete separado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al separar el paquete'))
+      notify.error(error, 'No se pudo separar el paquete')
     },
   })
 }
@@ -114,10 +140,10 @@ export function useCambiarEstadoPaquete() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['paquete', variables.id] })
-      toast.success('Estado del paquete actualizado exitosamente')
+      notify.success('Estado del paquete actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al cambiar el estado del paquete'))
+      notify.error(error, 'No se pudo cambiar el estado del paquete')
     },
   })
 }
@@ -138,34 +164,28 @@ export function useCambiarTipoMasivo() {
     mutationFn: ({ ids, nuevoTipo }: { ids: number[]; nuevoTipo: TipoPaquete }) =>
       paqueteService.cambiarTipoMasivo(ids, nuevoTipo),
     onSuccess: (paquetesActualizados) => {
-      // Actualizar el cache de forma optimista para que se vea inmediatamente
       paquetesActualizados.forEach((paqueteActualizado) => {
         if (paqueteActualizado.idPaquete) {
-          // Actualizar en la query de paquetes individuales
           queryClient.setQueryData(['paquete', paqueteActualizado.idPaquete], paqueteActualizado)
         }
       })
 
-      // Crear un mapa de paquetes actualizados para búsqueda rápida
       const paquetesActualizadosMap = new Map(
         paquetesActualizados
           .filter(p => p.idPaquete)
           .map(p => [p.idPaquete!, p])
       )
 
-      // Actualizar todas las queries de lotes de recepción que puedan contener estos paquetes
       queryClient.getQueryCache().getAll().forEach((query) => {
         const queryKey = query.queryKey
         if (queryKey[0] === 'lote-recepcion-paquetes' && query.state.data) {
           const paquetes = query.state.data as Paquete[]
           if (Array.isArray(paquetes)) {
-            // Verificar si alguno de los paquetes actualizados está en esta query
             const tienePaquetesActualizados = paquetes.some(p =>
               p.idPaquete && paquetesActualizadosMap.has(p.idPaquete)
             )
 
             if (tienePaquetesActualizados) {
-              // Actualizar los paquetes que cambiaron
               const paquetesNuevos = paquetes.map(p =>
                 (p.idPaquete && paquetesActualizadosMap.get(p.idPaquete)) || p
               )
@@ -176,13 +196,11 @@ export function useCambiarTipoMasivo() {
         }
       })
 
-      // Invalidar otras queries relacionadas para asegurar consistencia
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion'] })
-      // No mostrar toast aquí, se manejará en el componente con el progreso
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al cambiar el tipo de los paquetes'))
+      notify.error(error, 'No se pudo cambiar el tipo de los paquetes')
     },
   })
 }
@@ -197,14 +215,14 @@ export function useAsociarClementinaPorLote() {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes'] })
       if (result.exitosas > 0) {
-        toast.success(`${result.exitosas} asociación(es) exitosa(s)`)
+        notify.success(`${result.exitosas} asociación(es) exitosa(s)`)
       }
       if (result.fallidas > 0) {
-        toast.error(`${result.fallidas} asociación(es) fallida(s)`)
+        notify.error(`${result.fallidas} asociación(es) fallida(s)`)
       }
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al procesar las asociaciones'))
+      notify.error(error, 'No se pudieron procesar las asociaciones')
     },
   })
 }
@@ -219,14 +237,14 @@ export function useAsociarCadenitaPorLote() {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes'] })
       if (result.exitosas > 0) {
-        toast.success(`${result.exitosas} asociación(es) Cadenita exitosa(s)`)
+        notify.success(`${result.exitosas} asociación(es) Cadenita exitosa(s)`)
       }
       if (result.fallidas > 0) {
-        toast.error(`${result.fallidas} asociación(es) fallida(s)`)
+        notify.error(`${result.fallidas} asociación(es) fallida(s)`)
       }
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al procesar asociación Cadenita'))
+      notify.error(error, 'No se pudo procesar la asociación Cadenita')
     },
   })
 }
@@ -238,10 +256,10 @@ export function useMarcarEtiquetaCambiada() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['paquete', id] })
-      toast.success('Etiqueta marcada como cambiada')
+      notify.success('Etiqueta marcada como cambiada')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al marcar la etiqueta como cambiada'))
+      notify.error(error, 'No se pudo marcar la etiqueta como cambiada')
     },
   })
 }
@@ -254,10 +272,10 @@ export function useMarcarSeparado() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['paquete', id] })
-      toast.success('Paquete marcado como separado')
+      notify.success('Paquete marcado como separado')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al marcar el paquete como separado'))
+      notify.error(error, 'No se pudo marcar el paquete como separado')
     },
   })
 }
@@ -270,10 +288,10 @@ export function useMarcarUnidoEnCaja() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['paquete', id] })
-      toast.success('Paquete marcado como unido en caja')
+      notify.success('Paquete marcado como unido en caja')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al marcar el paquete como unido en caja'))
+      notify.error(error, 'No se pudo marcar el paquete como unido en caja')
     },
   })
 }

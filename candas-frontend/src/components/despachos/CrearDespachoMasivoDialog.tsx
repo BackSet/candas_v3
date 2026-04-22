@@ -32,6 +32,7 @@ export interface AgenciaOption {
   idAgencia: number
   nombre: string
   canton?: string
+  provincia?: string
 }
 
 export interface DestinatarioDirectoOption {
@@ -39,6 +40,7 @@ export interface DestinatarioDirectoOption {
   nombreDestinatario?: string | null
   nombreEmpresa?: string | null
   canton?: string
+  provincia?: string
   activo?: boolean
 }
 
@@ -183,10 +185,15 @@ export default function CrearDespachoMasivoDialog({
     }
   }
 
+  const buildUbicacion = (canton?: string | null, provincia?: string | null) =>
+    [canton, provincia]
+      .filter((p): p is string => !!p && p.trim().length > 0)
+      .join(' • ') || undefined
+
   const agenciasOpciones: ComboboxOption<AgenciaOption>[] = agencias.map((a) => ({
     value: a.idAgencia,
     label: a.nombre,
-    description: a.canton ?? undefined,
+    description: buildUbicacion(a.canton, a.provincia),
     data: a,
   }))
 
@@ -197,7 +204,7 @@ export default function CrearDespachoMasivoDialog({
       return {
         value: d.idDestinatarioDirecto,
         label,
-        description: d.canton ?? undefined,
+        description: buildUbicacion(d.canton, d.provincia),
         data: d,
       }
     })
@@ -282,7 +289,7 @@ export default function CrearDespachoMasivoDialog({
                           value={bulkIdDestino ? Number(bulkIdDestino) : null}
                           onValueChange={(v) => setBulkIdDestino(v != null ? String(v) : '')}
                           placeholder="Buscar agencia..."
-                          searchPlaceholder="Buscar por nombre o cantón..."
+                          searchPlaceholder="Buscar por agencia, cantón o provincia..."
                           emptyMessage="Sin resultados"
                           className="h-10 text-base"
                           onSearchChange={setBusquedaAgencia}
@@ -337,7 +344,7 @@ export default function CrearDespachoMasivoDialog({
                               value={bulkIdDestino?.trim() ? Number(bulkIdDestino) : null}
                               onValueChange={(v) => setBulkIdDestino(v != null ? String(v) : '')}
                               placeholder="Buscar destinatario directo..."
-                              searchPlaceholder="Buscar por nombre o cantón..."
+                              searchPlaceholder="Buscar por destinatario, cantón o provincia..."
                               emptyMessage="Sin destinatarios. Asegúrese de tener destinatarios directos dados de alta."
                               className="h-10 text-base"
                               onSearchChange={setBusquedaDestinatario}

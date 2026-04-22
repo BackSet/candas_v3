@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { rolService } from '@/lib/api/rol.service'
+import { rolService, type RolListParams } from '@/lib/api/rol.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Rol } from '@/types/rol'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
-export function useRoles(page: number = 0, size: number = 20) {
+export function useRoles(params: RolListParams = {}) {
+  const { page = 0, size = 20, search, activo } = params
   return useQuery({
-    queryKey: ['roles', page, size],
-    queryFn: () => rolService.findAll(page, size),
+    queryKey: ['roles', page, size, search, activo],
+    queryFn: () => rolService.findAll({ page, size, search, activo }),
   })
 }
 
@@ -34,10 +35,10 @@ export function useCreateRol() {
     mutationFn: (dto: Rol) => rolService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
-      toast.success('Rol creado exitosamente')
+      notify.success('Rol creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el rol'))
+      notify.error(error, 'Error al crear el rol')
     },
   })
 }
@@ -51,10 +52,10 @@ export function useUpdateRol() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       queryClient.invalidateQueries({ queryKey: ['rol', variables.id] })
-      toast.success('Rol actualizado exitosamente')
+      notify.success('Rol actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el rol'))
+      notify.error(error, 'Error al actualizar el rol')
     },
   })
 }
@@ -66,10 +67,10 @@ export function useDeleteRol() {
     mutationFn: (id: number) => rolService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
-      toast.success('Rol eliminado exitosamente')
+      notify.success('Rol eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el rol'))
+      notify.error(error, 'Error al eliminar el rol')
     },
   })
 }
@@ -84,10 +85,10 @@ export function useAsignarPermisosRol() {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       queryClient.invalidateQueries({ queryKey: ['rol', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['rol-permisos', variables.id] })
-      toast.success('Permisos asignados exitosamente')
+      notify.success('Permisos asignados exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al asignar los permisos'))
+      notify.error(error, 'Error al asignar los permisos')
     },
   })
 }

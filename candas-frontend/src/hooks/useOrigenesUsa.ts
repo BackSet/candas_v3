@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { origenUsaService } from '@/lib/api/origen-usa.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { OrigenUsa } from '@/types/origen-usa'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 export function useOrigenesUsa(page: number = 0, size: number = 20) {
   return useQuery({
@@ -26,10 +26,10 @@ export function useCreateOrigenUsa() {
     mutationFn: (dto: OrigenUsa) => origenUsaService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['origenes-usa'] })
-      toast.success('Origen USA creado exitosamente')
+      notify.success('Origen USA creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el origen USA'))
+      notify.error(error, 'Error al crear el origen USA')
     },
   })
 }
@@ -43,10 +43,10 @@ export function useUpdateOrigenUsa() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['origenes-usa'] })
       queryClient.invalidateQueries({ queryKey: ['origen-usa', variables.id] })
-      toast.success('Origen USA actualizado exitosamente')
+      notify.success('Origen USA actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el origen USA'))
+      notify.error(error, 'Error al actualizar el origen USA')
     },
   })
 }
@@ -58,10 +58,10 @@ export function useDeleteOrigenUsa() {
     mutationFn: (id: number) => origenUsaService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['origenes-usa'] })
-      toast.success('Origen USA eliminado exitosamente')
+      notify.success('Origen USA eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el origen USA'))
+      notify.error(error, 'Error al eliminar el origen USA')
     },
   })
 }

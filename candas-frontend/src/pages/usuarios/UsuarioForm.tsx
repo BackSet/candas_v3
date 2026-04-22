@@ -1,11 +1,9 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
+import { useForm, type FieldValues, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { CheckboxIndicator } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -15,38 +13,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useUsuario, useCreateUsuario, useUpdateUsuario, useRolesUsuario, useAgenciasUsuario, useAsignarRolesUsuario, useAsignarAgenciasUsuario } from '@/hooks/useUsuarios'
+import {
+  useUsuario,
+  useCreateUsuario,
+  useUpdateUsuario,
+  useRolesUsuario,
+  useAgenciasUsuario,
+  useAsignarRolesUsuario,
+  useAsignarAgenciasUsuario,
+} from '@/hooks/useUsuarios'
 import { useClientes, useAgencias } from '@/hooks/useSelectOptions'
 import { useRoles } from '@/hooks/useRoles'
-import type { Usuario } from '@/types/usuario'
-import { Search, UserCog, Save, ArrowLeft, Shield, Building2, User, Mail, Lock, Hash } from 'lucide-react'
+import { Search, Shield, Building2, User, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
-import { LoadingState } from '@/components/states/LoadingState'
 import { useHasAnyRole } from '@/hooks/useHasRole'
-
-const usuarioSchema = z.object({
-  username: z.string().min(1, 'El username es requerido'),
-  email: z.string().email('Email inválido'),
-  password: z.string().optional(),
-  nombreCompleto: z.string().min(1, 'El nombre completo es requerido'),
-  activo: z.boolean().optional(),
-  idCliente: z.number().optional().or(z.literal('')),
-  idAgencia: z.union([z.number(), z.literal('')]).optional(), // compat temporal
-  idAgencias: z.array(z.number()).optional(),
-})
-
-type UsuarioFormData = z.infer<typeof usuarioSchema>
+import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
+import {
+  usuarioSchema,
+  type UsuarioFormData,
+  usuarioFormDataToDto,
+  usuarioToFormData,
+} from '@/schemas/usuario'
 
 export default function UsuarioForm() {
   const navigate = useNavigate()
   const { id } = useParams({ strict: false })
   const isEdit = !!id
 
-  const { data: usuario, isLoading: loadingUsuario } = useUsuario(id ? Number(id) : undefined)
+  const {
+    data: usuario,
+    isLoading: loadingUsuario,
+    error: loadError,
+    refetch,
+  } = useUsuario(id ? Number(id) : undefined)
   const { data: clientes = [] } = useClientes()
   const { data: agencias = [] } = useAgencias()
-  const { data: rolesData } = useRoles(0, 100)
+  const { data: rolesData } = useRoles({ page: 0, size: 100 })
   const { data: rolesActuales } = useRolesUsuario(id ? Number(id) : undefined)
   const { data: agenciasActuales } = useAgenciasUsuario(id ? Number(id) : undefined)
   const createMutation = useCreateUsuario()
@@ -62,29 +64,26 @@ export default function UsuarioForm() {
   const rolesInicializados = useRef(false)
   const agenciasInicializadas = useRef(false)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setValue,
-    watch,
-  } = useForm<UsuarioFormData>({
+  const form = useForm<UsuarioFormData>({
     resolver: zodResolver(usuarioSchema),
     defaultValues: {
       activo: true,
     },
   })
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    reset,
+  } = form
 
   useEffect(() => {
     if (usuario) {
-      setValue('username', usuario.username)
-      setValue('email', usuario.email)
-      setValue('nombreCompleto', usuario.nombreCompleto)
-      setValue('activo', usuario.activo ?? true)
-      setValue('idCliente', usuario.idCliente ?? '')
-      setValue('idAgencia', usuario.idAgencia ?? '') // compat temporal
+      reset(usuarioToFormData(usuario))
     }
-  }, [usuario, setValue])
+  }, [usuario, reset])
 
   const rolesActualesMemo = useMemo(() => {
     if (!rolesActuales || !Array.isArray(rolesActuales)) return null
@@ -150,19 +149,12 @@ export default function UsuarioForm() {
   }
 
   const onSubmit = async (data: UsuarioFormData) => {
-    const usuarioData: Usuario = {
-      ...data,
-      password: data.password || undefined,
-      idCliente: data.idCliente === '' ? undefined : data.idCliente,
-      idAgencia: selectedAgencias.length > 0 ? selectedAgencias[0] : undefined,
-      idAgencias: canManageAgencias
-        ? selectedAgencias
-        : (usuario?.idAgencias ?? (usuario?.idAgencia ? [usuario.idAgencia] : [])),
-    }
-
-    if (isEdit && !data.password) {
-      delete usuarioData.password
-    }
+    const usuarioData = usuarioFormDataToDto(data, {
+      selectedAgencias,
+      canManageAgencias,
+      isEdit,
+      existingUsuario: usuario,
+    })
 
     try {
       let usuarioId: number
@@ -187,301 +179,275 @@ export default function UsuarioForm() {
       }
 
       navigate({ to: '/usuarios' })
-    } catch { /* hook */ }
+    } catch {
+      // Error ya manejado en el hook
+    }
   }
 
   const isLoading = isEdit && loadingUsuario
-  const isSaving = createMutation.isPending || updateMutation.isPending || asignarRolesMutation.isPending || asignarAgenciasMutation.isPending
-
-  if (isLoading) {
-    return (
-      <StandardPageLayout title={isEdit ? 'Editar Usuario' : 'Nuevo Usuario'} icon={<UserCog className="h-4 w-4" />}>
-        <div className="p-8">
-          <LoadingState label="Cargando formulario..." />
-        </div>
-      </StandardPageLayout>
-    )
-  }
+  const isSaving =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    asignarRolesMutation.isPending ||
+    asignarAgenciasMutation.isPending
 
   return (
-    <StandardPageLayout
+    <FormPageLayout
       title={isEdit ? 'Editar Usuario' : 'Nuevo Usuario'}
       subtitle={isEdit ? 'Modificar datos y roles del usuario' : 'Crear nuevo usuario en el sistema'}
-      icon={<div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"><UserCog className="h-4 w-4 text-primary" /></div>}
-      actions={
-        <div className="flex flex-wrap gap-2 justify-end">
-          <Button type="button" variant="ghost" size="sm" onClick={() => navigate({ to: '/usuarios' })} disabled={isSaving} className="h-8 text-xs rounded-lg">
-            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-            Volver
-          </Button>
-          <Button type="button" size="sm" disabled={isSaving} onClick={() => handleSubmit(onSubmit)()} className="h-8 text-xs rounded-lg shadow-sm">
-            {isSaving ? 'Guardando...' : (
-              <>
-                <Save className="h-3.5 w-3.5 mr-1.5" />
-                Guardar
-              </>
-            )}
-          </Button>
-        </div>
-      }
+      backUrl="/usuarios"
+      formId="usuario-form"
+      isLoading={isLoading}
+      loadError={loadError}
+      onRetry={() => void refetch()}
+      isSubmitting={isSaving}
+      errors={errors as unknown as Record<string, unknown>}
+      form={form as unknown as UseFormReturn<FieldValues>}
+      width="xl"
     >
-      {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <form id="usuario-form" onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-8">
+      <form id="usuario-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <FormSection
+          title="Credenciales"
+          description="Datos de acceso del usuario."
+          icon={Lock}
+          cols={2}
+        >
+          <FieldRow
+            label="Username"
+            required
+            htmlFor="username"
+            error={errors.username}
+          >
+            <Input
+              id="username"
+              {...register('username')}
+              className={cn(errors.username && 'border-destructive')}
+              placeholder="ej. jdoe"
+            />
+          </FieldRow>
 
-          {/* Basic Info Card */}
-          <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-border/30 bg-muted/10">
-              <div className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <User className="h-3.5 w-3.5 text-blue-500" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Datos Generales</h3>
-                  <p className="text-xs text-muted-foreground">Información básica del usuario</p>
-                </div>
-              </div>
-            </div>
+          <FieldRow label="Estado" htmlFor="activo">
+            <Select
+              value={watch('activo') ? 'true' : 'false'}
+              onValueChange={(value) => setValue('activo', value === 'true', { shouldDirty: true })}
+            >
+              <SelectTrigger id="activo" className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Activo</SelectItem>
+                <SelectItem value="false">Inactivo</SelectItem>
+              </SelectContent>
+            </Select>
+          </FieldRow>
 
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Username <span className="text-destructive">*</span></Label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                  <Input
-                    id="username"
-                    {...register('username')}
-                    className={cn("h-9 pl-9 bg-muted/30 border-border/30 rounded-lg focus:bg-background focus:border-primary/40 transition-all text-sm", errors.username && "border-red-500/50")}
-                    placeholder="ej. jdoe"
-                  />
-                </div>
-                {errors.username && <p className="text-[10px] text-red-500">{errors.username.message}</p>}
-              </div>
+          <FieldRow
+            label={
+              <span className="flex items-center gap-2">
+                Contraseña
+                {isEdit && (
+                  <span className="text-[10px] text-muted-foreground font-normal normal-case tracking-normal">
+                    Dejar vacío para mantener actual
+                  </span>
+                )}
+              </span>
+            }
+            required={!isEdit}
+            htmlFor="password"
+            error={errors.password}
+            span="full"
+          >
+            <Input
+              id="password"
+              type="password"
+              {...register('password')}
+              className={cn(errors.password && 'border-destructive')}
+              placeholder="••••••••"
+              autoComplete="new-password"
+            />
+          </FieldRow>
+        </FormSection>
 
-              <div className="space-y-2">
-                <Label htmlFor="nombreCompleto" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Nombre Completo <span className="text-destructive">*</span></Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                  <Input
-                    id="nombreCompleto"
-                    {...register('nombreCompleto')}
-                    className={cn("h-9 pl-9 bg-muted/30 border-border/30 rounded-lg focus:bg-background focus:border-primary/40 transition-all text-sm", errors.nombreCompleto && "border-red-500/50")}
-                    placeholder="Nombre Apellido"
-                  />
-                </div>
-                {errors.nombreCompleto && <p className="text-[10px] text-red-500">{errors.nombreCompleto.message}</p>}
-              </div>
+        <FormSection
+          title="Datos personales"
+          description="Información básica del usuario."
+          icon={User}
+          cols={2}
+        >
+          <FieldRow
+            label="Nombre completo"
+            required
+            htmlFor="nombreCompleto"
+            error={errors.nombreCompleto}
+          >
+            <Input
+              id="nombreCompleto"
+              {...register('nombreCompleto')}
+              className={cn(errors.nombreCompleto && 'border-destructive')}
+              placeholder="Nombre Apellido"
+            />
+          </FieldRow>
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Email <span className="text-destructive">*</span></Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                  <Input
-                    id="email"
-                    type="email"
-                    {...register('email')}
-                    className={cn("h-9 pl-9 bg-muted/30 border-border/30 rounded-lg focus:bg-background focus:border-primary/40 transition-all text-sm", errors.email && "border-red-500/50")}
-                    placeholder="usuario@ejemplo.com"
-                  />
-                </div>
-                {errors.email && <p className="text-[10px] text-red-500">{errors.email.message}</p>}
-              </div>
+          <FieldRow
+            label="Email"
+            required
+            htmlFor="email"
+            error={errors.email}
+          >
+            <Input
+              id="email"
+              type="email"
+              {...register('email')}
+              className={cn(errors.email && 'border-destructive')}
+              placeholder="usuario@ejemplo.com"
+            />
+          </FieldRow>
+        </FormSection>
 
-              <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Estado</Label>
-                <Select
-                  value={watch('activo') ? 'true' : 'false'}
-                  onValueChange={(value) => setValue('activo', value === 'true')}
-                >
-                  <SelectTrigger className="h-9 bg-muted/30 border-border/30 rounded-lg focus:ring-0 focus:bg-background focus:border-primary/40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="true">Activo</SelectItem>
-                    <SelectItem value="false">Inactivo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        <FormSection
+          title="Asignaciones"
+          description="Cliente, agencias habilitadas y roles asignados."
+          icon={Building2}
+          cols={2}
+        >
+          <FieldRow
+            label="Cliente (Opcional)"
+            htmlFor="idCliente"
+            hint="Si el usuario pertenece a un cliente corporativo."
+          >
+            <Select
+              value={watch('idCliente')?.toString() || 'none'}
+              onValueChange={(value) =>
+                setValue('idCliente', value === 'none' ? '' : Number(value), { shouldDirty: true })
+              }
+            >
+              <SelectTrigger id="idCliente" className="h-9">
+                <SelectValue placeholder="Ninguno" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Ninguno</SelectItem>
+                {clientes.map((cliente) => (
+                  <SelectItem key={cliente.value} value={cliente.value.toString()}>
+                    {cliente.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldRow>
 
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="password" className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <span>Contraseña {!isEdit && <span className="text-red-500">*</span>}</span>
-                  {isEdit && <span className="text-[10px] text-muted-foreground font-normal normal-case tracking-normal">Dejar vacío para mantener actual</span>}
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                  <Input
-                    id="password"
-                    type="password"
-                    {...register('password')}
-                    className={cn("h-9 pl-9 bg-muted/30 border-border/30 rounded-lg focus:bg-background focus:border-primary/40 transition-all text-sm", errors.password && "border-red-500/50")}
-                    placeholder="••••••••"
-                  />
-                </div>
-                {errors.password && <p className="text-[10px] text-red-500">{errors.password.message}</p>}
-              </div>
-            </div>
-          </div>
-
-          {/* Associations Card */}
-          <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-border/30 bg-muted/10">
-              <div className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Building2 className="h-3.5 w-3.5 text-amber-500" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Asociaciones</h3>
-                  <p className="text-xs text-muted-foreground">Cliente y agencia vinculados</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Cliente (Opcional)</Label>
-                <Select
-                  value={watch('idCliente')?.toString() || 'none'}
-                  onValueChange={(value) => setValue('idCliente', value === 'none' ? '' : Number(value))}
-                >
-                  <SelectTrigger className="h-9 bg-muted/30 border-border/30 rounded-lg focus:ring-0 focus:bg-background focus:border-primary/40">
-                    <SelectValue placeholder="Ninguno" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="none">Ninguno</SelectItem>
-                    {clientes.map((cliente) => (
-                      <SelectItem key={cliente.value} value={cliente.value.toString()}>
-                        {cliente.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground">Si el usuario pertenece a un cliente corporativo.</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Agencias habilitadas (Multi-agencia)
-                </Label>
-                <div className={cn("border border-border/30 rounded-lg p-3 bg-muted/20 space-y-2", !canManageAgencias && "opacity-70")}>
-                  <Input
-                    placeholder="Buscar agencia..."
-                    value={busquedaAgencias}
-                    onChange={(e) => setBusquedaAgencias(e.target.value)}
-                    className="h-8 bg-background/70 border-border/30 text-xs"
-                    disabled={!canManageAgencias}
-                  />
-                  <div className="max-h-36 overflow-auto space-y-1 pr-1">
-                    {agenciasFiltradas.map((agencia) => (
-                      <button
-                        key={agencia.value}
-                        type="button"
-                        onClick={() => handleToggleAgencia(agencia.value)}
-                        disabled={!canManageAgencias}
-                        className={cn(
-                          "w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/60 text-xs",
-                          selectedAgencias.includes(agencia.value) && "bg-primary/10"
-                        )}
-                      >
-                        <CheckboxIndicator checked={selectedAgencias.includes(agencia.value)} />
-                        <span className="truncate">{agencia.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  {canManageAgencias
-                    ? "Selecciona una o más agencias para habilitar entornos del usuario."
-                    : "Solo ADMIN o SUPERVISOR puede editar agencias habilitadas."}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Roles Card */}
-          <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-border/30 bg-muted/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-7 w-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                    <Shield className="h-3.5 w-3.5 text-violet-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Roles Asignados</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedRoles.length > 0
-                        ? `${selectedRoles.length} rol${selectedRoles.length > 1 ? 'es' : ''} seleccionado${selectedRoles.length > 1 ? 's' : ''}`
-                        : 'Ningún rol seleccionado'}
-                    </p>
-                  </div>
-                </div>
-                {rolesFiltrados.length > 0 && (
-                  <Button
+          <FieldRow
+            label="Agencias habilitadas (Multi-agencia)"
+            hint={
+              canManageAgencias
+                ? 'Selecciona una o más agencias para habilitar entornos del usuario.'
+                : 'Solo ADMIN o SUPERVISOR puede editar agencias habilitadas.'
+            }
+          >
+            <div className={cn('rounded-lg border border-border/40 p-3 space-y-2', !canManageAgencias && 'opacity-70')}>
+              <Input
+                placeholder="Buscar agencia..."
+                value={busquedaAgencias}
+                onChange={(e) => setBusquedaAgencias(e.target.value)}
+                className="h-8 text-xs"
+                disabled={!canManageAgencias}
+              />
+              <div className="max-h-36 overflow-auto space-y-1 pr-1">
+                {agenciasFiltradas.map((agencia) => (
+                  <button
+                    key={agencia.value}
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSelectAllRoles}
-                    className="h-7 text-[10px] rounded-lg"
+                    onClick={() => handleToggleAgencia(agencia.value)}
+                    disabled={!canManageAgencias}
+                    className={cn(
+                      'w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/60 text-xs',
+                      selectedAgencias.includes(agencia.value) && 'bg-primary/10'
+                    )}
                   >
-                    {selectedRoles.length === rolesFiltrados.length ? 'Deseleccionar' : 'Seleccionar Todos'}
-                  </Button>
-                )}
+                    <CheckboxIndicator checked={selectedAgencias.includes(agencia.value)} />
+                    <span className="truncate">{agencia.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
+          </FieldRow>
 
-            <div className="p-4 border-b border-border/20">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
-                <Input
-                  placeholder="Buscar rol..."
-                  value={busquedaRoles}
-                  onChange={(e) => setBusquedaRoles(e.target.value)}
-                  className="pl-9 h-8 bg-muted/30 border-border/30 text-xs rounded-lg"
-                />
+          <FieldRow
+            label="Roles asignados"
+            hint={
+              selectedRoles.length > 0
+                ? `${selectedRoles.length} rol${selectedRoles.length > 1 ? 'es' : ''} seleccionado${selectedRoles.length > 1 ? 's' : ''}`
+                : 'Ningún rol seleccionado'
+            }
+            span="full"
+            action={
+              rolesFiltrados.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSelectAllRoles}
+                  className="h-7 text-[10px] rounded-lg"
+                >
+                  {selectedRoles.length === rolesFiltrados.length ? 'Deseleccionar' : 'Seleccionar Todos'}
+                </Button>
+              ) : null
+            }
+          >
+            <div className="rounded-lg border border-border/40 overflow-hidden">
+              <div className="p-3 border-b border-border/30">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+                  <Input
+                    placeholder="Buscar rol..."
+                    value={busquedaRoles}
+                    onChange={(e) => setBusquedaRoles(e.target.value)}
+                    className="pl-9 h-8 text-xs"
+                  />
+                </div>
               </div>
-            </div>
 
-            <ScrollArea className="h-[280px]">
-              <div className="p-3 space-y-1.5">
-                {rolesFiltrados.length === 0 ? (
-                  <div className="py-10 text-center text-muted-foreground">
-                    <Shield className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-xs">No se encontraron roles</p>
-                  </div>
-                ) : (
-                  rolesFiltrados.map((rol) => {
-                    const isSelected = selectedRoles.includes(rol.idRol!)
-                    return (
-                      <div
-                        key={rol.idRol}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleToggleRol(rol.idRol!)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            handleToggleRol(rol.idRol!)
-                          }
-                        }}
-                        className={cn(
-                          "flex items-start gap-3 p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-all duration-150 select-none border border-transparent",
-                          isSelected && "bg-primary/5 hover:bg-primary/10 border-primary/20"
-                        )}
-                      >
-                        <CheckboxIndicator checked={isSelected} className="mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium leading-none">{rol.nombre}</p>
-                          {rol.descripcion && <p className="text-xs text-muted-foreground mt-1.5 opacity-80">{rol.descripcion}</p>}
+              <ScrollArea className="h-[280px]">
+                <div className="p-3 space-y-1.5">
+                  {rolesFiltrados.length === 0 ? (
+                    <div className="py-10 text-center text-muted-foreground">
+                      <Shield className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-xs">No se encontraron roles</p>
+                    </div>
+                  ) : (
+                    rolesFiltrados.map((rol) => {
+                      const isSelected = selectedRoles.includes(rol.idRol!)
+                      return (
+                        <div
+                          key={rol.idRol}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleToggleRol(rol.idRol!)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              handleToggleRol(rol.idRol!)
+                            }
+                          }}
+                          className={cn(
+                            'flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-all duration-150 select-none border border-transparent',
+                            isSelected && 'bg-primary/5 hover:bg-primary/10 border-primary/20'
+                          )}
+                        >
+                          <CheckboxIndicator checked={isSelected} className="mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium leading-none">{rol.nombre}</p>
+                            {rol.descripcion && <p className="text-xs text-muted-foreground mt-1.5 opacity-80">{rol.descripcion}</p>}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </form>
-      </div>
-    </StandardPageLayout>
+                      )
+                    })
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          </FieldRow>
+        </FormSection>
+      </form>
+    </FormPageLayout>
   )
 }

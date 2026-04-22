@@ -40,7 +40,7 @@ export default function UsuarioDetail() {
   const { data: usuario, isLoading } = useUsuario(id ? Number(id) : undefined)
   const { data: rolesIds } = useRolesUsuario(id ? Number(id) : undefined)
   const { data: agenciasIdsUsuario } = useAgenciasUsuario(id ? Number(id) : undefined)
-  const { data: rolesData } = useRoles(0, 100)
+  const { data: rolesData } = useRoles({ page: 0, size: 100 })
   const deleteMutation = useDeleteUsuario()
 
   const roles = rolesData?.content.filter((r) => rolesIds?.includes(r.idRol!)) || []

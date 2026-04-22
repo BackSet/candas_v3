@@ -29,10 +29,13 @@ public class RolController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar roles")
+    @Operation(summary = "Listar roles", description = "Lista paginada con filtros opcionales: search (nombre, descripción), activo.")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.ROLES_LISTAR + "') or hasAuthority('" + PermissionConstants.ROLES_VER + "')")
-    public ResponseEntity<Page<RolDTO>> findAll(Pageable pageable) {
-        return ResponseEntity.ok(rolService.findAll(pageable));
+    public ResponseEntity<Page<RolDTO>> findAll(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean activo) {
+        return ResponseEntity.ok(rolService.findAll(pageable, search, activo));
     }
 
     @GetMapping("/search")

@@ -12,19 +12,19 @@ import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.servi
 import { useAgencias, useAgencia, useSearchAgencias, useCreateAgencia } from '@/hooks/useAgencias'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
 import { usePaquetes } from '@/hooks/usePaquetes'
-import { useDestinatarioDirecto, useDestinatariosDirectos } from '@/hooks/useDestinatariosDirectos'
+import { useDestinatarioDirecto, useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
 import type { Despacho } from '@/types/despacho'
 import { TamanoSaca } from '@/types/saca'
 import { calcularTamanoSugerido } from '@/utils/saca'
 import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
 import { formatearTamanoSaca } from '@/utils/ensacado'
 import type { Paquete } from '@/types/paquete'
-import { Trash2, Plus, Copy, Loader2, Sparkles, Truck, ArrowLeft, Check, User, ArrowRight, Save, List as ListIcon, Package, SplitSquareVertical, Zap, Link2, RotateCcw } from 'lucide-react'
+import { Trash2, Plus, Copy, Loader2, Sparkles, Truck, ArrowLeft, Check, User, ArrowRight, List as ListIcon, Package, SplitSquareVertical, Zap, Link2, RotateCcw } from 'lucide-react'
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from 'sonner'
-import { Controller } from 'react-hook-form'
+import { notify } from '@/lib/notify'
+import { Controller, type FieldValues, type UseFormReturn } from 'react-hook-form'
 import { useDespachoForm, type DespachoFormData } from '@/hooks/useDespachoForm'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
 import { SectionTitle } from '@/components/ui/section-title'
@@ -36,8 +36,7 @@ import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoMan
 import AgregarCadenitaFormDialog from '@/components/despacho/AgregarCadenitaFormDialog'
 import PaqueteRapidoFormDialog from '@/components/despacho/PaqueteRapidoFormDialog'
 import { Separator } from '@/components/ui/separator'
-import { ErrorState, LoadingState } from '@/components/states'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { FormPageLayout } from '@/components/form'
 import { useDraftStore } from '@/stores/draftStore'
 import { CopyActionButton } from '@/components/ui/copy-action-button'
 import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
@@ -216,10 +215,11 @@ export default function DespachoForm() {
     isLoading: loadingDespacho,
     isError: isErrorDespacho,
     error: errorDespacho,
+    refetch: refetchDespacho,
   } = useDespacho(id ? Number(id) : undefined)
-  const { data: agenciasData } = useAgencias(0, 100)
-  const { data: distribuidoresData } = useDistribuidores(0, 100)
-  const { data: paquetesData } = usePaquetes(0, 1000)
+  const { data: agenciasData } = useAgencias({ page: 0, size: 100 })
+  const { data: distribuidoresData } = useDistribuidores({ page: 0, size: 100 })
+  const { data: paquetesData } = usePaquetes({ page: 0, size: 1000 })
   const { data: sacasDespacho } = useSacasDespacho(id ? Number(id) : undefined)
   const createMutation = useCreateDespacho()
   const updateMutation = useUpdateDespacho()
@@ -298,7 +298,7 @@ export default function DespachoForm() {
       if (fv.idDestinatarioDirecto) setValue('idDestinatarioDirecto', fv.idDestinatarioDirecto)
     }
     const totalPaquetes = d.sacas?.reduce((acc, s) => acc + s.idPaquetes.length, 0) ?? 0
-    toast.info(`Se restauró un borrador guardado hace ${minutesAgo < 1 ? 'menos de 1' : minutesAgo} min (${d.sacas?.length ?? 0} sacas, ${totalPaquetes} paquetes)`, {
+    notify.info(`Se restauró un borrador guardado hace ${minutesAgo < 1 ? 'menos de 1' : minutesAgo} min (${d.sacas?.length ?? 0} sacas, ${totalPaquetes} paquetes)`, {
       duration: 6000,
       action: { label: 'Descartar', onClick: handleDiscardDraft },
     })
@@ -503,13 +503,13 @@ export default function DespachoForm() {
   const handleCrearAgenciaRapida = async () => {
     const nombre = nuevaAgenciaNombre.trim()
     if (!nombre) {
-      toast.error('El nombre de la agencia es obligatorio')
+      notify.error('El nombre de la agencia es obligatorio')
       return
     }
 
     const telefonosValidos = nuevaAgenciaTelefonos.filter((t) => t.numero.trim() !== '')
     if (telefonosValidos.length === 0) {
-      toast.error('Debe ingresar al menos un número de teléfono')
+      notify.error('Debe ingresar al menos un número de teléfono')
       return
     }
 
@@ -544,7 +544,7 @@ export default function DespachoForm() {
     }
   }
 
-  const { data: todosDestinatariosDirectos } = useDestinatariosDirectos()
+  const { data: todosDestinatariosDirectos } = useDestinatariosDirectosAll()
   const idAgencia = watch('idAgencia')
   const idDestinatarioDirecto = watch('idDestinatarioDirecto')
   const idDistribuidor = watch('idDistribuidor')
@@ -660,7 +660,7 @@ export default function DespachoForm() {
         )
         if (agenciaCoincidente) {
           setValue('idAgencia', agenciaCoincidente.idAgencia)
-          toast.info(`Se ha seleccionado automáticamente la agencia en ${agenciaCoincidente.canton ?? cantonPredominante}`, {
+          notify.info(`Se ha seleccionado automáticamente la agencia en ${agenciaCoincidente.canton ?? cantonPredominante}`, {
             duration: 3000,
             icon: <Sparkles className="h-4 w-4 text-primary" />
           })
@@ -671,7 +671,7 @@ export default function DespachoForm() {
         )
         if (clienteCoincidente) {
           setValue('idDestinatarioDirecto', clienteCoincidente.idDestinatarioDirecto)
-          toast.info(`Se ha seleccionado automáticamente el cliente de ${clienteCoincidente.canton ?? cantonPredominante}`, {
+          notify.info(`Se ha seleccionado automáticamente el cliente de ${clienteCoincidente.canton ?? cantonPredominante}`, {
             duration: 3000,
             icon: <Sparkles className="h-4 w-4 text-primary" />
           })
@@ -685,10 +685,13 @@ export default function DespachoForm() {
     return agencias.filter(a => a.activa).map(agencia => {
       const match = (provinciaOCantonPredominante.provincia && agencia.canton?.toUpperCase() === provinciaOCantonPredominante.provincia.toUpperCase()) ||
         (provinciaOCantonPredominante.canton && agencia.canton?.toUpperCase() === provinciaOCantonPredominante.canton.toUpperCase())
+      const ubicacion = [agencia.canton, agencia.provincia]
+        .filter((p): p is string => !!p && p.trim().length > 0)
+        .join(' • ')
       return {
         value: agencia.idAgencia!,
         label: `${agencia.nombre}${agencia.codigo ? ` (${agencia.codigo})` : ''}`,
-        description: agencia.canton || undefined,
+        description: ubicacion || undefined,
         highlighted: !!match,
         data: agencia,
       }
@@ -701,10 +704,14 @@ export default function DespachoForm() {
       const match =
         (provinciaOCantonPredominante.canton && d.canton?.toUpperCase() === provinciaOCantonPredominante.canton.toUpperCase()) ||
         (provinciaOCantonPredominante.provincia && d.canton?.toUpperCase() === provinciaOCantonPredominante.provincia.toUpperCase())
+      const ubicacion = [d.canton, d.provincia]
+        .filter((p): p is string => !!p && p.trim().length > 0)
+        .join(' • ')
+      const partesDescripcion = [d.telefonoDestinatario, ubicacion].filter(Boolean)
       return {
         value: d.idDestinatarioDirecto!,
         label: d.nombreDestinatario,
-        description: `${d.telefonoDestinatario}${d.canton ? ` • ${d.canton}` : ''}`,
+        description: partesDescripcion.join(' • ') || undefined,
         highlighted: !!match,
         data: d
       }
@@ -814,7 +821,7 @@ export default function DespachoForm() {
   const handleProcesarListadoAgrupacion = async () => {
     const guias = listadoCompletoGuias.split('\n').map(l => l.trim()).filter(l => l.length > 0)
     if (guias.length === 0) {
-      toast.error('Ingresa al menos una guía por línea')
+      notify.error('Ingresa al menos una guía por línea')
       return
     }
     setProcesandoListadoAgrupacion(true)
@@ -830,9 +837,9 @@ export default function DespachoForm() {
       } else noEncontrados.push(guia)
     }
     setListadoProcesadoPaquetes(encontrados)
-    if (noEncontrados.length) toast.error(`${noEncontrados.length} guía(s) no encontrada(s)`)
-    if (enEstadoInvalido.length) toast.warning(`${enEstadoInvalido.length} ya despachada(s)`)
-    if (encontrados.length) toast.success(`${encontrados.length} paquete(s) listo(s). Indica la distribución (ej: 1,4,5).`)
+    if (noEncontrados.length) notify.error(`${noEncontrados.length} guía(s) no encontrada(s)`)
+    if (enEstadoInvalido.length) notify.warning(`${enEstadoInvalido.length} ya despachada(s)`)
+    if (encontrados.length) notify.success(`${encontrados.length} paquete(s) listo(s). Indica la distribución (ej: 1,4,5).`)
     setProcesandoListadoAgrupacion(false)
   }
 
@@ -840,7 +847,7 @@ export default function DespachoForm() {
     if (!listadoProcesadoPaquetes?.length) return
     const totalDist = agrupacionGroups.reduce((a, b) => a + b, 0)
     if (totalDist !== listadoProcesadoPaquetes.length) {
-      toast.error(`La suma de la distribución (${totalDist}) debe coincidir con el total de paquetes (${listadoProcesadoPaquetes.length})`)
+      notify.error(`La suma de la distribución (${totalDist}) debe coincidir con el total de paquetes (${listadoProcesadoPaquetes.length})`)
       return
     }
     const idsOrden = listadoProcesadoPaquetes.map(p => p.idPaquete!).filter((id): id is number => id != null)
@@ -862,12 +869,12 @@ export default function DespachoForm() {
     setListadoProcesadoPaquetes(null)
     setDistribucionAgrupacion('')
     setTamanosSacasAgrupacion([])
-    toast.success('Sacas creadas. Revisa el paso 2.')
+    notify.success('Sacas creadas. Revisa el paso 2.')
   }
 
   const handleProcesarListado = async () => {
     if (!listadoPaquetes.trim() || sacaSeleccionadaParaPaquetes === null) {
-      toast.error('Ingresa al menos un número de guía')
+      notify.error('Ingresa al menos un número de guía')
       return
     }
     const numerosGuia = listadoPaquetes.split('\n').map(l => l.trim()).filter(l => l.length > 0)
@@ -998,21 +1005,21 @@ export default function DespachoForm() {
 
   const onSubmit = async (data: DespachoFormData) => {
     if (sacas.length === 0) {
-      toast.error('Debe haber al menos una saca'); return
+      notify.error('Debe haber al menos una saca'); return
     }
     for (let i = 0; i < sacas.length; i++) {
       if (sacas[i].idPaquetes.length === 0) {
-        toast.error(`La saca ${i + 1} debe tener al menos un paquete`); return
+        notify.error(`La saca ${i + 1} debe tener al menos un paquete`); return
       }
     }
     if (tipoEnvio === 'agencia' && !data.idAgencia) {
-      toast.error('Selecciona una agencia'); return
+      notify.error('Selecciona una agencia'); return
     }
     if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'existente' && !data.idDestinatarioDirecto) {
-      toast.error('Selecciona un destinatario'); return
+      notify.error('Selecciona un destinatario'); return
     }
     if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'desde_paquete' && !idPaqueteOrigenDestinatario) {
-      toast.error('Selecciona un paquete de referencia para el destinatario')
+      notify.error('Selecciona un paquete de referencia para el destinatario')
       return
     }
 
@@ -1020,7 +1027,7 @@ export default function DespachoForm() {
       let idDestinatarioDirectoPayload = tipoEnvio === 'directo' ? data.idDestinatarioDirecto : undefined
       if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'desde_paquete') {
         if (!desdePaqueteNombre.trim()) {
-          toast.error('El paquete seleccionado no tiene nombre de destinatario válido')
+          notify.error('El paquete seleccionado no tiene nombre de destinatario válido')
           return
         }
         const nuevoDestinatario = await destinatarioDirectoService.create({
@@ -1055,7 +1062,7 @@ export default function DespachoForm() {
       else {
         const res = await createMutation.mutateAsync(despachoData)
         clearDraft(DESPACHO_DRAFT_KEY)
-        toast.success(`Despacho creado: ${res.numeroManifiesto}`)
+        notify.success(`Despacho creado: ${res.numeroManifiesto}`)
       }
       navigate({ to: '/despachos' })
     } catch (e) {
@@ -1063,94 +1070,103 @@ export default function DespachoForm() {
     }
   }
 
-  if (isEdit && loadingDespacho) return <LoadingState label="Cargando..." className="min-h-[50vh]" />
-  if (isEdit && isErrorDespacho) {
-    return (
-      <ErrorState
-        title="No se pudo cargar el despacho"
-        description={(errorDespacho as Error | undefined)?.message ?? 'Intenta nuevamente en unos segundos.'}
-        className="min-h-[50vh]"
-      />
-    )
-  }
+  const stepper = (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-0 sm:justify-between">
+        {[
+          { step: 1, label: 'Información' },
+          { step: 2, label: 'Sacas' },
+          { step: 3, label: 'Destino' },
+          { step: 4, label: 'Confirmar' },
+        ].map(({ step, label }, i) => (
+          <div key={step} className="flex items-center">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${step === pasoActual ? 'bg-primary text-primary-foreground' :
+                  step < pasoActual ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                  }`}
+              >
+                {step < pasoActual ? <Check className="h-4 w-4" /> : step}
+              </div>
+              <span className={`text-[10px] sm:text-xs font-medium hidden sm:block ${step === pasoActual ? 'text-foreground' : step < pasoActual ? 'text-primary' : 'text-muted-foreground'}`}>
+                {label}
+              </span>
+            </div>
+            {i < 3 && <div className={`w-8 sm:w-12 h-1 mx-1 sm:mx-2 rounded-full hidden sm:block ${step < pasoActual ? 'bg-primary/20' : 'bg-muted'}`} />}
+          </div>
+        ))}
+      </div>
+      {/* Resumen contextual */}
+      {pasoActual >= 2 && (
+        <div className="text-center py-2 px-3 rounded-md bg-muted/50 border border-border/50 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{sacas.length} sacas</span>
+          <span> · </span>
+          <span className="font-medium text-foreground">{sacas.reduce((acc, s) => acc + s.idPaquetes.length, 0)} paquetes</span>
+          {pasoActual === 4 && (tipoEnvio === 'agencia' && agenciaSeleccionada) && (
+            <>
+              <span> · </span>
+              <span>Destino: {agenciaSeleccionada.nombre}</span>
+            </>
+          )}
+          {pasoActual === 4 && tipoEnvio === 'directo' && (
+            <>
+              <span> · </span>
+              <span>
+                Destino: {destinatarioOrigenDirecto === 'existente'
+                  ? ((destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreDestinatario ?? 'Cliente directo')
+                  : (desdePaqueteNombre || 'Cliente desde paquete')}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+
+  const isSaving = createMutation.isPending || updateMutation.isPending
+  const showSaveButton = pasoActual === 4
+  const hayBorrador = !isEdit && !!getDraft(DESPACHO_DRAFT_KEY)
 
   return (
-    <StandardPageLayout
-      width="md"
+    <>
+    <FormPageLayout
       title={isEdit ? 'Editar Despacho' : 'Nuevo Despacho'}
       subtitle={isEdit ? 'Modifica la información del despacho' : 'Completa los pasos para crear el despacho'}
       icon={<Truck className="h-4 w-4" />}
-      className="min-h-0 bg-background font-sans"
-      spacing="8"
-      actions={
-        <div className="flex flex-wrap items-center gap-2 justify-end">
-          {!isEdit && getDraft(DESPACHO_DRAFT_KEY) && (
-            <Button variant="ghost" size="sm" onClick={handleDiscardDraft} className="text-muted-foreground hover:text-destructive" title="Descartar borrador y empezar de cero">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Descartar borrador
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/despachos' })} className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
+      backUrl="/despachos"
+      formId="despacho-form"
+      isLoading={isEdit && loadingDespacho}
+      loadError={isErrorDespacho ? errorDespacho : undefined}
+      onRetry={() => void refetchDespacho()}
+      isSubmitting={isSaving}
+      errors={errors as unknown as Record<string, unknown>}
+      form={form as unknown as UseFormReturn<FieldValues>}
+      width="xl"
+      subheader={stepper}
+      draftMode={!isEdit}
+      draftToastMessage="Guardamos este despacho como borrador. Vuelve a entrar a 'Nuevo despacho' para continuar editándolo."
+      primaryAction={{
+        label: isEdit ? 'Actualizar Despacho' : 'Crear Despacho',
+        loadingLabel: 'Guardando...',
+        hidden: !showSaveButton,
+      }}
+      secondaryActions={
+        hayBorrador ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleDiscardDraft}
+            className="text-muted-foreground hover:text-destructive"
+            title="Descartar borrador y empezar de cero"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Descartar borrador
           </Button>
-        </div>
+        ) : null
       }
     >
-      <div className="space-y-8">
-        {/* Stepper con etiquetas */}
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-0 sm:justify-between">
-            {[
-              { step: 1, label: 'Información' },
-              { step: 2, label: 'Sacas' },
-              { step: 3, label: 'Destino' },
-              { step: 4, label: 'Confirmar' },
-            ].map(({ step, label }, i) => (
-              <div key={step} className="flex items-center">
-                <div className="flex flex-col items-center gap-1">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${step === pasoActual ? 'bg-primary text-primary-foreground' :
-                      step < pasoActual ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                      }`}
-                  >
-                    {step < pasoActual ? <Check className="h-4 w-4" /> : step}
-                  </div>
-                  <span className={`text-[10px] sm:text-xs font-medium hidden sm:block ${step === pasoActual ? 'text-foreground' : step < pasoActual ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {label}
-                  </span>
-                </div>
-                {i < 3 && <div className={`w-8 sm:w-12 h-1 mx-1 sm:mx-2 rounded-full hidden sm:block ${step < pasoActual ? 'bg-primary/20' : 'bg-muted'}`} />}
-              </div>
-            ))}
-          </div>
-          {/* Resumen contextual */}
-          {pasoActual >= 2 && (
-            <div className="text-center py-2 px-3 rounded-md bg-muted/50 border border-border/50 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{sacas.length} sacas</span>
-              <span> · </span>
-              <span className="font-medium text-foreground">{sacas.reduce((acc, s) => acc + s.idPaquetes.length, 0)} paquetes</span>
-              {pasoActual === 4 && (tipoEnvio === 'agencia' && agenciaSeleccionada) && (
-                <>
-                  <span> · </span>
-                  <span>Destino: {agenciaSeleccionada.nombre}</span>
-                </>
-              )}
-              {pasoActual === 4 && tipoEnvio === 'directo' && (
-                <>
-                  <span> · </span>
-                  <span>
-                    Destino: {destinatarioOrigenDirecto === 'existente'
-                      ? ((destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreDestinatario ?? 'Cliente directo')
-                      : (desdePaqueteNombre || 'Cliente desde paquete')}
-                  </span>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form id="despacho-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* PASO 1: INFO BÁSICA */}
           {pasoActual === 1 && (
             <div className="space-y-6 animate-in fade-in duration-200">
@@ -1709,15 +1725,11 @@ export default function DespachoForm() {
                 <Button type="button" variant="outline" onClick={() => setPasoActual(3)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="bg-primary text-primary-foreground hover:bg-primary/90 sm:ml-auto">
-                  {createMutation.isPending || updateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {isEdit ? 'Actualizar Despacho' : 'Crear Despacho'}
-                </Button>
               </div>
             </div>
           )}
         </form>
-      </div>
+    </FormPageLayout>
 
       {/* DIALOGOS */}
       <Dialog open={showListadoAgrupacionDialog} onOpenChange={(v) => {
@@ -2130,6 +2142,6 @@ export default function DespachoForm() {
         onOpenChange={(v) => { setShowPaqueteRapidoDialog(v); if (!v) setSacaSeleccionadaParaPaquetes(null) }}
         onPaqueteCreado={handlePaqueteRapidoCreado}
       />
-    </StandardPageLayout>
+    </>
   )
 }

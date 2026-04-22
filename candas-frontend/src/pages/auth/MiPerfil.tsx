@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
 import { UserCog, Save, User, Mail, Hash, Lock } from 'lucide-react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -60,10 +60,10 @@ export default function MiPerfil() {
         nombreCompleto: data.nombreCompleto.trim(),
         password: data.password?.trim() ? data.password.trim() : undefined,
       })
-      toast.success('Perfil actualizado correctamente')
+      notify.success('Perfil actualizado correctamente')
       navigate({ to: '/dashboard' })
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'No se pudo actualizar tu perfil'))
+      notify.error(error, 'No se pudo actualizar tu perfil')
     }
   }
 

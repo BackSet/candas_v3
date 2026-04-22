@@ -4,12 +4,23 @@ import type { PuntoOrigen, PuntoOrigenPage } from '@/types/punto-origen'
 
 export type { PuntoOrigen, PuntoOrigenPage } from '@/types/punto-origen'
 
+export interface PuntoOrigenFindAllParams {
+  page?: number
+  size?: number
+  search?: string
+  activo?: boolean
+}
+
 export const puntoOrigenService = {
-  async findAll(page: number = 0, size: number = 20): Promise<PuntoOrigenPage> {
+  async findAll(params: PuntoOrigenFindAllParams = {}): Promise<PuntoOrigenPage> {
+    const { page = 0, size = 20, search, activo } = params
+    const queryParams: Record<string, string | number | boolean> = { page, size }
+    if (search && search.trim()) queryParams.search = search.trim()
+    if (activo !== undefined) queryParams.activo = activo
     const response = await apiClient.get<PuntoOrigenPage>(
       API_ENDPOINTS.PUNTOS_ORIGEN.BASE,
       {
-        params: { page, size },
+        params: queryParams,
       }
     )
     return response.data

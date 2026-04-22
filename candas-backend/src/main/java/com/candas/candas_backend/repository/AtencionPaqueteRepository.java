@@ -18,17 +18,23 @@ public interface AtencionPaqueteRepository extends JpaRepository<AtencionPaquete
     @Override
     org.springframework.data.domain.Page<AtencionPaquete> findAll(org.springframework.data.domain.Pageable pageable);
 
-    /** Lista paginada con filtros opcionales: estado y búsqueda en guía o motivo. {@code idAgencia} null = sin restricción por agencia. */
+    /** Lista paginada con filtros opcionales: estado, búsqueda en guía o motivo, tipoProblema, rango de fechaSolicitud. {@code idAgencia} null = sin restricción por agencia. */
     @EntityGraph(attributePaths = {"paquete", "paquete.agenciaDestino", "paquete.loteRecepcion", "paquete.loteRecepcion.agencia", "agenciaPropietaria"})
     @Query("SELECT a FROM AtencionPaquete a LEFT JOIN a.paquete p "
             + "WHERE (:estado IS NULL OR a.estado = :estado) AND "
             + "(:search IS NULL OR :search = '' OR "
             + "LOWER(COALESCE(a.motivo, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR "
             + "LOWER(COALESCE(p.numeroGuia, '')) LIKE LOWER(CONCAT('%', :search, '%'))) AND "
+            + "(:tipoProblema IS NULL OR a.tipoProblema = :tipoProblema) AND "
+            + "(CAST(:fechaDesde AS timestamp) IS NULL OR a.fechaSolicitud >= :fechaDesde) AND "
+            + "(CAST(:fechaHasta AS timestamp) IS NULL OR a.fechaSolicitud <= :fechaHasta) AND "
             + "(:idAgencia IS NULL OR (a.agenciaPropietaria IS NOT NULL AND a.agenciaPropietaria.idAgencia = :idAgencia))")
     org.springframework.data.domain.Page<AtencionPaquete> findAllFiltered(
             @Param("estado") com.candas.candas_backend.entity.enums.EstadoAtencion estado,
             @Param("search") String search,
+            @Param("tipoProblema") com.candas.candas_backend.entity.enums.TipoProblemaAtencion tipoProblema,
+            @Param("fechaDesde") java.time.LocalDateTime fechaDesde,
+            @Param("fechaHasta") java.time.LocalDateTime fechaHasta,
             @Param("idAgencia") Long idAgencia,
             org.springframework.data.domain.Pageable pageable);
     

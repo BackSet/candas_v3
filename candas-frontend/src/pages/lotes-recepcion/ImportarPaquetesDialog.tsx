@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
 import type { LoteRecepcionImportResult } from '@/types/lote-recepcion'
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, XCircle, FileText, Download } from 'lucide-react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   Table,
@@ -56,7 +56,7 @@ export default function ImportarPaquetesDialog({
         .toLowerCase()
 
       if (!validExtensions.includes(fileExtension)) {
-        toast.error('Por favor, selecciona un archivo Excel (.xlsx o .xls)')
+        notify.error('Por favor, selecciona un archivo Excel (.xlsx o .xls)')
         return
       }
 
@@ -67,7 +67,7 @@ export default function ImportarPaquetesDialog({
 
   const handleSubmitExcel = async () => {
     if (!file) {
-      toast.error('Por favor, selecciona un archivo')
+      notify.error('Por favor, selecciona un archivo')
       return
     }
 
@@ -79,13 +79,13 @@ export default function ImportarPaquetesDialog({
       setResultado(resultado)
 
       if (resultado.paquetesEncontrados > 0) {
-        toast.success(
+        notify.success(
           `Importación completada: ${resultado.paquetesEncontrados} de ${resultado.totalRegistros} paquetes asociados`
         )
       }
 
       if (resultado.paquetesNoEncontrados > 0) {
-        toast.warning(
+        notify.warning(
           `${resultado.paquetesNoEncontrados} guías no encontradas.`
         )
       }
@@ -94,7 +94,7 @@ export default function ImportarPaquetesDialog({
         onImportSuccess()
       }
     } catch (error: any) {
-      toast.error(
+      notify.error(
         error.response?.data?.message || 'Error al importar el archivo.'
       )
     } finally {
@@ -104,7 +104,7 @@ export default function ImportarPaquetesDialog({
 
   const handleSubmitManual = async () => {
     if (!listadoManual.trim()) {
-      toast.error('Por favor, ingresa al menos un número de guía')
+      notify.error('Por favor, ingresa al menos un número de guía')
       return
     }
 
@@ -115,7 +115,7 @@ export default function ImportarPaquetesDialog({
       .filter(guia => guia.length > 0)
 
     if (numerosGuia.length === 0) {
-      toast.error('Por favor, ingresa al menos un número de guía válido')
+      notify.error('Por favor, ingresa al menos un número de guía válido')
       return
     }
 
@@ -127,7 +127,7 @@ export default function ImportarPaquetesDialog({
       setResultado(resultado)
 
       if (resultado.paquetesEncontrados > 0) {
-        toast.success(
+        notify.success(
           `${resultado.paquetesEncontrados} de ${resultado.totalRegistros} paquetes asociados correctamente`
         )
       }
@@ -141,7 +141,7 @@ export default function ImportarPaquetesDialog({
         onImportSuccess()
       }
     } catch (error: any) {
-      toast.error(
+      notify.error(
         error.response?.data?.message || 'Error al agregar paquetes.'
       )
     } finally {

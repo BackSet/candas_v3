@@ -1,13 +1,36 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
 import type { DestinatarioDirecto } from '@/types/destinatario-directo'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
-export function useDestinatariosDirectos() {
+export interface UseDestinatariosDirectosParams {
+  page?: number
+  size?: number
+  search?: string
+  activo?: boolean
+}
+
+/**
+ * Versión paginada con filtros server-side (search/activo). Es el hook estándar
+ * para pantallas de listado.
+ */
+export function useDestinatariosDirectos(params: UseDestinatariosDirectosParams = {}) {
+  const { page = 0, size = 20, search, activo } = params
   return useQuery({
-    queryKey: ['destinatarios-directos'],
-    queryFn: () => destinatarioDirectoService.getAll(),
+    queryKey: ['destinatarios-directos', 'paginado', page, size, search ?? null, activo ?? null],
+    queryFn: () =>
+      destinatarioDirectoService.findAll({ page, size, search, activo }),
+  })
+}
+
+/**
+ * Devuelve TODOS los destinatarios sin paginar. Útil para selects/listas reducidas
+ * en formularios. Usa el endpoint `/all`.
+ */
+export function useDestinatariosDirectosAll() {
+  return useQuery({
+    queryKey: ['destinatarios-directos', 'all'],
+    queryFn: () => destinatarioDirectoService.findAllNoPaginado(),
   })
 }
 
@@ -34,10 +57,10 @@ export function useCreateDestinatarioDirecto() {
     mutationFn: (dto: DestinatarioDirecto) => destinatarioDirectoService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['destinatarios-directos'] })
-      toast.success('Destinatario directo creado exitosamente')
+      notify.success('Destinatario directo creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el destinatario directo'))
+      notify.error(error, 'Error al crear el destinatario directo')
     },
   })
 }
@@ -51,10 +74,10 @@ export function useUpdateDestinatarioDirecto() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['destinatarios-directos'] })
       queryClient.invalidateQueries({ queryKey: ['destinatario-directo', variables.id] })
-      toast.success('Destinatario directo actualizado exitosamente')
+      notify.success('Destinatario directo actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el destinatario directo'))
+      notify.error(error, 'Error al actualizar el destinatario directo')
     },
   })
 }
@@ -67,10 +90,10 @@ export function useDeleteDestinatarioDirecto() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['destinatarios-directos'] })
       queryClient.invalidateQueries({ queryKey: ['destinatario-directo'] })
-      toast.success('Destinatario directo eliminado exitosamente')
+      notify.success('Destinatario directo eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el destinatario directo'))
+      notify.error(error, 'Error al eliminar el destinatario directo')
     },
   })
 }

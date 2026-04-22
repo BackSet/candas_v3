@@ -20,11 +20,12 @@ import { useAgencias } from '@/hooks/useAgencias'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
 import { useCreateManifiestoConsolidado } from '@/hooks/useManifiestosConsolidados'
 import type { CrearManifiestoConsolidadoDTO } from '@/types/manifiesto-consolidado'
-import { FilePlus, Calendar, Globe, Building2, User, CalendarRange, CalendarDays } from 'lucide-react'
-import { toast } from 'sonner'
+import { FilePlus, Calendar, Globe, Building2, CalendarRange, CalendarDays } from 'lucide-react'
+import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
 import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 
 interface GenerarManifiestoConsolidadoDialogProps {
   open: boolean
@@ -45,8 +46,8 @@ export default function GenerarManifiestoConsolidadoDialog({
   const [mes, setMes] = useState<string>('')
   const [anio, setAnio] = useState<string>('')
 
-  const { data: agenciasData, isLoading: loadingAgencias } = useAgencias(0, 1000)
-  const { data: distribuidoresData, isLoading: loadingDistribuidores } = useDistribuidores(0, 1000)
+  const { data: agenciasData, isLoading: loadingAgencias } = useAgencias({ page: 0, size: 1000 })
+  const { data: distribuidoresData, isLoading: loadingDistribuidores } = useDistribuidores({ page: 0, size: 1000 })
   const createMutation = useCreateManifiestoConsolidado()
 
   const meses = [
@@ -72,27 +73,27 @@ export default function GenerarManifiestoConsolidadoDialog({
   const handleGenerar = async () => {
     if (tipoAgencia === 'especifica') {
       if (tipoAgenciaSeleccion === 'agencia' && !idAgencia) {
-        toast.error('Por favor, seleccione una agencia')
+        notify.error('Por favor, seleccione una agencia')
         return
       }
       if (tipoAgenciaSeleccion === 'distribuidor' && !idDistribuidor) {
-        toast.error('Por favor, seleccione un distribuidor')
+        notify.error('Por favor, seleccione un distribuidor')
         return
       }
     }
 
     if (tipoPeriodo === 'rango') {
       if (!fechaInicio || !fechaFin) {
-        toast.error('Por favor, seleccione ambas fechas')
+        notify.error('Por favor, seleccione ambas fechas')
         return
       }
       if (new Date(fechaInicio) > new Date(fechaFin)) {
-        toast.error('La fecha de inicio debe ser anterior a la fecha de fin')
+        notify.error('La fecha de inicio debe ser anterior a la fecha de fin')
         return
       }
     } else {
       if (!mes || !anio) {
-        toast.error('Por favor, seleccione mes y año')
+        notify.error('Por favor, seleccione mes y año')
         return
       }
     }
@@ -108,7 +109,7 @@ export default function GenerarManifiestoConsolidadoDialog({
 
     try {
       await createMutation.mutateAsync(dto)
-      toast.success('Manifiesto generado correctamente')
+      notify.success('Manifiesto generado correctamente')
       onOpenChange(false)
       setTipoAgencia('especifica')
       setTipoAgenciaSeleccion('agencia')
@@ -256,42 +257,40 @@ export default function GenerarManifiestoConsolidadoDialog({
 
               {tipoAgenciaSeleccion === 'agencia' ? (
                 <div className="space-y-2">
-                  <Select value={idAgencia} onValueChange={setIdAgencia} disabled={loadingAgencias || tipoAgencia === 'todas'}>
-                    <SelectTrigger className="h-10 bg-background rounded-lg border-border/40">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Building2 className="h-4 w-4" />
-                        <SelectValue placeholder="Seleccione una agencia..." />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[250px]">
-                      {agenciasData?.content
-                        .filter(a => a.activa !== false)
-                        .map((agencia) => (
-                          <SelectItem key={agencia.idAgencia} value={agencia.idAgencia!.toString()}>
-                            {agencia.nombre} {agencia.canton && <span className="text-muted-foreground text-xs ml-1">({agencia.canton})</span>}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={(agenciasData?.content ?? [])
+                      .filter((a) => a.activa !== false)
+                      .map<ComboboxOption>((a) => ({
+                        value: a.idAgencia!,
+                        label: a.nombre ?? '',
+                        description: [a.canton, a.provincia]
+                          .filter((p): p is string => !!p && p.trim().length > 0)
+                          .join(' • ') || undefined,
+                      }))}
+                    value={idAgencia ? Number(idAgencia) : null}
+                    onValueChange={(v) => setIdAgencia(v == null ? '' : String(v))}
+                    placeholder="Seleccione una agencia..."
+                    searchPlaceholder="Buscar por agencia, cantón o provincia..."
+                    disabled={loadingAgencias || tipoAgencia === 'todas'}
+                    triggerClassName="h-10 bg-background rounded-lg border-border/40"
+                    clearable
+                  />
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Select value={idDistribuidor} onValueChange={setIdDistribuidor} disabled={loadingDistribuidores || tipoAgencia === 'todas'}>
-                    <SelectTrigger className="h-10 bg-background rounded-lg border-border/40">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <User className="h-4 w-4" />
-                        <SelectValue placeholder="Seleccione un distribuidor..." />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {distribuidoresData?.content
-                        .map((distribuidor) => (
-                          <SelectItem key={distribuidor.idDistribuidor} value={distribuidor.idDistribuidor!.toString()}>
-                            {distribuidor.nombre}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={(distribuidoresData?.content ?? []).map<ComboboxOption>((d) => ({
+                      value: d.idDistribuidor!,
+                      label: d.nombre ?? '',
+                    }))}
+                    value={idDistribuidor ? Number(idDistribuidor) : null}
+                    onValueChange={(v) => setIdDistribuidor(v == null ? '' : String(v))}
+                    placeholder="Seleccione un distribuidor..."
+                    searchPlaceholder="Buscar distribuidor..."
+                    disabled={loadingDistribuidores || tipoAgencia === 'todas'}
+                    triggerClassName="h-10 bg-background rounded-lg border-border/40"
+                    clearable
+                  />
                 </div>
               )}
             </div>

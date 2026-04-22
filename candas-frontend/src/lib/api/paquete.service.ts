@@ -16,6 +16,18 @@ export interface PaqueteRapidoDTO {
   nombreDestinatario: string
 }
 
+export interface PaqueteFindAllParams {
+  page?: number
+  size?: number
+  search?: string
+  estado?: string
+  tipo?: string
+  idAgencia?: number
+  idLote?: number
+  fechaDesde?: string
+  fechaHasta?: string
+}
+
 export const paqueteService = {
   /**
    * Crea un paquete rápido (SEPARAR)
@@ -29,20 +41,29 @@ export const paqueteService = {
   },
 
   /**
-   * Lista todos los paquetes con paginación y filtros opcionales (estado, tipo).
+   * Lista todos los paquetes con paginación y filtros opcionales.
    */
-  async findAll(
-    page: number = 0,
-    size: number = 20,
-    search?: string,
-    estado?: string,
-    tipo?: string
-  ): Promise<PaquetePage> {
-    const params: Record<string, string | number> = { page, size }
-    if (search?.trim()) params.search = search.trim()
-    if (estado && estado !== 'all') params.estado = estado
-    if (tipo && tipo !== 'all') params.tipo = tipo
-    const response = await apiClient.get<PaquetePage>(API_ENDPOINTS.PAQUETES.BASE, { params })
+  async findAll(params: PaqueteFindAllParams = {}): Promise<PaquetePage> {
+    const {
+      page = 0,
+      size = 20,
+      search,
+      estado,
+      tipo,
+      idAgencia,
+      idLote,
+      fechaDesde,
+      fechaHasta,
+    } = params
+    const query: Record<string, string | number> = { page, size }
+    if (search?.trim()) query.search = search.trim()
+    if (estado && estado !== 'all') query.estado = estado
+    if (tipo && tipo !== 'all') query.tipo = tipo
+    if (idAgencia != null) query.idAgencia = idAgencia
+    if (idLote != null) query.idLote = idLote
+    if (fechaDesde) query.fechaDesde = fechaDesde
+    if (fechaHasta) query.fechaHasta = fechaHasta
+    const response = await apiClient.get<PaquetePage>(API_ENDPOINTS.PAQUETES.BASE, { params: query })
     return response.data
   },
 

@@ -29,14 +29,21 @@ public class AtencionPaqueteController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar solicitudes de atención")
+    @Operation(summary = "Listar solicitudes de atención",
+            description = "Lista paginada con filtros opcionales: estado, search (motivo o guía), tipoProblema, rango fechaDesde/fechaHasta (yyyy-MM-dd).")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.ATENCION_PAQUETES_LISTAR + "') or hasAuthority('" + PermissionConstants.ATENCION_PAQUETES_VER + "')")
     public ResponseEntity<Page<AtencionPaqueteDTO>> findAll(
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String tipoProblema,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
             Pageable pageable) {
         com.candas.candas_backend.entity.enums.EstadoAtencion estadoEnum = parseEstado(estado);
-        return ResponseEntity.ok(atencionPaqueteService.findAll(estadoEnum, search, pageable));
+        com.candas.candas_backend.entity.enums.TipoProblemaAtencion tipoEnum = parseTipoProblema(tipoProblema);
+        java.time.LocalDateTime desde = parseFechaInicio(fechaDesde);
+        java.time.LocalDateTime hasta = parseFechaFin(fechaHasta);
+        return ResponseEntity.ok(atencionPaqueteService.findAll(estadoEnum, search, tipoEnum, desde, hasta, pageable));
     }
 
     private static com.candas.candas_backend.entity.enums.EstadoAtencion parseEstado(String estado) {
@@ -46,6 +53,35 @@ public class AtencionPaqueteController {
         try {
             return com.candas.candas_backend.entity.enums.EstadoAtencion.valueOf(estado.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static com.candas.candas_backend.entity.enums.TipoProblemaAtencion parseTipoProblema(String tipo) {
+        if (tipo == null || tipo.isBlank() || "all".equalsIgnoreCase(tipo)) {
+            return null;
+        }
+        try {
+            return com.candas.candas_backend.entity.enums.TipoProblemaAtencion.valueOf(tipo.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static java.time.LocalDateTime parseFechaInicio(String fecha) {
+        if (fecha == null || fecha.isBlank()) return null;
+        try {
+            return java.time.LocalDate.parse(fecha.trim()).atStartOfDay();
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private static java.time.LocalDateTime parseFechaFin(String fecha) {
+        if (fecha == null || fecha.isBlank()) return null;
+        try {
+            return java.time.LocalDate.parse(fecha.trim()).atTime(23, 59, 59);
+        } catch (java.time.format.DateTimeParseException e) {
             return null;
         }
     }

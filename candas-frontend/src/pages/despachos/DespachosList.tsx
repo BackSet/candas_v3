@@ -1,23 +1,13 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useDespachos, useDeleteDespacho, useDespacho, useMarcarDespachado, useMarcarDespachadoBatch } from '@/hooks/useDespachos'
 import { useAgencia } from '@/hooks/useAgencias'
 import { useDistribuidor } from '@/hooks/useDistribuidores'
-import { useQuery } from '@tanstack/react-query'
 import { despachoService } from '@/lib/api/despacho.service'
 import { agenciaService } from '@/lib/api/agencia.service'
 import { distribuidorService } from '@/lib/api/distribuidor.service'
 import { Button } from '@/components/ui/button'
-import { DatePickerForm } from '@/components/ui/date-time-picker'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -27,13 +17,6 @@ import {
   DialogTitle,
   dialogContentPresets,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,23 +40,21 @@ import {
   FileText,
   Tag,
   Tags,
+  Loader2,
 } from 'lucide-react'
 import { imprimirDespacho, imprimirManifiestosMultiples, generarPDFDespacho } from '@/utils/imprimirDespacho'
 import { imprimirEtiquetaSaca, imprimirEtiquetasSacas, imprimirEtiquetasZebraSacas, imprimirEtiquetaZebraSaca, imprimirEtiquetasMultiplesDespachos, imprimirEtiquetasZebraMultiplesDespachos } from '@/utils/imprimirEtiquetaSaca'
-import { Checkbox } from '@/components/ui/checkbox'
 import type { Saca } from '@/types/saca'
 import type { Despacho } from '@/types/despacho'
 import type { Agencia } from '@/types/agencia'
 import type { Distribuidor } from '@/types/distribuidor'
 import { Badge } from '@/components/ui/badge'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { ListPageLayout } from '@/app/layout/ListPageLayout'
 import { ListPagination } from '@/components/list/ListPagination'
 import { useAuthStore } from '@/stores/authStore'
 import ImprimirDespachoDialog, { type TipoImpresion } from '@/components/despachos/ImprimirDespachoDialog'
-import { ListToolbar } from '@/components/list/ListToolbar'
-import { LoadingState } from '@/components/states'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
@@ -81,14 +62,42 @@ import { PERMISSIONS } from '@/types/permissions'
 import { usePlantillaWhatsAppDespacho } from '@/hooks/usePlantillaWhatsAppDespacho'
 import { reemplazarVariables, construirVariablesDesdeDespacho } from '@/utils/plantillaWhatsApp'
 import { copyTextToClipboard } from '@/utils/clipboard'
-import { usePersistedListFilters } from '@/hooks/usePersistedListFilters'
-import { formatearFechaCorta, formatearFechaLarga } from '@/utils/fechas'
+import { useListFilters } from '@/hooks/useListFilters'
+import { formatearFechaCorta } from '@/utils/fechas'
 import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
+import {
+  showProcessError,
+  showProcessStart,
+  showProcessSuccess,
+} from '@/hooks/mutationFeedback'
+import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { FilterBar, SelectFilter, DateRangeFilter } from '@/components/filters'
 
-const LIST_KEY = 'despachos' as const
+interface DespachosFiltersState extends Record<string, string | number | undefined> {
+  page: number
+  size: number
+  search: string
+  filtroTipoDestino: 'all' | 'agencia' | 'directo'
+  fechaDesde: string
+  fechaHasta: string
+}
+
+const DESPACHOS_FILTERS_DEFAULTS: DespachosFiltersState = {
+  page: 0,
+  size: 20,
+  search: '',
+  filtroTipoDestino: 'all',
+  fechaDesde: '',
+  fechaHasta: '',
+}
+
+const TIPO_DESTINO_LABEL: Record<DespachosFiltersState['filtroTipoDestino'], string> = {
+  all: 'Todos los destinos',
+  agencia: 'Con agencia',
+  directo: 'Directo',
+}
 
 function DespachoRowActions({
-  despacho,
   onVer,
   onEditar,
   onMensaje,
@@ -96,7 +105,6 @@ function DespachoRowActions({
   onImprimir,
   onEliminar,
 }: {
-  despacho: Despacho
   onVer: () => void
   onEditar: () => void
   onMensaje: () => void
@@ -112,7 +120,7 @@ function DespachoRowActions({
             variant="ghost"
             size="icon"
             aria-label="Acciones de fila"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground opacity-100 transition-opacity"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
           >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -164,52 +172,71 @@ export default function DespachosList() {
   const { data: agenciaUsuario } = useAgencia(agenciaOrigenId ?? undefined)
   const nombreAgenciaOrigen = agenciaUsuario?.nombre ?? undefined
 
-  const { stored, setFilters, setPage, setSearch } = usePersistedListFilters<{
-    page?: number
-    size?: number
-    search?: string
-    filtroTipoDestino?: 'all' | 'agencia' | 'directo'
-  }>(LIST_KEY)
-  const { page = 0, size = 20, search: busqueda = '', filtroTipoDestino = 'all' } = { ...stored } as { page?: number; size?: number; search?: string; filtroTipoDestino?: 'all' | 'agencia' | 'directo' }
-  const setBusqueda = (v: string) => setSearch(v)
-  const setFiltroTipoDestino = (v: 'all' | 'agencia' | 'directo') => setFilters({ filtroTipoDestino: v, page: 0 })
+  const filtros = useListFilters<DespachosFiltersState>({
+    storageKey: 'despachos',
+    defaults: DESPACHOS_FILTERS_DEFAULTS,
+    buildChips: (values, { removeFilter }) => {
+      const chips = []
+      if (values.search) {
+        chips.push({
+          key: 'search',
+          label: `Buscar: "${values.search}"`,
+          onRemove: () => removeFilter('search'),
+        })
+      }
+      if (values.filtroTipoDestino !== 'all') {
+        chips.push({
+          key: 'filtroTipoDestino',
+          label: `Destino: ${TIPO_DESTINO_LABEL[values.filtroTipoDestino]}`,
+          onRemove: () => removeFilter('filtroTipoDestino'),
+        })
+      }
+      if (values.fechaDesde || values.fechaHasta) {
+        const desde = values.fechaDesde || '...'
+        const hasta = values.fechaHasta || '...'
+        chips.push({
+          key: 'fechaRango',
+          label: `Fecha: ${desde} → ${hasta}`,
+          onRemove: () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' }),
+        })
+      }
+      return chips
+    },
+  })
+  const { page, size, search: busqueda, filtroTipoDestino, fechaDesde, fechaHasta } = filtros.values
   const [despachoAEliminar, setDespachoAEliminar] = useState<number | null>(null)
   const [despachoAImprimir, setDespachoAImprimir] = useState<number | null>(null)
   const [tipoImpresion, setTipoImpresion] = useState<TipoImpresion>('etiqueta')
   const [sacaSeleccionada, setSacaSeleccionada] = useState<number | null>(null)
   const [sacaConLeyenda, setSacaConLeyenda] = useState<number | null>(null)
 
-  // Estado para impresión múltiple
   const [mostrarDialogoMultiples, setMostrarDialogoMultiples] = useState(false)
   const [despachosSeleccionados, setDespachosSeleccionados] = useState<Set<number>>(new Set())
 
-  // Estado para mensaje de despacho
   const [despachoParaMensaje, setDespachoParaMensaje] = useState<number | null>(null)
   const [mensajeGenerado, setMensajeGenerado] = useState<string>('')
   const [copiado, setCopiado] = useState(false)
   const [telefonoDestino, setTelefonoDestino] = useState<string | null>(null)
   const [telefonoCopiado, setTelefonoCopiado] = useState(false)
-  const [fechaSeleccionada, setFechaSeleccionada] = useState<string | null>(null)
   const [despachoAMarcarDespachado, setDespachoAMarcarDespachado] = useState<number | null>(null)
   const [mostrarDialogoMarcarDespachadoBatch, setMostrarDialogoMarcarDespachadoBatch] = useState(false)
+  const [imprimiendoDespacho, setImprimiendoDespacho] = useState(false)
+  const [quickPrintEnCurso, setQuickPrintEnCurso] = useState<TipoImpresion | null>(null)
+  const [descargandoPdf, setDescargandoPdf] = useState(false)
+  const [imprimiendoMultiples, setImprimiendoMultiples] = useState<'documento' | 'normal' | 'zebra' | null>(null)
 
-  // Resetear página cuando cambie la fecha seleccionada o la búsqueda
-  useEffect(() => {
-    setPage(0)
-  }, [fechaSeleccionada, busqueda, filtroTipoDestino])
-
-  const { data, isLoading, error } = useDespachos(
+  const { data, isLoading, error } = useDespachos({
     page,
     size,
-    filtroTipoDestino,
-    fechaSeleccionada ?? undefined,
-    fechaSeleccionada ?? undefined
-  )
+    tipoDestino: filtroTipoDestino,
+    fechaDesde: fechaDesde || undefined,
+    fechaHasta: fechaHasta || undefined,
+    search: busqueda || undefined,
+  })
   const deleteMutation = useDeleteDespacho()
   const marcarDespachadoMutation = useMarcarDespachado()
   const marcarDespachadoBatchMutation = useMarcarDespachadoBatch()
 
-  // Cargar datos del despacho para impresión
   const { data: despachoCompleto } = useDespacho(despachoAImprimir ?? undefined)
   const sacas = despachoCompleto?.sacas || []
   const { data: agencia } = useAgencia(despachoCompleto?.idAgencia)
@@ -221,7 +248,7 @@ export default function DespachosList() {
       try {
         await deleteMutation.mutateAsync(despachoAEliminar)
         setDespachoAEliminar(null)
-      } catch (error) {
+      } catch (_error) {
         // Error ya manejado en el hook
       }
     }
@@ -273,111 +300,126 @@ export default function DespachosList() {
       tipoActual === 'todas-zebra'
 
     if (requiereSacas && (!sacas || sacas.length === 0)) {
-      toast.info(
+      notify.info(
         'Este despacho no tiene sacas para imprimir etiquetas. Puedes imprimir el documento.'
       )
       return
     }
 
     if (requiereSaca && !sacaActual) {
-      toast.error('Selecciona una saca para continuar con la impresión.')
+      notify.error('Selecciona una saca para continuar con la impresión.')
       return
     }
 
-    if (tipoActual === 'documento') {
-      await imprimirDespacho(
-        despachoCompleto,
-        agencia,
-        distribuidor,
-        nombreAgenciaOrigen
-      )
-      resetDialogoImpresion()
-      return
-    }
+    const toastId = showProcessStart('Preparando impresión...')
+    setImprimiendoDespacho(true)
+    setQuickPrintEnCurso(tipoOverride ?? null)
 
-    if (tipoActual === 'todas') {
-      const sacasOrdenadas = [...sacas].sort(
-        (a, b) => (a.numeroOrden || 0) - (b.numeroOrden || 0)
-      )
-      let indiceLeyenda: number | undefined
-      if (sacaConLeyenda !== null) {
-        const indice = sacasOrdenadas.findIndex(
-          (s) => s.idSaca === sacaConLeyenda
-        )
-        indiceLeyenda = indice >= 0 ? indice : undefined
-      }
-      await imprimirEtiquetasSacas(
-        sacas,
-        despachoCompleto,
-        agencia,
-        distribuidor,
-        indiceLeyenda,
-        nombreAgenciaOrigen
-      )
-      resetDialogoImpresion()
-      return
-    }
-
-    if (tipoActual === 'todas-zebra') {
-      const sacasOrdenadas = [...sacas].sort(
-        (a, b) => (a.numeroOrden || 0) - (b.numeroOrden || 0)
-      )
-      let indiceLeyenda: number | undefined
-      if (sacaConLeyenda !== null) {
-        const indice = sacasOrdenadas.findIndex(
-          (s) => s.idSaca === sacaConLeyenda
-        )
-        indiceLeyenda = indice >= 0 ? indice : undefined
-      }
-      await imprimirEtiquetasZebraSacas(
-        sacas,
-        despachoCompleto,
-        agencia,
-        distribuidor,
-        indiceLeyenda,
-        nombreAgenciaOrigen
-      )
-      resetDialogoImpresion()
-      return
-    }
-
-    if (tipoActual === 'etiqueta') {
-      const saca = sacas?.find((s) => s.idSaca === sacaActual)
-      if (saca) {
-        const mostrarLeyendaManifiesto = esUltimaSacaDelDespacho(saca.idSaca)
-        await imprimirEtiquetaSaca(
-          saca,
+    try {
+      if (tipoActual === 'documento') {
+        await imprimirDespacho(
           despachoCompleto,
           agencia,
           distribuidor,
-          sacas?.length,
-          nombreAgenciaOrigen,
-          mostrarLeyendaManifiesto
+          nombreAgenciaOrigen
         )
+        showProcessSuccess(toastId, 'Documento enviado a impresión.')
+        resetDialogoImpresion()
+        return
       }
-      resetDialogoImpresion()
-      return
-    }
 
-    if (tipoActual === 'etiqueta-zebra') {
-      const saca = sacas?.find((s) => s.idSaca === sacaActual)
-      if (saca) {
-        const mostrarLeyendaManifiesto = esUltimaSacaDelDespacho(saca.idSaca)
-        await imprimirEtiquetaZebraSaca(
-          saca,
+      if (tipoActual === 'todas') {
+        const sacasOrdenadas = [...sacas].sort(
+          (a, b) => (a.numeroOrden || 0) - (b.numeroOrden || 0)
+        )
+        let indiceLeyenda: number | undefined
+        if (sacaConLeyenda !== null) {
+          const indice = sacasOrdenadas.findIndex(
+            (s) => s.idSaca === sacaConLeyenda
+          )
+          indiceLeyenda = indice >= 0 ? indice : undefined
+        }
+        await imprimirEtiquetasSacas(
+          sacas,
           despachoCompleto,
           agencia,
           distribuidor,
-          sacas?.length,
-          nombreAgenciaOrigen,
-          mostrarLeyendaManifiesto
+          indiceLeyenda,
+          nombreAgenciaOrigen
         )
+        showProcessSuccess(toastId, 'Etiquetas enviadas a impresión.')
+        resetDialogoImpresion()
+        return
       }
-      resetDialogoImpresion()
+
+      if (tipoActual === 'todas-zebra') {
+        const sacasOrdenadas = [...sacas].sort(
+          (a, b) => (a.numeroOrden || 0) - (b.numeroOrden || 0)
+        )
+        let indiceLeyenda: number | undefined
+        if (sacaConLeyenda !== null) {
+          const indice = sacasOrdenadas.findIndex(
+            (s) => s.idSaca === sacaConLeyenda
+          )
+          indiceLeyenda = indice >= 0 ? indice : undefined
+        }
+        await imprimirEtiquetasZebraSacas(
+          sacas,
+          despachoCompleto,
+          agencia,
+          distribuidor,
+          indiceLeyenda,
+          nombreAgenciaOrigen
+        )
+        showProcessSuccess(toastId, 'Etiquetas Zebra enviadas a impresión.')
+        resetDialogoImpresion()
+        return
+      }
+
+      if (tipoActual === 'etiqueta') {
+        const saca = sacas?.find((s) => s.idSaca === sacaActual)
+        if (saca) {
+          const mostrarLeyendaManifiesto = esUltimaSacaDelDespacho(saca.idSaca)
+          await imprimirEtiquetaSaca(
+            saca,
+            despachoCompleto,
+            agencia,
+            distribuidor,
+            sacas?.length,
+            nombreAgenciaOrigen,
+            mostrarLeyendaManifiesto
+          )
+        }
+        showProcessSuccess(toastId, 'Etiqueta enviada a impresión.')
+        resetDialogoImpresion()
+        return
+      }
+
+      if (tipoActual === 'etiqueta-zebra') {
+        const saca = sacas?.find((s) => s.idSaca === sacaActual)
+        if (saca) {
+          const mostrarLeyendaManifiesto = esUltimaSacaDelDespacho(saca.idSaca)
+          await imprimirEtiquetaZebraSaca(
+            saca,
+            despachoCompleto,
+            agencia,
+            distribuidor,
+            sacas?.length,
+            nombreAgenciaOrigen,
+            mostrarLeyendaManifiesto
+          )
+        }
+        showProcessSuccess(toastId, 'Etiqueta Zebra enviada a impresión.')
+        resetDialogoImpresion()
+      }
+    } catch (error: unknown) {
+      showProcessError(toastId, error, 'No se pudo completar la impresión.')
+    } finally {
+      setImprimiendoDespacho(false)
+      setQuickPrintEnCurso(null)
     }
   }
 
-  // Función auxiliar para cargar datos de un despacho
   const cargarDatosDespacho = async (idDespacho: number): Promise<{
     despacho: Despacho
     agencia?: Agencia
@@ -399,17 +441,23 @@ export default function DespachosList() {
       }
 
       return { despacho, agencia, distribuidor }
-    } catch (error) {
-      // Error silencioso
+    } catch (_error) {
       return null
     }
   }
 
   const handleImprimirMultiplesEtiquetas = async (formato: 'normal' | 'zebra') => {
     if (despachosSeleccionados.size === 0) {
-      toast.error('Debes seleccionar al menos un despacho')
+      notify.error('Debes seleccionar al menos un despacho')
       return
     }
+
+    const toastId = showProcessStart(
+      formato === 'zebra'
+        ? 'Preparando etiquetas Zebra...'
+        : 'Preparando etiquetas...'
+    )
+    setImprimiendoMultiples(formato)
 
     const etiquetas: Array<{
       sacas: Saca[]
@@ -418,114 +466,105 @@ export default function DespachosList() {
       distribuidor?: Distribuidor
       indiceSacaConLeyenda?: number
     }> = []
+    try {
+      for (const idDespacho of despachosSeleccionados) {
+        const datos = await cargarDatosDespacho(idDespacho)
+        if (!datos) continue
 
-    for (const idDespacho of despachosSeleccionados) {
-      const datos = await cargarDatosDespacho(idDespacho)
-      if (!datos) continue
+        const sacasDesp = datos.despacho.sacas || []
+        if (sacasDesp.length === 0) continue
 
-      const sacasDesp = datos.despacho.sacas || []
-      if (sacasDesp.length === 0) continue
+        const sacasOrdenadas = [...sacasDesp].sort((a, b) => (a.numeroOrden || 0) - (b.numeroOrden || 0))
+        const indiceLeyenda = sacasOrdenadas.length - 1
 
-      const sacasOrdenadas = [...sacasDesp].sort((a, b) => (a.numeroOrden || 0) - (b.numeroOrden || 0))
-      const indiceLeyenda = sacasOrdenadas.length - 1
+        etiquetas.push({
+          sacas: sacasDesp,
+          despacho: datos.despacho,
+          agencia: datos.agencia,
+          distribuidor: datos.distribuidor,
+          indiceSacaConLeyenda: indiceLeyenda,
+        })
+      }
 
-      etiquetas.push({
-        sacas: sacasDesp,
-        despacho: datos.despacho,
-        agencia: datos.agencia,
-        distribuidor: datos.distribuidor,
-        indiceSacaConLeyenda: indiceLeyenda,
-      })
-    }
+      if (etiquetas.length === 0) {
+        showProcessError(toastId, null, 'No hay etiquetas para imprimir en los despachos seleccionados.')
+        return
+      }
 
-    if (etiquetas.length === 0) {
-      toast.error('No hay etiquetas para imprimir en los despachos seleccionados')
-      return
-    }
-
-    if (formato === 'zebra') {
-      await imprimirEtiquetasZebraMultiplesDespachos(etiquetas, nombreAgenciaOrigen)
-    } else {
-      await imprimirEtiquetasMultiplesDespachos(etiquetas, nombreAgenciaOrigen)
+      if (formato === 'zebra') {
+        await imprimirEtiquetasZebraMultiplesDespachos(etiquetas, nombreAgenciaOrigen)
+      } else {
+        await imprimirEtiquetasMultiplesDespachos(etiquetas, nombreAgenciaOrigen)
+      }
+      showProcessSuccess(toastId, 'Impresión múltiple enviada correctamente.')
+    } catch (error: unknown) {
+      showProcessError(toastId, error, 'No se pudo imprimir la selección.')
+    } finally {
+      setImprimiendoMultiples(null)
     }
   }
 
-  // Función para imprimir todos los documentos de todos los despachos seleccionados
   const handleImprimirTodosDocumentos = async () => {
     if (despachosSeleccionados.size === 0) {
-      toast.error('Debes seleccionar al menos un despacho')
+      notify.error('Debes seleccionar al menos un despacho')
       return
     }
+
+    const toastId = showProcessStart('Preparando documentos para impresión...')
+    setImprimiendoMultiples('documento')
 
     const manifiestos: Array<{
       despacho: Despacho
       agencia?: Agencia
       distribuidor?: Distribuidor
     }> = []
+    try {
+      for (const idDespacho of despachosSeleccionados) {
+        const datos = await cargarDatosDespacho(idDespacho)
+        if (!datos) continue
 
-    // Cargar datos de todos los despachos seleccionados
-    for (const idDespacho of despachosSeleccionados) {
-      const datos = await cargarDatosDespacho(idDespacho)
-      if (!datos) continue
+        manifiestos.push({
+          despacho: datos.despacho,
+          agencia: datos.agencia,
+          distribuidor: datos.distribuidor
+        })
+      }
 
-      manifiestos.push({
-        despacho: datos.despacho,
-        agencia: datos.agencia,
-        distribuidor: datos.distribuidor
-      })
+      if (manifiestos.length === 0) {
+        showProcessError(toastId, null, 'No hay documentos para imprimir en los despachos seleccionados.')
+        return
+      }
+
+      await imprimirManifiestosMultiples(manifiestos, nombreAgenciaOrigen)
+      showProcessSuccess(toastId, 'Documentos enviados a impresión.')
+    } catch (error: unknown) {
+      showProcessError(toastId, error, 'No se pudo imprimir los documentos seleccionados.')
+    } finally {
+      setImprimiendoMultiples(null)
     }
-
-    if (manifiestos.length === 0) {
-      toast.error('No hay documentos para imprimir en los despachos seleccionados')
-      return
-    }
-
-    await imprimirManifiestosMultiples(manifiestos, nombreAgenciaOrigen)
   }
 
-  // Búsqueda en el backend cuando hay una búsqueda activa
-  const { data: despachosBusqueda, isLoading: loadingBusqueda } = useQuery({
-    queryKey: ['despachos', 'search', busqueda],
-    queryFn: () => despachoService.search(busqueda.trim()),
-    enabled: busqueda.trim().length > 0,
-    staleTime: 30000,
-  })
+  const despachosFiltrados = data?.content || []
 
-  // Usar resultados de búsqueda del backend si hay búsqueda activa; si no, usar listado paginado (ya filtrado por fecha y tipo en backend)
-  const despachosFiltrados = useMemo(() => {
-    if (busqueda.trim().length > 0) {
-      const list = despachosBusqueda || []
-      if (filtroTipoDestino === 'agencia') return list.filter(d => d.idAgencia != null)
-      if (filtroTipoDestino === 'directo') return list.filter(d => d.despachoDirecto?.destinatarioDirecto != null)
-      return list
-    }
-    return data?.content || []
-  }, [busqueda, despachosBusqueda, data?.content, filtroTipoDestino])
-
-  // Funciones para manejar selección múltiple
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      const todosLosIds = new Set(despachosFiltrados.map(d => d.idDespacho!))
-      setDespachosSeleccionados(todosLosIds)
-    } else {
+  const handleToggleAll = (rows: Despacho[]) => {
+    const allSelected = rows.length > 0 && rows.every((r) => despachosSeleccionados.has(r.idDespacho!))
+    if (allSelected) {
       setDespachosSeleccionados(new Set())
-    }
-  }
-
-  const handleSelectDespacho = (idDespacho: number, checked: boolean) => {
-    const nuevosSeleccionados = new Set(despachosSeleccionados)
-    if (checked) {
-      nuevosSeleccionados.add(idDespacho)
     } else {
-      nuevosSeleccionados.delete(idDespacho)
+      setDespachosSeleccionados(new Set(rows.map((r) => r.idDespacho!)))
     }
-    setDespachosSeleccionados(nuevosSeleccionados)
   }
 
-  const todosSeleccionados = despachosFiltrados.length > 0 &&
-    despachosFiltrados.every(d => despachosSeleccionados.has(d.idDespacho!))
+  const handleToggleOne = (id: string | number) => {
+    setDespachosSeleccionados((prev) => {
+      const next = new Set(prev)
+      const numId = Number(id)
+      if (next.has(numId)) next.delete(numId)
+      else next.add(numId)
+      return next
+    })
+  }
 
-  // Función para generar el mensaje del despacho usando la plantilla configurada en parámetros del sistema
   const generarMensajeDespacho = async (idDespacho: number) => {
     try {
       const despacho = await despachoService.findById(idDespacho)
@@ -547,7 +586,6 @@ export default function DespachosList() {
         return reemplazarVariables(plantilla, variables)
       }
 
-      // Fallback si no hay plantilla configurada: versión corta y operativa
       const sacas = despacho.sacas || []
       const totalSacas = sacas.length
       const totalPaquetes = sacas.reduce((sum, saca) => sum + (saca.idPaquetes?.length || 0), 0)
@@ -593,10 +631,9 @@ export default function DespachosList() {
     }
   }
 
-  // Función para abrir el diálogo de mensaje
   const handleAbrirMensaje = async (idDespacho: number) => {
     setDespachoParaMensaje(idDespacho)
-    setMensajeGenerado('') // Limpiar previo
+    setMensajeGenerado('')
     setCopiado(false)
     setTelefonoCopiado(false)
     const mensaje = await generarMensajeDespacho(idDespacho)
@@ -605,7 +642,6 @@ export default function DespachosList() {
     try {
       const despacho = await despachoService.findById(idDespacho)
       if (despacho.idAgencia) {
-        // Buscar teléfono de la agencia
         const agencia = await agenciaService.findById(despacho.idAgencia)
         if (agencia?.telefonos && agencia.telefonos.length > 0) {
           const telefonoPrincipal = agencia.telefonos.find(t => t.principal) || agencia.telefonos[0]
@@ -614,13 +650,12 @@ export default function DespachosList() {
           setTelefonoDestino(null)
         }
       } else if (despacho.despachoDirecto?.destinatarioDirecto) {
-        // Buscar teléfono del destinatario directo
         const destinatario = despacho.despachoDirecto.destinatarioDirecto
         setTelefonoDestino(destinatario.telefonoDestinatario || null)
       } else {
         setTelefonoDestino(null)
       }
-    } catch (error) {
+    } catch (_error) {
       setTelefonoDestino(null)
     }
   }
@@ -629,10 +664,10 @@ export default function DespachosList() {
     const ok = await copyTextToClipboard(mensajeGenerado)
     if (ok) {
       setCopiado(true)
-      toast.success('Mensaje copiado al portapapeles')
+      notify.success('Mensaje copiado al portapapeles')
       setTimeout(() => setCopiado(false), 2000)
     } else {
-      toast.error('Error al copiar el mensaje')
+      notify.error('No se pudo copiar el mensaje')
     }
   }
 
@@ -641,19 +676,19 @@ export default function DespachosList() {
     const ok = await copyTextToClipboard(telefonoDestino)
     if (ok) {
       setTelefonoCopiado(true)
-      toast.success('Teléfono copiado al portapapeles')
+      notify.success('Teléfono copiado al portapapeles')
       setTimeout(() => setTelefonoCopiado(false), 2000)
     } else {
-      toast.error('Error al copiar el teléfono')
+      notify.error('No se pudo copiar el teléfono')
     }
   }
 
-  // Función para descargar PDF del despacho
   const descargarPDFDespacho = async () => {
     if (!despachoParaMensaje) return
 
+    setDescargandoPdf(true)
+    const toastId = showProcessStart('Preparando descarga del PDF...')
     try {
-      toast.info('Generando PDF...')
       const despacho = await despachoService.findById(despachoParaMensaje)
 
       let agencia: Agencia | null = null
@@ -667,20 +702,150 @@ export default function DespachosList() {
       }
 
       await generarPDFDespacho(despacho, agencia || undefined, distribuidor || undefined, nombreAgenciaOrigen)
-
-      toast.success('PDF descargado exitosamente')
+      showProcessSuccess(toastId, 'Descarga de PDF completada.')
     } catch (error: unknown) {
-      console.error('Error al generar PDF:', error)
-      const msg = error instanceof Error ? error.message : 'Error al generar el PDF del despacho'
-      toast.error(msg)
+      showProcessError(toastId, error, 'No se pudo generar el PDF del despacho.')
+    } finally {
+      setDescargandoPdf(false)
     }
   }
 
   const totalPages = data?.totalPages || 0
   const currentPage = data?.number || 0
 
+  const columns = useMemo<DataTableColumn<Despacho>[]>(() => [
+    {
+      id: 'manifiesto',
+      header: 'Manifiesto',
+      accessor: (d) => (
+        <span
+          className={cn(
+            'font-mono text-xs font-medium',
+            d.numeroManifiesto ? 'text-foreground' : 'text-muted-foreground'
+          )}
+          title={d.numeroManifiesto ?? `#${d.idDespacho}`}
+        >
+          {d.numeroManifiesto || `#${d.idDespacho}`}
+        </span>
+      ),
+      sortValue: (d) => d.numeroManifiesto ?? `#${d.idDespacho}`,
+      width: '160px',
+    },
+    {
+      id: 'fecha',
+      header: 'Fecha',
+      accessor: (d) => (
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {formatearFechaCorta(d.fechaDespacho)}
+        </span>
+      ),
+      sortValue: (d) => (d.fechaDespacho ? new Date(d.fechaDespacho) : null),
+      width: '130px',
+    },
+    {
+      id: 'destino',
+      header: 'Destino',
+      accessor: (d) => {
+        if (d.nombreAgencia) {
+          return (
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-xs font-medium text-foreground truncate" title={d.nombreAgencia}>
+                {d.nombreAgencia}
+              </span>
+              {d.cantonAgencia ? (
+                <span className="text-[11px] text-muted-foreground truncate">{d.cantonAgencia}</span>
+              ) : null}
+            </div>
+          )
+        }
+        if (d.despachoDirecto?.destinatarioDirecto) {
+          return (
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-xs font-medium text-info">Directo</span>
+              <span className="text-[11px] text-muted-foreground truncate">
+                {d.despachoDirecto.destinatarioDirecto.nombreDestinatario}
+              </span>
+            </div>
+          )
+        }
+        return <span className="text-xs text-muted-foreground italic">—</span>
+      },
+      sortValue: (d) =>
+        d.nombreAgencia ?? d.despachoDirecto?.destinatarioDirecto?.nombreDestinatario ?? '',
+    },
+    {
+      id: 'logistica',
+      header: 'Logística',
+      accessor: (d) => {
+        if (!d.nombreDistribuidor && !d.numeroGuiaAgenciaDistribucion) {
+          return <span className="text-xs text-muted-foreground/60">—</span>
+        }
+        return (
+          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground min-w-0">
+            {d.nombreDistribuidor ? (
+              <span className="truncate" title={d.nombreDistribuidor}>{d.nombreDistribuidor}</span>
+            ) : null}
+            {d.numeroGuiaAgenciaDistribucion ? (
+              <span className="font-mono text-[11px]">Guía: {d.numeroGuiaAgenciaDistribucion}</span>
+            ) : null}
+          </div>
+        )
+      },
+      sortValue: (d) => d.nombreDistribuidor ?? '',
+    },
+    {
+      id: 'sacas',
+      header: 'Sacas',
+      align: 'right',
+      width: '90px',
+      accessor: (d) => (
+        <span className="text-xs font-medium text-foreground tabular-nums">
+          {d.sacas?.length ?? 0}
+        </span>
+      ),
+      sortValue: (d) => d.sacas?.length ?? 0,
+    },
+    {
+      id: 'paquetes',
+      header: 'Paquetes',
+      align: 'right',
+      width: '110px',
+      accessor: (d) => {
+        const total = (d.sacas ?? []).reduce((sum, s) => sum + (s.idPaquetes?.length ?? 0), 0)
+        return (
+          <span className="text-xs font-medium text-foreground tabular-nums">{total}</span>
+        )
+      },
+      sortValue: (d) => (d.sacas ?? []).reduce((sum, s) => sum + (s.idPaquetes?.length ?? 0), 0),
+    },
+    {
+      id: 'presinto',
+      header: 'Presinto',
+      defaultHidden: true,
+      accessor: (d) =>
+        d.codigoPresinto ? (
+          <span className="font-mono text-[11px] text-muted-foreground">{d.codigoPresinto}</span>
+        ) : (
+          <span className="text-xs text-muted-foreground/60">—</span>
+        ),
+      sortValue: (d) => d.codigoPresinto ?? '',
+    },
+    {
+      id: 'usuario',
+      header: 'Usuario',
+      defaultHidden: true,
+      accessor: (d) => (
+        <span className="text-xs text-muted-foreground">{d.usuarioRegistro || '—'}</span>
+      ),
+      sortValue: (d) => d.usuarioRegistro ?? '',
+    },
+  ], [])
+
+  const isLoadingData = isLoading
+  const hayFiltros = filtros.hasActiveFilters
+
   return (
-    <StandardPageLayout
+    <ListPageLayout
       title="Despachos"
       icon={<Truck className="h-4 w-4" />}
       className="py-2 animate-in fade-in duration-500"
@@ -720,208 +885,100 @@ export default function DespachosList() {
           </ProtectedByPermission>
         </div>
       }
-    >
-      <ListToolbar
-        search={busqueda}
-        onSearchChange={setBusqueda}
-        searchPlaceholder="Buscar manifiesto..."
-        withBottomBorder={false}
-        filters={
-          <>
-            <Select value={filtroTipoDestino} onValueChange={(v) => setFiltroTipoDestino(v as 'all' | 'agencia' | 'directo')}>
-              <SelectTrigger className="w-[200px] h-9 text-xs">
-                <SelectValue placeholder="Destino" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los despachos</SelectItem>
-                <SelectItem value="agencia">Con agencia</SelectItem>
-                <SelectItem value="directo">Con destinatario directo</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="relative w-40">
-              <DatePickerForm
-                value={fechaSeleccionada ?? ''}
-                onChange={(v) => setFechaSeleccionada(v || null)}
-                inline
-                className={cn("h-9 text-xs px-2", !fechaSeleccionada && "text-muted-foreground")}
-              />
-            </div>
-          </>
-        }
-      />
-
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden pt-2">
-        {/* Main Content - Notion Table View */}
-        <div className="flex-1 min-h-0 rounded-md border border-border bg-card shadow-sm overflow-hidden flex flex-col">
-          {(isLoading || loadingBusqueda) ? (
-            <LoadingState label="Cargando despachos..." />
-          ) : error ? (
-            <ErrorState
-              title="Error al cargar los despachos"
-              description={
-                getInteragencyRestrictionMessage(error)
-                  ?? getApiErrorMessage(error, 'No se pudieron cargar los despachos.')
-              }
-            />
-          ) : (
-            <div className="flex-1 min-h-0 relative w-full overflow-auto">
-              <Table className="notion-table">
-                <TableHeader className="bg-muted/40 border-b border-border">
-                  <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="w-8 pl-3 h-9">
-                      <Checkbox
-                        checked={todosSeleccionados}
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Seleccionar todos"
-                        className="translate-y-[2px]"
-                      />
-                    </TableHead>
-                    <TableHead className="min-w-[120px] h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Manifiesto</TableHead>
-                    <TableHead className="min-w-[150px] h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Destino</TableHead>
-                    <TableHead className="min-w-[150px] h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Logística</TableHead>
-                    <TableHead className="h-9 text-xs uppercase tracking-wider font-semibold text-muted-foreground">Contenido</TableHead>
-                    <TableHead className="text-right h-9 pr-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {despachosFiltrados.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-64">
-                        <EmptyState
-                          title="No se encontraron despachos"
-                          description={
-                            busqueda || fechaSeleccionada
-                              ? "No hay resultados para los filtros seleccionados"
-                              : "No hay despachos registrados"
-                          }
-                          icon={<Truck className="h-10 w-10 text-muted-foreground/50" />}
-                          action={
-                            !busqueda && !fechaSeleccionada && (
-                              <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>
-                                <Button onClick={() => navigate({ to: '/despachos/new' })} variant="outline" size="sm">
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  Crear Despacho
-                                </Button>
-                              </ProtectedByPermission>
-                            )
-                          }
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    despachosFiltrados.map((despacho) => {
-                      // Calcular desglose de sacas y paquetes
-                      const sacas = despacho.sacas || []
-                      const totalSacas = sacas.length
-                      const totalPaquetes = sacas.reduce((sum, s) => sum + (s.idPaquetes?.length ?? 0), 0)
-
-                      return (
-                        <TableRow key={despacho.idDespacho} className="group hover:bg-muted/50 border-b border-border/50 last:border-0 h-10">
-                          <TableCell className="pl-3 py-2">
-                            <Checkbox
-                              checked={despachosSeleccionados.has(despacho.idDespacho!)}
-                              onCheckedChange={(checked) =>
-                                handleSelectDespacho(despacho.idDespacho!, checked as boolean)
-                              }
-                              className="translate-y-[2px]"
-                            />
-                          </TableCell>
-                          <TableCell className="py-2">
-                            <div className="flex flex-col gap-0.5">
-                              <div className="flex items-center gap-2">
-                                <span className={cn("font-mono text-xs font-medium text-foreground", despacho.numeroManifiesto ? "" : "text-muted-foreground")}>
-                                  {despacho.numeroManifiesto || `#${despacho.idDespacho}`}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                {formatearFechaCorta(despacho.fechaDespacho)}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2">
-                            {despacho.nombreAgencia ? (
-                              <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                                  <span className="truncate max-w-[170px]" title={despacho.nombreAgencia}>
-                                    {despacho.nombreAgencia}
-                                  </span>
-                                </div>
-                                {despacho.cantonAgencia && (
-                                  <span className="text-xs text-muted-foreground">{despacho.cantonAgencia}</span>
-                                )}
-                              </div>
-                            ) : despacho.despachoDirecto?.destinatarioDirecto ? (
-                              <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1.5 text-xs font-medium text-info">
-                                  <span>Directo</span>
-                                </div>
-                                <span className="text-xs text-muted-foreground truncate max-w-[170px]">
-                                  {despacho.despachoDirecto.destinatarioDirecto.nombreDestinatario}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground italic">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="py-2">
-                            <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-                              {despacho.nombreDistribuidor && (
-                                <div className="flex items-center gap-1.5">
-                                  <span>{despacho.nombreDistribuidor}</span>
-                                </div>
-                              )}
-                              {despacho.numeroGuiaAgenciaDistribucion && (
-                                <div className="flex items-center gap-1 font-mono text-xs">
-                                  <span>Guía: {despacho.numeroGuiaAgenciaDistribucion}</span>
-                                </div>
-                              )}
-                              {!despacho.nombreDistribuidor && !despacho.numeroGuiaAgenciaDistribucion && (
-                                <span className="opacity-50">-</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2">
-                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <span className="font-medium text-foreground">{totalSacas}</span> {totalSacas === 1 ? 'saca' : 'sacas'}
-                              {totalPaquetes > 0 && (
-                                <span className="text-muted-foreground/90">({totalPaquetes} {totalPaquetes === 1 ? 'paquete' : 'paquetes'})</span>
-                              )}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right py-2 pr-4">
-                            <DespachoRowActions
-                              despacho={despacho}
-                              onVer={() => navigate({ to: `/despachos/${despacho.idDespacho}` })}
-                              onEditar={() => navigate({ to: `/despachos/${despacho.idDespacho}/edit` })}
-                              onMensaje={() => handleAbrirMensaje(despacho.idDespacho!)}
-                              onMarcarDespachado={() => setDespachoAMarcarDespachado(despacho.idDespacho!)}
-                              onImprimir={() => setDespachoAImprimir(despacho.idDespacho!)}
-                              onEliminar={() => setDespachoAEliminar(despacho.idDespacho!)}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
-
-        {!isLoading && !loadingBusqueda && busqueda.trim().length === 0 && (
-          <ListPagination
-            page={currentPage}
-            totalPages={totalPages}
-            totalItems={data?.totalElements}
-            size={size}
-            onPageChange={setPage}
-            className="shrink-0"
+      filterBar={
+        <FilterBar
+          searchValue={busqueda}
+          onSearchChange={(v) => filtros.setFilter('search', v)}
+          searchPlaceholder="Buscar manifiesto o código..."
+          chips={filtros.activeChips}
+          onClearAll={filtros.clearAll}
+        >
+          <SelectFilter
+            value={filtroTipoDestino}
+            onChange={(v) => filtros.setFilter('filtroTipoDestino', v as DespachosFiltersState['filtroTipoDestino'])}
+            options={[
+              { value: 'all', label: 'Todos los destinos' },
+              { value: 'agencia', label: 'Con agencia' },
+              { value: 'directo', label: 'Directo' },
+            ]}
+            ariaLabel="Tipo de destino"
           />
-        )}
-      </div>
+          <DateRangeFilter
+            desde={fechaDesde}
+            hasta={fechaHasta}
+            onChange={({ desde, hasta }) => filtros.setFilters({ fechaDesde: desde, fechaHasta: hasta })}
+          />
+        </FilterBar>
+      }
+      table={
+        error && !isLoadingData ? (
+          <ErrorState
+            title="Error al cargar los despachos"
+            description={
+              getInteragencyRestrictionMessage(error)
+                ?? getApiErrorMessage(error, 'No se pudieron cargar los despachos.')
+            }
+          />
+        ) : (
+          <DataTable<Despacho>
+            data={despachosFiltrados}
+            columns={columns}
+            rowKey={(d) => d.idDespacho!}
+            storageKey="despachos"
+            isLoading={isLoadingData}
+            selection={{
+              selected: despachosSeleccionados,
+              getId: (d) => d.idDespacho!,
+              onToggle: handleToggleOne,
+              onToggleAll: handleToggleAll,
+            }}
+            emptyState={
+              <EmptyState
+                title="No se encontraron despachos"
+                description={
+                  hayFiltros
+                    ? 'No hay resultados para los filtros seleccionados'
+                    : 'No hay despachos registrados'
+                }
+                icon={<Truck className="h-10 w-10 text-muted-foreground/50" />}
+                action={
+                  !hayFiltros && (
+                    <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>
+                      <Button onClick={() => navigate({ to: '/despachos/new' })} variant="outline" size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Crear Despacho
+                      </Button>
+                    </ProtectedByPermission>
+                  )
+                }
+              />
+            }
+            rowActions={(d) => (
+              <DespachoRowActions
+                onVer={() => navigate({ to: `/despachos/${d.idDespacho}` })}
+                onEditar={() => navigate({ to: `/despachos/${d.idDespacho}/edit` })}
+                onMensaje={() => handleAbrirMensaje(d.idDespacho!)}
+                onMarcarDespachado={() => setDespachoAMarcarDespachado(d.idDespacho!)}
+                onImprimir={() => setDespachoAImprimir(d.idDespacho!)}
+                onEliminar={() => setDespachoAEliminar(d.idDespacho!)}
+              />
+            )}
+          />
+        )
+      }
+      footer={
+        <ListPagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalItems={data?.totalElements}
+          size={size}
+          onPageChange={(p) => filtros.setFilter('page', p)}
+          alwaysShow
+          className="border-t-0 pt-0"
+        />
+      }
+    >
 
-      {/* Dialogs */}
       <Dialog open={!!despachoAEliminar} onOpenChange={(open) => !open && setDespachoAEliminar(null)}>
         <DialogContent className={dialogContentPresets.compact}>
           <DialogHeader className="bg-destructive/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
@@ -948,7 +1005,6 @@ export default function DespachosList() {
         </DialogContent>
       </Dialog>
 
-      {/* ... Other existing dialogs preserved ... */}
       <Dialog open={!!despachoAMarcarDespachado} onOpenChange={(open) => !open && setDespachoAMarcarDespachado(null)}>
         <DialogContent className={dialogContentPresets.compact}>
           <DialogHeader>
@@ -1010,11 +1066,12 @@ export default function DespachosList() {
           void handleImprimir(tipo)
         }}
         onCancel={resetDialogoImpresion}
+        isPrinting={imprimiendoDespacho}
+        quickActionLoading={quickPrintEnCurso}
       />
 
-      {/* Mensaje Dialog */}
       <Dialog open={!!despachoParaMensaje} onOpenChange={(open) => !open && setDespachoParaMensaje(null)}>
-        <DialogContent className={cn(dialogContentPresets.form, "max-w-2xl p-0 overflow-hidden")}>
+        <DialogContent className={cn(dialogContentPresets.form, 'max-w-2xl p-0 overflow-hidden')}>
           <DialogHeader className="p-6 pb-2">
             <DialogTitle className="flex items-center gap-2 text-xl font-semibold tracking-tight">
               <MessageSquare className="h-5 w-5 text-info" />
@@ -1042,8 +1099,8 @@ export default function DespachosList() {
                 size="sm"
                 onClick={copiarMensaje}
                 className={cn(
-                  "h-9 border-border/60 hover:border-info/30 hover:bg-info/10 transition-all",
-                  copiado && "bg-success/10 text-success border-success/20"
+                  'h-9 border-border/60 hover:border-info/30 hover:bg-info/10 transition-all',
+                  copiado && 'bg-success/10 text-success border-success/20'
                 )}
               >
                 {copiado ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
@@ -1054,10 +1111,20 @@ export default function DespachosList() {
                 variant="outline"
                 size="sm"
                 onClick={descargarPDFDespacho}
+                disabled={descargandoPdf}
                 className="h-9 border-border/60 hover:border-primary/30 hover:bg-primary/10 transition-all"
               >
-                <FileText className="h-4 w-4 mr-2" />
-                Descargar PDF
+                {descargandoPdf ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Descargando...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Descargar PDF
+                  </>
+                )}
               </Button>
 
               {telefonoDestino && (
@@ -1066,8 +1133,8 @@ export default function DespachosList() {
                   size="sm"
                   onClick={copiarTelefono}
                   className={cn(
-                    "h-9 border-border/60 hover:border-info/30 hover:bg-info/10 transition-all font-mono",
-                    telefonoCopiado && "bg-success/10 text-success border-success/20 font-medium"
+                    'h-9 border-border/60 hover:border-info/30 hover:bg-info/10 transition-all font-mono',
+                    telefonoCopiado && 'bg-success/10 text-success border-success/20 font-medium'
                   )}
                 >
                   {telefonoCopiado ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
@@ -1080,9 +1147,9 @@ export default function DespachosList() {
                   variant="default"
                   size="sm"
                   onClick={() => {
-                    const cleanTel = telefonoDestino.replace(/\D/g, '');
-                    const finalTel = cleanTel.startsWith('593') ? cleanTel : `593${cleanTel.startsWith('0') ? cleanTel.substring(1) : cleanTel}`;
-                    window.open(`https://wa.me/${finalTel}?text=${encodeURIComponent(mensajeGenerado)}`, '_blank');
+                    const cleanTel = telefonoDestino.replace(/\D/g, '')
+                    const finalTel = cleanTel.startsWith('593') ? cleanTel : `593${cleanTel.startsWith('0') ? cleanTel.substring(1) : cleanTel}`
+                    window.open(`https://wa.me/${finalTel}?text=${encodeURIComponent(mensajeGenerado)}`, '_blank')
                   }}
                   className="h-9 bg-success text-success-foreground hover:bg-success/90 ml-auto"
                 >
@@ -1099,9 +1166,8 @@ export default function DespachosList() {
         </DialogContent>
       </Dialog>
 
-      {/* Multiples Dialog */}
       <Dialog open={mostrarDialogoMultiples} onOpenChange={setMostrarDialogoMultiples}>
-        <DialogContent className={cn(dialogContentPresets.form, "max-w-2xl")}>
+        <DialogContent className={cn(dialogContentPresets.form, 'max-w-2xl')}>
           <DialogHeader>
             <DialogTitle>Imprimir Selección</DialogTitle>
             <DialogDescription>
@@ -1123,9 +1189,14 @@ export default function DespachosList() {
                 variant="outline"
                 className="h-auto py-3 px-3 min-w-0 whitespace-normal flex flex-col items-start gap-1 text-left"
                 onClick={handleImprimirTodosDocumentos}
+                disabled={imprimiendoMultiples != null}
               >
                 <span className="w-full flex items-center gap-2 text-sm font-medium">
-                  <FileText className="h-4 w-4" />
+                  {imprimiendoMultiples === 'documento' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
                   Documento
                 </span>
                 <span className="w-full text-[11px] text-muted-foreground leading-tight whitespace-normal break-words">
@@ -1138,9 +1209,14 @@ export default function DespachosList() {
                 variant="outline"
                 className="h-auto py-3 px-3 min-w-0 whitespace-normal flex flex-col items-start gap-1 text-left"
                 onClick={() => handleImprimirMultiplesEtiquetas('normal')}
+                disabled={imprimiendoMultiples != null}
               >
                 <span className="w-full flex items-center gap-2 text-sm font-medium">
-                  <Tags className="h-4 w-4" />
+                  {imprimiendoMultiples === 'normal' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Tags className="h-4 w-4" />
+                  )}
                   Todas etiquetas
                 </span>
                 <span className="w-full text-[11px] text-muted-foreground leading-tight whitespace-normal break-words">
@@ -1153,9 +1229,14 @@ export default function DespachosList() {
                 variant="outline"
                 className="h-auto py-3 px-3 min-w-0 whitespace-normal flex flex-col items-start gap-1 text-left"
                 onClick={() => handleImprimirMultiplesEtiquetas('zebra')}
+                disabled={imprimiendoMultiples != null}
               >
                 <span className="w-full flex items-center gap-2 text-sm font-medium">
-                  <Tag className="h-4 w-4" />
+                  {imprimiendoMultiples === 'zebra' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Tag className="h-4 w-4" />
+                  )}
                   Todas Zebra
                 </span>
                 <span className="w-full text-[11px] text-muted-foreground leading-tight whitespace-normal break-words">
@@ -1166,6 +1247,6 @@ export default function DespachosList() {
           </div>
         </DialogContent>
       </Dialog>
-    </StandardPageLayout>
+    </ListPageLayout>
   )
 }

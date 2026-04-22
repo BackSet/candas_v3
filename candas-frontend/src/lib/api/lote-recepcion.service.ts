@@ -3,13 +3,28 @@ import { API_ENDPOINTS } from './endpoints'
 import type { LoteRecepcion, LoteRecepcionPage, LoteRecepcionImportResult, LoteRecepcionEstadisticas } from '@/types/lote-recepcion'
 import type { Paquete } from '@/types/paquete'
 
+export interface LoteRecepcionFindAllParams {
+  page?: number
+  size?: number
+  search?: string
+  tipoLote?: string
+  idAgencia?: number
+  fechaDesde?: string
+  fechaHasta?: string
+}
+
 export const loteRecepcionService = {
-  async findAll(page: number = 0, size: number = 20, tipoLote?: string): Promise<LoteRecepcionPage> {
-    const params: Record<string, string | number> = { page, size }
-    if (tipoLote && tipoLote !== 'all') params.tipoLote = tipoLote
+  async findAll(params: LoteRecepcionFindAllParams = {}): Promise<LoteRecepcionPage> {
+    const { page = 0, size = 20, search, tipoLote, idAgencia, fechaDesde, fechaHasta } = params
+    const query: Record<string, string | number> = { page, size }
+    if (search?.trim()) query.search = search.trim()
+    if (tipoLote && tipoLote !== 'all') query.tipoLote = tipoLote
+    if (idAgencia != null) query.idAgencia = idAgencia
+    if (fechaDesde) query.fechaDesde = fechaDesde
+    if (fechaHasta) query.fechaHasta = fechaHasta
     const response = await apiClient.get<LoteRecepcionPage>(
       API_ENDPOINTS.LOTES_RECEPCION.BASE,
-      { params }
+      { params: query }
     )
     return response.data
   },
@@ -96,12 +111,10 @@ export const loteRecepcionService = {
     return response.data
   },
 
-  async findAllEspeciales(page: number = 0, size: number = 20): Promise<LoteRecepcionPage> {
-    const response = await apiClient.get<LoteRecepcionPage>(
-      API_ENDPOINTS.LOTES_RECEPCION.ESPECIALES,
-      { params: { page, size } }
-    )
-    return response.data
+  async findAllEspeciales(
+    params: Omit<LoteRecepcionFindAllParams, 'tipoLote'> = {}
+  ): Promise<LoteRecepcionPage> {
+    return loteRecepcionService.findAll({ ...params, tipoLote: 'ESPECIAL' })
   },
 
   async searchEspeciales(query: string): Promise<LoteRecepcion[]> {

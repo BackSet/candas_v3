@@ -3,7 +3,7 @@ import { manifiestoPagoService } from '@/lib/api/manifiesto-pago.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { CrearManifiestoPagoDTO, ManifiestoPagoResumen } from '@/types/manifiesto-pago'
 import { imprimirManifiestoPago } from '@/utils/imprimirManifiestoPago'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { useAuthStore } from '@/stores/authStore'
 import { useAgencia } from '@/hooks/useAgencias'
 
@@ -46,10 +46,10 @@ export function useCreateManifiestoPago() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manifiestos-pago'] })
-      toast.success('Manifiesto de pago generado exitosamente')
+      notify.success('Manifiesto de pago generado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al generar el manifiesto de pago'))
+      notify.error(error, 'Error al generar el manifiesto de pago')
     },
   })
 }

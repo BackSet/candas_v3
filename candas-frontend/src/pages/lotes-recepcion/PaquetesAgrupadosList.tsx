@@ -16,7 +16,7 @@ import {
 import { Package, Copy, MapPin, Edit, X, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import AsignarHijosClementinaDialog from './AsignarHijosClementinaDialog'
@@ -523,7 +523,7 @@ export default function PaquetesAgrupadosList({
     const totalPaquetes = getCantidadParaSecuencia(paquetes)
     const parsed = parsearSecuencia(secuencia)
     if (parsed && parsed.suma > totalPaquetes) {
-      toast.error(`La secuencia suma ${parsed.suma}; hay ${totalPaquetes} paquetes. Faltan ${parsed.suma - totalPaquetes} paquetes para completar la secuencia.`)
+      notify.error(`La secuencia suma ${parsed.suma}; hay ${totalPaquetes} paquetes. Faltan ${parsed.suma - totalPaquetes} paquetes para completar la secuencia.`)
       return
     }
 
@@ -532,7 +532,7 @@ export default function PaquetesAgrupadosList({
       ? generarListasFromGuias(expandirPaquetesAGuias(paquetes, mapaClementinaHijos), secuencia)
       : generarListas(paquetes, secuencia)
     if (listas === null) {
-      toast.error('La secuencia no es válida o excede el total de guías disponibles')
+      notify.error('La secuencia no es válida o excede el total de guías disponibles')
       return
     }
 
@@ -557,10 +557,10 @@ export default function PaquetesAgrupadosList({
 
     const ok = await copyTextToClipboard(texto)
     if (ok) {
-      toast.success(`Lista de ${lista.length} paquete(s) copiada al portapapeles`)
+      notify.success(`Lista de ${lista.length} paquete(s) copiada al portapapeles`)
       // check state removed
     } else {
-      toast.error('Error al copiar la lista')
+      notify.error('Error al copiar la lista')
     }
   }
 
@@ -681,7 +681,7 @@ export default function PaquetesAgrupadosList({
             variant="secondary"
             onClick={() => {
               if (paquetesParaDestinoYAtencion.length === 0) {
-                toast.info('Para paquetes CLEMENTINA use la sección CLEMENTINA Hijos.')
+                notify.info('Para paquetes CLEMENTINA use la sección CLEMENTINA Hijos.')
                 return
               }
               const first = paquetesParaDestinoYAtencion[0]
@@ -703,7 +703,7 @@ export default function PaquetesAgrupadosList({
             variant="secondary"
             onClick={() => {
               if (paquetesParaDestinoYAtencion.length === 0) {
-                toast.info('Para paquetes CLEMENTINA use la sección CLEMENTINA Hijos.')
+                notify.info('Para paquetes CLEMENTINA use la sección CLEMENTINA Hijos.')
                 return
               }
               setShowCambiarTipoDestinoMasivoDialog(true)

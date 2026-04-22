@@ -1,26 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { despachoService, type TipoDestinoDespacho } from '@/lib/api/despacho.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Despacho } from '@/types/despacho'
 import { useAuthStore } from '@/stores/authStore'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
 
 function assertAgenciaActivaSeleccionada() {
   assertAgenciaOrigenActivaSeleccionadaParaCreacion()
 }
 
-export function useDespachos(
-  page: number = 0,
-  size: number = 20,
-  tipoDestino: TipoDestinoDespacho = 'all',
-  fechaDesde?: string,
+export interface UseDespachosParams {
+  page?: number
+  size?: number
+  tipoDestino?: TipoDestinoDespacho
+  fechaDesde?: string
   fechaHasta?: string
-) {
+  search?: string
+}
+
+export function useDespachos(params: UseDespachosParams = {}) {
   const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
+  const { page = 0, size = 20, tipoDestino = 'all', fechaDesde, fechaHasta, search } = params
   return useQuery({
-    queryKey: ['despachos', activeAgencyId, page, size, tipoDestino, fechaDesde, fechaHasta],
-    queryFn: () => despachoService.findAll(page, size, tipoDestino, fechaDesde, fechaHasta),
+    queryKey: ['despachos', activeAgencyId, page, size, tipoDestino, fechaDesde, fechaHasta, search],
+    queryFn: () => despachoService.findAll({ page, size, tipoDestino, fechaDesde, fechaHasta, search }),
   })
 }
 
@@ -52,10 +55,10 @@ export function useCreateDespacho() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['despachos'] })
-      toast.success('Despacho creado exitosamente')
+      notify.success('Despacho creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el despacho'))
+      notify.error(error, 'No se pudo crear el despacho')
     },
   })
 }
@@ -72,10 +75,10 @@ export function useUpdateDespacho() {
       queryClient.invalidateQueries({ queryKey: ['despachos'] })
       queryClient.invalidateQueries({ queryKey: ['despacho', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['despacho-sacas', variables.id] })
-      toast.success('Despacho actualizado exitosamente')
+      notify.success('Despacho actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el despacho'))
+      notify.error(error, 'No se pudo actualizar el despacho')
     },
   })
 }
@@ -87,10 +90,10 @@ export function useDeleteDespacho() {
     mutationFn: (id: number) => despachoService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['despachos'] })
-      toast.success('Despacho eliminado exitosamente')
+      notify.success('Despacho eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el despacho'))
+      notify.error(error, 'No se pudo eliminar el despacho')
     },
   })
 }
@@ -105,10 +108,10 @@ export function useAgregarSacasDespacho() {
       queryClient.invalidateQueries({ queryKey: ['despachos'] })
       queryClient.invalidateQueries({ queryKey: ['despacho', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['despacho-sacas', variables.id] })
-      toast.success('Sacas agregadas exitosamente')
+      notify.success('Sacas agregadas exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al agregar las sacas'))
+      notify.error(error, 'No se pudieron agregar las sacas')
     },
   })
 }
@@ -124,10 +127,10 @@ export function useAgregarCadenitaAlDespacho() {
       queryClient.invalidateQueries({ queryKey: ['despacho', variables.idDespacho] })
       queryClient.invalidateQueries({ queryKey: ['despacho-sacas', variables.idDespacho] })
       const n = saca?.idPaquetes?.length ?? 0
-      toast.success(`Saca Cadenita creada con ${n} guía(s)`)
+      notify.success(`Saca Cadenita creada con ${n} guía(s)`)
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al agregar Cadenita al despacho'))
+      notify.error(error, 'No se pudo agregar Cadenita al despacho')
     },
   })
 }
@@ -142,10 +145,10 @@ export function useMarcarDespachado() {
       queryClient.invalidateQueries({ queryKey: ['despacho', idDespacho] })
       queryClient.invalidateQueries({ queryKey: ['despacho-sacas', idDespacho] })
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
-      toast.success(`${paquetesMarcados} paquete(s) marcado(s) como despachado(s)`)
+      notify.success(`${paquetesMarcados} paquete(s) marcado(s) como despachado(s)`)
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al marcar paquetes como despachados'))
+      notify.error(error, 'No se pudieron marcar los paquetes como despachados')
     },
   })
 }
@@ -158,10 +161,10 @@ export function useMarcarDespachadoBatch() {
     onSuccess: (paquetesMarcados) => {
       queryClient.invalidateQueries({ queryKey: ['despachos'] })
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
-      toast.success(`${paquetesMarcados} paquete(s) marcado(s) como despachado(s)`)
+      notify.success(`${paquetesMarcados} paquete(s) marcado(s) como despachado(s)`)
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al marcar paquetes como despachados'))
+      notify.error(error, 'No se pudieron marcar los paquetes como despachados')
     },
   })
 }

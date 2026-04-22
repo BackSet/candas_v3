@@ -1,20 +1,35 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { manifiestoConsolidadoService } from '@/lib/api/manifiesto-consolidado.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
-import type { CrearManifiestoConsolidadoDTO, ManifiestoConsolidadoResumen } from '@/types/manifiesto-consolidado'
+import {
+  manifiestoConsolidadoService,
+  type ManifiestoConsolidadoFindAllParams,
+} from '@/lib/api/manifiesto-consolidado.service'
+import type { CrearManifiestoConsolidadoDTO } from '@/types/manifiesto-consolidado'
 import { useAuthStore } from '@/stores/authStore'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
 
 function assertAgenciaActivaSeleccionada() {
   assertAgenciaOrigenActivaSeleccionadaParaCreacion()
 }
 
-export function useManifiestosConsolidados(page: number = 0, size: number = 20) {
+export type UseManifiestosConsolidadosParams = ManifiestoConsolidadoFindAllParams
+
+export function useManifiestosConsolidados(params: UseManifiestosConsolidadosParams = {}) {
+  const { page = 0, size = 20, search, idAgencia, mes, anio } = params
   const activeAgencyId = useAuthStore((state) => state.activeAgencyId)
   return useQuery({
-    queryKey: ['manifiestos-consolidados', activeAgencyId, page, size],
-    queryFn: () => manifiestoConsolidadoService.findAll(page, size),
+    queryKey: [
+      'manifiestos-consolidados',
+      activeAgencyId,
+      page,
+      size,
+      search,
+      idAgencia,
+      mes,
+      anio,
+    ],
+    queryFn: () =>
+      manifiestoConsolidadoService.findAll({ page, size, search, idAgencia, mes, anio }),
   })
 }
 
@@ -27,8 +42,6 @@ export function useManifiestoConsolidado(id: number | undefined) {
   })
 }
 
-
-
 export function useCreateManifiestoConsolidado() {
   const queryClient = useQueryClient()
 
@@ -40,10 +53,10 @@ export function useCreateManifiestoConsolidado() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manifiestos-consolidados'] })
-      toast.success('Manifiesto consolidado generado exitosamente')
+      notify.success('Manifiesto consolidado generado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al generar el manifiesto consolidado'))
+      notify.error(error, 'No se pudo generar el manifiesto consolidado')
     },
   })
 }
@@ -57,10 +70,10 @@ export function useDeleteManifiestoConsolidado() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manifiestos-consolidados'] })
-      toast.success('Manifiesto consolidado eliminado exitosamente')
+      notify.success('Manifiesto consolidado eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el manifiesto consolidado'))
+      notify.error(error, 'No se pudo eliminar el manifiesto consolidado')
     },
   })
 }

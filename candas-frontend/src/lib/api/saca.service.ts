@@ -3,13 +3,24 @@ import { API_ENDPOINTS } from './endpoints'
 import type { Saca, SacaPage } from '@/types/saca'
 import type { Paquete } from '@/types/paquete'
 
+export interface SacaFindAllParams {
+  page?: number
+  size?: number
+  search?: string
+  idDespacho?: number
+  tamano?: string
+}
+
 export const sacaService = {
-  async findAll(page: number = 0, size: number = 20): Promise<SacaPage> {
+  async findAll(params: SacaFindAllParams = {}): Promise<SacaPage> {
+    const { page = 0, size = 20, search, idDespacho, tamano } = params
+    const query: Record<string, string | number> = { page, size }
+    if (search?.trim()) query.search = search.trim()
+    if (idDespacho != null) query.idDespacho = idDespacho
+    if (tamano && tamano !== 'all') query.tamano = tamano
     const response = await apiClient.get<SacaPage>(
       API_ENDPOINTS.SACAS.BASE,
-      {
-        params: { page, size },
-      }
+      { params: query }
     )
     return response.data
   },

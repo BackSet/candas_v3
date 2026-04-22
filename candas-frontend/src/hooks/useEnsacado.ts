@@ -1,10 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ensacadoService } from '@/lib/api/ensacado.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
-import type {
-  PaqueteEnsacadoInfo,
-} from '@/types/ensacado'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 /** No usar como guía cadenas que parezcan mensajes de error del backend (evita 404 con "null identifier..."). */
 export function esGuiaValidaParaBuscar(guia: string | undefined): boolean {
@@ -34,10 +30,10 @@ export function useMarcarEnsacado() {
       queryClient.invalidateQueries({ queryKey: ['ensacado-despachos'] })
       queryClient.invalidateQueries({ queryKey: ['ensacado-despacho'] })
       queryClient.invalidateQueries({ queryKey: ['ensacado-session'] })
-      toast.success('Paquete marcado como ensacado')
+      notify.success('Paquete marcado como ensacado')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al marcar el paquete como ensacado'))
+      notify.error(error, 'No se pudo marcar el paquete como ensacado')
     },
   })
 }
@@ -70,7 +66,7 @@ export function useActualizarUltimaBusqueda() {
       queryClient.invalidateQueries({ queryKey: ['ensacado-session'] })
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'No se pudo sincronizar con la vista en curso'))
+      notify.error(error, 'No se pudo sincronizar con la vista en curso')
     },
   })
 }

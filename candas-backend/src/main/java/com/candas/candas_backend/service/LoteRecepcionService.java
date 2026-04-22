@@ -89,8 +89,18 @@ public class LoteRecepcionService {
     }
 
     public Page<LoteRecepcionDTO> findAll(Pageable pageable, String search, TipoLote tipoLote) {
-        Long idAg = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
-        var spec = LoteRecepcionSpecs.withFilters(search, tipoLote, idAg);
+        return findAll(pageable, search, tipoLote, null, null, null);
+    }
+
+    public Page<LoteRecepcionDTO> findAll(
+            Pageable pageable,
+            String search,
+            TipoLote tipoLote,
+            Long idAgencia,
+            LocalDateTime fechaDesde,
+            LocalDateTime fechaHasta) {
+        Long idAgRestringida = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
+        var spec = LoteRecepcionSpecs.withFilters(search, tipoLote, idAgencia, fechaDesde, fechaHasta, idAgRestringida);
         return loteRecepcionRepository.findAll(spec, pageable).map(this::toDTO);
     }
 

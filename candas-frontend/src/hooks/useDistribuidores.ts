@@ -1,13 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { distribuidorService } from '@/lib/api/distribuidor.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Distribuidor } from '@/types/distribuidor'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
-export function useDistribuidores(page: number = 0, size: number = 20) {
+export interface UseDistribuidoresParams {
+  page?: number
+  size?: number
+  search?: string
+  activa?: boolean
+}
+
+export function useDistribuidores(params: UseDistribuidoresParams = {}) {
+  const { page = 0, size = 20, search, activa } = params
   return useQuery({
-    queryKey: ['distribuidores', page, size],
-    queryFn: () => distribuidorService.findAll(page, size),
+    queryKey: ['distribuidores', page, size, search ?? null, activa ?? null],
+    queryFn: () => distribuidorService.findAll({ page, size, search, activa }),
   })
 }
 
@@ -25,10 +32,10 @@ export function useCreateDistribuidor() {
     mutationFn: (distribuidor: Distribuidor) => distribuidorService.create(distribuidor),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['distribuidores'] })
-      toast.success('Distribuidor creado exitosamente')
+      notify.success('Distribuidor creado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el distribuidor'))
+      notify.error(error, 'Error al crear el distribuidor')
     },
   })
 }
@@ -41,10 +48,10 @@ export function useUpdateDistribuidor() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['distribuidores'] })
       queryClient.invalidateQueries({ queryKey: ['distribuidor', variables.id] })
-      toast.success('Distribuidor actualizado exitosamente')
+      notify.success('Distribuidor actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el distribuidor'))
+      notify.error(error, 'Error al actualizar el distribuidor')
     },
   })
 }
@@ -55,10 +62,10 @@ export function useDeleteDistribuidor() {
     mutationFn: (id: number) => distribuidorService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['distribuidores'] })
-      toast.success('Distribuidor eliminado exitosamente')
+      notify.success('Distribuidor eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el distribuidor'))
+      notify.error(error, 'Error al eliminar el distribuidor')
     },
   })
 }
@@ -68,7 +75,7 @@ export function useBuscarOCrearDistribuidor() {
     mutationFn: ({ nombre, codigo }: { nombre?: string; codigo?: string }) =>
       distribuidorService.buscarOCrear(nombre, codigo),
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al buscar o crear el distribuidor'))
+      notify.error(error, 'Error al buscar o crear el distribuidor')
     },
   })
 }

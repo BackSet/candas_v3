@@ -4,6 +4,7 @@ import com.candas.candas_backend.dto.DistribuidorDTO;
 import com.candas.candas_backend.entity.Distribuidor;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.repository.DistribuidorRepository;
+import com.candas.candas_backend.repository.spec.DistribuidorSpecs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,15 @@ public class DistribuidorService {
     }
 
     public Page<DistribuidorDTO> findAll(Pageable pageable) {
-        return distribuidorRepository.findAll(pageable).map(this::toDTO);
+        return findAll(pageable, null, null);
+    }
+
+    public Page<DistribuidorDTO> findAll(Pageable pageable, String search, Boolean activa) {
+        boolean sinFiltros = (search == null || search.isBlank()) && activa == null;
+        if (sinFiltros) {
+            return distribuidorRepository.findAll(pageable).map(this::toDTO);
+        }
+        return distribuidorRepository.findAll(DistribuidorSpecs.withFilters(search, activa), pageable).map(this::toDTO);
     }
 
     public DistribuidorDTO findById(Long id) {

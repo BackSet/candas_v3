@@ -29,7 +29,7 @@ export function GlobalCommandPalette() {
     const debouncedCommandSearch = useDebounce(commandSearch, 300)
 
     // Búsqueda para el Command Palette resources
-    const { data: commandSearchResults } = usePaquetes(0, 5, debouncedCommandSearch)
+    const { data: commandSearchResults } = usePaquetes({ page: 0, size: 5, search: debouncedCommandSearch })
 
     // Efecto para atajo de teclado Cmd+K / Ctrl+K
     useEffect(() => {

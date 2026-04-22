@@ -28,10 +28,26 @@ public class SacaController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar sacas")
+    @Operation(summary = "Listar sacas", description = "Lista paginada con filtros opcionales: search (codigoQR, manifiesto), idDespacho, tamano.")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.SACAS_LISTAR + "') or hasAuthority('" + PermissionConstants.SACAS_VER + "')")
-    public ResponseEntity<Page<SacaDTO>> findAll(Pageable pageable) {
-        return ResponseEntity.ok(sacaService.findAll(pageable));
+    public ResponseEntity<Page<SacaDTO>> findAll(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long idDespacho,
+            @RequestParam(required = false) String tamano) {
+        com.candas.candas_backend.entity.enums.TamanoSaca tamanoEnum = parseTamano(tamano);
+        return ResponseEntity.ok(sacaService.findAll(pageable, search, idDespacho, tamanoEnum));
+    }
+
+    private static com.candas.candas_backend.entity.enums.TamanoSaca parseTamano(String tamano) {
+        if (tamano == null || tamano.isBlank() || "all".equalsIgnoreCase(tamano)) {
+            return null;
+        }
+        try {
+            return com.candas.candas_backend.entity.enums.TamanoSaca.valueOf(tamano.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     @GetMapping("/search")

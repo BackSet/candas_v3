@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils'
 import AgregarPaquetesDialog from './AgregarPaquetesDialog'
 import { EstadoPaquete } from '@/types/paquete'
 import { StatusBadge } from '@/components/detail/StatusBadge'
-import { EmptyState, LoadingState } from '@/components/states'
+import { EmptyState, DetailSkeleton } from '@/components/states'
 import { ErrorState } from '@/components/states/ErrorState'
 import { CAPACIDADES_SACA_KG } from '@/types/saca'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
@@ -70,7 +70,11 @@ export default function SacaDetail() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Cargando saca..." />
+    return (
+      <DetailPageLayout title="Cargando saca..." backUrl="/sacas" maxWidth="xl">
+        <DetailSkeleton />
+      </DetailPageLayout>
+    )
   }
 
   if (!saca) {

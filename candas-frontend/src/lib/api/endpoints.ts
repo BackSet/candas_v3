@@ -111,6 +111,7 @@ export const API_ENDPOINTS = {
   // Destinatarios Directos
   DESTINATARIOS_DIRECTOS: {
     BASE: '/api/v1/destinatarios-directos',
+    ALL: '/api/v1/destinatarios-directos/all',
     BY_ID: (id: number) => `/api/v1/destinatarios-directos/${id}`,
     SEARCH: '/api/v1/destinatarios-directos/search',
   },

@@ -3,14 +3,20 @@ import { agenciaService } from '@/lib/api/agencia.service'
 import type { Agencia } from '@/types/agencia'
 import { showMutationError, showMutationSuccess } from '@/hooks/mutationFeedback'
 
-export function useAgencias(
-  page: number = 0,
-  size: number = 20,
-  filters?: { search?: string; nombre?: string; codigo?: string; activa?: boolean }
-) {
+export interface UseAgenciasParams {
+  page?: number
+  size?: number
+  search?: string
+  nombre?: string
+  codigo?: string
+  activa?: boolean
+}
+
+export function useAgencias(params: UseAgenciasParams = {}) {
+  const { page = 0, size = 20, search, nombre, codigo, activa } = params
   return useQuery({
-    queryKey: ['agencias', page, size, filters],
-    queryFn: () => agenciaService.findAll(page, size, filters),
+    queryKey: ['agencias', page, size, search ?? null, nombre ?? null, codigo ?? null, activa ?? null],
+    queryFn: () => agenciaService.findAll({ page, size, search, nombre, codigo, activa }),
   })
 }
 

@@ -2,19 +2,39 @@ import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
 import type { AtencionPaquete, AtencionPaquetePage } from '@/types/atencion-paquete'
 
+export interface AtencionPaqueteFindAllParams {
+  page?: number
+  size?: number
+  estado?: string
+  search?: string
+  tipoProblema?: string
+  fechaDesde?: string
+  fechaHasta?: string
+  idAgencia?: number
+}
+
 export const atencionPaqueteService = {
-  async findAll(
-    page: number = 0,
-    size: number = 20,
-    estado?: string,
-    search?: string
-  ): Promise<AtencionPaquetePage> {
-    const params: Record<string, string | number> = { page, size }
-    if (estado && estado !== 'all') params.estado = estado
-    if (search?.trim()) params.search = search.trim()
+  async findAll(params: AtencionPaqueteFindAllParams = {}): Promise<AtencionPaquetePage> {
+    const {
+      page = 0,
+      size = 20,
+      estado,
+      search,
+      tipoProblema,
+      fechaDesde,
+      fechaHasta,
+      idAgencia,
+    } = params
+    const query: Record<string, string | number> = { page, size }
+    if (estado && estado !== 'all') query.estado = estado
+    if (search?.trim()) query.search = search.trim()
+    if (tipoProblema && tipoProblema !== 'all') query.tipoProblema = tipoProblema
+    if (fechaDesde) query.fechaDesde = fechaDesde
+    if (fechaHasta) query.fechaHasta = fechaHasta
+    if (idAgencia != null) query.idAgencia = idAgencia
     const response = await apiClient.get<AtencionPaquetePage>(
       API_ENDPOINTS.ATENCION_PAQUETES.BASE,
-      { params }
+      { params: query }
     )
     return response.data
   },

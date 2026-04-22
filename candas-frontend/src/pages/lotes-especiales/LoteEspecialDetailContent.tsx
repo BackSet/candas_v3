@@ -48,8 +48,8 @@ import { generarExcelLoteRecepcion } from '@/utils/generarExcelLoteRecepcion'
 import { instruccionDeObservaciones } from '@/utils/observacionesDespacho'
 import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
-import { LoadingState } from '@/components/states'
-import { toast } from 'sonner'
+import { DetailSkeleton } from '@/components/states'
+import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
 
 const SIN_ETIQUETA_KEY = '__SIN_ETIQUETA__'
@@ -86,6 +86,8 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
   const [showDialogImprimir, setShowDialogImprimir] = useState(false)
   const [tipoImpresion, setTipoImpresion] = useState('TODOS')
   const [imprimiendo, setImprimiendo] = useState(false)
+  const [exportandoPdf, setExportandoPdf] = useState<string | null>(null)
+  const [exportandoExcel, setExportandoExcel] = useState(false)
   const [paqueteParaAtencion, setPaqueteParaAtencion] = useState<Paquete | null>(null)
   const [showAgregarAtencionDialog, setShowAgregarAtencionDialog] = useState(false)
 
@@ -96,11 +98,11 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', id] })
       setAsignarEtiquetaPaquete(null)
       setAsignarEtiquetaValor('')
-      toast.success('Etiqueta asignada')
+      notify.success('Etiqueta asignada')
     },
     onError: (err: unknown) => {
       const msg = getApiErrorMessage(err, 'Error')
-      toast.error(msg)
+      notify.error(msg)
     },
   })
 
@@ -138,24 +140,28 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
 
   const handleExportPdf = async (tipo: string) => {
     if (!lote) return
+    setExportandoPdf(tipo)
+    const toastId = notify.start('Generando PDF...')
     try {
-      toast.info('Generando PDF...')
       const filtrados = filtrarPaquetesPorTipo(paquetes, tipo)
       await descargarPDFLoteEspecial(
         filtrados,
         lote.numeroRecepcion ?? String(id),
         tipo || 'TODOS'
       )
-      toast.success('PDF descargado exitosamente')
+      notify.finish(toastId, 'PDF descargado exitosamente')
     } catch (err) {
       console.error('Error al generar PDF:', err)
-      toast.error(err instanceof Error ? err.message : 'Error al generar el PDF')
+      notify.fail(toastId, err instanceof Error ? err.message : 'Error al generar el PDF')
+    } finally {
+      setExportandoPdf(null)
     }
   }
 
   const handleImprimir = async () => {
     if (!lote) return
     setImprimiendo(true)
+    const toastId = notify.start('Preparando impresión...')
     try {
       const filtrados = filtrarPaquetesPorTipo(paquetes, tipoImpresion)
       await imprimirLoteEspecial(
@@ -164,10 +170,10 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
         tipoImpresion || 'TODOS'
       )
       setShowDialogImprimir(false)
-      toast.success('Ventana de impresión abierta')
+      notify.finish(toastId, 'Ventana de impresión abierta')
     } catch (err) {
       console.error('Error al imprimir:', err)
-      toast.error(err instanceof Error ? err.message : 'Error al abrir la impresión')
+      notify.fail(toastId, err instanceof Error ? err.message : 'Error al abrir la impresión')
     } finally {
       setImprimiendo(false)
     }
@@ -175,9 +181,11 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
 
   const handleExportExcel = () => {
     if (!lote || !paquetes.length) {
-      toast.error('No hay paquetes para exportar')
+      notify.error('No hay paquetes para exportar')
       return
     }
+    setExportandoExcel(true)
+    const toastId = notify.start('Generando Excel...')
     try {
       const now = new Date()
       const fecha = now.toISOString().slice(0, 10)
@@ -189,9 +197,11 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
         lote.numeroRecepcion ?? String(id),
         true
       )
-      toast.success('Excel exportado')
+      notify.finish(toastId, 'Excel exportado')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al exportar Excel')
+      notify.fail(toastId, err instanceof Error ? err.message : 'Error al exportar Excel')
+    } finally {
+      setExportandoExcel(false)
     }
   }
 
@@ -200,7 +210,7 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
   if (isLoading || !lote) {
     return (
       <DetailPageLayout title="Cargando..." backUrl={backUrl} maxWidth="2xl">
-        <LoadingState />
+        <DetailSkeleton />
       </DetailPageLayout>
     )
   }
@@ -234,29 +244,67 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
             <div className="w-px h-3.5 bg-border/60 mx-1" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 text-muted-foreground hover:text-foreground">
-                  <Download className="h-3.5 w-3.5 mr-1.5" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-muted-foreground hover:text-foreground"
+                  disabled={exportandoExcel || exportandoPdf !== null}
+                >
+                  {exportandoExcel || exportandoPdf !== null ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                  )}
                   Exportar
                   <Download className="h-3 w-3 ml-1 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
-                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                <DropdownMenuItem
+                  onClick={handleExportExcel}
+                  disabled={exportandoExcel}
+                  className="gap-2"
+                >
+                  {exportandoExcel ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                  )}
                   <span>Excel (Todos)</span>
                 </DropdownMenuItem>
                 <Separator className="my-1" />
-                <DropdownMenuItem onClick={() => handleExportPdf('TODOS')} className="gap-2">
-                  <FileDown className="h-4 w-4 text-red-600" />
+                <DropdownMenuItem
+                  onClick={() => handleExportPdf('TODOS')}
+                  disabled={exportandoPdf !== null}
+                  className="gap-2"
+                >
+                  {exportandoPdf === 'TODOS' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileDown className="h-4 w-4 text-red-600" />
+                  )}
                   <span>PDF - Todos</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExportPdf('SIN_ETIQUETA')}>
+                <DropdownMenuItem
+                  onClick={() => handleExportPdf('SIN_ETIQUETA')}
+                  disabled={exportandoPdf !== null}
+                  className="gap-2"
+                >
+                  {exportandoPdf === 'SIN_ETIQUETA' && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
                   PDF - Sin Etiqueta
                 </DropdownMenuItem>
                 {tabsEtiquetas
                   .filter((t) => t !== SIN_ETIQUETA_KEY && t !== VARIAS_LISTAS_KEY)
                   .map((etq) => (
-                    <DropdownMenuItem key={etq} onClick={() => handleExportPdf(etq)}>
+                    <DropdownMenuItem
+                      key={etq}
+                      onClick={() => handleExportPdf(etq)}
+                      disabled={exportandoPdf !== null}
+                      className="gap-2"
+                    >
+                      {exportandoPdf === etq && <Loader2 className="h-4 w-4 animate-spin" />}
                       PDF - {etq}
                     </DropdownMenuItem>
                   ))}
@@ -268,8 +316,13 @@ export function LoteEspecialDetailContent({ id, backUrl }: LoteEspecialDetailCon
               size="sm"
               className="h-7 text-muted-foreground hover:text-foreground"
               onClick={() => setShowDialogImprimir(true)}
+              disabled={imprimiendo}
             >
-              <Printer className="h-3.5 w-3.5 mr-1.5" />
+              {imprimiendo ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Printer className="h-3.5 w-3.5 mr-1.5" />
+              )}
               Imprimir
             </Button>
           </div>

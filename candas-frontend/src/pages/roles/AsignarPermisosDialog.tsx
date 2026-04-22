@@ -28,7 +28,7 @@ export default function AsignarPermisosDialog({
 }: AsignarPermisosDialogProps) {
   const [selectedPermisos, setSelectedPermisos] = useState<number[]>([])
   const [busqueda, setBusqueda] = useState('')
-  const { data: permisosData } = usePermisos(0, 100)
+  const { data: permisosData } = usePermisos({ page: 0, size: 100 })
   const { data: permisosActuales } = usePermisosRol(open && rolId ? rolId : undefined)
   const asignarMutation = useAsignarPermisosRol()
 

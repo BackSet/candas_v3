@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type FieldValues, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -22,16 +21,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useLoteRecepcion, useCreateLoteRecepcion, useUpdateLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { useAgencias } from '@/hooks/useSelectOptions'
 import { useAuthStore } from '@/stores/authStore'
-import { CheckCircle2, Package, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
-import { Label } from '@/components/ui/label'
-import { FormError } from '@/components/ui/form-error'
-import { SectionTitle } from '@/components/ui/section-title'
-import { LoadingState } from '@/components/states'
+import { CheckCircle2, Package, ArrowRight } from 'lucide-react'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
 import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
+import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
 import {
   loteRecepcionSchema,
   loteRecepcionFormDataToDto,
@@ -51,7 +45,12 @@ interface LoteRecepcionFormProps {
   subtitle?: string
 }
 
-export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaultTipoLote, title, subtitle }: LoteRecepcionFormProps = {}) {
+export default function LoteRecepcionForm({
+  backUrl = '/lotes-recepcion',
+  defaultTipoLote,
+  title,
+  subtitle,
+}: LoteRecepcionFormProps = {}) {
   const navigate = useNavigate()
   const { id } = useParams({ strict: false })
   const isEdit = !!id
@@ -61,11 +60,22 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [nuevoLoteRecepcionId, setNuevoLoteRecepcionId] = useState<number | null>(null)
 
-  const { data: loteRecepcion, isLoading: loadingLoteRecepcion } = useLoteRecepcion(id ? Number(id) : undefined)
-  const { data: agencias = [] } = useAgencias()
+  const {
+    data: loteRecepcion,
+    isLoading: loadingLoteRecepcion,
+    error: loadError,
+    refetch,
+  } = useLoteRecepcion(id ? Number(id) : undefined)
   const createMutation = useCreateLoteRecepcion()
   const updateMutation = useUpdateLoteRecepcion()
 
+  const form = useForm<LoteRecepcionFormData>({
+    resolver: zodResolver(loteRecepcionSchema),
+    defaultValues: {
+      ...defaultLoteRecepcionFormData(user?.nombreCompleto, activeAgencyId ?? user?.idAgencia),
+      tipoLote: (defaultTipoLote === 'ESPECIAL' ? 'ESPECIAL' : 'NORMAL') as 'NORMAL' | 'ESPECIAL',
+    },
+  })
   const {
     register,
     control,
@@ -74,13 +84,7 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
     setValue,
     watch,
     reset,
-  } = useForm<LoteRecepcionFormData>({
-    resolver: zodResolver(loteRecepcionSchema),
-    defaultValues: {
-      ...defaultLoteRecepcionFormData(user?.nombreCompleto, activeAgencyId ?? user?.idAgencia),
-      tipoLote: (defaultTipoLote === 'ESPECIAL' ? 'ESPECIAL' : 'NORMAL') as 'NORMAL' | 'ESPECIAL',
-    },
-  })
+  } = form
 
   // Al crear lote nuevo, refrescar usuario para obtener idAgencia actualizado desde el backend
   useEffect(() => {
@@ -123,7 +127,7 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
         setNuevoLoteRecepcionId(nuevoLoteRecepcion.idLoteRecepcion || null)
         setShowSuccessDialog(true)
       }
-    } catch (error) {
+    } catch {
       // Error ya manejado en el hook
     }
   }
@@ -135,176 +139,140 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
 
   const handleIrAlLote = () => {
     setShowSuccessDialog(false)
-    if (nuevoLoteRecepcionId) navigate({ to: '/lotes-recepcion/$id', params: { id: String(nuevoLoteRecepcionId) } })
+    if (nuevoLoteRecepcionId)
+      navigate({ to: '/lotes-recepcion/$id', params: { id: String(nuevoLoteRecepcionId) } })
     else navigate({ to: backUrl as never })
   }
 
-  if (isEdit && loadingLoteRecepcion) {
-    return <LoadingState label="Cargando formulario..." />
-  }
+  const isSaving = createMutation.isPending || updateMutation.isPending
+  const isLoading = isEdit && loadingLoteRecepcion
 
   return (
-    <StandardPageLayout
-      width="lg"
-      spacing="6"
-      title={title ?? (isEdit ? 'Editar Lote de Recepción' : 'Nuevo Lote de Recepción')}
-      subtitle={
-        subtitle ??
-        (isEdit
-          ? 'Modifica la información del lote de recepción'
-          : 'Crea un lote normal o especial; la gestión de paquetes (importar o tipiar) se hace desde el detalle del lote.')
-      }
-      icon={<Package className="h-4 w-4" />}
-      actions={
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: backUrl as never })} className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver
-        </Button>
-      }
-    >
-      <Card>
-        <CardHeader>
-          <SectionTitle
+    <>
+      <FormPageLayout
+        title={title ?? (isEdit ? 'Editar Lote de Recepción' : 'Nuevo Lote de Recepción')}
+        subtitle={
+          subtitle ??
+          (isEdit
+            ? 'Modifica la información del lote de recepción'
+            : 'Crea un lote normal o especial; la gestión de paquetes (importar o tipiar) se hace desde el detalle del lote.')
+        }
+        backUrl={backUrl}
+        formId="lote-recepcion-form"
+        isLoading={isLoading}
+        loadError={loadError}
+        onRetry={() => void refetch()}
+        isSubmitting={isSaving}
+        errors={errors as unknown as Record<string, unknown>}
+        form={form as unknown as UseFormReturn<FieldValues>}
+        width="lg"
+        primaryAction={{
+          label: isEdit ? 'Actualizar Recepción' : 'Crear Recepción',
+          icon: isEdit ? undefined : ArrowRight,
+          loadingLabel: 'Guardando...',
+        }}
+      >
+        <form
+          id="lote-recepcion-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-5"
+        >
+          <AssignedAgencyNotice />
+
+          <FormSection
             title={isEdit ? 'Información de la Recepción' : 'Datos de la Recepción'}
-            variant="form"
-            icon={<Package className="h-5 w-5 mr-2 text-muted-foreground" />}
-            as="h2"
-          />
-          <CardDescription>
-            {isEdit
-              ? 'Modifica los datos de la recepción'
-              : 'Completa los campos. Puedes crear lote normal o especial; la importación de paquetes o el tipiado se hace desde el detalle del lote.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <AssignedAgencyNotice />
+            description={
+              isEdit
+                ? 'Modifica los datos de la recepción.'
+                : 'Completa los campos. Puedes crear lote normal o especial; la importación de paquetes o el tipiado se hace desde el detalle del lote.'
+            }
+            icon={Package}
+            cols={2}
+          >
+            {!isEdit && (
+              <FieldRow label="Tipo de lote" htmlFor="tipoLote" hint="Especial: podrás tipiar paquetes y clasificarlos por etiqueta al abrir el lote.">
+                <Select
+                  value={watch('tipoLote') || 'NORMAL'}
+                  onValueChange={(value) =>
+                    setValue('tipoLote', value as 'NORMAL' | 'ESPECIAL', { shouldDirty: true })
+                  }
+                >
+                  <SelectTrigger id="tipoLote" className="h-9">
+                    <SelectValue placeholder="Tipo de lote" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NORMAL">Normal</SelectItem>
+                    <SelectItem value="ESPECIAL">
+                      Especial (tipiar y clasificar por etiqueta)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FieldRow>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {!isEdit && (
-                <div className="space-y-2">
-                  <Label htmlFor="tipoLote">Tipo de lote</Label>
-                  <Select
-                    value={watch('tipoLote') || 'NORMAL'}
-                    onValueChange={(value) => setValue('tipoLote', value as 'NORMAL' | 'ESPECIAL', { shouldValidate: true })}
-                  >
-                    <SelectTrigger id="tipoLote">
-                      <SelectValue placeholder="Tipo de lote" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NORMAL">Normal</SelectItem>
-                      <SelectItem value="ESPECIAL">Especial (tipiar y clasificar por etiqueta)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Especial: podrás tipiar paquetes y clasificarlos por etiqueta al abrir el lote.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="fechaRecepcion">
-                  Fecha y Hora de Recepción <span className="text-destructive">*</span>
-                </Label>
-                <Controller
-                  name="fechaRecepcion"
-                  control={control}
-                  render={({ field }) => (
-                    <DateTimePickerForm
-                      id="fechaRecepcion"
-                      value={field.value}
-                      onChange={field.onChange}
-                    />
-                  )}
-                />
-                <FormError message={errors.fechaRecepcion?.message} showIcon />
-                {!errors.fechaRecepcion && watch('fechaRecepcion') && (
-                  <p className="text-xs text-muted-foreground">Fecha configurada</p>
+            <FieldRow
+              label="Fecha y Hora de Recepción"
+              required
+              htmlFor="fechaRecepcion"
+              error={errors.fechaRecepcion}
+              hint={watch('fechaRecepcion') ? 'Fecha configurada' : undefined}
+            >
+              <Controller
+                name="fechaRecepcion"
+                control={control}
+                render={({ field }) => (
+                  <DateTimePickerForm
+                    id="fechaRecepcion"
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
                 )}
-              </div>
-            </div>
+              />
+            </FieldRow>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="usuarioRegistro">
-                  Usuario de Registro <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="usuarioRegistro"
-                  {...register('usuarioRegistro')}
-                  className={errors.usuarioRegistro ? 'border-destructive' : ''}
-                  placeholder="Usuario que registra la recepción"
-                  disabled
-                  readOnly
-                />
-                {!isEdit && (
-                  <p className="text-xs text-muted-foreground">
-                    Se usa automáticamente el usuario registrado: <span className="font-medium">{user?.nombreCompleto || 'No disponible'}</span>
-                  </p>
-                )}
-                <FormError message={errors.usuarioRegistro?.message} showIcon />
-                {!errors.usuarioRegistro && watch('usuarioRegistro') && isEdit && (
-                  <p className="text-xs text-muted-foreground">Usuario registrado</p>
-                )}
-              </div>
+            <FieldRow
+              label="Usuario de Registro"
+              required
+              htmlFor="usuarioRegistro"
+              error={errors.usuarioRegistro}
+              hint={
+                !isEdit
+                  ? `Se usa automáticamente: ${user?.nombreCompleto || 'No disponible'}`
+                  : undefined
+              }
+            >
+              <Input
+                id="usuarioRegistro"
+                {...register('usuarioRegistro')}
+                placeholder="Usuario que registra la recepción"
+                disabled
+                readOnly
+              />
+            </FieldRow>
 
-              <div className="space-y-2">
-                <Label htmlFor="numeroRecepcion">
-                  Número de Recepción <span className="text-xs text-muted-foreground font-normal">(Opcional)</span>
-                </Label>
-                <Input
-                  id="numeroRecepcion"
-                  {...register('numeroRecepcion')}
-                  placeholder="Se generará automáticamente si se deja vacío"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Si no ingresas un número, se generará automáticamente
-                </p>
-              </div>
-            </div>
+            <FieldRow
+              label="Número de Recepción"
+              htmlFor="numeroRecepcion"
+              hint="Si no ingresas un número, se generará automáticamente."
+            >
+              <Input
+                id="numeroRecepcion"
+                {...register('numeroRecepcion')}
+                placeholder="Se generará automáticamente si se deja vacío"
+              />
+            </FieldRow>
 
-            <div className="space-y-2">
-              <Label htmlFor="observaciones">
-                Observaciones <span className="text-xs text-muted-foreground font-normal">(Opcional)</span>
-              </Label>
+            <FieldRow label="Observaciones" htmlFor="observaciones" span="full">
               <Textarea
                 id="observaciones"
                 {...register('observaciones')}
                 placeholder="Notas adicionales sobre esta recepción..."
                 rows={3}
               />
-            </div>
-
-            <div className="flex gap-3 justify-end pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate({ to: backUrl })}
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="min-w-[120px]"
-              >
-                {createMutation.isPending || updateMutation.isPending ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Guardando...
-                  </span>
-                ) : isEdit ? (
-                  'Actualizar Recepción'
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Crear Recepción <ArrowRight className="h-4 w-4" />
-                  </span>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </FieldRow>
+          </FormSection>
+        </form>
+      </FormPageLayout>
 
       {/* Diálogo de éxito después de crear */}
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
@@ -317,7 +285,8 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
               <div>
                 <DialogTitle>Recepción creada</DialogTitle>
                 <DialogDescription className="mt-1">
-                  Desde el detalle del lote podrás importar paquetes (lote normal) o tipiar y clasificar por etiqueta (lote especial).
+                  Desde el detalle del lote podrás importar paquetes (lote normal) o tipiar y
+                  clasificar por etiqueta (lote especial).
                 </DialogDescription>
               </div>
             </div>
@@ -342,6 +311,6 @@ export default function LoteRecepcionForm({ backUrl = '/lotes-recepcion', defaul
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </StandardPageLayout>
+    </>
   )
 }

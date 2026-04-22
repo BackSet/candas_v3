@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
 import type { ManifiestoConsolidadoDetalle } from '@/types/manifiesto-consolidado'
 import { generarExcelManifiestoConsolidado } from '@/utils/generarExcelManifiestoConsolidado'
-import { FileSpreadsheet, AlertCircle } from 'lucide-react'
-import { toast } from 'sonner'
+import { FileSpreadsheet, AlertCircle, Loader2 } from 'lucide-react'
+import { notify } from '@/lib/notify'
 
 function obtenerFechaHoraActual(): string {
   const ahora = new Date()
@@ -49,16 +49,17 @@ export default function GenerarExcelDialog({
 
   const handleGenerar = () => {
     if (!fechaHora) {
-      toast.error('Por favor, completa la fecha y la hora')
+      notify.error('Por favor, completa la fecha y la hora')
       return
     }
     const [fecha, hora] = fechaHora.split('T')
     if (!fecha || !hora) {
-      toast.error('Por favor, completa la fecha y la hora correctamente')
+      notify.error('Por favor, completa la fecha y la hora correctamente')
       return
     }
 
     setIsGenerating(true)
+    const id = notify.start('Generando Excel del manifiesto…')
 
     try {
       generarExcelManifiestoConsolidado(manifiesto, fecha, hora)
@@ -74,10 +75,10 @@ export default function GenerarExcelDialog({
         }
       }
 
-      toast.success(`Excel generado exitosamente con ${totalPaquetes} paquete(s)`)
+      notify.finish(id, `Excel generado exitosamente con ${totalPaquetes} paquete(s)`)
       onOpenChange(false)
-    } catch (error: any) {
-      toast.error(error.message || 'Error al generar el archivo Excel')
+    } catch (error: unknown) {
+      notify.fail(id, error, 'No se pudo generar el archivo Excel')
     } finally {
       setIsGenerating(false)
     }
@@ -154,7 +155,10 @@ export default function GenerarExcelDialog({
             className="rounded-lg"
           >
             {isGenerating ? (
-              <>Generando...</>
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generando…
+              </>
             ) : (
               <>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />

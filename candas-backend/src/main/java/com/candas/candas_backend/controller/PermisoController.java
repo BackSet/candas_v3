@@ -28,10 +28,14 @@ public class PermisoController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar permisos")
+    @Operation(summary = "Listar permisos", description = "Lista paginada con filtros opcionales: search, recurso, accion.")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.PERMISOS_LISTAR + "') or hasAuthority('" + PermissionConstants.PERMISOS_VER + "')")
-    public ResponseEntity<Page<PermisoDTO>> findAll(Pageable pageable) {
-        return ResponseEntity.ok(permisoService.findAll(pageable));
+    public ResponseEntity<Page<PermisoDTO>> findAll(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String recurso,
+            @RequestParam(required = false) String accion) {
+        return ResponseEntity.ok(permisoService.findAll(pageable, search, recurso, accion));
     }
 
     @GetMapping("/search")

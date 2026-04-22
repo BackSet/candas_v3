@@ -42,10 +42,21 @@ public class AtencionPaqueteService {
     }
 
     public Page<AtencionPaqueteDTO> findAll(EstadoAtencion estado, String search, Pageable pageable) {
+        return findAll(estado, search, null, null, null, pageable);
+    }
+
+    public Page<AtencionPaqueteDTO> findAll(
+            EstadoAtencion estado,
+            String search,
+            com.candas.candas_backend.entity.enums.TipoProblemaAtencion tipoProblema,
+            LocalDateTime fechaDesde,
+            LocalDateTime fechaHasta,
+            Pageable pageable) {
         String searchTrimmed = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
-        EstadoAtencion estadoFilter = estado;
         Long idAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
-        return atencionPaqueteRepository.findAllFiltered(estadoFilter, searchTrimmed, idAgencia, pageable).map(this::toDTO);
+        return atencionPaqueteRepository
+                .findAllFiltered(estado, searchTrimmed, tipoProblema, fechaDesde, fechaHasta, idAgencia, pageable)
+                .map(this::toDTO);
     }
 
     public AtencionPaqueteDTO findById(Long id) {

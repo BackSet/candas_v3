@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { copyTextToClipboard } from '@/utils/clipboard'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 interface CopyActionButtonProps {
   textToCopy: string
@@ -34,8 +34,8 @@ export function CopyActionButton({
       title={title}
       onClick={async () => {
         const ok = await copyTextToClipboard(textToCopy)
-        if (ok) toast.success(successMessage)
-        else toast.error(errorMessage)
+        if (ok) notify.success(successMessage)
+        else notify.error(errorMessage)
       }}
     >
       {children ?? (

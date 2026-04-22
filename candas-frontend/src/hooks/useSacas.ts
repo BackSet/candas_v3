@@ -1,13 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { sacaService } from '@/lib/api/saca.service'
+import { sacaService, type SacaFindAllParams } from '@/lib/api/saca.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { Saca } from '@/types/saca'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
-export function useSacas(page: number = 0, size: number = 20) {
+export type UseSacasParams = SacaFindAllParams
+
+export function useSacas(params: UseSacasParams = {}) {
+  const { page = 0, size = 20, search, idDespacho, tamano } = params
   return useQuery({
-    queryKey: ['sacas', page, size],
-    queryFn: () => sacaService.findAll(page, size),
+    queryKey: ['sacas', page, size, search, idDespacho, tamano],
+    queryFn: () => sacaService.findAll({ page, size, search, idDespacho, tamano }),
   })
 }
 
@@ -34,10 +37,10 @@ export function useCreateSaca() {
     mutationFn: (dto: Saca) => sacaService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sacas'] })
-      toast.success('Saca creada exitosamente')
+      notify.success('Saca creada exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear la saca'))
+      notify.error(error, 'Error al crear la saca')
     },
   })
 }
@@ -51,10 +54,10 @@ export function useUpdateSaca() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['sacas'] })
       queryClient.invalidateQueries({ queryKey: ['saca', variables.id] })
-      toast.success('Saca actualizada exitosamente')
+      notify.success('Saca actualizada exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar la saca'))
+      notify.error(error, 'Error al actualizar la saca')
     },
   })
 }
@@ -66,10 +69,10 @@ export function useDeleteSaca() {
     mutationFn: (id: number) => sacaService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sacas'] })
-      toast.success('Saca eliminada exitosamente')
+      notify.success('Saca eliminada exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar la saca'))
+      notify.error(error, 'Error al eliminar la saca')
     },
   })
 }
@@ -84,10 +87,10 @@ export function useAgregarPaquetesSaca() {
       queryClient.invalidateQueries({ queryKey: ['sacas'] })
       queryClient.invalidateQueries({ queryKey: ['saca', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['saca-paquetes', variables.id] })
-      toast.success('Paquetes agregados exitosamente')
+      notify.success('Paquetes agregados exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al agregar los paquetes'))
+      notify.error(error, 'Error al agregar los paquetes')
     },
   })
 }
@@ -100,10 +103,10 @@ export function useCalcularPesoSaca() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['sacas'] })
       queryClient.invalidateQueries({ queryKey: ['saca', id] })
-      toast.success('Peso calculado exitosamente')
+      notify.success('Peso calculado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al calcular el peso'))
+      notify.error(error, 'Error al calcular el peso')
     },
   })
 }

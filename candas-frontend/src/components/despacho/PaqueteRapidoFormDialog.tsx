@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Loader2, Zap } from 'lucide-react'
 import { paqueteService } from '@/lib/api/paquete.service'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -54,10 +54,10 @@ export default function PaqueteRapidoFormDialog({
       onPaqueteCreado(paquete)
       reset()
       onOpenChange(false)
-      toast.success(`Paquete rápido creado: ${paquete.numeroGuia}`)
+      notify.success(`Paquete rápido creado: ${paquete.numeroGuia}`)
     } catch (error) {
       console.error(error)
-      toast.error('Error al crear paquete rápido')
+      notify.error('Error al crear paquete rápido')
     } finally {
       setLoading(false)
     }

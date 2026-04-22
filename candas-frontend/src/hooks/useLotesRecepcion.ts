@@ -1,20 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
+import {
+  loteRecepcionService,
+  type LoteRecepcionFindAllParams,
+} from '@/lib/api/lote-recepcion.service'
 import type { LoteRecepcion } from '@/types/lote-recepcion'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
-export function useLotesRecepcion(page: number = 0, size: number = 20, tipoLote?: string) {
+export type UseLotesRecepcionParams = LoteRecepcionFindAllParams
+
+export function useLotesRecepcion(params: UseLotesRecepcionParams = {}) {
+  const { page = 0, size = 20, search, tipoLote, idAgencia, fechaDesde, fechaHasta } = params
   return useQuery({
-    queryKey: ['lotes-recepcion', page, size, tipoLote],
-    queryFn: () => loteRecepcionService.findAll(page, size, tipoLote),
+    queryKey: ['lotes-recepcion', page, size, search, tipoLote, idAgencia, fechaDesde, fechaHasta],
+    queryFn: () =>
+      loteRecepcionService.findAll({ page, size, search, tipoLote, idAgencia, fechaDesde, fechaHasta }),
   })
 }
 
-export function useLotesEspeciales(page: number = 0, size: number = 20) {
+export type UseLotesEspecialesParams = Omit<LoteRecepcionFindAllParams, 'tipoLote'>
+
+export function useLotesEspeciales(params: UseLotesEspecialesParams = {}) {
+  const { page = 0, size = 20, search, idAgencia, fechaDesde, fechaHasta } = params
   return useQuery({
-    queryKey: ['lotes-especiales', page, size],
-    queryFn: () => loteRecepcionService.findAllEspeciales(page, size),
+    queryKey: ['lotes-especiales', page, size, search, idAgencia, fechaDesde, fechaHasta],
+    queryFn: () =>
+      loteRecepcionService.findAllEspeciales({ page, size, search, idAgencia, fechaDesde, fechaHasta }),
   })
 }
 
@@ -49,7 +59,7 @@ export function useCreateLoteRecepcion() {
       return data
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear el lote de recepción'))
+      notify.error(error, 'No se pudo crear el lote de recepción')
     },
   })
 }
@@ -64,10 +74,10 @@ export function useUpdateLoteRecepcion() {
       queryClient.invalidateQueries({ queryKey: ['lotes-recepcion'] })
       queryClient.invalidateQueries({ queryKey: ['lotes-especiales'] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion', variables.id] })
-      toast.success('Lote de recepción actualizado exitosamente')
+      notify.success('Lote de recepción actualizado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar el lote de recepción'))
+      notify.error(error, 'No se pudo actualizar el lote de recepción')
     },
   })
 }
@@ -80,10 +90,10 @@ export function useDeleteLoteRecepcion() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lotes-recepcion'] })
       queryClient.invalidateQueries({ queryKey: ['lotes-especiales'] })
-      toast.success('Lote de recepción eliminado exitosamente')
+      notify.success('Lote de recepción eliminado exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar el lote de recepción'))
+      notify.error(error, 'No se pudo eliminar el lote de recepción')
     },
   })
 }
@@ -99,10 +109,10 @@ export function useAgregarPaquetesLoteRecepcion() {
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes-no-encontrados', variables.id] })
-      toast.success('Paquetes agregados exitosamente')
+      notify.success('Paquetes agregados exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al agregar los paquetes'))
+      notify.error(error, 'No se pudieron agregar los paquetes')
     },
   })
 }
@@ -127,10 +137,10 @@ export function useAgregarHijosClementinaALote() {
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', variables.idLoteRecepcion] })
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['paquete', variables.idPaquetePadre] })
-      toast.success('Paquetes hijos agregados al lote exitosamente')
+      notify.success('Paquetes hijos agregados al lote exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al agregar los paquetes hijos al lote'))
+      notify.error(error, 'No se pudieron agregar los paquetes hijos al lote')
     },
   })
 }
@@ -147,10 +157,10 @@ export function useAgregarHijoClementinaPorGuiaALote() {
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', variables.idLoteRecepcion] })
       queryClient.invalidateQueries({ queryKey: ['paquetes'] })
       queryClient.invalidateQueries({ queryKey: ['paquete', variables.idPaquetePadre] })
-      toast.success('Paquete hijo agregado al lote exitosamente')
+      notify.success('Paquete hijo agregado al lote exitosamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al agregar el paquete hijo al lote'))
+      notify.error(error, 'No se pudo agregar el paquete hijo al lote')
     },
   })
 }

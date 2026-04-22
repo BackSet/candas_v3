@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { TamanoSaca } from '@/types/saca'
 
 export interface SacaFormData {
@@ -31,9 +31,9 @@ export function useSacasManager(initialSacas: SacaFormData[] = []) {
       const nuevas = [...prev]
       if (!nuevas[sacaIndex].idPaquetes.includes(paqueteId)) {
         nuevas[sacaIndex].idPaquetes.push(paqueteId)
-        toast.success('Paquete agregado a la saca')
+        notify.success('Paquete agregado a la saca')
       } else {
-        toast.info('El paquete ya está en la saca')
+        notify.info('El paquete ya está en la saca')
       }
       return nuevas
     })
@@ -45,7 +45,7 @@ export function useSacasManager(initialSacas: SacaFormData[] = []) {
       nuevas[sacaIndex].idPaquetes = nuevas[sacaIndex].idPaquetes.filter(id => id !== paqueteId)
       return nuevas
     })
-    toast.success('Paquete eliminado de la saca')
+    notify.success('Paquete eliminado de la saca')
   }, [])
 
   const moverPaqueteASaca = useCallback((paqueteId: number, sacaOrigenIndex: number, sacaDestinoIndex: number) => {
@@ -59,7 +59,7 @@ export function useSacasManager(initialSacas: SacaFormData[] = []) {
       }
       return nuevas
     })
-    toast.success('Paquete movido a otra saca')
+    notify.success('Paquete movido a otra saca')
   }, [])
 
   const agregarPaquetesPorListado = useCallback((
@@ -110,13 +110,13 @@ export function useSacasManager(initialSacas: SacaFormData[] = []) {
 
     // Mostrar resumen
     if (encontrados > 0) {
-      toast.success(`${encontrados} paquete(s) agregado(s) a la saca`)
+      notify.success(`${encontrados} paquete(s) agregado(s) a la saca`)
     }
     if (yaAgregados > 0) {
-      toast.info(`${yaAgregados} paquete(s) ya estaban en la saca`)
+      notify.info(`${yaAgregados} paquete(s) ya estaban en la saca`)
     }
     if (noEncontrados.length > 0) {
-      toast.error(`${noEncontrados.length} paquete(s) no encontrado(s): ${noEncontrados.slice(0, 5).join(', ')}${noEncontrados.length > 5 ? '...' : ''}`)
+      notify.error(`${noEncontrados.length} paquete(s) no encontrado(s): ${noEncontrados.slice(0, 5).join(', ')}${noEncontrados.length > 5 ? '...' : ''}`)
     }
   }, [])
 

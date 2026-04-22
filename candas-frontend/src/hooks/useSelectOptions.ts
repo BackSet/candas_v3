@@ -1,26 +1,47 @@
 import { useQuery } from '@tanstack/react-query'
-import { clienteService, type Cliente } from '@/lib/api/cliente.service'
-import { agenciaService, type Agencia } from '@/lib/api/agencia.service'
-import { puntoOrigenService, type PuntoOrigen } from '@/lib/api/punto-origen.service'
+import { clienteService } from '@/lib/api/cliente.service'
+import { agenciaService } from '@/lib/api/agencia.service'
+import { puntoOrigenService } from '@/lib/api/punto-origen.service'
 
 export interface SelectOption {
   value: number
   label: string
+  /**
+   * Texto secundario opcional (ej: "Cantón • Provincia") para mostrar y
+   * permitir búsqueda en componentes tipo Combobox.
+   */
+  description?: string
+}
+
+/**
+ * Construye una descripción "Cantón • Provincia" a partir de los campos
+ * disponibles. Devuelve `undefined` si no hay nada que mostrar.
+ */
+function buildLocationDescription(
+  canton?: string | null,
+  provincia?: string | null,
+): string | undefined {
+  const parts = [canton, provincia].filter(
+    (p): p is string => typeof p === 'string' && p.trim().length > 0,
+  )
+  if (parts.length === 0) return undefined
+  return parts.join(' • ')
 }
 
 export function useClientes() {
   return useQuery({
     queryKey: ['clientes'],
     queryFn: async () => {
-      const data = await clienteService.findAll(0, 1000)
+      const data = await clienteService.findAll({ page: 0, size: 1000 })
       return data.content
         .filter((c) => c.activo !== false)
-        .map((c) => ({
+        .map<SelectOption>((c) => ({
           value: c.idCliente!,
           label: c.nombreCompleto,
-        })) as SelectOption[]
+          description: buildLocationDescription(c.canton, c.provincia),
+        }))
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -28,15 +49,16 @@ export function useAgencias() {
   return useQuery({
     queryKey: ['agencias'],
     queryFn: async () => {
-      const data = await agenciaService.findAll(0, 1000)
+      const data = await agenciaService.findAll({ page: 0, size: 1000 })
       return data.content
         .filter((a) => a.activa !== false)
-        .map((a) => ({
+        .map<SelectOption>((a) => ({
           value: a.idAgencia!,
           label: a.nombre,
-        })) as SelectOption[]
+          description: buildLocationDescription(a.canton, a.provincia),
+        }))
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -44,7 +66,7 @@ export function usePuntosOrigen() {
   return useQuery({
     queryKey: ['puntos-origen'],
     queryFn: async () => {
-      const data = await puntoOrigenService.findAll(0, 1000)
+      const data = await puntoOrigenService.findAll({ page: 0, size: 1000 })
       return data.content
         .filter((o) => o.activo !== false)
         .map((o) => ({
@@ -52,6 +74,6 @@ export function usePuntosOrigen() {
           label: o.nombrePuntoOrigen,
         })) as SelectOption[]
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   })
 }

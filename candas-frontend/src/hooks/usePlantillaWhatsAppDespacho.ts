@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { parametroSistemaService } from '@/lib/api/parametroSistema.service'
 import { getApiErrorMessage } from '@/lib/api/errors'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 
 const QUERY_KEY_PLANTILLA = ['parametros-sistema', 'whatsapp-despacho'] as const
 const QUERY_KEY_VARIABLES = ['parametros-sistema', 'whatsapp-despacho', 'variables'] as const
@@ -28,10 +28,10 @@ export function useGuardarPlantillaWhatsAppDespacho() {
       parametroSistemaService.guardarPlantillaWhatsAppDespacho(plantilla),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY_PLANTILLA })
-      toast.success('Plantilla guardada correctamente')
+      notify.success('Plantilla guardada correctamente')
     },
     onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al guardar la plantilla'))
+      notify.error(error, 'Error al guardar la plantilla')
     },
   })
 }

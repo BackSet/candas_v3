@@ -2,10 +2,21 @@ import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
 import type { Distribuidor, DistribuidorPage } from '@/types/distribuidor'
 
+export interface DistribuidorFindAllParams {
+  page?: number
+  size?: number
+  search?: string
+  activa?: boolean
+}
+
 export const distribuidorService = {
-  async findAll(page: number = 0, size: number = 20): Promise<DistribuidorPage> {
+  async findAll(params: DistribuidorFindAllParams = {}): Promise<DistribuidorPage> {
+    const { page = 0, size = 20, search, activa } = params
+    const queryParams: Record<string, string | number | boolean> = { page, size }
+    if (search && search.trim()) queryParams.search = search.trim()
+    if (activa !== undefined) queryParams.activa = activa
     const response = await apiClient.get(API_ENDPOINTS.DISTRIBUIDORES.BASE, {
-      params: { page, size },
+      params: queryParams,
     })
     return response.data
   },

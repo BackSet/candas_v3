@@ -17,7 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import type { Saca } from '@/types/saca'
-import { FileText, Printer, Tag, Tags } from 'lucide-react'
+import { FileText, Loader2, Printer, Tag, Tags } from 'lucide-react'
 
 export type TipoImpresion =
   | 'etiqueta'
@@ -37,6 +37,8 @@ interface ImprimirDespachoDialogProps {
   onPrint: () => void
   onQuickPrint: (tipo: TipoImpresion) => void
   onCancel: () => void
+  isPrinting?: boolean
+  quickActionLoading?: TipoImpresion | null
 }
 
 const OPCIONES_TIPO: Array<{
@@ -103,6 +105,8 @@ export default function ImprimirDespachoDialog({
   onPrint,
   onQuickPrint,
   onCancel,
+  isPrinting = false,
+  quickActionLoading = null,
 }: ImprimirDespachoDialogProps) {
   const sacasOrdenadas = [...sacas].sort(
     (a, b) => (a.numeroOrden || 0) - (b.numeroOrden || 0)
@@ -152,10 +156,14 @@ export default function ImprimirDespachoDialog({
                     variant="outline"
                     className="h-auto py-3 px-3 flex flex-col items-start gap-1 text-left"
                     onClick={() => onQuickPrint(action.value)}
-                    disabled={disabled}
+                    disabled={disabled || isPrinting}
                   >
                     <span className="flex items-center gap-2 text-sm font-medium">
-                      <Icon className="h-4 w-4" />
+                      {quickActionLoading === action.value ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Icon className="h-4 w-4" />
+                      )}
                       {action.label}
                     </span>
                     <span className="text-[11px] text-muted-foreground leading-tight">
@@ -250,11 +258,18 @@ export default function ImprimirDespachoDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel} disabled={isPrinting}>
             Cancelar
           </Button>
-          <Button onClick={onPrint} disabled={botonImprimirDisabled}>
-            Imprimir
+          <Button onClick={onPrint} disabled={botonImprimirDisabled || isPrinting}>
+            {isPrinting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Imprimiendo...
+              </>
+            ) : (
+              'Imprimir'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

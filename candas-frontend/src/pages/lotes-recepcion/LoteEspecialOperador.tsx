@@ -5,7 +5,7 @@ import { useLoteRecepcion, usePaquetesLoteRecepcion } from '@/hooks/useLotesRece
 import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
 import { useAgencias, useCreateAgencia } from '@/hooks/useAgencias'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
-import { useDestinatariosDirectos } from '@/hooks/useDestinatariosDirectos'
+import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
 import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
 import { useAuthStore } from '@/stores/authStore'
 import { useDraftStore } from '@/stores/draftStore'
@@ -58,7 +58,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ScanLine, Loader2, List as ListIcon, FileText, X, Box, Truck, MapPin, QrCode, CheckCircle2, Download, FileDown, FileSpreadsheet, Printer, Edit, ChevronDown, Trash2, Upload, ChevronsUpDown, Plus, Sparkles } from 'lucide-react'
-import { toast } from 'sonner'
+import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import { LoadingState } from '@/components/states'
 import { PERMISSIONS } from '@/types/permissions'
@@ -101,9 +101,9 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
 
   const { data: lote, isLoading } = useLoteRecepcion(id)
   const { data: paquetes = [] } = usePaquetesLoteRecepcion(id)
-  const { data: agenciasResponse } = useAgencias(0, 100)
-  const { data: distribuidoresResponse } = useDistribuidores(0, 100)
-  const { data: destinatariosDirectos = [] } = useDestinatariosDirectos()
+  const { data: agenciasResponse } = useAgencias({ page: 0, size: 100 })
+  const { data: distribuidoresResponse } = useDistribuidores({ page: 0, size: 100 })
+  const { data: destinatariosDirectos = [] } = useDestinatariosDirectosAll()
   const user = useAuthStore((s) => s.user)
 
   const destinatarioManager = useDestinatarioDirectoManager((destinatario) => {
@@ -149,12 +149,12 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
   const handleCrearAgencia = async () => {
     const nombre = nuevaAgenciaNombre.trim()
     if (!nombre) {
-      toast.error('El nombre de la agencia es obligatorio')
+      notify.error('El nombre de la agencia es obligatorio')
       return
     }
     const telefonosValidos = nuevaAgenciaTelefonos.filter((t) => t.numero.trim() !== '')
     if (telefonosValidos.length === 0) {
-      toast.error('Debe ingresar al menos un número de teléfono')
+      notify.error('Debe ingresar al menos un número de teléfono')
       return
     }
     if (!telefonosValidos.some((t) => t.principal)) {
@@ -281,13 +281,13 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     if (d.operacionModo) setOperacionModo(d.operacionModo)
     if (d.colaEspecial?.length) {
       setColaEspecial(d.colaEspecial)
-      toast.info(`Se restauró la cola de tipeo con ${d.colaEspecial.length} guía(s)`, { duration: 4000 })
+      notify.info(`Se restauró la cola de tipeo con ${d.colaEspecial.length} guía(s)`, { duration: 4000 })
     }
     if (d.selectedPackageIdsOrder?.length) {
       const ids = d.selectedPackageIdsOrder
       setSelectedPackageIdsOrder(ids)
       setSelectedPackageIds(new Set(ids))
-      toast.info(`Se restauraron ${ids.length} paquete(s) seleccionados para despacho`, { duration: 4000 })
+      notify.info(`Se restauraron ${ids.length} paquete(s) seleccionados para despacho`, { duration: 4000 })
     }
   }, [id])
 
@@ -314,11 +314,11 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', id] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion', id] })
       setTipiarGuia('')
-      toast.success('Paquete marcado como receptado')
+      notify.success('Paquete marcado como receptado')
       inputRef.current?.focus()
     },
     onError: (err: unknown) => {
-      toast.error(getApiErrorMessage(err, 'Error al marcar'))
+      notify.error(err, 'Error al marcar')
     },
   })
 
@@ -335,24 +335,24 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       setColaEspecial((prev) => {
         const yaEnCola = prev.some((x) => x.numeroGuia === n)
         if (yaEnCola) {
-          toast.info('Ya en cola')
+          notify.info('Ya en cola')
           return [{ numeroGuia: n, resultado }, ...prev.filter((x) => x.numeroGuia !== n)]
         }
         return [{ numeroGuia: n, resultado }, ...prev]
       })
-      toast.success('Añadido a la cola')
+      notify.success('Añadido a la cola')
     } catch {
       setLastConsultaResultado('sin_etiqueta')
       setColaEspecial((prev) => {
         const yaEnCola = prev.some((x) => x.numeroGuia === n)
         const resultado: GuiaListaEtiquetadaConsultaDTO | 'sin_etiqueta' | null = 'sin_etiqueta'
         if (yaEnCola) {
-          toast.info('Ya en cola')
+          notify.info('Ya en cola')
           return [{ numeroGuia: n, resultado }, ...prev.filter((x) => x.numeroGuia !== n)]
         }
         return [{ numeroGuia: n, resultado }, ...prev]
       })
-      toast.success('Añadido a la cola (sin etiqueta)')
+      notify.success('Añadido a la cola (sin etiqueta)')
     } finally {
       setConsultando(false)
     }
@@ -370,10 +370,10 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       clearDraft(draftKey)
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', id] })
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion', id] })
-      toast.success(`${count} paquete(s) guardado(s) en el lote`)
+      notify.success(`${count} paquete(s) guardado(s) en el lote`)
       inputRef.current?.focus()
     } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Error al guardar'))
+      notify.error(err, 'Error al guardar')
     } finally {
       setGuardandoEnLote(false)
     }
@@ -504,12 +504,12 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       try {
         const paquete = await paqueteService.findByNumeroGuia(n)
         if (!paquete || !paquete.idPaquete) {
-          toast.error(`Paquete ${n} no encontrado`)
+          notify.error(`Paquete ${n} no encontrado`)
           return
         }
         const idP = paquete.idPaquete
         if (selectedPackageIds.has(idP)) {
-          toast.info('Ya tipiado en despacho')
+          notify.info('Ya tipiado en despacho')
           setLastScannedDespacho({
             guia: paquete.numeroGuia ?? n,
             ref: paquete.ref?.trim(),
@@ -528,10 +528,10 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
           clienteDestino: buildClienteDestinoFromPaquete(paquete),
           observacion: paquete.observaciones?.trim(),
         })
-        toast.success('Agregado a despacho')
+        notify.success('Agregado a despacho')
         setTipiarGuia('')
       } catch {
-        toast.error('Error al buscar paquete')
+        notify.error('Error al buscar paquete')
       } finally {
         setConsultando(false)
       }
@@ -557,7 +557,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     try {
       assertAgenciaOrigenActivaSeleccionadaParaCreacion()
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, 'Debes seleccionar una agencia origen activa para continuar.'))
+      notify.error(error, 'Debes seleccionar una agencia origen activa para continuar.')
       return
     }
 
@@ -566,12 +566,12 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       .map((s) => parseInt(s.trim(), 10))
       .filter((n) => !isNaN(n) && n > 0)
     if (groups.length === 0) {
-      toast.error("Ingrese una distribución válida (ej: '5, 5')")
+      notify.error("Ingrese una distribución válida (ej: '5, 5')")
       return
     }
     const totalInGroups = groups.reduce((a, b) => a + b, 0)
     if (totalInGroups !== selectedPackageIdsOrder.length) {
-      toast.error(
+      notify.error(
         `La suma de los grupos (${totalInGroups}) no coincide con los paquetes seleccionados (${selectedPackageIdsOrder.length})`
       )
       return
@@ -583,7 +583,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
           ? !!bulkIdDestino
           : !!bulkIdPaqueteOrigenDestinatario && !!bulkDesdePaqueteNombre.trim()
     if (!destinoValido || !bulkIdDistribuidor) {
-      toast.error(
+      notify.error(
         bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE'
           ? 'Seleccione el paquete de referencia para el destinatario y el Distribuidor'
           : 'Seleccione Destino (Agencia o Destinatario directo) y Distribuidor en el diálogo'
@@ -597,7 +597,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       idDestinatarioDirectoPayload = Number(bulkIdDestino)
     } else if (bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE' && bulkIdPaqueteOrigenDestinatario) {
       if (!bulkDesdePaqueteNombre.trim()) {
-        toast.error('El paquete seleccionado no tiene nombre de destinatario válido')
+        notify.error('El paquete seleccionado no tiene nombre de destinatario válido')
         return
       }
       const nuevoDest = await destinatarioDirectoService.create({
@@ -639,7 +639,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         sacas: sacasPayload,
       }
       await despachoService.create(createPayload)
-      toast.success('Despacho masivo completado exitosamente')
+      notify.success('Despacho masivo completado exitosamente')
       setIsBulkDialogOpen(false)
       setSelectedPackageIds(new Set())
       setSelectedPackageIdsOrder([])
@@ -656,7 +656,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion', id] })
     } catch (err) {
       console.error(err)
-      toast.error('Error durante el proceso masivo')
+      notify.error('Error durante el proceso masivo')
     } finally {
       setBulkSubmitting(false)
     }
@@ -672,6 +672,8 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
   const [showDialogImprimir, setShowDialogImprimir] = useState(false)
   const [tipoImpresion, setTipoImpresion] = useState('TODOS')
   const [imprimiendo, setImprimiendo] = useState(false)
+  const [exportandoExcel, setExportandoExcel] = useState<string | null>(null)
+  const [exportandoPdf, setExportandoPdf] = useState<string | null>(null)
   const [asignarEtiquetaPaquete, setAsignarEtiquetaPaquete] = useState<Paquete | null>(null)
   const [asignarEtiquetaValor, setAsignarEtiquetaValor] = useState('')
 
@@ -700,10 +702,10 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
       queryClient.invalidateQueries({ queryKey: ['lote-recepcion-paquetes', id] })
       setAsignarEtiquetaPaquete(null)
       setAsignarEtiquetaValor('')
-      toast.success('Etiqueta asignada')
+      notify.success('Etiqueta asignada')
     },
     onError: (err: unknown) => {
-      toast.error(getApiErrorMessage(err, 'Error'))
+      notify.error(err, 'Error')
     },
   })
 
@@ -751,38 +753,46 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     }
   }
 
-  const handleExportExcel = (tipo: string) => {
+  const handleExportExcel = async (tipo: string) => {
     if (!lote || !paquetes.length) {
-      toast.error('No hay paquetes para exportar')
+      notify.error('No hay paquetes para exportar')
       return
     }
+    setExportandoExcel(tipo)
+    const toastId = notify.start('Generando Excel del lote especial…')
     try {
       const filtrados = filtrarPaquetesPorTipo(paquetes, tipo || 'TODOS')
       if (!filtrados.length) {
-        toast.warning('No hay paquetes para el filtro seleccionado')
+        notify.dismiss(toastId)
+        notify.warning('No hay paquetes para el filtro seleccionado')
         return
       }
       const now = new Date()
       const fecha = now.toISOString().slice(0, 10)
       const hora = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-      generarExcelLoteRecepcion(filtrados, fecha, hora, lote.numeroRecepcion ?? String(id), true)
+      await generarExcelLoteRecepcion(filtrados, fecha, hora, lote.numeroRecepcion ?? String(id), true)
       const label = tipo === 'TODOS' || !tipo ? 'Todos' : tipo === 'SIN_ETIQUETA' ? 'Sin Etiqueta' : tipo
-      toast.success(`Excel exportado (${label})`)
+      notify.finish(toastId, `Excel exportado (${label})`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al exportar Excel')
+      notify.fail(toastId, err, 'No se pudo exportar el Excel')
+    } finally {
+      setExportandoExcel(null)
     }
   }
 
   const handleExportPdf = async (tipo: string) => {
     if (!lote) return
+    setExportandoPdf(tipo)
+    const toastId = notify.start('Generando PDF del lote especial…')
     try {
-      toast.info('Generando PDF...')
       const filtrados = filtrarPaquetesPorTipo(paquetes, tipo)
       await descargarPDFLoteEspecial(filtrados, lote.numeroRecepcion ?? String(id), tipo || 'TODOS')
-      toast.success('PDF descargado exitosamente')
+      notify.finish(toastId, 'PDF descargado correctamente')
     } catch (err) {
       console.error('Error al generar PDF:', err)
-      toast.error(err instanceof Error ? err.message : 'Error al generar el PDF')
+      notify.fail(toastId, err, 'No se pudo generar el PDF')
+    } finally {
+      setExportandoPdf(null)
     }
   }
 
@@ -790,14 +800,15 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
     if (!lote) return
     const tipo = tipoOverride ?? tipoImpresion
     setImprimiendo(true)
+    const toastId = notify.start('Preparando impresión…')
     try {
       const filtrados = filtrarPaquetesPorTipo(paquetes, tipo)
       await imprimirLoteEspecial(filtrados, lote.numeroRecepcion ?? String(id), tipo || 'TODOS')
       setShowDialogImprimir(false)
-      toast.success('Ventana de impresión abierta')
+      notify.finish(toastId, 'Ventana de impresión abierta')
     } catch (err) {
       console.error('Error al imprimir:', err)
-      toast.error(err instanceof Error ? err.message : 'Error al abrir la impresión')
+      notify.fail(toastId, err, 'No se pudo abrir la impresión')
     } finally {
       setImprimiendo(false)
     }
@@ -855,40 +866,57 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 text-muted-foreground hover:text-foreground">
-                <Download className="h-3.5 w-3.5 mr-1.5" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-muted-foreground hover:text-foreground"
+                disabled={exportandoExcel !== null || exportandoPdf !== null}
+              >
+                {exportandoExcel || exportandoPdf ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5 mr-1.5" />
+                )}
                 Exportar
                 <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
               <DropdownMenuLabel>Exportar</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleExportExcel('TODOS')} className="gap-2">
-                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+              <DropdownMenuItem onClick={() => handleExportExcel('TODOS')} className="gap-2" disabled={exportandoExcel !== null}>
+                {exportandoExcel === 'TODOS' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                )}
                 <span>Excel (Todos)</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportExcel('SIN_ETIQUETA')}>
+              <DropdownMenuItem onClick={() => handleExportExcel('SIN_ETIQUETA')} disabled={exportandoExcel !== null}>
                 Excel - Sin Etiqueta
               </DropdownMenuItem>
               {tabsEtiquetas
                 .filter((t) => t !== SIN_ETIQUETA_KEY && t !== VARIAS_LISTAS_KEY)
                 .map((etq) => (
-                  <DropdownMenuItem key={`excel-${etq}`} onClick={() => handleExportExcel(etq)}>
+                  <DropdownMenuItem key={`excel-${etq}`} onClick={() => handleExportExcel(etq)} disabled={exportandoExcel !== null}>
                     Excel - {etq}
                   </DropdownMenuItem>
                 ))}
               <Separator className="my-1" />
-              <DropdownMenuItem onClick={() => handleExportPdf('TODOS')} className="gap-2">
-                <FileDown className="h-4 w-4 text-red-600" />
+              <DropdownMenuItem onClick={() => handleExportPdf('TODOS')} className="gap-2" disabled={exportandoPdf !== null}>
+                {exportandoPdf === 'TODOS' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="h-4 w-4 text-red-600" />
+                )}
                 <span>PDF - Todos</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportPdf('SIN_ETIQUETA')}>
+              <DropdownMenuItem onClick={() => handleExportPdf('SIN_ETIQUETA')} disabled={exportandoPdf !== null}>
                 PDF - Sin Etiqueta
               </DropdownMenuItem>
               {tabsEtiquetas
                 .filter((t) => t !== SIN_ETIQUETA_KEY && t !== VARIAS_LISTAS_KEY)
                 .map((etq) => (
-                  <DropdownMenuItem key={`pdf-${etq}`} onClick={() => handleExportPdf(etq)}>
+                  <DropdownMenuItem key={`pdf-${etq}`} onClick={() => handleExportPdf(etq)} disabled={exportandoPdf !== null}>
                     PDF - {etq}
                   </DropdownMenuItem>
                 ))}
@@ -896,8 +924,17 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 text-muted-foreground hover:text-foreground">
-                <Printer className="h-3.5 w-3.5 mr-1.5" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-muted-foreground hover:text-foreground"
+                disabled={imprimiendo}
+              >
+                {imprimiendo ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Printer className="h-3.5 w-3.5 mr-1.5" />
+                )}
                 Imprimir
                 <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
               </Button>
@@ -905,10 +942,14 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
             <DropdownMenuContent align="start" className="w-48">
               <DropdownMenuLabel>Imprimir</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleImprimir('TODOS')} className="gap-2" disabled={imprimiendo}>
-                <Printer className="h-3.5 w-3.5" />
+                {imprimiendo ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Printer className="h-3.5 w-3.5" />
+                )}
                 Imprimir todos
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowDialogImprimir(true)} className="gap-2">
+              <DropdownMenuItem onClick={() => setShowDialogImprimir(true)} className="gap-2" disabled={imprimiendo}>
                 <Printer className="h-3.5 w-3.5" />
                 Imprimir por etiqueta...
               </DropdownMenuItem>

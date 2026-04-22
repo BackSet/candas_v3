@@ -4,18 +4,25 @@ import type { Cliente, ClientePage } from '@/types/cliente'
 
 export type { Cliente, ClientePage } from '@/types/cliente'
 
+export interface ClienteFindAllParams {
+  page?: number
+  size?: number
+  search?: string
+  nombre?: string
+  documento?: string
+  email?: string
+  activo?: boolean
+}
+
 export const clienteService = {
-  async findAll(
-    page: number = 0,
-    size: number = 20,
-    params?: { search?: string; nombre?: string; documento?: string; email?: string; activo?: boolean }
-  ): Promise<ClientePage> {
+  async findAll(params: ClienteFindAllParams = {}): Promise<ClientePage> {
+    const { page = 0, size = 20, search, nombre, documento, email, activo } = params
     const queryParams: Record<string, string | number | boolean> = { page, size }
-    if (params?.search) queryParams.search = params.search
-    if (params?.nombre) queryParams.nombre = params.nombre
-    if (params?.documento) queryParams.documento = params.documento
-    if (params?.email) queryParams.email = params.email
-    if (params?.activo !== undefined) queryParams.activo = params.activo
+    if (search && search.trim()) queryParams.search = search.trim()
+    if (nombre && nombre.trim()) queryParams.nombre = nombre.trim()
+    if (documento && documento.trim()) queryParams.documento = documento.trim()
+    if (email && email.trim()) queryParams.email = email.trim()
+    if (activo !== undefined) queryParams.activo = activo
     const response = await apiClient.get<ClientePage>(
       API_ENDPOINTS.CLIENTES.BASE,
       { params: queryParams }

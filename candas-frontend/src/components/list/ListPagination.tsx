@@ -13,6 +13,8 @@ export interface ListPaginationProps {
   showRange?: boolean
   /** compact: solo Anterior/Siguiente; full: primera, anterior, N/total, siguiente, última (default full) */
   variant?: 'compact' | 'full'
+  /** Si true, renderiza el componente aunque solo haya 1 página (oculta los botones, mantiene el rango). */
+  alwaysShow?: boolean
 }
 
 export function ListPagination({
@@ -24,8 +26,10 @@ export function ListPagination({
   className,
   showRange = true,
   variant = 'full',
+  alwaysShow = false,
 }: ListPaginationProps) {
-  if (totalPages <= 1) return null
+  if (totalPages <= 1 && !alwaysShow) return null
+  const hideButtons = totalPages <= 1
 
   const canPrev = page > 0
   const canNext = page < totalPages - 1
@@ -44,7 +48,7 @@ export function ListPagination({
       </div>
 
       <div className="flex items-center gap-1">
-        {variant === 'full' && (
+        {!hideButtons && variant === 'full' && (
           <>
             <Button
               variant="outline"
@@ -91,7 +95,7 @@ export function ListPagination({
             </Button>
           </>
         )}
-        {variant === 'compact' && (
+        {!hideButtons && variant === 'compact' && (
           <>
             <Button
               variant="outline"
