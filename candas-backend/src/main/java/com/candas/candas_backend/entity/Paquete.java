@@ -5,6 +5,7 @@ import com.candas.candas_backend.entity.enums.TipoPaquete;
 import com.candas.candas_backend.entity.enums.TipoDestino;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -73,6 +74,7 @@ public class Paquete {
     @JoinColumn(name = "id_lote_recepcion")
     private LoteRecepcion loteRecepcion;
 
+    @BatchSize(size = 32)
     @OneToMany(mappedBy = "paquete", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaqueteSaca> paqueteSacas;
 

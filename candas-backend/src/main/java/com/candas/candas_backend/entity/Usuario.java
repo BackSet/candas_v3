@@ -2,6 +2,7 @@ package com.candas.candas_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -68,6 +69,7 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "id_agencia")
     private Agencia agencia;
 
+    @BatchSize(size = 32)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "usuario_agencia",
@@ -76,6 +78,7 @@ public class Usuario implements UserDetails {
     )
     private Set<Agencia> agencias;
 
+    @BatchSize(size = 32)
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UsuarioRol> usuarioRoles;
 

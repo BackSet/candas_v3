@@ -24,16 +24,21 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpec
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
     
-    @EntityGraph(attributePaths = {
-            "usuarioRoles", "usuarioRoles.rol", "agencia", "agencias"
-    })
+    /**
+     * Listado paginado: solo ManyToOne (sin colecciones) para paginar en BD.
+     * Roles y agencias múltiples se inicializan por batch ({@code @BatchSize} en la entidad).
+     */
+    @Override
+    @EntityGraph(attributePaths = { "agencia", "cliente" })
     Page<Usuario> findAll(Pageable pageable);
     
+    @Override
     @EntityGraph(attributePaths = {
             "usuarioRoles", "usuarioRoles.rol", "agencia", "agencias"
     })
     List<Usuario> findAllById(Iterable<Long> ids);
 
+    @Override
     @EntityGraph(attributePaths = {
             "usuarioRoles", "usuarioRoles.rol", "agencia", "agencias"
     })

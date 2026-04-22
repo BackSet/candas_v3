@@ -37,17 +37,23 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long>, JpaSpec
     @Query("SELECT p FROM Paquete p WHERE p.paquetePadre.idPaquete IN :idPaquetePadres")
     java.util.List<Paquete> findByPaquetePadreIdPaqueteIn(@Param("idPaquetePadres") List<Long> idPaquetePadres);
 
+    /**
+     * Listado paginado: sin {@code paqueteSacas} en el EntityGraph para que Hibernate
+     * aplique LIMIT/OFFSET en SQL (HHH90003004 si se combina paginación con fetch de colección).
+     * Las sacas se cargan en batch vía {@code @BatchSize} en la entidad.
+     */
+    @Override
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
-            "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })
+            "destinatarioDirecto", "loteRecepcion", "paquetePadre" })
     Page<Paquete> findAll(Pageable pageable);
 
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
-            "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })
+            "destinatarioDirecto", "loteRecepcion", "paquetePadre" })
     Page<Paquete> findByNumeroGuiaContainingIgnoreCase(String numeroGuia, Pageable pageable);
 
     /** Lista paginada con filtros opcionales: búsqueda por guía, estado, tipo, agencia destino, lote y rango de fechaRegistro. Parámetros null = sin filtrar. */
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
-            "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })
+            "destinatarioDirecto", "loteRecepcion", "paquetePadre" })
     @Query("SELECT p FROM Paquete p WHERE "
             + "(:search IS NULL OR :search = '' OR LOWER(p.numeroGuia) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(COALESCE(p.ref, '')) LIKE LOWER(CONCAT('%', :search, '%'))) AND "
             + "(:estado IS NULL OR p.estado = :estado) AND "
@@ -64,6 +70,7 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long>, JpaSpec
             @Param("fechaHasta") java.time.LocalDateTime fechaHasta,
             Pageable pageable);
 
+    @Override
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
             "destinatarioDirecto", "loteRecepcion", "paqueteSacas", "paqueteSacas.saca", "paqueteSacas.saca.despacho", "paquetePadre" })
     java.util.Optional<Paquete> findById(Long id);

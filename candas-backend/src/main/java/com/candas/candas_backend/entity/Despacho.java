@@ -2,6 +2,7 @@ package com.candas.candas_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,6 +11,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "despacho")
+@BatchSize(size = 32)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
