@@ -165,6 +165,7 @@ export default function LoteRecepcionForm({
         isSubmitting={isSaving}
         errors={errors as unknown as Record<string, unknown>}
         form={form as unknown as UseFormReturn<FieldValues>}
+        skipUnsavedPrompt={!isEdit}
         width="lg"
         primaryAction={{
           label: isEdit ? 'Actualizar Recepción' : 'Crear Recepción',

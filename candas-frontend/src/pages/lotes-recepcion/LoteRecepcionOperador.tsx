@@ -1352,10 +1352,12 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
         }
 
         // Reflejar el último paquete agregado como feedback visual del operador.
-        if (ultimoPaqueteOk) {
+        // Tras await, TS no estrecha `let` mutado en workers async; forzamos Paquete | null para el feedback.
+        const lastAddedPaquete = ultimoPaqueteOk as Paquete | null
+        if (lastAddedPaquete) {
             setLastScanned({
-                id: String(ultimoPaqueteOk.idPaquete),
-                guia: ultimoPaqueteOk.numeroGuia ?? '',
+                id: String(lastAddedPaquete.idPaquete),
+                guia: lastAddedPaquete.numeroGuia ?? '',
                 timestamp: new Date(),
                 destinoType: isModoDespacho
                     ? 'DESPACHO'
@@ -1363,9 +1365,9 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         ? 'DOMICILIO'
                         : 'AGENCIA',
                 tipoPaquete: isModoDespacho ? undefined : (scanMode as TipoPaquete),
-                ref: ultimoPaqueteOk.ref?.trim() || undefined,
-                clienteDestino: buildClienteDestinoFromPaquete(ultimoPaqueteOk),
-                observacion: ultimoPaqueteOk.observaciones?.trim() || undefined,
+                ref: lastAddedPaquete.ref?.trim() || undefined,
+                clienteDestino: buildClienteDestinoFromPaquete(lastAddedPaquete),
+                observacion: lastAddedPaquete.observaciones?.trim() || undefined,
             })
         }
 

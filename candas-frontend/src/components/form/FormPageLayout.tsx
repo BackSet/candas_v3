@@ -45,6 +45,12 @@ export interface FormPageLayoutProps {
   /** Si true, fuerza el dirty guard (sobrescribe `form.formState.isDirty`). */
   isDirty?: boolean
   /**
+   * Si true, no se muestra el diálogo de cambios sin guardar ni se bloquea la
+   * navegación por formulario sucio (útil en altas nuevas donde se prefiere
+   * salir con Atrás/Cancelar sin confirmación).
+   */
+  skipUnsavedPrompt?: boolean
+  /**
    * Si true, no se muestra el diálogo "Cambios sin guardar": se asume que
    * el formulario persiste sus datos en localStorage como borrador.
    * En su lugar, al salir se muestra un toast informativo y la navegación
@@ -113,6 +119,7 @@ export function FormPageLayout({
   width = 'lg',
   showCancel = true,
   cancelLabel = 'Cancelar',
+  skipUnsavedPrompt = false,
   draftMode = false,
   draftToastMessage,
   children,
@@ -125,7 +132,8 @@ export function FormPageLayout({
       ? isDirty
       : !!form?.formState.isDirty
 
-  const dirtyGuardEnabled = computedDirty && !isSubmitting && !isLoading
+  const dirtyGuardEnabled =
+    computedDirty && !isSubmitting && !isLoading && !skipUnsavedPrompt
   const guard = useDirtyGuard({
     enabled: dirtyGuardEnabled,
     enableBeforeUnload: dirtyGuardEnabled && !draftMode,
