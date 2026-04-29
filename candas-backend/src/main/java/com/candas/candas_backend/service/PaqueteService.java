@@ -54,7 +54,7 @@ public class PaqueteService {
         return findAll(search, estado, tipo, null, null, null, null, pageable);
     }
 
-    public Page<PaqueteDTO> findAll(
+public Page<PaqueteDTO> findAll(
             String search,
             EstadoPaquete estado,
             TipoPaquete tipo,
@@ -64,8 +64,26 @@ public class PaqueteService {
             LocalDateTime fechaHasta,
             Pageable pageable) {
         String searchTrimmed = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        
+        // Solo aplicar ambos filtros si vienen ambas fechas
+        // De lo contrario, omitir el filtro de fecha completamente
+        LocalDateTime desde = null;
+        LocalDateTime hasta = null;
+        if (fechaDesde != null && fechaHasta != null) {
+            desde = fechaDesde;
+            hasta = fechaHasta;
+        }
+        
         return paqueteRepository
-                .findAllFiltered(searchTrimmed, estado, tipo, idAgencia, idLote, fechaDesde, fechaHasta, pageable)
+                .findAllFiltered(searchTrimmed, estado, tipo, idAgencia, idLote, desde, hasta, pageable)
+                .map(paqueteMapper::toDTO);
+    }
+        if (fechaHasta != null) {
+            hasta = fechaHasta.atTime(23, 59, 59); // Fin del día
+        }
+        
+        return paqueteRepository
+                .findAllFiltered(searchTrimmed, estado, tipo, idAgencia, idLote, desde, hasta, pageable)
                 .map(paqueteMapper::toDTO);
     }
 
