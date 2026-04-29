@@ -65,12 +65,13 @@ public class PaqueteController {
             Pageable pageable) {
         EstadoPaquete estadoEnum = parseEstado(estado);
         TipoPaquete tipoEnum = parseTipo(tipo);
-        java.time.LocalDateTime desde = parseFechaInicio(fechaDesde);
-        java.time.LocalDateTime hasta = parseFechaFin(fechaHasta);
+        java.time.LocalDateTime desde = parseFechaDesde(fechaDesde);
+        java.time.LocalDateTime hasta = parseFechaHasta(fechaHasta);
         return ResponseEntity.ok(paqueteService.findAll(search, estadoEnum, tipoEnum, idAgencia, idLote, desde, hasta, pageable));
     }
 
-    private static java.time.LocalDateTime parseFechaInicio(String fecha) {
+    /** Parse fechaDesde: si hay fecha pero no hay hora, usa start of day. Si hay rango parcial, permite null. */
+    private static java.time.LocalDateTime parseFechaDesde(String fecha) {
         if (fecha == null || fecha.isBlank()) return null;
         try {
             return java.time.LocalDate.parse(fecha.trim()).atStartOfDay();
@@ -79,7 +80,8 @@ public class PaqueteController {
         }
     }
 
-    private static java.time.LocalDateTime parseFechaFin(String fecha) {
+    /** Parse fechaHasta: si hay fecha pero no hay hora, usa end of day. */
+    private static java.time.LocalDateTime parseFechaHasta(String fecha) {
         if (fecha == null || fecha.isBlank()) return null;
         try {
             return java.time.LocalDate.parse(fecha.trim()).atTime(23, 59, 59);

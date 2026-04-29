@@ -6,6 +6,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +14,11 @@ import java.util.List;
  * Specifications para filtrado opcional del listado de lotes de recepción.
  * Soporta search (numeroRecepcion / usuario), tipoLote, agencia (filtro adicional o restricción de seguridad)
  * y rango de fechaRecepcion.
+ * 
+ * Filtros de fecha optimizados:
+ * - Si solo hay fechaDesde: fechaRecepcion >= fechaDesde (desde esa fecha en adelante)
+ * - Si solo hay fechaHasta: fechaRecepcion <= fechaHasta (hasta esa fecha)
+ * - Si hay ambos: rango completo
  */
 public final class LoteRecepcionSpecs {
 
@@ -48,12 +54,17 @@ public final class LoteRecepcionSpecs {
             if (idAgencia != null) {
                 predicates.add(cb.equal(root.get("agencia").get("idAgencia"), idAgencia));
             }
-            if (fechaDesde != null) {
+            
+            // Filtro de fecha optimizado: soporte para rangos parciales
+            if (fechaDesde != null && fechaHasta != null) {
+                predicates.add(cb.between(root.get("fechaRecepcion"), fechaDesde, fechaHasta));
+            } else if (fechaDesde != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("fechaRecepcion"), fechaDesde));
+            } else if (fechaHasta != null) {
+                LocalDateTime hastaConHora = fechaHasta.atTime(LocalTime.MAX);
+                predicates.add(cb.lessThanOrEqualTo(root.get("fechaRecepcion"), hastaConHora));
             }
-            if (fechaHasta != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("fechaRecepcion"), fechaHasta));
-            }
+            
             if (idAgenciaRestringida != null) {
                 predicates.add(cb.equal(root.get("agencia").get("idAgencia"), idAgenciaRestringida));
             }

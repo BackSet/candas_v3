@@ -51,7 +51,12 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long>, JpaSpec
             "destinatarioDirecto", "loteRecepcion", "paquetePadre" })
     Page<Paquete> findByNumeroGuiaContainingIgnoreCase(String numeroGuia, Pageable pageable);
 
-    /** Lista paginada con filtros opcionales: búsqueda por guía, estado, tipo, agencia destino, lote y rango de fechaRegistro. Parámetros null = sin filtrar. */
+    /** Lista paginada con filtros opcionales: búsqueda por guía, estado, tipo, agencia destino, lote y rango de fechaRegistro. 
+     * Filtros de fecha optimizados:
+     * - Si solo hay fechaDesde: fechaRegistro >= fechaDesde (desde esa fecha en adelante)
+     * - Si solo hay fechaHasta: fechaRegistro <= fechaHasta (hasta esa fecha)
+     * - Si hay ambos: rango completo
+     */
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
             "destinatarioDirecto", "loteRecepcion", "paquetePadre" })
     @Query("SELECT p FROM Paquete p WHERE "
@@ -60,8 +65,8 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long>, JpaSpec
             + "(:tipo IS NULL OR p.tipoPaquete = :tipo) AND "
             + "(:idAgencia IS NULL OR (p.agenciaDestino IS NOT NULL AND p.agenciaDestino.idAgencia = :idAgencia)) AND "
             + "(:idLote IS NULL OR (p.loteRecepcion IS NOT NULL AND p.loteRecepcion.idLoteRecepcion = :idLote)) AND "
-            + "(CAST(:fechaDesde AS timestamp) IS NULL OR p.fechaRegistro >= :fechaDesde) AND "
-            + "(CAST(:fechaHasta AS timestamp) IS NULL OR p.fechaRegistro <= :fechaHasta)")
+            + "(:fechaDesde IS NULL OR p.fechaRegistro >= :fechaDesde) AND "
+            + "(:fechaHasta IS NULL OR p.fechaRegistro <= :fechaHasta)")
     Page<Paquete> findAllFiltered(@Param("search") String search, @Param("estado") EstadoPaquete estado,
             @Param("tipo") TipoPaquete tipo,
             @Param("idAgencia") Long idAgencia,
