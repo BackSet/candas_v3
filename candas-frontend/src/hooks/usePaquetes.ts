@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { paqueteService, type PaqueteFindAllParams } from '@/lib/api/paquete.service'
+import { paqueteService, type PaqueteFindAllParams, type PaqueteEstadisticas } from '@/lib/api/paquete.service'
 import type { Paquete, EstadoPaquete, TipoPaquete } from '@/types/paquete'
 import { notify } from '@/lib/notify'
 
@@ -154,6 +154,13 @@ export function usePaquetePorNumeroGuia(numeroGuia: string | undefined) {
     queryFn: () => paqueteService.findByNumeroGuia(numeroGuia!),
     enabled: !!numeroGuia && numeroGuia.trim().length > 0,
     retry: false,
+  })
+}
+
+export function usePaquetesEstadisticas() {
+  return useQuery({
+    queryKey: ['paquetes-stats'],
+    queryFn: () => paqueteService.getEstadisticas(),
   })
 }
 

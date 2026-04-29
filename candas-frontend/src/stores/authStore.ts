@@ -14,6 +14,21 @@ interface AuthState {
   logout: () => void
 }
 
+function arraysEqual(a: unknown[], b: unknown[]): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  if (a.length !== b.length) return false
+  return a.every((val, idx) => val === b[idx])
+}
+
+function shallowUserChanged(current: User | null, next: User | null): boolean {
+  if (current?.idUsuario !== next?.idUsuario) return true
+  if (!arraysEqual(current?.roles ?? [], next?.roles ?? [])) return true
+  if (!arraysEqual(current?.permisos ?? [], next?.permisos ?? [])) return true
+  if (!arraysEqual(current?.idAgencias ?? [], next?.idAgencias ?? [])) return true
+  return false
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -29,11 +44,7 @@ export const useAuthStore = create<AuthState>()(
         const nextActive = currentActive && agencias.includes(currentActive)
           ? currentActive
           : (agencias[0] ?? null)
-        if (currentUser?.idUsuario !== user?.idUsuario || 
-            JSON.stringify(currentUser?.roles) !== JSON.stringify(user?.roles) ||
-            JSON.stringify(currentUser?.permisos) !== JSON.stringify(user?.permisos) ||
-            JSON.stringify(currentUser?.idAgencias ?? []) !== JSON.stringify(user?.idAgencias ?? []) ||
-            get().token !== token) {
+        if (shallowUserChanged(currentUser, user) || get().token !== token) {
           set({ user, token, isAuthenticated: true, activeAgencyId: nextActive })
         }
       },
@@ -51,13 +62,7 @@ export const useAuthStore = create<AuthState>()(
           const me = await authService.me()
           const currentUser = get().user
           if (!currentUser) return
-          const rolesChanged = JSON.stringify(currentUser.roles ?? []) !== JSON.stringify(me.roles ?? [])
-          const permisosChanged = JSON.stringify(currentUser.permisos ?? []) !== JSON.stringify(me.permisos ?? [])
-          const idAgenciaChanged = currentUser.idAgencia !== me.idAgencia
-          const idAgenciasChanged = JSON.stringify(currentUser.idAgencias ?? []) !== JSON.stringify(me.idAgencias ?? [])
-
-          // Evitar set() si no hay cambios (previene rerenders innecesarios / loops en dev StrictMode)
-          if (!rolesChanged && !permisosChanged && !idAgenciaChanged && !idAgenciasChanged) {
+          if (!shallowUserChanged(currentUser, me) && currentUser.idAgencia === me.idAgencia) {
             return
           }
 

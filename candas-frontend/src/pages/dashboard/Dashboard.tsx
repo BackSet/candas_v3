@@ -1,12 +1,11 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { usePaquetes } from '@/hooks/usePaquetes'
+import { usePaquetesEstadisticas } from '@/hooks/usePaquetes'
 import { useAtencionPaquetesPendientes } from '@/hooks/useAtencionPaquetes'
 import { useDespachos } from '@/hooks/useDespachos'
 import { useLotesRecepcion } from '@/hooks/useLotesRecepcion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { EstadoPaquete } from '@/types/paquete'
 import { getTipoProblemaLabel } from '@/types/atencion-paquete'
 import {
   Package, AlertCircle, Truck, Inbox, ArrowRight,
@@ -20,30 +19,22 @@ import { LoadingState } from '@/components/states/LoadingState'
 export default function Dashboard() {
   const navigate = useNavigate()
 
-  const { data: paquetesData, isLoading: loadingPaquetes, refetch: refetchPaquetes } = usePaquetes({ page: 0, size: 1000 })
+  const { data: paquetesStats, isLoading: loadingPaquetes } = usePaquetesEstadisticas()
   const { data: atencionesPendientes, isLoading: loadingAtenciones, refetch: refetchAtenciones } = useAtencionPaquetesPendientes()
   const { data: despachosData, isLoading: loadingDespachos, refetch: refetchDespachos } = useDespachos({ page: 0, size: 10 })
   const { data: lotesRecepcionData, isLoading: loadingLotes, refetch: refetchLotes } = useLotesRecepcion({ page: 0, size: 10 })
 
-  // Refrescar datos al montar el dashboard para mostrar información actualizada
-  useEffect(() => {
-    refetchPaquetes()
-    refetchAtenciones()
-    refetchDespachos()
-    refetchLotes()
-  }, [refetchPaquetes, refetchAtenciones, refetchDespachos, refetchLotes])
+  const isLoading = loadingPaquetes || loadingAtenciones || loadingDespachos || loadingLotes
 
   const estadisticasPaquetes = useMemo(() => {
-    const paquetes = paquetesData?.content ?? []
-    const total = paquetesData?.totalElements ?? 0
     return {
-      total,
-      registrados: paquetes.filter(p => p.estado === EstadoPaquete.REGISTRADO).length,
-      recibidos: paquetes.filter(p => p.estado === EstadoPaquete.RECIBIDO).length,
-      ensacados: paquetes.filter(p => p.estado === EstadoPaquete.ENSACADO).length,
-      despachados: paquetes.filter(p => p.estado === EstadoPaquete.DESPACHADO).length,
+      total: paquetesStats?.total ?? 0,
+      registrados: paquetesStats?.registrados ?? 0,
+      recibidos: paquetesStats?.recibidos ?? 0,
+      ensacados: paquetesStats?.ensacados ?? 0,
+      despachados: paquetesStats?.despachados ?? 0,
     }
-  }, [paquetesData])
+  }, [paquetesStats])
 
   const atencionesRecientes = useMemo(() => {
     return (atencionesPendientes || []).slice(0, 5)
@@ -56,8 +47,6 @@ export default function Dashboard() {
   const lotesRecientes = useMemo(() => {
     return (lotesRecepcionData?.content || []).slice(0, 5)
   }, [lotesRecepcionData])
-
-  const isLoading = loadingPaquetes || loadingAtenciones || loadingDespachos || loadingLotes
 
   return (
     <StandardPageLayout

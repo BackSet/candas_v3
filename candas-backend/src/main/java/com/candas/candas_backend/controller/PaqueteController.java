@@ -8,6 +8,7 @@ import com.candas.candas_backend.dto.CambiarTipoMasivoDTO;
 import com.candas.candas_backend.dto.ImportResultDTO;
 import com.candas.candas_backend.dto.GuiaRefDTO;
 import com.candas.candas_backend.dto.PaqueteDTO;
+import com.candas.candas_backend.dto.PaqueteEstadisticasDTO;
 import com.candas.candas_backend.dto.PaqueteRapidoDTO;
 import com.candas.candas_backend.dto.PaqueteSimplificadoDTO;
 import com.candas.candas_backend.entity.enums.EstadoPaquete;
@@ -114,6 +115,13 @@ public class PaqueteController {
     @Operation(summary = "Obtener paquete por ID")
     public ResponseEntity<PaqueteDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(paqueteService.findById(id));
+    }
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.PAQUETES_LISTAR + "')")
+    @Operation(summary = "Estadísticas de paquetes", description = "Devuelve el total de paquetes y conteos por estado (REGISTRADO, RECIBIDO, ENSACADO, DESPACHADO)")
+    public ResponseEntity<PaqueteEstadisticasDTO> getEstadisticas() {
+        return ResponseEntity.ok(paqueteService.getEstadisticas());
     }
 
     @GetMapping("/por-guia/{numeroGuia}")

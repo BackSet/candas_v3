@@ -319,6 +319,13 @@ export const paqueteService = {
     )
     return response.data
   },
+
+  async getEstadisticas(): Promise<PaqueteEstadisticas> {
+    const response = await apiClient.get<PaqueteEstadisticas>(
+      `${API_ENDPOINTS.PAQUETES.BASE}/stats`
+    )
+    return response.data
+  },
 }
 
 export interface ImportResult {
@@ -333,4 +340,12 @@ export interface ImportResult {
     numeroFila?: number
   }>
   numerosGuiaDuplicados?: string[]
+}
+
+export interface PaqueteEstadisticas {
+  total: number
+  registrados: number
+  recibidos: number
+  ensacados: number
+  despachados: number
 }

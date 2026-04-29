@@ -6,6 +6,7 @@ import com.candas.candas_backend.dto.ImportResultDTO;
 import com.candas.candas_backend.dto.PaqueteDTO;
 import com.candas.candas_backend.dto.PaqueteRapidoDTO;
 import com.candas.candas_backend.dto.PaqueteSimplificadoDTO;
+import com.candas.candas_backend.dto.PaqueteEstadisticasDTO;
 import com.candas.candas_backend.entity.*;
 import com.candas.candas_backend.entity.enums.EstadoPaquete;
 import com.candas.candas_backend.entity.enums.TipoPaquete;
@@ -580,5 +581,14 @@ public class PaqueteService {
         if (p.getValor() == null) p.setValor(ListasEtiquetadasConstants.VALOR_DEFAULT);
         if (p.getTarifaPosition() == null || p.getTarifaPosition().isBlank()) p.setTarifaPosition(ListasEtiquetadasConstants.TARIFA_POSITION_DEFAULT);
         if (p.getSed() == null || p.getSed().isBlank()) p.setSed(ListasEtiquetadasConstants.SED_DEFAULT);
+    }
+
+    public PaqueteEstadisticasDTO getEstadisticas() {
+        long total = paqueteRepository.countTotal();
+        long registrados = paqueteRepository.countByEstado(EstadoPaquete.REGISTRADO);
+        long recibidos = paqueteRepository.countByEstado(EstadoPaquete.RECIBIDO);
+        long ensacados = paqueteRepository.countByEstado(EstadoPaquete.ENSACADO);
+        long despachados = paqueteRepository.countByEstado(EstadoPaquete.DESPACHADO);
+        return new PaqueteEstadisticasDTO(total, registrados, recibidos, ensacados, despachados);
     }
 }

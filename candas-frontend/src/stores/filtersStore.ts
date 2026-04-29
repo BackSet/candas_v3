@@ -31,10 +31,14 @@ type FiltersState = Partial<Record<ListFilterKey, ListFiltersState>>
 
 interface FiltersStore {
   filters: FiltersState
+  recentKeys: ListFilterKey[]
   setFilters: (listKey: ListFilterKey, filters: Partial<ListFiltersState>) => void
   getFilters: (listKey: ListFilterKey) => ListFiltersState
   clearFilters: (listKey: ListFilterKey) => void
+  clearAllFilters: () => void
 }
+
+const MAX_RECENT_KEYS = 5
 
 const defaultFilters = (): ListFiltersState => ({
   search: '',
@@ -44,22 +48,42 @@ const defaultFilters = (): ListFiltersState => ({
   filtroTipo: 'all',
 })
 
+function pruneOldKeys(
+  state: FiltersStore
+): Pick<FiltersStore, 'filters' | 'recentKeys'> {
+  const recentKeys = state.recentKeys.slice(0, MAX_RECENT_KEYS)
+  const filters: FiltersState = {}
+  for (const key of recentKeys) {
+    if (state.filters[key]) {
+      filters[key] = state.filters[key]
+    }
+  }
+  return { filters, recentKeys }
+}
+
 export const useFiltersStore = create<FiltersStore>()(
   persist(
     (set, get) => ({
       filters: {},
+      recentKeys: [],
 
       setFilters: (listKey, filters) => {
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            [listKey]: {
-              ...defaultFilters(),
-              ...state.filters[listKey],
-              ...filters,
+        set((state) => {
+          const newRecent = state.recentKeys.includes(listKey)
+            ? state.recentKeys
+            : [listKey, ...state.recentKeys].slice(0, MAX_RECENT_KEYS)
+          return {
+            filters: {
+              ...state.filters,
+              [listKey]: {
+                ...defaultFilters(),
+                ...state.filters[listKey],
+                ...filters,
+              },
             },
-          },
-        }))
+            recentKeys: newRecent,
+          }
+        })
       },
 
       getFilters: (listKey) => {
@@ -73,13 +97,18 @@ export const useFiltersStore = create<FiltersStore>()(
         set((state) => {
           const next = { ...state.filters }
           delete next[listKey]
-          return { filters: next }
+          const nextRecent = state.recentKeys.filter((k) => k !== listKey)
+          return { filters: next, recentKeys: nextRecent }
         })
+      },
+
+      clearAllFilters: () => {
+        set({ filters: {}, recentKeys: [] })
       },
     }),
     {
       name: 'candas-filters-storage',
-      partialize: (state) => ({ filters: state.filters }),
+      partialize: (state) => pruneOldKeys(state),
     }
   )
 )

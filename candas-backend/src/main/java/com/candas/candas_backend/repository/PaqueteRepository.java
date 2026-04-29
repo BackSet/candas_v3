@@ -131,4 +131,13 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long>, JpaSpec
     @EntityGraph(attributePaths = { "loteRecepcion" })
     @Query("SELECT p FROM Paquete p WHERE p.ref IS NOT NULL ORDER BY p.numeroGuia")
     List<Paquete> findAllListasEtiquetadas();
+
+    @Query("SELECT COUNT(p) FROM Paquete p")
+    long countTotal();
+
+    @Query("SELECT COUNT(p) FROM Paquete p WHERE p.estado = :estado")
+    long countByEstado(@Param("estado") EstadoPaquete estado);
+
+    @Query("SELECT p.estado, COUNT(p) FROM Paquete p GROUP BY p.estado")
+    List<Object[]> countGroupByEstado();
 }

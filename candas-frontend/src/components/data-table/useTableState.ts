@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DataTableColumn } from './types'
 
 export type SortDir = 'asc' | 'desc'
@@ -41,6 +41,9 @@ interface UseTableStateOptions<T> {
 }
 
 export function useTableState<T>({ storageKey, columns }: UseTableStateOptions<T>) {
+  const columnsRef = useRef(columns)
+  columnsRef.current = columns
+
   const initialHidden = useMemo(() => {
     const persisted = readPersistedState(storageKey)
     if (persisted?.hidden) return new Set(persisted.hidden)
@@ -84,14 +87,15 @@ export function useTableState<T>({ storageKey, columns }: UseTableStateOptions<T
   }, [])
 
   const visibleColumns = useMemo(
-    () => columns.filter((c) => !hiddenColumns.has(c.id)),
-    [columns, hiddenColumns]
+    () => columnsRef.current.filter((c) => !hiddenColumns.has(c.id)),
+    [hiddenColumns]
   )
 
   const sortData = useCallback(
     (data: T[]): T[] => {
       if (!sort) return data
-      const col = columns.find((c) => c.id === sort.id)
+      const cols = columnsRef.current
+      const col = cols.find((c) => c.id === sort.id)
       if (!col?.sortValue) return data
       const accessor = col.sortValue
       const sorted = [...data].sort((a, b) => {
@@ -110,7 +114,7 @@ export function useTableState<T>({ storageKey, columns }: UseTableStateOptions<T
       })
       return sort.dir === 'asc' ? sorted : sorted.reverse()
     },
-    [sort, columns]
+    [sort]
   )
 
   return {

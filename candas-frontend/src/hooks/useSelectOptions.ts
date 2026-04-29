@@ -32,7 +32,7 @@ export function useClientes() {
   return useQuery({
     queryKey: ['clientes'],
     queryFn: async () => {
-      const data = await clienteService.findAll({ page: 0, size: 1000 })
+      const data = await clienteService.findAll({ page: 0, size: 100 })
       return data.content
         .filter((c) => c.activo !== false)
         .map<SelectOption>((c) => ({
@@ -49,7 +49,7 @@ export function useAgencias() {
   return useQuery({
     queryKey: ['agencias'],
     queryFn: async () => {
-      const data = await agenciaService.findAll({ page: 0, size: 1000 })
+      const data = await agenciaService.findAll({ page: 0, size: 100 })
       return data.content
         .filter((a) => a.activa !== false)
         .map<SelectOption>((a) => ({
@@ -66,7 +66,7 @@ export function usePuntosOrigen() {
   return useQuery({
     queryKey: ['puntos-origen'],
     queryFn: async () => {
-      const data = await puntoOrigenService.findAll({ page: 0, size: 1000 })
+      const data = await puntoOrigenService.findAll({ page: 0, size: 100 })
       return data.content
         .filter((o) => o.activo !== false)
         .map((o) => ({
