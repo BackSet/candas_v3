@@ -52,10 +52,7 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long>, JpaSpec
     Page<Paquete> findByNumeroGuiaContainingIgnoreCase(String numeroGuia, Pageable pageable);
 
     /** Lista paginada con filtros opcionales: búsqueda por guía, estado, tipo, agencia destino, lote y rango de fechaRegistro. 
-     * Filtros de fecha optimizados:
-     * - Si solo hay fechaDesde: fechaRegistro >= fechaDesde (desde esa fecha en adelante)
-     * - Si solo hay fechaHasta: fechaRegistro <= fechaHasta (hasta esa fecha)
-     * - Si hay ambos: rango completo
+     * Filtros de fecha: soporta null para ambos (sin filtro) o valores específicos.
      */
     @EntityGraph(attributePaths = { "puntoOrigen", "clienteRemitente", "clienteDestinatario", "agenciaDestino",
             "destinatarioDirecto", "loteRecepcion", "paquetePadre" })
