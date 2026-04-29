@@ -27,10 +27,23 @@ public final class DespachoSpecs {
     private DespachoSpecs() {
     }
 
+    /** Versión con LocalDate (convierte a LocalDateTime internamente). */
     public static Specification<Despacho> withFilters(
             String search,
             LocalDate fechaDesde,
             LocalDate fechaHasta,
+            String tipoDestino,
+            Long idAgenciaRestringida) {
+        LocalDateTime desde = fechaDesde != null ? fechaDesde.atStartOfDay() : null;
+        LocalDateTime hasta = fechaHasta != null ? fechaHasta.atTime(LocalTime.MAX) : null;
+        return withFilters(search, desde, hasta, tipoDestino, idAgenciaRestringida);
+    }
+
+    /** Versión con LocalDateTime (soporte para rangos parciales). */
+    public static Specification<Despacho> withFilters(
+            String search,
+            LocalDateTime fechaDesde,
+            LocalDateTime fechaHasta,
             String tipoDestino,
             Long idAgenciaRestringida) {
         return (Root<Despacho> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
@@ -48,18 +61,11 @@ public final class DespachoSpecs {
             
             // Filtro de fecha optimizado: soporte para rangos parciales
             if (fechaDesde != null && fechaHasta != null) {
-                // Rango completo: desde el inicio de fechaDesde hasta el fin de fechaHasta
-                LocalDateTime desde = fechaDesde.atStartOfDay();
-                LocalDateTime hasta = fechaHasta.atTime(LocalTime.MAX);
-                predicates.add(cb.between(root.get("fechaDespacho"), desde, hasta));
+                predicates.add(cb.between(root.get("fechaDespacho"), fechaDesde, fechaHasta));
             } else if (fechaDesde != null) {
-                // Solo desde: desde esa fecha en adelante
-                LocalDateTime desde = fechaDesde.atStartOfDay();
-                predicates.add(cb.greaterThanOrEqualTo(root.get("fechaDespacho"), desde));
+                predicates.add(cb.greaterThanOrEqualTo(root.get("fechaDespacho"), fechaDesde));
             } else if (fechaHasta != null) {
-                // Solo hasta: hasta esa fecha (fin del día)
-                LocalDateTime hasta = fechaHasta.atTime(LocalTime.MAX);
-                predicates.add(cb.lessThanOrEqualTo(root.get("fechaDespacho"), hasta));
+                predicates.add(cb.lessThanOrEqualTo(root.get("fechaDespacho"), fechaHasta));
             }
             
             if (tipoDestino != null && !tipoDestino.isBlank()) {

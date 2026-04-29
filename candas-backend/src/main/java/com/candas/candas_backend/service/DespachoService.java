@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -74,12 +75,8 @@ public class DespachoService {
     }
 
     public Page<DespachoDTO> findAll(Pageable pageable, String tipoDestino, LocalDate fechaDesde, LocalDate fechaHasta, String search) {
-        LocalDateTime inicio = null;
-        LocalDateTime fin = null;
-        if (fechaDesde != null && fechaHasta != null && !fechaHasta.isBefore(fechaDesde)) {
-            inicio = fechaDesde.atStartOfDay();
-            fin = fechaHasta.atTime(23, 59, 59, 999_000_000);
-        }
+        LocalDateTime inicio = fechaDesde != null ? fechaDesde.atStartOfDay() : null;
+        LocalDateTime fin = fechaHasta != null ? fechaHasta.atTime(LocalTime.MAX) : null;
         String searchTrimmed = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         Long idAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
         var spec = DespachoSpecs.withFilters(searchTrimmed, inicio, fin, tipoDestino, idAgencia);
@@ -113,7 +110,7 @@ public class DespachoService {
             return List.of();
         }
         LocalDateTime inicio = fechaInicio.atStartOfDay();
-        LocalDateTime fin = fechaFin.atTime(23, 59, 59, 999_000_000);
+        LocalDateTime fin = fechaFin.atTime(LocalTime.MAX);
         Long idAgencia = agenciaScopeResolver.idAgenciaRestringida().orElse(null);
         var spec = DespachoSpecs.withFilters(null, inicio, fin, null, idAgencia);
         return despachoRepository.findAll(spec).stream()
