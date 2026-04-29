@@ -47,7 +47,7 @@ function getPresetDates(preset: DatePreset): { desde: string; hasta: string } {
       return { desde: formatDate(inicioSemanaPasada), hasta: formatDate(finSemanaPasada) }
     }
     case 'este-mes': {
-      const inicioMes = new Date(hoy.getFullYear(), mes.getMonth(), 1)
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
       return { desde: formatDate(inicioMes), hasta: formatDate(hoy) }
     }
     case 'mes-pasado': {
@@ -133,4 +133,3 @@ export function DateQuickFilter({
 }
 
 export { getPresetDates, getCurrentPreset, formatDate }
-export type { DatePreset }
