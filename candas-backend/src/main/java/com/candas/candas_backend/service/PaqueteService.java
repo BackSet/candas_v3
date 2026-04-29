@@ -14,11 +14,13 @@ import com.candas.candas_backend.exception.BadRequestException;
 import com.candas.candas_backend.exception.ResourceNotFoundException;
 import com.candas.candas_backend.mapper.PaqueteMapper;
 import com.candas.candas_backend.repository.*;
+import com.candas.candas_backend.repository.spec.PaqueteSpecs;
 import com.candas.candas_backend.util.ExcelHelper;
 import com.candas.candas_backend.util.ListasEtiquetadasConstants;
 import com.candas.candas_backend.validation.PaqueteValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -65,26 +67,11 @@ public Page<PaqueteDTO> findAll(
             Pageable pageable) {
         String searchTrimmed = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         
-        // Solo aplicar ambos filtros si vienen ambas fechas
-        // De lo contrario, omitir el filtro de fecha completamente
-        LocalDateTime desde = null;
-        LocalDateTime hasta = null;
-        if (fechaDesde != null && fechaHasta != null) {
-            desde = fechaDesde;
-            hasta = fechaHasta;
-        }
+        // Usar Specifications para evitar problemas con parámetros null en JPQL
+        Specification<Paquete> spec = PaqueteSpecs.withFilters(
+                searchTrimmed, estado, tipo, idAgencia, idLote, fechaDesde, fechaHasta);
         
-        return paqueteRepository
-                .findAllFiltered(searchTrimmed, estado, tipo, idAgencia, idLote, desde, hasta, pageable)
-                .map(paqueteMapper::toDTO);
-    }
-        if (fechaHasta != null) {
-            hasta = fechaHasta.atTime(23, 59, 59); // Fin del día
-        }
-        
-        return paqueteRepository
-                .findAllFiltered(searchTrimmed, estado, tipo, idAgencia, idLote, desde, hasta, pageable)
-                .map(paqueteMapper::toDTO);
+        return paqueteRepository.findAll(spec, pageable).map(paqueteMapper::toDTO);
     }
 
     public PaqueteDTO findById(Long id) {

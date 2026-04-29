@@ -6,7 +6,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,8 +60,8 @@ public final class LoteRecepcionSpecs {
             } else if (fechaDesde != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("fechaRecepcion"), fechaDesde));
             } else if (fechaHasta != null) {
-                LocalDateTime hastaConHora = fechaHasta.atTime(LocalTime.MAX);
-                predicates.add(cb.lessThanOrEqualTo(root.get("fechaRecepcion"), hastaConHora));
+                // fechaHasta ya es LocalDateTime, pasar directamente
+                predicates.add(cb.lessThanOrEqualTo(root.get("fechaRecepcion"), fechaHasta));
             }
             
             if (idAgenciaRestringida != null) {
