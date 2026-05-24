@@ -1580,9 +1580,9 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                             )}
 
                                             {lastScanned.observacion && (
-                                                <div className="col-span-2 bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                                                    <span className="text-xs uppercase text-amber-600 dark:text-amber-400 font-bold tracking-wider block mb-1">Observaciones</span>
-                                                    <p className="text-lg font-medium text-amber-900 dark:text-amber-100">{lastScanned.observacion}</p>
+                                                <div className="col-span-2 rounded-lg border border-warning/40 bg-warning/15 p-4">
+                                                    <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-warning">Observaciones</span>
+                                                    <p className="text-lg font-medium text-warning-foreground">{lastScanned.observacion}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -1948,7 +1948,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                                     Despachado
                                                                 </Badge>
                                                             ) : (
-                                                                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-normal">
+                                                                <Badge variant="warning" className="font-normal">
                                                                     Pendiente
                                                                 </Badge>
                                                             )}
@@ -2463,11 +2463,11 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                 {pasteListResult.agregados}
                                             </div>
                                         </div>
-                                        <div className="rounded-md border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 px-3 py-2">
-                                            <div className="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">
+                                        <div className="rounded-md border border-warning/40 bg-warning/15 px-3 py-2">
+                                            <div className="text-[10px] font-semibold uppercase tracking-wider text-warning-foreground">
                                                 Ya estaban
                                             </div>
-                                            <div className="text-xl font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                                            <div className="text-xl font-bold tabular-nums text-warning-foreground">
                                                 {pasteListResult.yaEstaban.length}
                                             </div>
                                         </div>
@@ -2503,11 +2503,11 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
                                     {pasteListResult.yaEstaban.length > 0 && (
                                         <div className="space-y-1.5">
-                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-warning-foreground">
                                                 <AlertCircle className="h-3.5 w-3.5" />
                                                 Ya estaban en la cola ({pasteListResult.yaEstaban.length})
                                             </div>
-                                            <div className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20 max-h-24 overflow-y-auto p-2 font-mono text-[11px] text-amber-900 dark:text-amber-300">
+                                            <div className="max-h-24 overflow-y-auto rounded-md border border-warning/30 bg-warning/10 p-2 font-mono text-[11px] text-warning-foreground">
                                                 {pasteListResult.yaEstaban.join(', ')}
                                             </div>
                                         </div>

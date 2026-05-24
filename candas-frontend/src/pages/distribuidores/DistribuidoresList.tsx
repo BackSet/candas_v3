@@ -29,6 +29,7 @@ import {
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { EmptyState } from '@/components/states/EmptyState'
@@ -224,7 +225,7 @@ export default function DistribuidoresList() {
   return (
     <ListPageLayout
       title="Distribuidores"
-      icon={<Building2 className="h-4 w-4" />}
+      icon={<ModulePageIcon module="distribuidores" />}
       className="py-2 animate-in fade-in duration-500"
       actions={
         <ProtectedByPermission permission={PERMISSIONS.DISTRIBUIDORES.CREAR}>
@@ -282,9 +283,7 @@ export default function DistribuidoresList() {
                     ? 'No hay resultados con los filtros aplicados'
                     : 'No hay distribuidores registrados'
                 }
-                icon={
-                  <Building2 className="h-10 w-10 text-muted-foreground/50" />
-                }
+                icon={<ModulePageIcon module="distribuidores" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission

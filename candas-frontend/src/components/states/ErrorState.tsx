@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export function ErrorState({
@@ -7,12 +8,17 @@ export function ErrorState({
   description,
   icon,
   action,
+  onRetry,
+  retryLabel = 'Reintentar',
   className,
 }: {
   title?: string
   description?: string
   icon?: ReactNode
   action?: ReactNode
+  /** Si se provee, muestra botón de reintento (útil con `refetch` de React Query). */
+  onRetry?: () => void
+  retryLabel?: string
   className?: string
 }) {
   return (
@@ -28,6 +34,14 @@ export function ErrorState({
       <div className="mt-3 text-sm font-medium text-foreground">{title}</div>
       {description ? <div className="mt-1 text-xs text-muted-foreground max-w-sm">{description}</div> : null}
       {action ? <div className="mt-4">{action}</div> : null}
+      {!action && onRetry ? (
+        <div className="mt-4">
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+            <RotateCcw className="h-3.5 w-3.5" />
+            {retryLabel}
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }

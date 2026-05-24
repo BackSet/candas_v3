@@ -33,11 +33,12 @@ import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { cn } from '@/lib/utils'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ErrorState } from '@/components/states'
 import { ListPagination } from '@/components/list/ListPagination'
 import { EmptyState } from '@/components/states/EmptyState'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter, DateRangeFilter } from '@/components/filters'
+import { FilterBar, SelectFilter, DateRangeFilter, buildDateRangeChip } from '@/components/filters'
 import { useListFilters } from '@/hooks/useListFilters'
 import { useAgencias } from '@/hooks/useSelectOptions'
 import type { LoteRecepcion } from '@/types/lote-recepcion'
@@ -150,15 +151,12 @@ export default function LotesRecepcionList() {
           onRemove: () => removeFilter('idAgencia'),
         })
       }
-      if (values.fechaDesde || values.fechaHasta) {
-        const desde = values.fechaDesde || '...'
-        const hasta = values.fechaHasta || '...'
-        chips.push({
-          key: 'fechaRango',
-          label: `Fecha: ${desde} → ${hasta}`,
-          onRemove: () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' }),
-        })
-      }
+      const fechaChip = buildDateRangeChip(
+        String(values.fechaDesde ?? ''),
+        String(values.fechaHasta ?? ''),
+        () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' })
+      )
+      if (fechaChip) chips.push(fechaChip)
       return chips
     },
   })
@@ -313,7 +311,7 @@ export default function LotesRecepcionList() {
   return (
     <ListPageLayout
       title="Lotes de Recepción"
-      icon={<Package2 className="h-4 w-4" />}
+      icon={<ModulePageIcon module="lotesRecepcion" />}
       actions={
         <ProtectedByPermission permission={PERMISSIONS.LOTES_RECEPCION.CREAR}>
           <Button onClick={() => navigate({ to: '/lotes-recepcion/new' })} size="sm" className="h-8 shadow-sm">
@@ -390,7 +388,7 @@ export default function LotesRecepcionList() {
                     ? 'No hay resultados para los filtros seleccionados'
                     : 'No hay lotes de recepción registrados'
                 }
-                icon={<Package2 className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="lotesRecepcion" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission permission={PERMISSIONS.LOTES_RECEPCION.CREAR}>

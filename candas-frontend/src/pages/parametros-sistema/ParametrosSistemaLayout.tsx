@@ -1,18 +1,36 @@
 import { Link, Outlet, useLocation } from '@tanstack/react-router'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
-import { Settings, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { ModulePageIcon } from '@/components/icons'
+import { PARAMETROS_MODULES } from './submenuItems'
 
 export default function ParametrosSistemaLayout() {
   const { pathname } = useLocation()
-  const isIndexPage = pathname === '/parametros-sistema' || pathname.endsWith('/parametros-sistema')
+  const isIndexPage =
+    pathname === '/parametros-sistema' || pathname.endsWith('/parametros-sistema')
+
+  const currentModule = PARAMETROS_MODULES.find((m) => pathname.includes(m.id))
+
+  const title = isIndexPage
+    ? 'Parámetros del sistema'
+    : (currentModule?.label ?? 'Parámetros del sistema')
+
+  const subtitle = isIndexPage
+    ? 'Configuración global: elija qué desea ajustar'
+    : (currentModule?.description ?? '')
 
   return (
     <StandardPageLayout
-      title="Parámetros del sistema"
-      subtitle="Configuración y preferencias para el operario"
-      icon={<Settings className="size-5" />}
-      width="lg"
+      title={title}
+      subtitle={subtitle}
+      icon={
+        <ModulePageIcon
+          module={isIndexPage ? 'parametros' : (currentModule?.moduleId ?? 'parametros')}
+        />
+      }
+      width="xl"
       spacing="6"
+      className="py-2"
     >
       <div className="space-y-4">
         {!isIndexPage && (
@@ -21,12 +39,10 @@ export default function ParametrosSistemaLayout() {
             className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Ver todos los parámetros
+            Todas las configuraciones
           </Link>
         )}
-        <div className="min-w-0">
-          <Outlet />
-        </div>
+        <Outlet />
       </div>
     </StandardPageLayout>
   )

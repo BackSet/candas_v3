@@ -1,3 +1,4 @@
+import { printNotify } from '@/lib/print-notify'
 import type { Paquete } from '@/types/paquete'
 import { PRINT_CSS_BASE } from './printTheme'
 
@@ -115,7 +116,7 @@ export async function imprimirLoteEspecial(
 ): Promise<void> {
   const printWindow = window.open('', '_blank', 'width=1000,height=800')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
   const titulo = `Lote especial ${numeroRecepcion || ''} - ${tipo || 'TODOS'}`
@@ -132,7 +133,7 @@ export async function imprimirLoteEspecial(
 export function imprimirPdfEnVentana(blob: Blob, titulo: string): void {
   const printWindow = window.open('', '_blank', 'width=1000,height=800')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
   const url = URL.createObjectURL(blob)

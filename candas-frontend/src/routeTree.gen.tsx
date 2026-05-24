@@ -254,15 +254,6 @@ const permisosIndexRoute = createRoute({
     </ProtectedRouteByPermission>
   ),
 })
-const permisosNewRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: 'permisos/new',
-  component: () => (
-    <ProtectedRouteByPermission permission={PERMISSIONS.PERMISOS.CREAR}>
-      <PermisoForm />
-    </ProtectedRouteByPermission>
-  ),
-})
 const permisosIdRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: 'permisos/$id',
@@ -694,7 +685,6 @@ const routeTree = rootRoute.addChildren([
     puntosOrigenIdRoute,
     puntosOrigenIdEditRoute,
     permisosIndexRoute,
-    permisosNewRoute,
     permisosIdRoute,
     permisosIdEditRoute,
     lotesRecepcionIndexRoute,

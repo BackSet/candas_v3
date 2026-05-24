@@ -384,9 +384,9 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
           {/* Guía en varias etiquetas: operario debe elegir tipo correcto */}
           {pendienteElegirEtiqueta && (
             <div ref={resultadoRef} className="w-full max-w-4xl mx-auto mt-12 animate-in slide-in-from-bottom-4 duration-500">
-              <div className="rounded-xl border-2 border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20 shadow-lg overflow-hidden p-8 md:p-12 text-center">
+              <div className="overflow-hidden rounded-xl border-2 border-warning/40 bg-warning/15 p-8 text-center shadow-lg md:p-12">
                 <div className="flex flex-col items-center justify-center gap-4">
-                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <div className="flex items-center gap-2 text-warning-foreground">
                     <AlertTriangle className="h-8 w-8" />
                     <span className="text-lg font-semibold">La guía está en varias listas</span>
                   </div>

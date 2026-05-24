@@ -26,11 +26,12 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ErrorState } from '@/components/states'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ListPagination } from '@/components/list/ListPagination'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter, DateRangeFilter } from '@/components/filters'
+import { FilterBar, SelectFilter, DateRangeFilter, buildDateRangeChip } from '@/components/filters'
 import { useListFilters } from '@/hooks/useListFilters'
 import { useAgencias } from '@/hooks/useSelectOptions'
 import type { LoteRecepcion } from '@/types/lote-recepcion'
@@ -78,15 +79,12 @@ export default function LotesEspecialesList() {
           onRemove: () => removeFilter('idAgencia'),
         })
       }
-      if (values.fechaDesde || values.fechaHasta) {
-        const desde = values.fechaDesde || '...'
-        const hasta = values.fechaHasta || '...'
-        chips.push({
-          key: 'fechaRango',
-          label: `Fecha: ${desde} → ${hasta}`,
-          onRemove: () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' }),
-        })
-      }
+      const fechaChip = buildDateRangeChip(
+        String(values.fechaDesde ?? ''),
+        String(values.fechaHasta ?? ''),
+        () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' })
+      )
+      if (fechaChip) chips.push(fechaChip)
       return chips
     },
   })
@@ -221,7 +219,7 @@ export default function LotesEspecialesList() {
   return (
     <ListPageLayout
       title="Lotes especiales"
-      icon={<Tag className="h-4 w-4" />}
+      icon={<ModulePageIcon module="lotesEspeciales" />}
       actions={
         <Button onClick={() => navigate({ to: '/lotes-especiales/new' })} size="sm" className="h-8 shadow-sm">
           <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -284,7 +282,7 @@ export default function LotesEspecialesList() {
                     ? 'No hay resultados para los filtros seleccionados'
                     : 'Aún no se han registrado lotes especiales'
                 }
-                icon={<Tag className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="lotesEspeciales" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <Button onClick={() => navigate({ to: '/lotes-especiales/new' })} variant="outline" size="sm">

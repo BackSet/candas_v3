@@ -1069,9 +1069,9 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
                         </div>
                       )}
                       {lastScannedDespacho.observacion && (
-                        <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                          <span className="text-xs uppercase text-amber-600 dark:text-amber-400 font-bold tracking-wider block mb-1">Observaciones</span>
-                          <p className="text-lg font-medium text-amber-900 dark:text-amber-100">{lastScannedDespacho.observacion}</p>
+                        <div className="rounded-lg border border-warning/40 bg-warning/15 p-4">
+                          <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-warning">Observaciones</span>
+                          <p className="text-lg font-medium text-warning-foreground">{lastScannedDespacho.observacion}</p>
                         </div>
                       )}
                     </div>
@@ -1103,13 +1103,13 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
                       </div>
                     )}
                     {lastConsultaResultado !== 'sin_etiqueta' && (lastConsultaResultado as GuiaListaEtiquetadaConsultaDTO).instruccion && (
-                      <div className="p-5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex gap-4 items-start">
-                        <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                          <span className="text-amber-700 dark:text-amber-300 text-sm font-bold">!</span>
+                      <div className="flex items-start gap-4 rounded-xl border border-warning/40 bg-warning/15 p-5">
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-warning/25">
+                          <span className="text-sm font-bold text-warning">!</span>
                         </div>
-                        <div className="space-y-1.5 min-w-0">
-                          <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Instrucción</p>
-                          <p className="text-lg font-semibold text-amber-900 dark:text-amber-100">
+                        <div className="min-w-0 space-y-1.5">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-warning">Instrucción</p>
+                          <p className="text-lg font-semibold text-warning-foreground">
                             {(lastConsultaResultado as GuiaListaEtiquetadaConsultaDTO).instruccion}
                           </p>
                         </div>

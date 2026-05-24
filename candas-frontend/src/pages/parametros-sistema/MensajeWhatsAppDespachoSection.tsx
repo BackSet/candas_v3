@@ -11,7 +11,6 @@ import { PERMISSIONS } from '@/types/permissions'
 import { Save, MessageSquare, Bold, Italic, Strikethrough, Code, CheckCircle2, Clock3, CircleDashed } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { reemplazarVariables } from '@/utils/plantillaWhatsApp'
-import { useUIStore } from '@/stores/uiStore'
 
 /** Agrupación de variables para mejor orden en la UI (claves en el orden deseado). */
 const VARIABLE_GROUPS: { id: string; label: string; keys: string[] }[] = [
@@ -228,15 +227,13 @@ export function MensajeWhatsAppDespachoSection() {
       return { label: 'Guardando…', icon: Clock3, className: 'text-amber-600 dark:text-amber-400' }
     }
     if (hasUnsavedChanges) {
-      return { label: 'Editando', icon: CircleDashed, className: 'text-blue-600 dark:text-blue-400' }
+      return { label: 'Editando', icon: CircleDashed, className: 'text-info' }
     }
-    return { label: 'Sin cambios', icon: CheckCircle2, className: 'text-emerald-600 dark:text-emerald-400' }
+    return { label: 'Sin cambios', icon: CheckCircle2, className: 'text-success' }
   }, [hasUnsavedChanges, isSaving])
 
   const preview = reemplazarVariables(plantillaLocal, VALORES_EJEMPLO)
   const groupedVariables = variables?.length ? groupVariables(variables, VARIABLE_GROUPS) : []
-  const resolvedTheme = useUIStore((state) => state.resolvedTheme)
-
   const handleGuardar = () => {
     guardarMutation.mutate(plantillaLocal)
   }
@@ -257,58 +254,54 @@ export function MensajeWhatsAppDespachoSection() {
   }
 
   return (
-    <section className="rounded-xl border bg-card p-6 space-y-6 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <MessageSquare className="size-5" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">Mensaje de despacho WhatsApp</h2>
-            <p className="text-sm text-muted-foreground">
-              Se ha cargado la configuración actual. Edite la plantilla y guarde para aplicar los cambios.
-            </p>
-          </div>
+    <div className="mx-auto max-w-6xl space-y-4">
+      {/* Barra de estado y guardado */}
+      <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card/80 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <MessageSquare className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <span>Edite la plantilla y guarde para aplicarla en los próximos despachos.</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={cn('inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide', saveStatus.className)}>
-            <saveStatus.icon className="size-4" />
+        <div className="flex items-center gap-3 sm:shrink-0">
+          <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', saveStatus.className)}>
+            <saveStatus.icon className="size-3.5" />
             {saveStatus.label}
           </span>
           <ProtectedByPermission permission={PERMISSIONS.PARAMETROS_SISTEMA.EDITAR}>
             <Button
+              size="sm"
               onClick={handleGuardar}
               disabled={isSaving || !plantillaLocal.trim() || !hasUnsavedChanges}
             >
-              <Save className="size-4 mr-2" />
-              {isSaving ? 'Guardando...' : 'Guardar configuración'}
+              <Save className="size-4 mr-1.5" />
+              {isSaving ? 'Guardando…' : 'Guardar'}
             </Button>
           </ProtectedByPermission>
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Editor del mensaje</Label>
-            <p className="text-xs text-muted-foreground">Formato rápido y edición de plantilla.</p>
+      <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+        {/* Editor */}
+        <section className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
+          <div className="space-y-1">
+            <Label className="text-sm font-semibold">Plantilla del mensaje</Label>
+            <p className="text-xs text-muted-foreground">
+              Atajos: Ctrl+B negrita · Ctrl+I cursiva · Ctrl+U tachado · Tab indentar
+            </p>
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/20 p-2.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onMouseDown={keepTextareaFocus} onClick={() => wrapSelection('*')} title="Negrita">
-                <Bold className="size-4" />
-              </Button>
-              <Button type="button" variant="outline" size="sm" onMouseDown={keepTextareaFocus} onClick={() => wrapSelection('_')} title="Cursiva">
-                <Italic className="size-4" />
-              </Button>
-              <Button type="button" variant="outline" size="sm" onMouseDown={keepTextareaFocus} onClick={() => wrapSelection('~')} title="Tachado">
-                <Strikethrough className="size-4" />
-              </Button>
-              <Button type="button" variant="outline" size="sm" onMouseDown={keepTextareaFocus} onClick={() => wrapSelection('```', '```')} title="Monoespacio">
-                <Code className="size-4" />
-              </Button>
-            </div>
+          <div className="flex flex-wrap items-center gap-1 rounded-lg border border-border/50 bg-muted/30 p-1.5">
+            <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onMouseDown={keepTextareaFocus} onClick={() => wrapSelection('*')} title="Negrita">
+              <Bold className="size-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onMouseDown={keepTextareaFocus} onClick={() => wrapSelection('_')} title="Cursiva">
+              <Italic className="size-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onMouseDown={keepTextareaFocus} onClick={() => wrapSelection('~')} title="Tachado">
+              <Strikethrough className="size-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onMouseDown={keepTextareaFocus} onClick={() => wrapSelection('```', '```')} title="Monoespacio">
+              <Code className="size-4" />
+            </Button>
           </div>
 
           <Textarea
@@ -321,38 +314,33 @@ export function MensajeWhatsAppDespachoSection() {
             onSelect={guardarPosicionCursor}
             onKeyUp={guardarPosicionCursor}
             onClick={guardarPosicionCursor}
-            placeholder="Ej: Despacho {{numero_manifiesto}}&#10;Fecha: {{fecha_despacho}}..."
-            rows={16}
-            className="font-mono text-sm resize-y min-h-[340px]"
+            placeholder={'Ej: Despacho {{numero_manifiesto}}\nFecha: {{fecha_despacho}}...'}
+            rows={14}
+            className="min-h-[300px] resize-y font-mono text-sm leading-relaxed"
           />
 
           {groupedVariables.length > 0 && (
-            <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
-              <div className="space-y-1">
-                <Label>Variables disponibles</Label>
-                <p className="text-xs text-muted-foreground">
-                  Haga clic para insertar en la posición del cursor.
-                </p>
-              </div>
-              <div className="space-y-4">
+            <div className="space-y-3 rounded-lg border border-dashed border-border/70 bg-muted/20 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Insertar variable</p>
+              <div className="space-y-3 max-h-[200px] overflow-y-auto pr-1">
                 {groupedVariables.map(({ group, variables: vars }) => (
-                  <div key={group.id} className="space-y-2">
-                    <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <div key={group.id} className="space-y-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
                       {group.label}
                     </span>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {vars.map((v) => (
                         <Button
                           key={v.clave}
                           type="button"
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           onMouseDown={keepTextareaFocus}
                           onClick={() => insertarVariable(v.clave)}
                           title={v.descripcion}
-                          className="font-mono"
+                          className="h-7 px-2 font-mono text-[11px]"
                         >
-                          {v.clave}
+                          {`{{${v.clave}}}`}
                         </Button>
                       ))}
                     </div>
@@ -361,27 +349,31 @@ export function MensajeWhatsAppDespachoSection() {
               </div>
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Vista previa (como en WhatsApp)</Label>
+        {/* Vista previa estilo chat */}
+        <section className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
+          <div className="space-y-1">
+            <Label className="text-sm font-semibold">Vista previa</Label>
             <p className="text-xs text-muted-foreground">
-              Se actualiza en tiempo real mientras escribe. Formato: *negrita* · _cursiva_ · ~tachado~ · ```mono```
+              Datos de ejemplo · *negrita* _cursiva_ ~tachado~ ```mono```
             </p>
           </div>
-          <div
-            className={cn(
-              'w-full min-h-[280px] rounded-lg border border-border/50 px-4 py-3 shadow-sm',
-              resolvedTheme === 'dark' ? 'bg-zinc-800 text-zinc-100' : 'bg-zinc-100 text-black',
-              'whitespace-pre-wrap text-sm leading-relaxed'
-            )}
-            aria-live="polite"
-          >
-            {preview ? renderPreviewComoWhatsApp(preview) : '(Sin contenido)'}
+          <div className="whatsapp-preview-bg flex min-h-[360px] flex-1 flex-col rounded-xl p-4">
+            <div className="mt-auto max-w-[92%] self-start">
+              <div
+                className="whatsapp-bubble"
+                aria-live="polite"
+              >
+                {preview ? renderPreviewComoWhatsApp(preview) : (
+                  <span className="italic text-muted-foreground">Sin contenido</span>
+                )}
+              </div>
+              <p className="mt-1 pl-1 text-[10px] text-muted-foreground/70">12:00</p>
+            </div>
           </div>
-        </div>
+        </section>
       </div>
-    </section>
+    </div>
   )
 }

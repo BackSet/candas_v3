@@ -215,13 +215,13 @@ export default function LoteEspecialTipeo() {
                 </div>
 
                 {(consultaResultado !== 'sin_etiqueta' && (consultaResultado as GuiaListaEtiquetadaConsultaDTO).instruccion) && (
-                  <div className="p-5 sm:p-6 rounded-xl bg-amber-500/10 border border-amber-500/25 flex gap-4 items-start">
-                    <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-amber-700 dark:text-amber-300 text-sm font-bold">!</span>
+                  <div className="flex items-start gap-4 rounded-xl border border-warning/40 bg-warning/15 p-5 sm:p-6">
+                    <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-warning/25">
+                      <span className="text-sm font-bold text-warning">!</span>
                     </div>
-                    <div className="space-y-1.5 min-w-0">
-                      <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Instrucción</p>
-                      <p className="text-xl sm:text-2xl font-semibold text-amber-900 dark:text-amber-100">
+                    <div className="min-w-0 space-y-1.5">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-warning">Instrucción</p>
+                      <p className="text-xl font-semibold text-warning-foreground sm:text-2xl">
                         {(consultaResultado as GuiaListaEtiquetadaConsultaDTO).instruccion}
                       </p>
                     </div>

@@ -1,4 +1,4 @@
-import { Search, Bell, LogOut, Shield, Loader2, UserCog } from 'lucide-react'
+import { Search, Bell, LogOut, Shield, Loader2, UserCog, Sun, Moon, Monitor } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -25,6 +25,7 @@ import {
 
 export function Header() {
   const { user, activeAgencyId, setActiveAgencyId } = useAuthStore()
+  const { theme, resolvedTheme, toggleTheme } = useUIStore()
   const navigate = useNavigate()
   const [isSwitchingAgency, setIsSwitchingAgency] = useState(false)
   const { data: agencias = [] } = useAgencias()
@@ -109,7 +110,30 @@ export function Header() {
           </div>
         )}
 
-        {/* Notifications */}
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          onClick={toggleTheme}
+          aria-label="Cambiar tema"
+          title={
+            theme === 'system'
+              ? 'Tema: Sistema'
+              : theme === 'dark'
+                ? 'Tema: Oscuro'
+                : 'Tema: Claro'
+          }
+          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+        >
+          {theme === 'system' ? (
+            <Monitor className="h-4 w-4" />
+          ) : resolvedTheme === 'dark' ? (
+            <Moon className="h-4 w-4" />
+          ) : (
+            <Sun className="h-4 w-4" />
+          )}
+        </Button>
+
         <Button
           variant="ghost"
           size="icon"
@@ -156,7 +180,7 @@ export function Header() {
                             <Badge
                               key={role}
                               variant="secondary"
-                              className="text-[9px] px-1.5 py-0 rounded-md border-0 font-semibold bg-violet-100/80 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400"
+                              className="text-[9px] px-1.5 py-0 rounded-md border-0 font-semibold bg-accent text-accent-foreground"
                             >
                               <Shield className="h-2.5 w-2.5 mr-0.5" />
                               {role}

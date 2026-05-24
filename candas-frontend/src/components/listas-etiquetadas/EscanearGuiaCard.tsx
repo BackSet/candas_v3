@@ -392,10 +392,10 @@ export default function EscanearGuiaCard() {
           {pendienteElegirEtiqueta && (
             <div
               ref={resultadoRef}
-              className="flex-1 rounded-xl border-2 border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm overflow-hidden animate-in slide-in-from-bottom-2 duration-300 p-6"
+              className="flex-1 overflow-hidden rounded-xl border-2 border-warning/40 bg-warning/15 p-6 shadow-sm animate-in slide-in-from-bottom-2 duration-300"
             >
-              <div className="flex flex-col items-center justify-center text-center gap-4">
-                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <div className="flex flex-col items-center justify-center gap-4 text-center">
+                <div className="flex items-center gap-2 text-warning-foreground">
                   <AlertTriangle className="h-8 w-8" />
                   <span className="text-lg font-semibold">La guía está en varios tipos</span>
                 </div>
@@ -501,9 +501,9 @@ export default function EscanearGuiaCard() {
 
                   {/* Instruccion Especial */}
                   {resultadoActual.instruccion && resultadoActual.instruccion !== 'NINGUNA' && (
-                    <div className={`mt-4 px-6 py-3 rounded-lg border-2 animate-pulse flex items-center gap-3 ${resultadoActual.instruccion === 'RETENER'
-                      ? 'bg-red-50 border-red-500 text-red-700'
-                      : 'bg-yellow-50 border-yellow-500 text-yellow-700'
+                    <div className={`mt-4 flex animate-pulse items-center gap-3 rounded-lg border-2 px-6 py-3 ${resultadoActual.instruccion === 'RETENER'
+                      ? 'border-error bg-error/10 text-foreground [&_svg]:text-error'
+                      : 'border-warning bg-warning/15 text-warning-foreground [&_svg]:text-warning'
                       }`}>
                       {resultadoActual.instruccion === 'RETENER' ? <ShieldAlert className="h-8 w-8" /> : <AlertTriangle className="h-8 w-8" />}
                       <div className="text-2xl font-black uppercase tracking-wider">

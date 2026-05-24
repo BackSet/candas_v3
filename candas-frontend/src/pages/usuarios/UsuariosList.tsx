@@ -23,6 +23,7 @@ import { Eye, Edit, Trash2, Plus, MoreHorizontal, Users, Mail } from 'lucide-rea
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
@@ -209,7 +210,7 @@ export default function UsuariosList() {
     <ListPageLayout
       title="Usuarios"
       subtitle="Gestión de cuentas y acceso"
-      icon={<Users className="h-4 w-4" />}
+      icon={<ModulePageIcon module="usuarios" />}
       className="py-2 animate-in fade-in duration-500"
       actions={
         <ProtectedByPermission permission={PERMISSIONS.USUARIOS.CREAR}>
@@ -260,7 +261,7 @@ export default function UsuariosList() {
                     ? 'No hay resultados para los filtros seleccionados'
                     : 'Aún no hay usuarios registrados en el sistema.'
                 }
-                icon={<Users className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="usuarios" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission permission={PERMISSIONS.USUARIOS.CREAR}>

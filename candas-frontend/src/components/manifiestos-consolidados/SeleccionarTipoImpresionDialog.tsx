@@ -42,7 +42,7 @@ const OPCIONES: Array<{
       label: 'Solo Agencias',
       hint: 'Despachos a agencias',
       icon: Building2,
-      color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+      color: 'bg-warning/15 text-warning',
     },
     {
       value: 'destinatarios-directos',

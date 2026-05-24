@@ -68,7 +68,7 @@ export default function PaqueteRapidoFormDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-yellow-100 flex items-center justify-center text-yellow-700">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-warning/15 text-warning">
               <Zap className="h-4 w-4" />
             </div>
             Paquete Rápido (SEPARAR)

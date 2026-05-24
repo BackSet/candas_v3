@@ -1,3 +1,4 @@
+import { printNotify } from '@/lib/print-notify'
 import { PRINT_CSS_BASE } from './printTheme'
 
 interface EscaneoResultado {
@@ -13,7 +14,7 @@ interface EscaneoResultado {
  */
 export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: string[]): void {
   if (historial.length === 0) {
-    alert('No hay escaneos para imprimir')
+    printNotify.nothingToPrint('No hay escaneos para imprimir')
     return
   }
 
@@ -28,14 +29,14 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
   }
 
   if (historialFiltrado.length === 0) {
-    alert('No hay escaneos para imprimir con los grupos seleccionados')
+    printNotify.nothingToPrint('No hay escaneos para imprimir con los grupos seleccionados')
     return
   }
 
   // Crear ventana de impresión
   const printWindow = window.open('', '_blank', 'width=800,height=600')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
 

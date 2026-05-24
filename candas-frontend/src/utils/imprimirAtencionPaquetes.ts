@@ -1,3 +1,4 @@
+import { printNotify } from '@/lib/print-notify'
 import type { AtencionPaquete } from '@/types/atencion-paquete'
 import { getTipoProblemaLabel } from '@/types/atencion-paquete'
 import type { Paquete } from '@/types/paquete'
@@ -15,7 +16,7 @@ export function imprimirAtencionPaquetes(
    hijosMap?: Map<number, Paquete[]>
 ): void {
    if (atenciones.length === 0) {
-      alert('No hay atenciones para imprimir')
+      printNotify.nothingToPrint('No hay atenciones para imprimir')
       return
    }
 
@@ -27,7 +28,7 @@ export function imprimirAtencionPaquetes(
    // Crear ventana de impresión
    const printWindow = window.open('', '_blank', 'width=1000,height=800')
    if (!printWindow) {
-      alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+      printNotify.popupBlocked()
       return
    }
 

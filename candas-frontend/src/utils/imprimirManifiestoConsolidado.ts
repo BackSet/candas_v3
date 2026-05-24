@@ -1,3 +1,4 @@
+import { printNotify } from '@/lib/print-notify'
 import type {
   ManifiestoConsolidadoDetalle,
   DespachoDetalle,
@@ -38,7 +39,7 @@ export function imprimirManifiestoConsolidado(
 ) {
   const printWindow = window.open('', '_blank', 'width=1000,height=800')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
 

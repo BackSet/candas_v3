@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { DatePickerForm } from '@/components/ui/date-time-picker'
+import { DateRangeFilter } from '@/components/filters'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -267,28 +267,19 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="fecha-desde" className="text-xs text-muted-foreground whitespace-nowrap">Desde</Label>
-                    <DatePickerForm
-                      id="fecha-desde"
-                      value={fechaDesde}
-                      onChange={setFechaDesde}
-                      inline
-                      className="w-[140px] h-8"
-                      disabled={filtroReceptado === 'SIN_RECEPTAR'}
-                      title={filtroReceptado === 'SIN_RECEPTAR' ? 'Solo aplica a guías receptadas' : undefined}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="fecha-hasta" className="text-xs text-muted-foreground whitespace-nowrap">Hasta</Label>
-                    <DatePickerForm
-                      id="fecha-hasta"
-                      value={fechaHasta}
-                      onChange={setFechaHasta}
-                      inline
-                      className="w-[140px] h-8"
-                      disabled={filtroReceptado === 'SIN_RECEPTAR'}
-                      title={filtroReceptado === 'SIN_RECEPTAR' ? 'Solo aplica a guías receptadas' : undefined}
+                  <div
+                    className={filtroReceptado === 'SIN_RECEPTAR' ? 'pointer-events-none opacity-50' : undefined}
+                    title={filtroReceptado === 'SIN_RECEPTAR' ? 'Solo aplica a guías receptadas' : undefined}
+                  >
+                    <DateRangeFilter
+                      desde={fechaDesde}
+                      hasta={fechaHasta}
+                      onChange={({ desde, hasta }) => {
+                        setFechaDesde(desde)
+                        setFechaHasta(hasta)
+                      }}
+                      showModeToggles={false}
+                      compact
                     />
                   </div>
                   <div className="flex items-center gap-2 ml-auto">

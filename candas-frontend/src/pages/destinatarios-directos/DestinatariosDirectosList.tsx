@@ -32,6 +32,7 @@ import {
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { EmptyState } from '@/components/states/EmptyState'
@@ -273,7 +274,7 @@ export default function DestinatariosDirectosList() {
   return (
     <ListPageLayout
       title="Destinatarios"
-      icon={<Home className="h-4 w-4" />}
+      icon={<ModulePageIcon module="destinatarios" />}
       className="py-2 animate-in fade-in duration-500"
       actions={
         <ProtectedByPermission
@@ -333,7 +334,7 @@ export default function DestinatariosDirectosList() {
                     ? 'No hay resultados con los filtros aplicados'
                     : 'No hay destinatarios registrados'
                 }
-                icon={<Home className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="destinatarios" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission

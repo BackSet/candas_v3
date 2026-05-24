@@ -80,7 +80,7 @@ export default function AgregarPaquetesDialog({
           </DialogDescription>
         </DialogHeader>
         {restrictionMessage && (
-          <div className="mx-4 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <div className="mx-4 mt-3 rounded-md border border-warning/40 bg-warning/15 px-3 py-2 text-sm text-warning-foreground">
             {restrictionMessage}
           </div>
         )}
@@ -105,7 +105,7 @@ export default function AgregarPaquetesDialog({
               {isLoading ? (
                 <div className="py-12 text-center text-muted-foreground animate-pulse text-sm">Cargando paquetes...</div>
               ) : restrictionMessage ? (
-                <div className="py-12 text-center text-amber-700 border-2 border-dashed border-amber-300 rounded-lg">
+                <div className="rounded-lg border-2 border-dashed border-warning/35 bg-warning/10 py-12 text-center text-sm text-warning-foreground">
                   {restrictionMessage}
                 </div>
               ) : paquetesFiltrados.length === 0 ? (

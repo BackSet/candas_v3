@@ -1,3 +1,4 @@
+import { printNotify } from '@/lib/print-notify'
 import type { Despacho } from '@/types/despacho'
 import type { Agencia } from '@/types/agencia'
 import type { Distribuidor } from '@/types/distribuidor'
@@ -117,7 +118,7 @@ export async function imprimirDespacho(
 ) {
   const printWindow = window.open('', '_blank', 'width=1000,height=800')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
   const manifiestoHTML = await generarManifiestoHTML(despacho, agencia, distribuidor, nombreAgenciaOrigen)
@@ -316,13 +317,13 @@ export async function imprimirManifiestosMultiples(
   nombreAgenciaOrigen?: string
 ) {
   if (datosDespachos.length === 0) {
-    alert('No hay despachos para imprimir')
+    printNotify.nothingToPrint('No hay despachos para imprimir')
     return
   }
 
   const printWindow = window.open('', '_blank', 'width=1000,height=800')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
 
@@ -338,7 +339,7 @@ export async function imprimirManifiestosMultiples(
   const manifiestosHTMLJoined = manifiestosHTML.join('')
 
   if (!manifiestosHTMLJoined || manifiestosHTMLJoined.trim() === '') {
-    alert('Error: No se pudo generar el contenido de los manifiestos')
+    printNotify.error('No se pudo generar el contenido de los manifiestos')
     printWindow.close()
     return
   }

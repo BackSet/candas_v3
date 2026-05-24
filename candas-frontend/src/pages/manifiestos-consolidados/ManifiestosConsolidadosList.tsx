@@ -45,6 +45,7 @@ import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { notify } from '@/lib/notify'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
@@ -362,11 +363,7 @@ export default function ManifiestosConsolidadosList() {
     <ListPageLayout
       title="Manifiestos Consolidados"
       subtitle="Gestión de manifiestos y reportes"
-      icon={
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-          <FileText className="h-4 w-4 text-primary" />
-        </div>
-      }
+      icon={<ModulePageIcon module="manifiestos" />}
       actions={
         <ProtectedByPermission permission={PERMISSIONS.MANIFIESTOS_CONSOLIDADOS.GENERAR}>
           <Button
@@ -451,7 +448,7 @@ export default function ManifiestosConsolidadosList() {
                     ? 'No se encontraron resultados para los filtros seleccionados'
                     : 'Aún no se han generado manifiestos consolidados. Comienza creando uno nuevo.'
                 }
-                icon={<FileText className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="manifiestos" variant="empty" />}
                 action={
                   !hayFiltros ? (
                     <ProtectedByPermission permission={PERMISSIONS.MANIFIESTOS_CONSOLIDADOS.GENERAR}>
@@ -568,11 +565,11 @@ export default function ManifiestosConsolidadosList() {
                   Despachos
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/40 dark:border-amber-900/20">
-                <div className="text-2xl font-bold text-amber-700 dark:text-amber-400 tabular-nums">
+              <div className="rounded-xl border border-warning/30 bg-warning/15 p-3">
+                <div className="text-2xl font-bold tabular-nums text-warning-foreground">
                   {manifiestoDetalleData?.totales.totalSacas}
                 </div>
-                <div className="text-[10px] text-amber-600/60 dark:text-amber-400/60 uppercase tracking-wider font-bold mt-1">
+                <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-warning-foreground/70">
                   Sacas
                 </div>
               </div>

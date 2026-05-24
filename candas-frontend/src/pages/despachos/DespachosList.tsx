@@ -52,6 +52,7 @@ import { Badge } from '@/components/ui/badge'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { useAuthStore } from '@/stores/authStore'
 import ImprimirDespachoDialog, { type TipoImpresion } from '@/components/despachos/ImprimirDespachoDialog'
@@ -71,7 +72,7 @@ import {
   showProcessSuccess,
 } from '@/hooks/mutationFeedback'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter, DateRangeFilter } from '@/components/filters'
+import { FilterBar, SelectFilter, DateRangeFilter, buildDateRangeChip } from '@/components/filters'
 
 interface DespachosFiltersState extends Record<string, string | number | undefined> {
   page: number
@@ -191,15 +192,12 @@ export default function DespachosList() {
           onRemove: () => removeFilter('filtroTipoDestino'),
         })
       }
-      if (values.fechaDesde || values.fechaHasta) {
-        const desde = values.fechaDesde || '...'
-        const hasta = values.fechaHasta || '...'
-        chips.push({
-          key: 'fechaRango',
-          label: `Fecha: ${desde} → ${hasta}`,
-          onRemove: () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' }),
-        })
-      }
+      const fechaChip = buildDateRangeChip(
+        String(values.fechaDesde ?? ''),
+        String(values.fechaHasta ?? ''),
+        () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' })
+      )
+      if (fechaChip) chips.push(fechaChip)
       return chips
     },
   })
@@ -847,7 +845,7 @@ export default function DespachosList() {
   return (
     <ListPageLayout
       title="Despachos"
-      icon={<Truck className="h-4 w-4" />}
+      icon={<ModulePageIcon module="despachos" />}
       className="py-2 animate-in fade-in duration-500"
       actions={
         <div className="flex flex-wrap items-center gap-2 justify-end">
@@ -940,7 +938,7 @@ export default function DespachosList() {
                     ? 'No hay resultados para los filtros seleccionados'
                     : 'No hay despachos registrados'
                 }
-                icon={<Truck className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="despachos" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>

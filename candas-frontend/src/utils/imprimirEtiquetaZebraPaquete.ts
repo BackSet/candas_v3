@@ -1,3 +1,4 @@
+import { printNotify } from '@/lib/print-notify'
 import type { Paquete } from '@/types/paquete'
 
 const REF_SERVICIO = 'CATEGORIA B'
@@ -237,7 +238,7 @@ function formatMedidasConBold(medidas: string): string {
 function openPrintWindowZebra(content: string, numerosGuia: string[]) {
   const printWindow = window.open('', '_blank', 'width=420,height=640')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
   const htmlContent = `

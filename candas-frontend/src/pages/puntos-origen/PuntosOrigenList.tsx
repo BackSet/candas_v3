@@ -22,6 +22,7 @@ import { Eye, Edit, Trash2, Plus, MapPin, MoreHorizontal } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { EmptyState } from '@/components/states/EmptyState'
@@ -189,7 +190,7 @@ export default function PuntosOrigenList() {
   return (
     <ListPageLayout
       title="Puntos de Origen"
-      icon={<MapPin className="h-4 w-4" />}
+      icon={<ModulePageIcon module="puntosOrigen" />}
       className="py-2 animate-in fade-in duration-500"
       actions={
         <ProtectedByPermission permission={PERMISSIONS.PUNTOS_ORIGEN.CREAR}>
@@ -247,7 +248,7 @@ export default function PuntosOrigenList() {
                     ? 'No hay resultados con los filtros aplicados'
                     : 'No hay puntos de origen registrados'
                 }
-                icon={<MapPin className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="puntosOrigen" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission permission={PERMISSIONS.PUNTOS_ORIGEN.CREAR}>

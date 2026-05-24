@@ -86,7 +86,7 @@ export function FilterBar({
         className
       )}
     >
-      <div className={cn('flex flex-wrap items-center gap-2', filtersClassName)}>
+      <div className={cn('flex flex-wrap items-center gap-3', filtersClassName)}>
         {showSearch && onSearchChange && (
           <div className="relative w-full sm:w-72">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -109,7 +109,7 @@ export function FilterBar({
             )}
           </div>
         )}
-        <div className="flex flex-1 flex-wrap items-center gap-2 min-w-0">{children}</div>
+        <div className="flex flex-1 flex-wrap items-center gap-3 min-w-0">{children}</div>
         {trailing && <div className="flex items-center gap-2 ml-auto">{trailing}</div>}
       </div>
 

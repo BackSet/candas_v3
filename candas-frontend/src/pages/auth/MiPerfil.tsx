@@ -94,8 +94,8 @@ export default function MiPerfil() {
           <div className="overflow-hidden rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
             <div className="border-b border-border/30 bg-muted/10 px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10">
-                  <User className="h-3.5 w-3.5 text-blue-500" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/10">
+                  <User className="h-3.5 w-3.5 text-info" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Datos de acceso</h3>
@@ -168,7 +168,7 @@ export default function MiPerfil() {
           <div className="overflow-hidden rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
             <div className="border-b border-border/30 bg-muted/10 px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent">
                   <Lock className="h-3.5 w-3.5 text-violet-500" />
                 </div>
                 <div>

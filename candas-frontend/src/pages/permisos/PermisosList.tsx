@@ -1,17 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { usePermisos, useDeletePermiso } from '@/hooks/usePermisos'
+import { usePermisos } from '@/hooks/usePermisos'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,10 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Eye, Edit, Trash2, Plus, Key, MoreHorizontal, Folder, Zap } from 'lucide-react'
+import { Eye, Edit, Key, MoreHorizontal, Folder, Zap } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { AppIcon, ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
@@ -53,14 +46,12 @@ const PERMISOS_FILTERS_DEFAULTS: PermisosFiltersState = {
 function PermisoRowActions({
   onVer,
   onEditar,
-  onEliminar,
 }: {
   onVer: () => void
   onEditar: () => void
-  onEliminar: () => void
 }) {
   return (
-    <ProtectedByPermission permissions={[PERMISSIONS.PERMISOS.VER, PERMISSIONS.PERMISOS.EDITAR, PERMISSIONS.PERMISOS.ELIMINAR]}>
+    <ProtectedByPermission permissions={[PERMISSIONS.PERMISOS.VER, PERMISSIONS.PERMISOS.EDITAR]}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -77,18 +68,12 @@ function PermisoRowActions({
           <DropdownMenuSeparator />
           <ProtectedByPermission permission={PERMISSIONS.PERMISOS.VER}>
             <DropdownMenuItem onClick={onVer}>
-              <Eye className="h-3.5 w-3.5 mr-2" /> Ver Detalles
+              <Eye className="h-3.5 w-3.5 mr-2" /> Ver detalles
             </DropdownMenuItem>
           </ProtectedByPermission>
           <ProtectedByPermission permission={PERMISSIONS.PERMISOS.EDITAR}>
             <DropdownMenuItem onClick={onEditar}>
-              <Edit className="h-3.5 w-3.5 mr-2" /> Editar
-            </DropdownMenuItem>
-          </ProtectedByPermission>
-          <DropdownMenuSeparator />
-          <ProtectedByPermission permission={PERMISSIONS.PERMISOS.ELIMINAR}>
-            <DropdownMenuItem onClick={onEliminar} className="text-destructive focus:text-destructive">
-              <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
+              <Edit className="h-3.5 w-3.5 mr-2" /> Editar nombre
             </DropdownMenuItem>
           </ProtectedByPermission>
         </DropdownMenuContent>
@@ -172,25 +157,13 @@ export default function PermisosList() {
   })
   const { page, size, search: busqueda, recurso, accion } = filtros.values
 
-  const [permisoAEliminar, setPermisoAEliminar] = useState<number | null>(null)
-
-  const { data, isLoading, error } = usePermisos({
+  const { data, isLoading, error, refetch } = usePermisos({
     page,
     size,
     search: busqueda || undefined,
     recurso: recurso || undefined,
     accion: accion || undefined,
   })
-  const deleteMutation = useDeletePermiso()
-
-  const handleDelete = async () => {
-    if (permisoAEliminar) {
-      try {
-        await deleteMutation.mutateAsync(permisoAEliminar)
-        setPermisoAEliminar(null)
-      } catch { /* hook */ }
-    }
-  }
 
   const permisosFiltrados = data?.content || []
   const totalPages = data?.totalPages || 0
@@ -261,17 +234,9 @@ export default function PermisosList() {
   return (
     <ListPageLayout
       title="Permisos"
-      subtitle="Gestión de permisos del sistema"
-      icon={<Key className="h-4 w-4" />}
+      subtitle="Consulta y renombrado. Los permisos se registran en código (DataInitializer)."
+      icon={<ModulePageIcon module="permisos" />}
       className="py-2 animate-in fade-in duration-500"
-      actions={
-        <ProtectedByPermission permission={PERMISSIONS.PERMISOS.CREAR}>
-          <Button onClick={() => navigate({ to: '/permisos/new' })} size="sm" className="h-8 shadow-sm">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Nuevo
-          </Button>
-        </ProtectedByPermission>
-      }
       filterBar={
         <FilterBar
           searchValue={busqueda}
@@ -285,14 +250,14 @@ export default function PermisosList() {
             onChange={(v) => filtros.setFilter('recurso', v)}
             placeholder="Recurso..."
             ariaLabel="Filtrar por recurso"
-            icon={<Folder className="h-3.5 w-3.5" />}
+            icon={<AppIcon icon={Folder} size="xs" />}
           />
           <DebouncedTextFilter
             value={accion}
             onChange={(v) => filtros.setFilter('accion', v)}
             placeholder="Acción..."
             ariaLabel="Filtrar por acción"
-            icon={<Zap className="h-3.5 w-3.5" />}
+            icon={<AppIcon icon={Zap} size="xs" />}
           />
         </FilterBar>
       }
@@ -301,6 +266,7 @@ export default function PermisosList() {
           <ErrorState
             title="Error al cargar permisos"
             description={getApiErrorMessage(error, 'No se pudieron cargar los permisos.')}
+            onRetry={() => void refetch()}
           />
         ) : (
           <DataTable<Permiso>
@@ -315,26 +281,15 @@ export default function PermisosList() {
                 description={
                   hayFiltros
                     ? 'No hay resultados para los filtros seleccionados'
-                    : 'Aún no hay permisos registrados en el sistema.'
+                    : 'Los permisos se crean al iniciar la aplicación desde el código del sistema.'
                 }
-                icon={<Key className="h-10 w-10 text-muted-foreground/50" />}
-                action={
-                  !hayFiltros && (
-                    <ProtectedByPermission permission={PERMISSIONS.PERMISOS.CREAR}>
-                      <Button onClick={() => navigate({ to: '/permisos/new' })} variant="outline" size="sm">
-                        <Plus className="h-3.5 w-3.5 mr-1.5" />
-                        Crear Permiso
-                      </Button>
-                    </ProtectedByPermission>
-                  )
-                }
+                icon={<ModulePageIcon module="permisos" variant="empty" />}
               />
             }
             rowActions={(p) => (
               <PermisoRowActions
                 onVer={() => navigate({ to: `/permisos/${p.idPermiso}` })}
                 onEditar={() => navigate({ to: `/permisos/${p.idPermiso}/edit` })}
-                onEliminar={() => setPermisoAEliminar(p.idPermiso!)}
               />
             )}
           />
@@ -351,25 +306,6 @@ export default function PermisosList() {
           className="border-t-0 pt-0"
         />
       }
-    >
-      <Dialog open={!!permisoAEliminar} onOpenChange={(open) => !open && setPermisoAEliminar(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Eliminación</DialogTitle>
-            <DialogDescription>
-              ¿Estás seguro de que deseas eliminar este permiso? Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPermisoAEliminar(null)} disabled={deleteMutation.isPending}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
-              {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </ListPageLayout>
+    />
   )
 }

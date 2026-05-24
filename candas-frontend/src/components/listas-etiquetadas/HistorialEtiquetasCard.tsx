@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { DatePickerForm } from '@/components/ui/date-time-picker'
+import { DateRangeFilter } from '@/components/filters'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -107,30 +107,17 @@ export default function HistorialEtiquetasCard() {
 
                 {/* Filtros */}
                 <div className="flex flex-wrap items-end gap-3 pt-4 border-t mt-4">
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Fecha Inicio</label>
-                        <DatePickerForm
-                            value={fechaInicio}
-                            onChange={(v) => {
-                                setFechaInicio(v)
-                                setPage(0)
-                            }}
-                            inline
-                            className="h-8 text-xs w-[140px]"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Fecha Fin</label>
-                        <DatePickerForm
-                            value={fechaFin}
-                            onChange={(v) => {
-                                setFechaFin(v)
-                                setPage(0)
-                            }}
-                            inline
-                            className="h-8 text-xs w-[140px]"
-                        />
-                    </div>
+                    <DateRangeFilter
+                        desde={fechaInicio}
+                        hasta={fechaFin}
+                        onChange={({ desde, hasta }) => {
+                            setFechaInicio(desde)
+                            setFechaFin(hasta)
+                            setPage(0)
+                        }}
+                        showModeToggles={false}
+                        compact
+                    />
                     <div className="space-y-1 min-w-[140px]">
                         <label className="text-xs font-medium text-muted-foreground">Etiqueta</label>
                         <Select
@@ -239,12 +226,12 @@ export default function HistorialEtiquetasCard() {
                                                 </Badge>
                                             )}
                                             {instruccion === 'PREGUNTAR' && (
-                                                <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 items-center gap-1 text-black">
+                                                <Badge variant="warning" className="items-center gap-1 text-warning-foreground">
                                                     <AlertTriangle className="h-3 w-3" /> PREGUNTAR
                                                 </Badge>
                                             )}
                                             {instruccion === 'ATENCION' && (
-                                                <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200 items-center gap-1">
+                                                <Badge variant="info" className="items-center gap-1 text-foreground">
                                                     <AlertTriangle className="h-3 w-3" /> ATENCIÓN
                                                 </Badge>
                                             )}

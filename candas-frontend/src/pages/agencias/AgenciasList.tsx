@@ -30,6 +30,7 @@ import {
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPagination } from '@/components/list/ListPagination'
 import { EmptyState } from '@/components/states/EmptyState'
@@ -246,7 +247,7 @@ export default function AgenciasList() {
   return (
     <ListPageLayout
       title="Agencias"
-      icon={<Building2 className="h-4 w-4" />}
+      icon={<ModulePageIcon module="agencias" />}
       className="py-2 animate-in fade-in duration-500"
       actions={
         <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.CREAR}>
@@ -304,7 +305,7 @@ export default function AgenciasList() {
                     ? 'No hay resultados para los filtros seleccionados'
                     : 'No hay agencias registradas'
                 }
-                icon={<Building2 className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="agencias" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission permission={PERMISSIONS.AGENCIAS.CREAR}>

@@ -206,7 +206,7 @@ export default function AtencionPaqueteForm() {
 
           {paquetePorGuia && busquedaPaquete.length >= 10 && (
             <FieldRow span="full">
-              <div className="flex items-center gap-2 text-xs text-emerald-600 p-2.5 bg-emerald-50 rounded-md border border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-900/30 dark:text-emerald-400">
+              <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/10 p-2.5 text-xs text-foreground">
                 <Check className="h-3.5 w-3.5" />
                 Paquete encontrado:{' '}
                 <span className="font-mono font-semibold">{paquetePorGuia.numeroGuia}</span>

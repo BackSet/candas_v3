@@ -180,11 +180,11 @@ export default function ImportarPaquetesEspecialesMiamiDialog({
                   </div>
                 </div>
                 {resultado.guiasEnVariasListas && resultado.guiasEnVariasListas.length > 0 && (
-                  <div className="border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-center bg-amber-50 dark:bg-amber-950/30">
-                    <div className="text-xs text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1">
+                  <div className="rounded-lg border border-warning/40 bg-warning/15 p-3 text-center">
+                    <div className="mb-1 text-xs uppercase tracking-wider text-warning-foreground/80">
                       Guías en varias listas
                     </div>
-                    <div className="text-lg font-semibold text-amber-700 dark:text-amber-400">
+                    <div className="text-lg font-semibold text-warning-foreground">
                       {resultado.guiasEnVariasListas.length}
                     </div>
                   </div>
@@ -193,7 +193,7 @@ export default function ImportarPaquetesEspecialesMiamiDialog({
 
               {resultado.guiasEnVariasListas && resultado.guiasEnVariasListas.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <h4 className="flex items-center gap-2 text-sm font-medium text-warning-foreground">
                     <AlertCircle className="h-4 w-4" /> Guías que quedaron en VARIAS
                   </h4>
                   <div className="rounded-md border border-border overflow-hidden max-h-48 overflow-y-auto">

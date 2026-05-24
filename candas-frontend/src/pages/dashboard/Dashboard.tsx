@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge'
 import { getTipoProblemaLabel } from '@/types/atencion-paquete'
 import {
   Package, AlertCircle, Truck, Inbox, ArrowRight,
-  CheckCircle2, Clock, Box, LayoutDashboard, Activity,
+  CheckCircle2, Clock, Box, Activity,
   TrendingUp, Boxes,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ModulePageIcon } from '@/components/icons'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
 import { LoadingState } from '@/components/states/LoadingState'
 
@@ -52,11 +53,7 @@ export default function Dashboard() {
     <StandardPageLayout
       title="Dashboard"
       subtitle="Resumen de operaciones en tiempo real"
-      icon={
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-          <LayoutDashboard className="h-4 w-4 text-primary" />
-        </div>
-      }
+      icon={<ModulePageIcon module="dashboard" />}
     >
       {/* Content Area */}
       <div className="flex-1 overflow-auto">
@@ -282,11 +279,11 @@ export default function Dashboard() {
 /* ─── Sub-components ──────────────────────────────────────────────── */
 
 const colorMap = {
-  blue: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', badge: 'bg-blue-100/80 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' },
-  red: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', badge: 'bg-red-100/80 text-red-700 dark:bg-red-900/20 dark:text-red-400' },
-  amber: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', badge: 'bg-amber-100/80 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' },
-  emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' },
-  slate: { bg: 'bg-slate-500/10', text: 'text-slate-600 dark:text-slate-400', badge: 'bg-slate-100/80 text-slate-700 dark:bg-slate-900/20 dark:text-slate-400' },
+  blue: { bg: 'bg-info/10', text: 'text-info', badge: 'bg-info/15 text-info border-0' },
+  red: { bg: 'bg-error/10', text: 'text-error', badge: 'bg-error/15 text-error border-0' },
+  amber: { bg: 'bg-warning/10', text: 'text-warning', badge: 'bg-warning/15 text-warning border-0' },
+  emerald: { bg: 'bg-success/10', text: 'text-success', badge: 'bg-success/15 text-success border-0' },
+  slate: { bg: 'bg-muted', text: 'text-muted-foreground', badge: 'bg-muted text-muted-foreground border-0' },
 } as const
 
 type ColorKey = keyof typeof colorMap
@@ -302,7 +299,7 @@ function MetricCard({ label, value, icon: Icon, color, alert }: {
   return (
     <div className={cn(
       "border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm p-5 transition-all hover:shadow-sm hover:border-border/60",
-      alert && "border-red-500/20 bg-red-500/[0.03]"
+      alert && "border-error/30 bg-error/5"
     )}>
       <div className="flex items-center gap-2 mb-3">
         <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", c.bg)}>
@@ -312,7 +309,7 @@ function MetricCard({ label, value, icon: Icon, color, alert }: {
       </div>
       <span className={cn(
         "text-3xl font-bold tracking-tight",
-        alert ? "text-red-600 dark:text-red-400" : "text-foreground"
+        alert ? "text-error" : "text-foreground"
       )}>
         {value}
       </span>

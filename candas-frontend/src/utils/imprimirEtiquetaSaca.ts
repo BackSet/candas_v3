@@ -1,3 +1,4 @@
+import { printNotify } from '@/lib/print-notify'
 import type { Saca } from '@/types/saca'
 import type { Despacho } from '@/types/despacho'
 import type { Agencia } from '@/types/agencia'
@@ -332,13 +333,13 @@ export async function imprimirEtiquetaSaca(
       color: { dark: '#000000', light: '#FFFFFF' }
     })
   } catch (error) {
-    alert('Error generando código QR')
+    printNotify.error('Error generando código QR')
     return
   }
 
   const printWindow = window.open('', '_blank', 'width=800,height=600')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
 
@@ -367,7 +368,7 @@ export async function imprimirEtiquetasSacas(
   nombreAgenciaOrigen?: string
 ) {
   if (sacas.length === 0) {
-    alert('No hay sacas para imprimir')
+    printNotify.nothingToPrint('No hay sacas para imprimir')
     return
   }
 
@@ -394,13 +395,13 @@ export async function imprimirEtiquetasSacas(
       )
     )
   } catch (error) {
-    alert('Error generando códigos QR')
+    printNotify.error('Error generando códigos QR')
     return
   }
 
   const printWindow = window.open('', '_blank', 'width=800,height=600')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
 
@@ -744,12 +745,12 @@ export async function imprimirEtiquetaZebraSaca(
   try {
     qrDataURL = await QRCode.toDataURL(idSaca, { width: 150, margin: 0, color: { dark: '#000000', light: '#FFFFFF' } })
   } catch {
-    alert('Error generando código QR')
+    printNotify.error('Error generando código QR')
     return
   }
   const printWindow = window.open('', '_blank', 'width=400,height=600')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
   const etiquetaHTML = generarEtiquetaZebraHTML(
@@ -777,7 +778,7 @@ export async function imprimirEtiquetasZebraSacas(
   nombreAgenciaOrigen?: string
 ) {
   if (sacas.length === 0) {
-    alert('No hay sacas para imprimir')
+    printNotify.nothingToPrint('No hay sacas para imprimir')
     return
   }
   const codigoPresinto = despacho.codigoPresinto ?? ''
@@ -789,7 +790,7 @@ export async function imprimirEtiquetasZebraSacas(
   try {
     qrDataURLs = await Promise.all(idsSacas.map(id => QRCode.toDataURL(id, { width: 150, margin: 0, color: { dark: '#000000', light: '#FFFFFF' } })))
   } catch {
-    alert('Error generando códigos QR')
+    printNotify.error('Error generando códigos QR')
     return
   }
   const etiquetasHTML = sacasOrdenadas.map((saca, index) => {
@@ -799,7 +800,7 @@ export async function imprimirEtiquetasZebraSacas(
   }).join('')
   const printWindow = window.open('', '_blank', 'width=400,height=600')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
   printWindow.document.write(buildZebraPrintDocument(etiquetasHTML, `Etiquetas Zebra - ${totalSacas} saca(s)`))
@@ -812,7 +813,7 @@ export async function imprimirEtiquetasZebraMultiplesDespachos(
   nombreAgenciaOrigen?: string
 ) {
   if (datosDespachos.length === 0) {
-    alert('No hay despachos para imprimir')
+    printNotify.nothingToPrint('No hay despachos para imprimir')
     return
   }
 
@@ -863,7 +864,7 @@ export async function imprimirEtiquetasZebraMultiplesDespachos(
       )
     )
   } catch {
-    alert('Error generando códigos QR')
+    printNotify.error('Error generando códigos QR')
     return
   }
 
@@ -886,7 +887,7 @@ export async function imprimirEtiquetasZebraMultiplesDespachos(
 
   const printWindow = window.open('', '_blank', 'width=400,height=600')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
   printWindow.document.write(
@@ -909,7 +910,7 @@ export async function imprimirEtiquetasMultiplesDespachos(
   nombreAgenciaOrigen?: string
 ) {
   if (datosDespachos.length === 0) {
-    alert('No hay despachos para imprimir')
+    printNotify.nothingToPrint('No hay despachos para imprimir')
     return
   }
 
@@ -962,13 +963,13 @@ export async function imprimirEtiquetasMultiplesDespachos(
       )
     )
   } catch (error) {
-    alert('Error generando códigos QR')
+    printNotify.error('Error generando códigos QR')
     return
   }
 
   const printWindow = window.open('', '_blank', 'width=800,height=600')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
 

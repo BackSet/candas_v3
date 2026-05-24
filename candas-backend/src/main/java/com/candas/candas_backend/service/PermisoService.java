@@ -55,27 +55,14 @@ public class PermisoService {
             .collect(java.util.stream.Collectors.toList());
     }
 
-    public PermisoDTO create(PermisoDTO dto) {
-        Permiso permiso = toEntity(dto);
-        return toDTO(permisoRepository.save(permiso));
-    }
-
-    public PermisoDTO update(Long id, PermisoDTO dto) {
+    /**
+     * Solo permite cambiar el nombre visible. Alta/baja de permisos vía código (DataInitializer).
+     */
+    public PermisoDTO updateNombre(Long id, String nombre) {
         Permiso permiso = permisoRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Permiso", id));
-        
-        permiso.setNombre(dto.getNombre());
-        permiso.setDescripcion(dto.getDescripcion());
-        permiso.setRecurso(dto.getRecurso());
-        permiso.setAccion(dto.getAccion());
-        
+        permiso.setNombre(nombre.trim());
         return toDTO(permisoRepository.save(permiso));
-    }
-
-    public void delete(Long id) {
-        Permiso permiso = permisoRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Permiso", id));
-        permisoRepository.delete(permiso);
     }
 
     private PermisoDTO toDTO(Permiso permiso) {
@@ -88,12 +75,4 @@ public class PermisoService {
         return dto;
     }
 
-    private Permiso toEntity(PermisoDTO dto) {
-        Permiso permiso = new Permiso();
-        permiso.setNombre(dto.getNombre());
-        permiso.setDescripcion(dto.getDescripcion());
-        permiso.setRecurso(dto.getRecurso());
-        permiso.setAccion(dto.getAccion());
-        return permiso;
-    }
 }

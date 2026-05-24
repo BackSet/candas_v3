@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPagination } from '@/components/list/ListPagination'
 import { PERMISSIONS } from '@/types/permissions'
@@ -233,7 +234,7 @@ export default function ClientesList() {
   return (
     <ListPageLayout
       title="Clientes"
-      icon={<Users className="h-4 w-4" />}
+      icon={<ModulePageIcon module="clientes" />}
       className="py-2 animate-in fade-in duration-500"
       actions={
         <ProtectedByPermission permission={PERMISSIONS.CLIENTES.CREAR}>
@@ -291,7 +292,7 @@ export default function ClientesList() {
                     ? 'No hay resultados con los filtros aplicados'
                     : 'No hay clientes registrados'
                 }
-                icon={<Users className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="clientes" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission permission={PERMISSIONS.CLIENTES.CREAR}>

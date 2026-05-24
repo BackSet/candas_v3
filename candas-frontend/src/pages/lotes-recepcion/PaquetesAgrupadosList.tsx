@@ -786,8 +786,8 @@ export default function PaquetesAgrupadosList({
 
                             const colors = {
                               error: 'text-destructive bg-destructive/10 border-destructive/20',
-                              warning: 'text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-500 dark:bg-amber-950/30 dark:border-amber-900/50',
-                              success: 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:text-emerald-500 dark:bg-emerald-950/30 dark:border-emerald-900/50'
+                              warning: 'border-warning/30 bg-warning/15 text-warning-foreground',
+                              success: 'border-success/30 bg-success/10 text-foreground'
                             }
 
                             let texto = ''

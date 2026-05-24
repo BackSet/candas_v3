@@ -1902,7 +1902,7 @@ export default function DespachoForm() {
                     {resultadoProcesamiento.encontrados > 0 && <p className="text-green-600">Agregados: {resultadoProcesamiento.encontrados}</p>}
                     {resultadoProcesamiento.noEncontrados.length > 0 && <p className="text-error">No encontrados: {resultadoProcesamiento.noEncontrados.length}</p>}
                     {resultadoProcesamiento.yaAgregados > 0 && <p className="text-blue-600">Ya en saca: {resultadoProcesamiento.yaAgregados}</p>}
-                    {resultadoProcesamiento.enEstadoInvalido.length > 0 && <p className="text-yellow-600">Despachados: {resultadoProcesamiento.enEstadoInvalido.length}</p>}
+                    {resultadoProcesamiento.enEstadoInvalido.length > 0 && <p className="text-warning-foreground">Despachados: {resultadoProcesamiento.enEstadoInvalido.length}</p>}
                   </div>
                 )}
               </TabsContent>
@@ -1929,17 +1929,17 @@ export default function DespachoForm() {
                       </div>
                     )}
                     {scanHistory.map((item, idx) => (
-                      <div key={idx} className={`p-2 rounded text-sm flex items-center justify-between animate-in fade-in duration-200 ${item.status === 'success' ? 'bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-900/50' :
-                        item.status === 'error' ? 'bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50' :
-                          'bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50'
+                      <div key={idx} className={`flex animate-in fade-in items-center justify-between rounded border p-2 text-sm duration-200 ${item.status === 'success' ? 'border-success/30 bg-success/10' :
+                        item.status === 'error' ? 'border-error/30 bg-error/10' :
+                          'border-warning/30 bg-warning/15'
                         }`}>
                         <div className="flex flex-col">
                           <span className="font-mono font-medium">{item.guia}</span>
                           <span className="text-[10px] text-muted-foreground">{item.timestamp.toLocaleTimeString()}</span>
                         </div>
-                        <span className={`font-medium ${item.status === 'success' ? 'text-green-700 dark:text-green-400' :
-                          item.status === 'error' ? 'text-red-700 dark:text-red-400' :
-                            'text-yellow-700 dark:text-yellow-400'
+                        <span className={`font-medium ${item.status === 'success' ? 'text-success' :
+                          item.status === 'error' ? 'text-error' :
+                            'text-warning-foreground'
                           }`}>
                           {item.message}
                         </span>

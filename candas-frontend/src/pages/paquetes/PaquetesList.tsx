@@ -2,15 +2,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { usePaquetes, useDeletePaquete } from '@/hooks/usePaquetes'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  dialogContentPresets,
-} from '@/components/ui/dialog'
+import { ConfirmDeleteDialog } from '@/components/dialogs/ConfirmDeleteDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +43,7 @@ import type { Paquete } from '@/types/paquete'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { cn } from '@/lib/utils'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { PERMISSIONS } from '@/types/permissions'
@@ -61,7 +54,7 @@ import { useListFilters } from '@/hooks/useListFilters'
 import { useAgencias } from '@/hooks/useSelectOptions'
 import { formatearFechaCorta } from '@/utils/fechas'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter, DateRangeFilter } from '@/components/filters'
+import { FilterBar, SelectFilter, DateRangeFilter, buildDateRangeChip } from '@/components/filters'
 import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
 
 interface PaquetesFiltersState extends Record<string, string | number | undefined> {
@@ -134,15 +127,12 @@ export default function PaquetesList() {
           onRemove: () => removeFilter('idLote'),
         })
       }
-      if (values.fechaDesde || values.fechaHasta) {
-        const desde = values.fechaDesde || '...'
-        const hasta = values.fechaHasta || '...'
-        chips.push({
-          key: 'fechaRango',
-          label: `Fecha: ${desde} → ${hasta}`,
-          onRemove: () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' }),
-        })
-      }
+      const fechaChip = buildDateRangeChip(
+        String(values.fechaDesde ?? ''),
+        String(values.fechaHasta ?? ''),
+        () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' })
+      )
+      if (fechaChip) chips.push(fechaChip)
       return chips
     },
   })
@@ -339,7 +329,7 @@ export default function PaquetesList() {
   return (
     <ListPageLayout
       title="Paquetes"
-      icon={<Package className="h-4 w-4" />}
+      icon={<ModulePageIcon module="paquetes" />}
       actions={
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {paquetesSeleccionados.size > 0 && (
@@ -501,7 +491,7 @@ export default function PaquetesList() {
                     ? 'No hay resultados para los filtros seleccionados'
                     : 'No hay paquetes registrados'
                 }
-                icon={<Package className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="paquetes" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission permission={PERMISSIONS.PAQUETES.CREAR}>
@@ -586,34 +576,14 @@ export default function PaquetesList() {
         />
       }
     >
-      <Dialog open={!!paqueteAEliminar} onOpenChange={(open) => !open && setPaqueteAEliminar(null)}>
-        <DialogContent className={cn(dialogContentPresets.compact, 'p-0 gap-0 overflow-hidden')}>
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40 bg-destructive/5">
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <div className="h-8 w-8 rounded-md bg-destructive/10 border border-destructive/20 flex items-center justify-center">
-                <Trash2 className="h-4 w-4" />
-              </div>
-              Confirmar Eliminación
-            </DialogTitle>
-            <DialogDescription>
-              Esta acción eliminará permanentemente el paquete.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-6">
-            <p className="text-sm text-muted-foreground">
-              ¿Estás seguro de que deseas eliminar este paquete? Esta acción no se puede deshacer.
-            </p>
-          </div>
-          <DialogFooter className="px-6 py-4 border-t border-border/40 bg-muted/10">
-            <Button variant="outline" onClick={() => setPaqueteAEliminar(null)} disabled={deleteMutation.isPending}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
-              {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={!!paqueteAEliminar}
+        onOpenChange={(open) => !open && setPaqueteAEliminar(null)}
+        onConfirm={handleDelete}
+        isPending={deleteMutation.isPending}
+        description="Esta acción eliminará permanentemente el paquete."
+        message="¿Estás seguro de que deseas eliminar este paquete? Esta acción no se puede deshacer."
+      />
 
       <ImportarPaquetesDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} onImportSuccess={refreshPaquetes} />
       <ImportarRefDialog open={importRefDialogOpen} onOpenChange={setImportRefDialogOpen} onImportSuccess={refreshPaquetes} />

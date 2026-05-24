@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useState } from 'react'
-import { Outlet } from '@tanstack/react-router'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Outlet, useLocation } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
@@ -9,11 +9,25 @@ import { useUIStore } from '@/stores/uiStore'
 import { LoadingState } from '@/components/states'
 import { Skeleton } from '@/components/ui/skeleton'
 
+function mainUsesContentPadding(pathname: string): boolean {
+  if (pathname === '/dashboard' || pathname === '/mi-perfil') return true
+  if (pathname === '/parametros-sistema') return true
+  return false
+}
+
 export function MainLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const refreshMe = useAuthStore((s) => s.refreshMe)
   const resolvedTheme = useUIStore((s) => s.resolvedTheme)
+  const location = useLocation()
   const [permissionsSynced, setPermissionsSynced] = useState(false)
+
+  const mainPaddingClass = useMemo(() => {
+    if (mainUsesContentPadding(location.pathname)) {
+      return 'p-4 md:p-6 lg:p-8'
+    }
+    return 'p-0'
+  }, [location.pathname])
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -44,7 +58,9 @@ export function MainLayout() {
       <Sidebar />
       <div className="flex flex-1 flex-col min-w-0 h-full">
         <Header />
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 md:p-6 lg:p-8 flex flex-col">
+        <main
+          className={`flex flex-1 min-h-0 flex-col overflow-x-hidden overflow-y-auto ${mainPaddingClass}`}
+        >
           <Suspense fallback={<RouteSkeleton />}>
             <Outlet />
           </Suspense>
@@ -70,10 +86,10 @@ export function MainLayout() {
               'bg-muted text-muted-foreground hover:bg-muted/80 rounded-md text-xs font-medium',
             closeButton:
               'border-border bg-background text-muted-foreground hover:bg-muted',
-            success: 'border-emerald-500/40 dark:border-emerald-400/40',
-            error: 'border-destructive/50',
-            warning: 'border-amber-500/40 dark:border-amber-400/40',
-            info: 'border-sky-500/40 dark:border-sky-400/40',
+            success: 'border-success/50',
+            error: 'border-error/50',
+            warning: 'border-warning/50',
+            info: 'border-info/50',
             loading: 'border-border',
           },
         }}

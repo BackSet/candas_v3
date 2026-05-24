@@ -160,9 +160,9 @@ public class EnsacadoService {
         info.setPaquetesEnDespacho(infoDespacho.getPaquetesEnsacados());
         info.setPaquetesFaltantesDespacho(infoDespacho.getPaquetesPendientes());
         info.setDespachoLleno(infoDespacho.getCompletado());
-        // La saca solo está llena si el porcentaje es >= 100% Y no hay paquetes pendientes
-        // Si hay paquetes pendientes, la saca no está llena porque aún se pueden ensacar
-        boolean sacaLlena = porcentajeLlenadoSaca.compareTo(BigDecimal.valueOf(100)) >= 0 && paquetesFaltantesSaca == 0;
+        // Saca llena: todos los paquetes asignados ya fueron ensacados (físicamente o despachados)
+        int paquetesAsignados = contarPaquetesAsignadosSaca(sacaAsignada);
+        boolean sacaLlena = paquetesAsignados > 0 && paquetesFaltantesSaca == 0;
         info.setSacaLlena(sacaLlena);
         // El paquete ya está ensacado si está en estado ENSACADO o DESPACHADO
         info.setYaEnsacado(paquete.getEstado() == EstadoPaquete.ENSACADO || paquete.getEstado() == EstadoPaquete.DESPACHADO);
@@ -509,7 +509,7 @@ public class EnsacadoService {
         List<Paquete> todosPaquetes = paqueteRepository.findBySacaDespachoIdDespacho(despacho.getIdDespacho());
         int totalPaquetes = todosPaquetes.size();
         int paquetesEnsacados = (int) todosPaquetes.stream()
-            .filter(p -> p.getEstado() == EstadoPaquete.ENSACADO)
+            .filter(p -> esPaqueteEnsacadoFisicamente(p.getEstado()))
             .count();
         int paquetesPendientes = totalPaquetes - paquetesEnsacados;
         
@@ -571,7 +571,7 @@ public class EnsacadoService {
         // Obtener lista de paquetes pendientes (asignados pero no ensacados físicamente)
         List<String> paquetesPendientes = saca.getPaqueteSacas().stream()
             .map(PaqueteSaca::getPaquete)
-            .filter(p -> p.getEstado() == EstadoPaquete.ASIGNADO_SACA)
+            .filter(p -> esPaquetePendienteEnsacado(p.getEstado()))
             .map(Paquete::getNumeroGuia)
             .collect(Collectors.toList());
         info.setPaquetesPendientes(paquetesPendientes);
@@ -579,7 +579,7 @@ public class EnsacadoService {
         // Obtener lista de guías ya ensacadas en esta saca
         List<String> paquetesEnsacados = saca.getPaqueteSacas().stream()
             .map(PaqueteSaca::getPaquete)
-            .filter(p -> p.getEstado() == EstadoPaquete.ENSACADO)
+            .filter(p -> esPaqueteEnsacadoFisicamente(p.getEstado()))
             .map(Paquete::getNumeroGuia)
             .collect(Collectors.toList());
         info.setPaquetesEnsacados(paquetesEnsacados);
@@ -590,9 +590,19 @@ public class EnsacadoService {
     private BigDecimal calcularPesoActualSaca(Saca saca) {
         return saca.getPaqueteSacas().stream()
             .map(PaqueteSaca::getPaquete)
-            .filter(p -> p.getEstado() == EstadoPaquete.ENSACADO)
+            .filter(p -> esPaqueteEnsacadoFisicamente(p.getEstado()))
             .map(p -> p.getPesoKilos() != null ? p.getPesoKilos() : BigDecimal.ZERO)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** Paquete ya pasó por ensacado (incluye los ya despachados). */
+    private boolean esPaqueteEnsacadoFisicamente(EstadoPaquete estado) {
+        return estado == EstadoPaquete.ENSACADO || estado == EstadoPaquete.DESPACHADO;
+    }
+
+    /** Pendiente de marcar como ensacado en bodega. */
+    private boolean esPaquetePendienteEnsacado(EstadoPaquete estado) {
+        return estado == EstadoPaquete.ASIGNADO_SACA;
     }
 
     private BigDecimal calcularPorcentaje(BigDecimal actual, BigDecimal maximo) {
@@ -612,7 +622,7 @@ public class EnsacadoService {
     private int contarPaquetesEnSaca(Saca saca) {
         return (int) saca.getPaqueteSacas().stream()
             .map(PaqueteSaca::getPaquete)
-            .filter(p -> p.getEstado() == EstadoPaquete.ENSACADO)
+            .filter(p -> esPaqueteEnsacadoFisicamente(p.getEstado()))
             .count();
     }
 
@@ -623,14 +633,17 @@ public class EnsacadoService {
     private int contarPaquetesPendientesSaca(Saca saca) {
         return (int) saca.getPaqueteSacas().stream()
             .map(PaqueteSaca::getPaquete)
-            .filter(p -> p.getEstado() != EstadoPaquete.ENSACADO)
+            .filter(p -> esPaquetePendienteEnsacado(p.getEstado()))
             .count();
     }
 
     private boolean esSacaCompletada(Saca saca) {
+        if (saca.getPaqueteSacas().isEmpty()) {
+            return false;
+        }
         return saca.getPaqueteSacas().stream()
             .map(PaqueteSaca::getPaquete)
-            .allMatch(p -> p.getEstado() == EstadoPaquete.ENSACADO);
+            .allMatch(p -> esPaqueteEnsacadoFisicamente(p.getEstado()));
     }
 
     private String obtenerDestinoPaquete(Paquete paquete) {

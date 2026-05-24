@@ -1,29 +1,19 @@
 import { z } from 'zod'
 import type { Permiso } from '@/types/permiso'
 
-export const permisoSchema = z.object({
+/** Solo el nombre es editable desde la UI. */
+export const permisoEditSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
-  descripcion: z.string().optional(),
-  recurso: z.string().optional(),
-  accion: z.string().optional(),
 })
 
-export type PermisoFormData = z.infer<typeof permisoSchema>
+export type PermisoEditFormData = z.infer<typeof permisoEditSchema>
 
-export function permisoFormDataToDto(data: PermisoFormData): Permiso {
+export function permisoToEditFormData(permiso: Permiso): PermisoEditFormData {
   return {
-    ...data,
-    descripcion: data.descripcion || undefined,
-    recurso: data.recurso || undefined,
-    accion: data.accion || undefined,
+    nombre: permiso.nombre,
   }
 }
 
-export function permisoToFormData(permiso: Permiso): PermisoFormData {
-  return {
-    nombre: permiso.nombre,
-    descripcion: permiso.descripcion || '',
-    recurso: permiso.recurso || '',
-    accion: permiso.accion || '',
-  }
+export function permisoEditFormDataToDto(data: PermisoEditFormData): Pick<Permiso, 'nombre'> {
+  return { nombre: data.nombre.trim() }
 }

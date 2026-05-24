@@ -1,5 +1,6 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { applyThemeClass, getSystemTheme, resolveTheme } from '@/lib/theme'
 import { useUIStore } from '@/stores/uiStore'
 
 function RootComponent() {
@@ -9,22 +10,17 @@ function RootComponent() {
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')
 
-    const applyTheme = () => {
-      const resolved = theme === 'system'
-        ? (media.matches ? 'dark' : 'light')
-        : theme
-
-      if (resolved === 'dark') document.documentElement.classList.add('dark')
-      else document.documentElement.classList.remove('dark')
-
+    const syncTheme = () => {
+      const resolved = resolveTheme(theme)
+      applyThemeClass(resolved)
       setResolvedTheme(resolved)
     }
 
-    applyTheme()
+    syncTheme()
 
     if (theme !== 'system') return
 
-    const onChange = () => applyTheme()
+    const onChange = () => syncTheme()
     media.addEventListener('change', onChange)
     return () => media.removeEventListener('change', onChange)
   }, [theme, setResolvedTheme])

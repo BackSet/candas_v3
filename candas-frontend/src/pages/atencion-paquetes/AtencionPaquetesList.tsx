@@ -44,13 +44,14 @@ import ResolverDialog from './ResolverDialog'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter, DateRangeFilter } from '@/components/filters'
+import { FilterBar, SelectFilter, DateRangeFilter, buildDateRangeChip } from '@/components/filters'
 import { useListFilters } from '@/hooks/useListFilters'
 import {
   showProcessError,
@@ -167,15 +168,12 @@ export default function AtencionPaquetesList() {
           onRemove: () => removeFilter('tipoProblema'),
         })
       }
-      if (values.fechaDesde || values.fechaHasta) {
-        const desde = values.fechaDesde || '...'
-        const hasta = values.fechaHasta || '...'
-        chips.push({
-          key: 'fechaRango',
-          label: `Fecha: ${desde} → ${hasta}`,
-          onRemove: () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' }),
-        })
-      }
+      const fechaChip = buildDateRangeChip(
+        String(values.fechaDesde ?? ''),
+        String(values.fechaHasta ?? ''),
+        () => filtros.setFilters({ fechaDesde: '', fechaHasta: '' })
+      )
+      if (fechaChip) chips.push(fechaChip)
       return chips
     },
   })
@@ -361,7 +359,7 @@ export default function AtencionPaquetesList() {
     <ListPageLayout
       title="Atención Paquetes"
       subtitle="Gestión de incidencias y problemas"
-      icon={<AlertCircle className="h-4 w-4" />}
+      icon={<ModulePageIcon module="atencionPaquetes" />}
       actions={
         <div className="flex flex-wrap gap-2 justify-end">
           {atencionesSeleccionadas.size > 0 && (
@@ -480,7 +478,7 @@ export default function AtencionPaquetesList() {
                     ? 'No se encontraron resultados para los filtros seleccionados'
                     : 'No hay solicitudes de atención registradas.'
                 }
-                icon={<AlertCircle className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="atencionPaquetes" variant="empty" />}
                 action={
                   !hayFiltros ? (
                     <ProtectedByPermission permission={PERMISSIONS.ATENCION_PAQUETES.CREAR}>

@@ -1,29 +1,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import {
+  applyThemeClass,
+  getSystemTheme,
+  resolveTheme,
+  UI_STORAGE_KEY,
+  type ResolvedTheme,
+  type ThemeMode,
+} from '@/lib/theme'
 
-export type ThemeMode = 'light' | 'dark' | 'system'
-export type ResolvedTheme = 'light' | 'dark'
-
-const getSystemTheme = (): ResolvedTheme => {
-  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-    return 'dark'
-  }
-  return 'light'
-}
-
-const resolveTheme = (theme: ThemeMode): ResolvedTheme => {
-  if (theme === 'system') return getSystemTheme()
-  return theme
-}
-
-const applyThemeClass = (resolvedTheme: ResolvedTheme) => {
-  if (typeof document === 'undefined') return
-  if (resolvedTheme === 'dark') {
-    document.documentElement.classList.add('dark')
-  } else {
-    document.documentElement.classList.remove('dark')
-  }
-}
+export type { ResolvedTheme, ThemeMode }
 
 interface UIState {
   sidebarCollapsed: boolean
@@ -45,9 +31,7 @@ export const useUIStore = create<UIState>()(
       theme: 'system',
       resolvedTheme: resolveTheme('system'),
       toggleSidebar: () => {
-        set((state) => {
-          return { sidebarCollapsed: !state.sidebarCollapsed }
-        })
+        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }))
       },
       setTheme: (theme) => {
         const resolvedTheme = resolveTheme(theme)
@@ -61,28 +45,32 @@ export const useUIStore = create<UIState>()(
           applyThemeClass(resolvedTheme)
         }
       },
-      toggleTheme: () => set((state) => {
-        const nextTheme: ThemeMode =
-          state.theme === 'light' ? 'dark'
-            : state.theme === 'dark' ? 'system'
-              : 'light'
-        const resolvedTheme = resolveTheme(nextTheme)
-        applyThemeClass(resolvedTheme)
-        return { theme: nextTheme, resolvedTheme }
-      }),
+      toggleTheme: () =>
+        set((state) => {
+          const nextTheme: ThemeMode =
+            state.theme === 'light' ? 'dark' : state.theme === 'dark' ? 'system' : 'light'
+          const resolvedTheme = resolveTheme(nextTheme)
+          applyThemeClass(resolvedTheme)
+          return { theme: nextTheme, resolvedTheme }
+        }),
 
-      // Command Palette State
       isCommandPaletteOpen: false,
       setCommandPaletteOpen: (open) => set({ isCommandPaletteOpen: open }),
-      toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
+      toggleCommandPalette: () =>
+        set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
     }),
     {
-      name: 'candas-ui-storage',
-      partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed, theme: state.theme }), // Don't persist command palette/resolved theme state
+      name: UI_STORAGE_KEY,
+      partialize: (state) => ({
+        sidebarCollapsed: state.sidebarCollapsed,
+        theme: state.theme,
+      }),
       onRehydrateStorage: () => (state) => {
-        if (!state) return
-        const resolvedTheme = resolveTheme(state.theme)
-        state.setResolvedTheme(resolvedTheme)
+        if (state) {
+          const resolved = resolveTheme(state.theme)
+          state.resolvedTheme = resolved
+          applyThemeClass(resolved)
+        }
       },
     }
   )

@@ -23,6 +23,7 @@ import { Eye, Edit, Trash2, Plus, Shield, MoreHorizontal } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
@@ -211,7 +212,7 @@ export default function RolesList() {
     <ListPageLayout
       title="Roles"
       subtitle="Gestión de roles y permisos"
-      icon={<Shield className="h-4 w-4" />}
+      icon={<ModulePageIcon module="roles" />}
       className="py-2 animate-in fade-in duration-500"
       actions={
         <ProtectedByPermission permission={PERMISSIONS.ROLES.CREAR}>
@@ -262,7 +263,7 @@ export default function RolesList() {
                     ? 'No hay resultados para los filtros seleccionados'
                     : 'Aún no hay roles registrados en el sistema.'
                 }
-                icon={<Shield className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="roles" variant="empty" />}
                 action={
                   !hayFiltros && (
                     <ProtectedByPermission permission={PERMISSIONS.ROLES.CREAR}>

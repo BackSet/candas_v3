@@ -1,6 +1,7 @@
 import { Building2, AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAgencias } from '@/hooks/useSelectOptions'
+import { SemanticNotice } from '@/components/ui/semantic-notice'
 import { cn } from '@/lib/utils'
 
 interface AssignedAgencyNoticeProps {
@@ -14,26 +15,29 @@ export function AssignedAgencyNotice({ className }: AssignedAgencyNoticeProps) {
 
   if (activeAgencyId == null) {
     return (
-      <div className={cn('rounded-lg border border-amber-300/40 bg-amber-50/50 p-3 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/20 dark:text-amber-200', className)}>
-        <div className="flex items-start gap-2">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide">Agencia de asignacion</p>
-            <p className="text-sm">No hay una agencia origen activa seleccionada. Cambiala desde el header.</p>
-          </div>
-        </div>
-      </div>
+      <SemanticNotice
+        className={className}
+        variant="warning"
+        icon={AlertTriangle}
+        title="Agencia de asignación"
+      >
+        No hay una agencia origen activa seleccionada. Cámbiala desde el header.
+      </SemanticNotice>
     )
   }
 
   return (
-    <div className={cn('rounded-lg border border-border bg-muted/30 p-3', className)}>
-      <div className="flex items-start gap-2">
-        <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Agencia de asignacion</p>
+    <div className={cn('rounded-lg border border-border bg-muted/40 p-3', className)}>
+      <div className="flex items-start gap-2.5">
+        <Building2 className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={1.75} />
+        <div className="min-w-0 space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Agencia de asignación
+          </p>
           <p className="text-sm font-medium text-foreground">{agencia?.label ?? `#${activeAgencyId}`}</p>
-          <p className="text-xs text-muted-foreground">Se define por la agencia origen activa en el header.</p>
+          <p className="text-xs text-muted-foreground">
+            Se define por la agencia origen activa en el header.
+          </p>
         </div>
       </div>
     </div>

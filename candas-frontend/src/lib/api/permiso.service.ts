@@ -31,24 +31,13 @@ export const permisoService = {
     return response.data
   },
 
-  async create(dto: Permiso): Promise<Permiso> {
-    const response = await apiClient.post<Permiso>(
-      API_ENDPOINTS.PERMISOS.BASE,
-      dto
-    )
-    return response.data
-  },
-
-  async update(id: number, dto: Permiso): Promise<Permiso> {
+  /** Solo renombra el permiso; recurso/acción se gestionan en código backend. */
+  async updateNombre(id: number, dto: Pick<Permiso, 'nombre'>): Promise<Permiso> {
     const response = await apiClient.put<Permiso>(
       API_ENDPOINTS.PERMISOS.BY_ID(id),
       dto
     )
     return response.data
-  },
-
-  async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.PERMISOS.BY_ID(id))
   },
 
   async search(query: string): Promise<Permiso[]> {

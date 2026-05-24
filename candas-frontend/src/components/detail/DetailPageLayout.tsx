@@ -39,7 +39,12 @@ export function DetailPageLayout({
   contentClassName?: string
 }) {
   return (
-    <div className={cn('w-full flex-1 flex flex-col h-full overflow-hidden bg-background', className)}>
+    <div
+      className={cn(
+        'flex h-full w-full flex-1 flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/20',
+        className
+      )}
+    >
       <div
         className={cn(
           'px-4 sm:px-6 py-4 border-b border-border/40 bg-background/95 backdrop-blur z-10 shrink-0',

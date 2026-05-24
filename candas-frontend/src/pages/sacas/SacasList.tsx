@@ -22,6 +22,7 @@ import { Eye, Edit, Trash2, Plus, ShoppingBag, MoreHorizontal } from 'lucide-rea
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
@@ -221,7 +222,7 @@ export default function SacasList() {
   return (
     <ListPageLayout
       title="Sacas"
-      icon={<ShoppingBag className="h-4 w-4" />}
+      icon={<ModulePageIcon module="sacas" />}
       actions={
         <ProtectedByPermission permission={PERMISSIONS.SACAS.CREAR}>
           <Button onClick={() => navigate({ to: '/sacas/new' })} size="sm" className="h-8 shadow-sm">
@@ -285,7 +286,7 @@ export default function SacasList() {
                     ? 'No hay resultados para los filtros seleccionados'
                     : 'No hay sacas registradas'
                 }
-                icon={<ShoppingBag className="h-10 w-10 text-muted-foreground/50" />}
+                icon={<ModulePageIcon module="sacas" variant="empty" />}
                 action={
                   !hayFiltros ? (
                     <ProtectedByPermission permission={PERMISSIONS.SACAS.CREAR}>

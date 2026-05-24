@@ -174,7 +174,7 @@ export default function ImprimirDespachoDialog({
               })}
             </div>
             {sinSacas && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
+              <p className="text-xs text-warning-foreground">
                 Este despacho no tiene sacas. Solo está disponible la impresión
                 de documento.
               </p>
@@ -241,7 +241,7 @@ export default function ImprimirDespachoDialog({
                   </SelectContent>
                 </Select>
                 {!sacaSeleccionada && !sinSacas && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                  <p className="text-xs text-warning-foreground">
                     Selecciona una saca para continuar.
                   </p>
                 )}

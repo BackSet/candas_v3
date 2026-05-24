@@ -22,11 +22,7 @@ export function PageHeader({
       )}
     >
       <div className="flex items-start gap-3 min-w-0">
-        {icon ? (
-          <div className="h-8 w-8 rounded bg-muted/50 flex items-center justify-center text-muted-foreground shrink-0">
-            {icon}
-          </div>
-        ) : null}
+        {icon ? <div className="shrink-0">{icon}</div> : null}
 
         <div className="min-w-0">
           <div className="text-xl font-semibold text-foreground tracking-tight truncate">

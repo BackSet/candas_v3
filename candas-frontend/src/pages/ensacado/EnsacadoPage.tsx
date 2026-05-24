@@ -1,381 +1,351 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PaqueteInfoCard } from './PaqueteInfoCard'
 import type { PaqueteEnsacadoInfo } from '@/types/ensacado'
-import { useBuscarPaquete, useMarcarEnsacado, useActualizarUltimaBusqueda, useInfoDespacho, esGuiaValidaParaBuscar } from '@/hooks/useEnsacado'
+import {
+  useBuscarPaquete,
+  useMarcarEnsacado,
+  useActualizarUltimaBusqueda,
+  useInfoDespacho,
+  esGuiaValidaParaBuscar,
+} from '@/hooks/useEnsacado'
 import { notify } from '@/lib/notify'
-import { Scan, X, Loader2, AlertCircle, ArrowLeft, Smartphone, Package, CheckCircle2 } from 'lucide-react'
+import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
+import { ScanBarcode, X, Loader2, AlertCircle, Smartphone } from 'lucide-react'
 import { VistaEnsacadoSoloLectura } from './VistaEnsacadoSoloLectura'
-import { Link } from '@tanstack/react-router'
+import { EnsacadoLayoutHeader } from '@/components/ensacado/EnsacadoLayoutHeader'
+import { SacaGuiasPanel } from '@/components/ensacado/SacaGuiasPanel'
+import { SyncStatusIndicator } from '@/components/ensacado/SyncStatusIndicator'
+import { AppIcon, ModulePageIcon } from '@/components/icons'
+import { ENSACADO_POLL, ENSACADO_SCAN } from '@/constants/ensacado'
 import { cn } from '@/lib/utils'
 
-const MAX_ITEMS_VISIBLES = 50
+type Modo = 'selector' | 'escanear' | 'soloLectura'
 
 function EnsacadoPage() {
-  type Modo = 'selector' | 'escanear' | 'soloLectura'
   const [modo, setModo] = useState<Modo>('selector')
   const [numeroGuia, setNumeroGuia] = useState('')
   const [numeroGuiaDebounced, setNumeroGuiaDebounced] = useState('')
   const [ultimoPaqueteMostrado, setUltimoPaqueteMostrado] = useState<PaqueteEnsacadoInfo | null>(null)
+  const [highlightSuccess, setHighlightSuccess] = useState(false)
+  const [ensacadosSesion, setEnsacadosSesion] = useState(0)
+
   const inputRef = useRef<HTMLInputElement>(null)
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const ultimoValorProcesadoRef = useRef<string>('')
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const ultimoValorProcesadoRef = useRef('')
   const ultimaGuiaSincronizadaRef = useRef<string | null>(null)
   const ultimoIdMarcadoRef = useRef<number | null>(null)
+  const marcandoRef = useRef(false)
 
-  const actualizarUltimaBusqueda = useActualizarUltimaBusqueda()
+  const { mutate: actualizarUltimaBusquedaMutate } = useActualizarUltimaBusqueda()
 
-  // Debounce
+  const limpiarInput = useCallback(() => {
+    setNumeroGuia('')
+    setNumeroGuiaDebounced('')
+    ultimoValorProcesadoRef.current = ''
+  }, [])
+
+  const aplicarGuia = useCallback((valor: string) => {
+    const limpio = valor.trim()
+    if (!limpio) return
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    setNumeroGuiaDebounced(limpio)
+    ultimoValorProcesadoRef.current = limpio
+  }, [])
+
   useEffect(() => {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
     debounceTimerRef.current = setTimeout(() => {
-      const nuevoValor = numeroGuia.trim()
-      if (nuevoValor && nuevoValor !== ultimoValorProcesadoRef.current) {
-        setNumeroGuiaDebounced(nuevoValor)
-        ultimoValorProcesadoRef.current = nuevoValor
-      } else if (!nuevoValor && !numeroGuiaDebounced) {
+      const limpio = numeroGuia.trim()
+      if (limpio && limpio !== ultimoValorProcesadoRef.current) {
+        setNumeroGuiaDebounced(limpio)
+        ultimoValorProcesadoRef.current = limpio
+      } else if (!limpio) {
         setNumeroGuiaDebounced('')
         ultimoValorProcesadoRef.current = ''
       }
-    }, 500)
-    return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current) }
-  }, [numeroGuia, numeroGuiaDebounced])
+    }, ENSACADO_SCAN.debounceMs)
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    }
+  }, [numeroGuia])
 
   useEffect(() => {
+    ultimoIdMarcadoRef.current = null
+    marcandoRef.current = false
     if (numeroGuiaDebounced?.trim()) setUltimoPaqueteMostrado(null)
   }, [numeroGuiaDebounced])
 
   const {
     data: paqueteInfo,
     isLoading: isLoadingPaquete,
+    isFetching: isFetchingPaquete,
     error: errorPaquete,
   } = useBuscarPaquete(numeroGuiaDebounced || undefined)
 
-  const marcarEnsacado = useMarcarEnsacado()
+  const { mutate: marcarEnsacadoMutate, isPending: marcarEnsacadoPending } = useMarcarEnsacado()
 
-  // Info del despacho para listas de guías ensacadas/pendientes
-  const paqueteActivo = paqueteInfo && !errorPaquete && numeroGuiaDebounced ? paqueteInfo : ultimoPaqueteMostrado
+  const paqueteActivo =
+    paqueteInfo && !errorPaquete && numeroGuiaDebounced ? paqueteInfo : ultimoPaqueteMostrado
+
   const { data: despachoInfo } = useInfoDespacho(paqueteActivo?.idDespacho, {
-    refetchInterval: 5000,
+    refetchInterval: ENSACADO_POLL.despachoMs,
+    enabled: modo === 'escanear' && !!paqueteActivo?.idDespacho,
   })
-  const sacaActual = despachoInfo?.sacas?.find(
-    (s) => s.idSaca === paqueteActivo?.idSacaAsignada
-  ) ?? null
+
+  const sacaActual =
+    despachoInfo?.sacas?.find((s) => s.idSaca === paqueteActivo?.idSacaAsignada) ?? null
   const paquetesEnsacados = sacaActual?.paquetesEnsacados ?? []
   const paquetesPendientes = sacaActual?.paquetesPendientes ?? []
 
-  // Sincronizar última búsqueda con sesión para vista móvil
+  // Sincronizar sesión para vista móvil (al encontrar paquete válido)
   useEffect(() => {
+    if (modo !== 'escanear') return
     const guia = numeroGuiaDebounced?.trim()
     if (!guia || !esGuiaValidaParaBuscar(guia)) {
       ultimaGuiaSincronizadaRef.current = null
-      ultimoIdMarcadoRef.current = null
       return
     }
     if (!paqueteInfo || errorPaquete) return
     if (ultimaGuiaSincronizadaRef.current === guia) return
-    ultimaGuiaSincronizadaRef.current = guia
-    actualizarUltimaBusqueda.mutate(guia)
-  }, [paqueteInfo, errorPaquete, numeroGuiaDebounced])
 
-  // Ensacar automáticamente
+    ultimaGuiaSincronizadaRef.current = guia
+    actualizarUltimaBusquedaMutate(guia)
+  }, [modo, paqueteInfo, errorPaquete, numeroGuiaDebounced, actualizarUltimaBusquedaMutate])
+
+  // Ensacar automáticamente tras búsqueda exitosa
   useEffect(() => {
+    if (modo !== 'escanear') return
     if (!paqueteInfo || errorPaquete || !numeroGuiaDebounced?.trim()) return
+    if (marcandoRef.current) return
     if (ultimoIdMarcadoRef.current === paqueteInfo.idPaquete) return
 
     if (paqueteInfo.yaEnsacado) {
       notify.warning('Este paquete ya está ensacado')
       setUltimoPaqueteMostrado(paqueteInfo)
-      setNumeroGuia('')
-      setNumeroGuiaDebounced('')
-      ultimoValorProcesadoRef.current = ''
+      limpiarInput()
       ultimoIdMarcadoRef.current = paqueteInfo.idPaquete
       return
     }
 
-    ultimoIdMarcadoRef.current = paqueteInfo.idPaquete
-    marcarEnsacado.mutate(paqueteInfo.idPaquete, {
+    marcandoRef.current = true
+    const idPaquete = paqueteInfo.idPaquete
+    marcarEnsacadoMutate(idPaquete, {
       onSuccess: () => {
+        ultimoIdMarcadoRef.current = idPaquete
         setUltimoPaqueteMostrado(paqueteInfo)
-        setNumeroGuia('')
-        setNumeroGuiaDebounced('')
-        ultimoValorProcesadoRef.current = ''
+        setEnsacadosSesion((n) => n + 1)
+        setHighlightSuccess(true)
+        setTimeout(() => setHighlightSuccess(false), 1_200)
+        limpiarInput()
+        inputRef.current?.focus()
+      },
+      onError: () => {
+        // Bloquear reintentos automáticos para el mismo paquete hasta escanear otra guía
+        ultimoIdMarcadoRef.current = idPaquete
+        setUltimoPaqueteMostrado(paqueteInfo)
+      },
+      onSettled: () => {
+        marcandoRef.current = false
       },
     })
-  }, [paqueteInfo, errorPaquete, numeroGuiaDebounced])
+  }, [modo, paqueteInfo, errorPaquete, numeroGuiaDebounced, marcarEnsacadoMutate, limpiarInput])
 
-  // Auto-focus
-  useEffect(() => { inputRef.current?.focus() }, [])
   useEffect(() => {
-    if (!marcarEnsacado.isPending && !numeroGuia) {
-      const timer = setTimeout(() => inputRef.current?.focus(), 100)
+    if (modo === 'escanear') inputRef.current?.focus()
+  }, [modo])
+
+  useEffect(() => {
+    if (modo !== 'escanear') return
+    if (!marcarEnsacadoPending && !numeroGuia) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 80)
       return () => clearTimeout(timer)
     }
-  }, [marcarEnsacado.isPending, numeroGuia])
+  }, [modo, marcarEnsacadoPending, numeroGuia])
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && numeroGuia.trim()) {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
-      const nuevoValor = numeroGuia.trim()
-      setNumeroGuiaDebounced(nuevoValor)
-      ultimoValorProcesadoRef.current = nuevoValor
+      e.preventDefault()
+      aplicarGuia(numeroGuia)
     }
   }
 
-  // === VISTA: Solo Lectura ===
+  const errorMessage =
+    errorPaquete && numeroGuiaDebounced
+      ? getApiStatus(errorPaquete) === 404
+        ? 'Paquete no encontrado'
+        : getApiErrorMessage(errorPaquete, 'Error al buscar el paquete')
+      : null
+
+  const procesando = isLoadingPaquete || isFetchingPaquete || marcarEnsacadoPending
+
   if (modo === 'soloLectura') {
     return <VistaEnsacadoSoloLectura onVolver={() => setModo('selector')} />
   }
 
-  // === VISTA: Selector Inicial ===
   if (modo === 'selector') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col">
-        <div className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/30">
-          <div className="w-full px-4 sm:px-6 h-14 sm:h-16 flex items-center gap-3">
-            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                <Package className="h-4 w-4 text-primary" />
-              </div>
-              <h1 className="text-lg font-bold tracking-tight">Ensacado</h1>
-            </div>
-          </div>
-        </div>
+      <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-muted/30">
+        <EnsacadoLayoutHeader title="Ensacado" subtitle="Operación de bodega" />
 
-        <div className="flex-1 p-4 sm:p-8 flex flex-col items-center justify-center">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">¿Qué deseas hacer?</h2>
-            <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
-              Elige una opción para comenzar con el proceso de ensacado
+        <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-8">
+          <div className="mb-10 max-w-lg text-center">
+            <ModulePageIcon module="ensacado" variant="tile" className="mx-auto mb-4 size-14" />
+            <h2 className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">¿Qué deseas hacer?</h2>
+            <p className="text-sm text-muted-foreground sm:text-base">
+              Escanea guías en esta pantalla o abre la vista en otro dispositivo para seguir el progreso en
+              tiempo real.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-2xl">
-            <button
-              type="button"
-              onClick={() => setModo('escanear')}
-              className="group relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-7 text-left transition-colors transition-shadow duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background"
-            >
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
-                    <Scan className="h-6 w-6 text-primary" />
-                  </div>
-                  <h2 className="font-bold text-foreground text-lg">Escanear paquetes</h2>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Usa el escáner o teclado para buscar guías y marcar paquetes como ensacados.
-                </p>
-              </div>
-            </button>
-            <button
-              type="button"
+
+          <div className="grid w-full max-w-2xl grid-cols-1 gap-5 sm:grid-cols-2">
+            <ModoCard
+              title="Escanear paquetes"
+              description="Lector o teclado: busca la guía y la marca como ensacada automáticamente."
+              icon={ScanBarcode}
+              onClick={() => {
+                setEnsacadosSesion(0)
+                setModo('escanear')
+              }}
+            />
+            <ModoCard
+              title="Ver en curso"
+              description="Pantalla secundaria (móvil/tablet) sincronizada con el último escaneo del mismo usuario."
+              icon={Smartphone}
               onClick={() => setModo('soloLectura')}
-              className="group relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-7 text-left transition-colors transition-shadow duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background"
-            >
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
-                    <Smartphone className="h-6 w-6 text-primary" />
-                  </div>
-                  <h2 className="font-bold text-foreground text-lg">Ver en curso</h2>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Muestra en tiempo real los datos del paquete que se está ensacando en el otro dispositivo.
-                </p>
-              </div>
-            </button>
+            />
           </div>
         </div>
       </div>
     )
   }
 
-  // === VISTA: Modo Escaneo ===
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/70 backdrop-blur-xl border-b border-border/30">
-        <div className="w-full px-4 sm:px-6 h-14 sm:h-16 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setModo('selector')} className="text-muted-foreground hover:text-foreground -ml-2" title="Volver al inicio">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <Scan className="h-4 w-4 text-primary" />
-            </div>
-            <h1 className="text-lg font-bold tracking-tight">Escanear paquetes</h1>
-          </div>
-        </div>
-      </div>
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-muted/20">
+      <EnsacadoLayoutHeader
+        title="Escanear paquetes"
+        subtitle={ensacadosSesion > 0 ? `${ensacadosSesion} ensacados en esta sesión` : 'Listo para escanear'}
+        onBack={() => setModo('selector')}
+        showScanIcon
+        trailing={<SyncStatusIndicator />}
+      />
 
-      <div className="flex-1 p-4 sm:p-6 space-y-6">
-        {/* Zona de escaneo + resultado */}
-        <div className="max-w-3xl mx-auto space-y-5">
+      <div className="flex-1 space-y-6 p-4 sm:p-6">
+        <div className="mx-auto max-w-3xl space-y-5">
           <div className="relative">
-            <Label htmlFor="scanGuiaEnsacado" className="sr-only">Número de Guía</Label>
-            <div className={cn(
-              "relative rounded-2xl overflow-hidden transition-colors transition-shadow duration-200 border-2 shadow-sm",
-              errorPaquete
-                ? "border-red-400/60 shadow-red-500/10 shadow-lg"
-                : isLoadingPaquete
-                  ? "border-primary/50 shadow-primary/10 shadow-lg"
-                  : "border-border/50 hover:border-primary/30 focus-within:border-primary/60 focus-within:shadow-primary/10 focus-within:shadow-lg"
-            )}>
+            <Label htmlFor="scanGuiaEnsacado" className="sr-only">
+              Número de guía
+            </Label>
+            <div
+              className={cn(
+                'relative overflow-hidden rounded-2xl border-2 shadow-sm transition-all duration-200',
+                errorMessage
+                  ? 'border-error/50 shadow-error/10'
+                  : procesando
+                    ? 'border-primary/50 shadow-primary/10'
+                    : 'border-border/50 focus-within:border-primary/60'
+              )}
+            >
               <Input
                 id="scanGuiaEnsacado"
                 ref={inputRef}
-                placeholder="Escanear o escribir guía..."
+                placeholder="Escanear o escribir guía…"
                 value={numeroGuia}
                 onChange={(e) => setNumeroGuia(e.target.value)}
-                onKeyDown={handleKeyPress}
-                className="border-0 h-16 sm:h-20 text-2xl sm:text-3xl font-mono text-center bg-transparent focus-visible:ring-0 px-14"
-                autoFocus
+                onKeyDown={handleKeyDown}
+                disabled={marcarEnsacadoPending}
+                className="h-16 border-0 bg-transparent px-14 text-center font-mono text-2xl focus-visible:ring-0 sm:h-20 sm:text-3xl"
                 autoComplete="off"
+                inputMode="text"
               />
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                {isLoadingPaquete && (
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2">
+                {procesando ? (
+                  <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
+                    <Loader2 className="size-5 animate-spin text-primary" />
                   </div>
-                )}
-                {!isLoadingPaquete && numeroGuia && (
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-muted" onClick={() => { setNumeroGuia(''); inputRef.current?.focus() }}>
-                    <X className="h-4 w-4" />
+                ) : numeroGuia ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 rounded-full"
+                    onClick={() => {
+                      limpiarInput()
+                      inputRef.current?.focus()
+                    }}
+                  >
+                    <X className="size-4" />
                   </Button>
-                )}
-                {!isLoadingPaquete && !numeroGuia && (
-                  <Scan className="h-5 w-5 text-muted-foreground/20" />
+                ) : (
+                  <AppIcon icon={ScanBarcode} size="md" className="text-muted-foreground/25" />
                 )}
               </div>
             </div>
-            <p className="mt-2 text-center text-xs text-muted-foreground/70">
-              {isLoadingPaquete ? 'Buscando información...' : 'El escáner envía Enter automáticamente · También puedes teclear y presionar Enter'}
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {marcarEnsacadoPending
+                ? 'Marcando como ensacado…'
+                : isLoadingPaquete
+                  ? 'Buscando paquete…'
+                  : 'Enter confirma · El lector suele enviar Enter automáticamente'}
             </p>
           </div>
 
-          {/* Error */}
-          {errorPaquete && numeroGuiaDebounced && (
-            <div className="animate-in fade-in duration-200">
-              <div className="rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <p className="font-semibold text-red-700 dark:text-red-300 text-sm">
-                    {(errorPaquete as any)?.response?.status === 404
-                      ? 'Paquete no encontrado'
-                      : 'Error al buscar el paquete'}
-                  </p>
-                  <p className="text-xs text-red-600/80 dark:text-red-400/70 font-mono mt-0.5">{numeroGuiaDebounced}</p>
-                </div>
+          {errorMessage ? (
+            <div className="animate-in fade-in flex items-center gap-4 rounded-xl border border-error/30 bg-error/10 p-4 duration-200">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-error/15">
+                <AlertCircle className="size-5 text-error" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-error">{errorMessage}</p>
+                <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">{numeroGuiaDebounced}</p>
               </div>
             </div>
-          )}
+          ) : null}
 
-          {/* Resultado del paquete */}
-          {paqueteActivo && (
+          {paqueteActivo ? (
             <div className="animate-in fade-in duration-200">
-              <PaqueteInfoCard info={paqueteActivo} />
+              <PaqueteInfoCard info={paqueteActivo} saca={sacaActual} highlightSuccess={highlightSuccess} />
             </div>
-          )}
+          ) : null}
         </div>
 
-        {/* Listas de guías ensacadas y pendientes */}
-        {paqueteActivo && (
-          <div className="max-w-3xl mx-auto animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Guías ensacadas */}
-              <Card className="border-border/40 bg-card/80 backdrop-blur-sm shadow-sm rounded-2xl">
-                <CardContent className="p-4 sm:p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-6 w-6 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                      Guías ensacadas
-                    </h3>
-                    {paquetesEnsacados.length > 0 && (
-                      <span className="ml-auto text-[11px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        {paquetesEnsacados.length}
-                      </span>
-                    )}
-                  </div>
-                  {paquetesEnsacados.length === 0 ? (
-                    <p className="text-sm text-muted-foreground/60 py-3 text-center italic">Ninguna aún</p>
-                  ) : (
-                    <>
-                      <ul className="space-y-1.5 max-h-52 sm:max-h-72 overflow-y-auto text-sm font-mono" role="list">
-                        {paquetesEnsacados.slice(0, MAX_ITEMS_VISIBLES).map((guia) => (
-                          <li
-                            key={guia}
-                            className="py-1.5 px-3 rounded-lg bg-emerald-500/8 border border-emerald-500/15 text-emerald-700 dark:text-emerald-400 truncate text-xs"
-                          >
-                            {guia}
-                          </li>
-                        ))}
-                      </ul>
-                      {paquetesEnsacados.length > MAX_ITEMS_VISIBLES && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Mostrando {MAX_ITEMS_VISIBLES} de {paquetesEnsacados.length}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Pendientes */}
-              <Card className="border-border/40 bg-card/80 backdrop-blur-sm shadow-sm rounded-2xl">
-                <CardContent className="p-4 sm:p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-6 w-6 rounded-full bg-muted/60 flex items-center justify-center">
-                      <Package className="h-3.5 w-3.5 text-muted-foreground/60" />
-                    </div>
-                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                      Pendientes
-                    </h3>
-                    {paquetesPendientes.length > 0 && (
-                      <span className="ml-auto text-[11px] font-bold tabular-nums text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-                        {paquetesPendientes.length}
-                      </span>
-                    )}
-                  </div>
-                  {paquetesPendientes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground/60 py-3 text-center italic">No hay pendientes</p>
-                  ) : (
-                    <>
-                      <ul className="space-y-1.5 max-h-52 sm:max-h-72 overflow-y-auto text-sm font-mono" role="list">
-                        {paquetesPendientes.slice(0, MAX_ITEMS_VISIBLES).map((guia) => (
-                          <li
-                            key={guia}
-                            className="py-1.5 px-3 rounded-lg bg-muted/30 border border-border/30 truncate text-xs"
-                          >
-                            {guia}
-                          </li>
-                        ))}
-                      </ul>
-                      {paquetesPendientes.length > MAX_ITEMS_VISIBLES && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Mostrando {MAX_ITEMS_VISIBLES} de {paquetesPendientes.length}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+        {paqueteActivo ? (
+          <div className="mx-auto max-w-3xl animate-in fade-in duration-200">
+            <SacaGuiasPanel ensacados={paquetesEnsacados} pendientes={paquetesPendientes} />
           </div>
-        )}
+        ) : null}
       </div>
     </div>
+  )
+}
+
+function ModoCard({
+  title,
+  description,
+  icon,
+  onClick,
+}: {
+  title: string
+  description: string
+  icon: typeof ScanBarcode
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative rounded-2xl border border-border/60 bg-card/80 p-7 text-left backdrop-blur-sm transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
+    >
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/15">
+          <AppIcon icon={icon} size="lg" className="text-primary" />
+        </div>
+        <h2 className="text-lg font-bold text-foreground">{title}</h2>
+      </div>
+      <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+    </button>
   )
 }
 

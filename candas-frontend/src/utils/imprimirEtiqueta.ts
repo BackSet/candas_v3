@@ -1,3 +1,4 @@
+import { printNotify } from '@/lib/print-notify'
 import type { Paquete } from '@/types/paquete'
 import { PRINT_CSS_BASE } from './printTheme'
 
@@ -228,7 +229,7 @@ function generarEtiquetaHTML(paquete: Paquete, index: number): string {
 function openPrintWindow(content: string, numerosGuia: string[]) {
   const printWindow = window.open('', '_blank', 'width=800,height=600')
   if (!printWindow) {
-    alert('No se pudo abrir la ventana de impresión. Por favor, permite las ventanas emergentes.')
+    printNotify.popupBlocked()
     return
   }
 
@@ -289,7 +290,7 @@ export function imprimirEtiqueta(paquete: Paquete) {
 
 export function imprimirEtiquetasMultiples(paquetes: Paquete[]) {
   if (paquetes.length === 0) {
-    alert('No hay paquetes para imprimir')
+    printNotify.nothingToPrint('No hay paquetes para imprimir')
     return
   }
 
