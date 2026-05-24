@@ -1,5 +1,7 @@
 package com.candas.candas_backend.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,17 +15,29 @@ import java.util.stream.Stream;
 @Configuration
 public class CorsConfig {
 
-    @Value("${candas.cors.allowed-origin-patterns:http://localhost:5173,http://127.0.0.1:5173}")
-    private String allowedOriginPatterns;
+    private static final Logger log = LoggerFactory.getLogger(CorsConfig.class);
+
+    @Value("${app.cors.allowed-origins:}")
+    private String allowedOrigins;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         var configuration = new CorsConfiguration();
-        var parsedOriginPatterns = Stream.of(allowedOriginPatterns.split(","))
+        var parsedOrigins = Stream.of(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isEmpty())
                 .toList();
-        configuration.setAllowedOriginPatterns(parsedOriginPatterns.isEmpty() ? List.of("*") : parsedOriginPatterns);
+
+        if (parsedOrigins.isEmpty()) {
+            log.warn(
+                    "CORS: CORS_ALLOWED_ORIGINS / app.cors.allowed-origins está vacío. "
+                            + "Defínalo en .env (ej. http://localhost:5173 o el dominio del frontend en producción)."
+            );
+        } else {
+            log.info("CORS: orígenes permitidos: {}", parsedOrigins);
+        }
+
+        configuration.setAllowedOriginPatterns(parsedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));

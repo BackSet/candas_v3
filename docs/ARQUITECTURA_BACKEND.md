@@ -134,7 +134,7 @@ sequenceDiagram
   - JWT: `jwt.secret`, `jwt.expiration`
   - Springdoc: rutas de API docs y Swagger UI
 
-- **CORS:** [CorsConfig](candas-backend/src/main/java/com/candas/candas_backend/config/CorsConfig.java): orígenes permitidos (localhost:5173, localhost:3000, 127.0.0.1:5173, 127.0.0.1:3000), métodos (GET, POST, PUT, DELETE, OPTIONS, PATCH), cabeceras permitidas, `allowCredentials=true`, `maxAge=3600`.
+- **CORS:** [CorsConfig](candas-backend/src/main/java/com/candas/candas_backend/config/CorsConfig.java): orígenes desde `app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:}` (`.env` / Railway, sin URLs por defecto en properties). Métodos, cabeceras y credenciales fijados en código.
 
 - **Flyway:** Migraciones en [db/migration](candas-backend/src/main/resources/db/migration/); scripts `V*.sql`.
 

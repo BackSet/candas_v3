@@ -40,6 +40,30 @@ export function getApiStatus(error: unknown): number | null {
   return typeof status === 'number' ? status : null
 }
 
+/** Sin respuesta HTTP: red caída, CORS bloqueado por el navegador, etc. */
+export function isNetworkOrCorsError(error: unknown): boolean {
+  const err = error as { code?: string; response?: unknown; message?: string }
+  if (err?.response != null) return false
+  const code = err?.code ?? ''
+  const msg = (err?.message ?? '').toLowerCase()
+  return (
+    code === 'ERR_NETWORK' ||
+    code === 'ECONNABORTED' ||
+    msg.includes('network error') ||
+    msg.includes('cors')
+  )
+}
+
+export function getNetworkErrorHint(apiBaseUrl: string): string {
+  const origin =
+    typeof window !== 'undefined' ? window.location.origin : '(origen del frontend)'
+  return (
+    `No se pudo conectar con ${apiBaseUrl}. ` +
+    `Si el API está en línea, suele ser CORS: en el backend configure ` +
+    `CORS_ALLOWED_ORIGINS=${origin} (y redespliegue). Origen actual: ${origin}.`
+  )
+}
+
 export function getInteragencyRestrictionMessage(error: unknown): string | null {
   if (getApiStatus(error) !== 403) {
     return null

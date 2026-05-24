@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { authService } from '@/lib/api/auth.service'
+import { API_BASE_URL } from '@/lib/api/client'
+import { getNetworkErrorHint, isNetworkOrCorsError } from '@/lib/api/errors'
 import { getApiErrorMessage } from '@/lib/api/errors'
 import type { RegisterRequest } from '@/types/user'
 
@@ -40,8 +42,8 @@ export default function Register() {
     } catch (err: unknown) {
       let errorMessage = 'Error al registrar usuario'
       const errObj = err as { code?: string; response?: { status?: number; data?: { message?: string } } }
-      if (errObj?.code === 'ERR_NETWORK' || !errObj?.response) {
-        errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté en ejecución y que la URL de la API sea correcta.'
+      if (isNetworkOrCorsError(err)) {
+        errorMessage = getNetworkErrorHint(API_BASE_URL)
       } else if (errObj?.response?.status === 400) {
         errorMessage = 'Datos inválidos. Verifica que todos los campos estén correctos'
       } else if (errObj?.response?.status === 409) {

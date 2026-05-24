@@ -32,6 +32,8 @@ Guía para desplegar Candas en Railway con dos servicios Docker separados.
 
 ## Paso 2: Configurar variables de entorno
 
+Plantilla lista para copiar (dominios **bymerge.org**, referencias `${{servicio.*}}`): **[RAILWAY_ENV.md](RAILWAY_ENV.md)**.
+
 ### Backend (`candas-backend`)
 
 Variables mínimas:
@@ -43,20 +45,19 @@ Variables mínimas:
 - `JWT_SECRET=<secreto-largo-y-seguro>`
 - `JWT_EXPIRATION=86400000`
 - `PRESINTO_SECRET=<secreto-largo-y-seguro>`
-- `CORS_ALLOWED_ORIGINS=https://<frontend>.up.railway.app`
+- `CORS_ALLOWED_ORIGINS=https://<dominio-del-frontend>` (origen de la SPA en el navegador, **no** la URL del API)
 
 Notas:
 
+- En `application.properties`: `app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:}` (sin URLs por defecto en el código).
 - En `prod`, el backend usa `server.port=${PORT:8080}` para ajustarse al puerto dinámico de Railway.
-- En `prod`, no necesitas definir `SERVER_ADDRESS` ni `SERVER_PORT`.
 - Flyway corre al arranque y aplica migraciones automáticamente.
-- También se acepta `CORS_ALLOWED_ORIGIN_PATTERNS` por compatibilidad, pero se recomienda `CORS_ALLOWED_ORIGINS`.
 
 ### Frontend (`candas-frontend`)
 
 Variables mínimas (build de la imagen Docker / `vite build`):
 
-- `VITE_API_BASE_URL=https://<backend>.up.railway.app` (URL completa del API; el código de producción no añade puerto por defecto)
+- `VITE_API_BASE_URL=https://<dominio-del-backend>` (URL completa del API; **no** `VITE_API_URL`)
 
 Notas:
 
@@ -105,9 +106,13 @@ docker build -t candas-frontend:local .
 
 ## Troubleshooting rápido
 
-- **Error CORS en navegador**:
-  - Revisar `CORS_ALLOWED_ORIGINS` en backend.
-  - Confirmar que el valor coincide con la URL exacta del frontend Railway.
+- **Error CORS en navegador** (consola: *falta la cabecera CORS 'Access-Control-Allow-Origin'*, código 403):
+  - El backend y el frontend son **orígenes distintos** (ej. `https://candas.bymerge.org` → `https://api-candas.bymerge.org`).
+  - En el servicio **backend**, definir `CORS_ALLOWED_ORIGINS` con la **URL exacta** del frontend (sin barra final), separada por comas si hay varias:
+    - `CORS_ALLOWED_ORIGINS=https://<dominio-exacto-del-frontend>`
+  - Redesplegar el backend tras cambiar la variable.
+  - En logs de arranque debe aparecer: `CORS: orígenes permitidos: [...]`.
+  - Comprobar que `VITE_API_BASE_URL` en el build del frontend apunte a `https://api-candas.bymerge.org` (sin `/` final).
 - **Frontend no conecta API**:
   - Verificar `VITE_API_BASE_URL` y redeploy frontend.
 - **Backend no inicia**:
