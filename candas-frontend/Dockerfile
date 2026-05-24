@@ -2,9 +2,11 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Obligatoria en imagen de producción: URL completa del API (Railway la inyecta en build).
+# Obligatorias en producción (Railway las inyecta en build).
 ARG VITE_API_BASE_URL
+ARG VITE_APP_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_APP_URL=${VITE_APP_URL}
 
 COPY package.json package-lock.json ./
 RUN npm ci

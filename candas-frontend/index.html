@@ -2,13 +2,55 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <title>Candas - Gestión de Paquetes</title>
+
+    <title>Candas — Gestión logística de paquetes</title>
+    <meta
+      name="description"
+      content="Sistema de gestión logística y operativa: recepción, despachos, ensacado, manifiestos, atención de paquetes y seguimiento en bodega."
+    />
+    <meta
+      name="keywords"
+      content="candas, logística, paquetes, despachos, ensacado, manifiestos, bodega, courier"
+    />
+    <meta name="author" content="Candas" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#2563eb" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="canonical" href="%VITE_APP_URL%/" />
+
+    <!-- Open Graph (WhatsApp, Facebook, LinkedIn…) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Candas" />
+    <meta property="og:locale" content="es_EC" />
+    <meta property="og:title" content="Candas — Gestión logística de paquetes" />
+    <meta
+      property="og:description"
+      content="Gestiona recepción, despachos, ensacado y manifiestos. Seguimiento operativo de paquetes en bodega, en un solo sistema."
+    />
+    <meta property="og:url" content="%VITE_APP_URL%/" />
+    <meta property="og:image" content="%VITE_APP_URL%/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Candas — Gestión logística y operativa de paquetes" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Candas — Gestión logística de paquetes" />
+    <meta
+      name="twitter:description"
+      content="Gestiona recepción, despachos, ensacado y manifiestos. Seguimiento operativo de paquetes en bodega."
+    />
+    <meta name="twitter:image" content="%VITE_APP_URL%/og-image.svg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
       (function () {
         try {
@@ -18,7 +60,9 @@
             var parsed = JSON.parse(raw);
             if (parsed && parsed.state && parsed.state.theme) theme = parsed.state.theme;
           }
-          var dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var dark =
+            theme === 'dark' ||
+            (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) document.documentElement.classList.add('dark');
         } catch (e) {}
       })();

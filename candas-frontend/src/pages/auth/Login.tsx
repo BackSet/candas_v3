@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { applyPageMeta } from '@/lib/document-meta'
 import { useNavigate, Link } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -20,6 +21,14 @@ export default function Login() {
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    applyPageMeta({
+      title: 'Iniciar sesión',
+      description:
+        'Accede a Candas para gestionar recepción, despachos, ensacado y manifiestos de paquetes en bodega.',
+    })
+  }, [])
 
   const {
     register,

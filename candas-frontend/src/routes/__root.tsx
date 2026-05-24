@@ -1,11 +1,16 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { applyThemeClass, getSystemTheme, resolveTheme } from '@/lib/theme'
+import { applyDefaultDocumentMeta } from '@/lib/document-meta'
+import { applyThemeClass, resolveTheme } from '@/lib/theme'
 import { useUIStore } from '@/stores/uiStore'
 
 function RootComponent() {
   const theme = useUIStore((s) => s.theme)
   const setResolvedTheme = useUIStore((s) => s.setResolvedTheme)
+
+  useEffect(() => {
+    applyDefaultDocumentMeta()
+  }, [])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')

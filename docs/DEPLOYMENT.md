@@ -58,6 +58,7 @@ Notas:
 Variables mínimas (build de la imagen Docker / `vite build`):
 
 - `VITE_API_BASE_URL=https://<dominio-del-backend>` (URL completa del API; **no** `VITE_API_URL`)
+- `VITE_APP_URL=https://<dominio-del-frontend>` (URL pública para SEO y vista previa al compartir enlaces)
 
 Notas:
 

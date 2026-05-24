@@ -12,9 +12,17 @@ Build Docker (`vite build`):
 
 ```env
 VITE_API_BASE_URL=https://${{candas-backend.RAILWAY_PUBLIC_DOMAIN}}
+VITE_APP_URL=https://${{candas-frontend.RAILWAY_PUBLIC_DOMAIN}}
 ```
 
-O dominio custom del API, si lo tienes configurado en Railway.
+O dominios custom (sin barra final):
+
+```env
+VITE_API_BASE_URL=https://api-candas.bymerge.org
+VITE_APP_URL=https://candas.bymerge.org
+```
+
+`VITE_APP_URL` alimenta Open Graph / SEO en el build (`og:title`, `og:description`, imagen al compartir).
 
 **No uses** `VITE_API_URL` (otro proyecto). Candas solo lee `VITE_API_BASE_URL`.
 
