@@ -268,8 +268,8 @@ export default function CrearDespachoMasivoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent ref={dialogContentRef} className="max-w-4xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
-        <DialogHeader className="px-8 pt-8 pb-5 shrink-0 border-b border-border bg-muted/30">
+      <DialogContent ref={dialogContentRef} className="max-w-4xl w-[calc(100vw-1.5rem)] sm:w-full max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-5 shrink-0 border-b border-border bg-muted/30">
           <DialogTitle className="flex items-center gap-3 text-xl font-semibold">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600">
               <Truck className="h-6 w-6" />
@@ -282,7 +282,7 @@ export default function CrearDespachoMasivoDialog({
         </DialogHeader>
 
         {/* Resumen operativo */}
-        <div className="px-8 py-4 bg-muted/50 border-b border-border shrink-0 flex flex-wrap items-center gap-6 text-sm">
+        <div className="px-4 sm:px-8 py-3 sm:py-4 bg-muted/50 border-b border-border shrink-0 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <span className="inline-flex items-center gap-2 font-semibold text-foreground">
             <Package className="h-4 w-4 text-muted-foreground" />
             {packageCount} paquetes
@@ -295,10 +295,10 @@ export default function CrearDespachoMasivoDialog({
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-0 px-8 py-6 space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-w-0">
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-8 py-5 sm:py-6 space-y-6 sm:space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 min-w-0">
             {/* Card: Destino */}
-            <div className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-sm min-w-0">
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-6 space-y-5 shadow-sm min-w-0">
               <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
                 <MapPin className="h-5 w-5 text-muted-foreground" />
                 Destino
@@ -495,7 +495,7 @@ export default function CrearDespachoMasivoDialog({
             </div>
 
             {/* Card: Datos del despacho */}
-            <div className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-sm min-w-0">
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-6 space-y-5 shadow-sm min-w-0">
               <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 Datos del despacho
@@ -589,7 +589,7 @@ export default function CrearDespachoMasivoDialog({
           </div>
 
           {/* Card: Distribución de Sacas (ancho completo) */}
-          <div className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-4 sm:p-6 space-y-5 shadow-sm">
             <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
               <Box className="h-5 w-5 text-muted-foreground" />
               Distribución de Sacas
@@ -742,7 +742,7 @@ export default function CrearDespachoMasivoDialog({
           </div>
 
           {/* Resumen del despacho y datos del destinatario (copiables para el courier) */}
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
             <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
               <ClipboardList className="h-5 w-5 text-muted-foreground" />
               Resumen y datos para el courier
@@ -751,7 +751,7 @@ export default function CrearDespachoMasivoDialog({
           </div>
         </div>
 
-        <DialogFooter className="sm:justify-between px-8 py-5 border-t border-border shrink-0 bg-muted/30">
+        <DialogFooter className="sm:justify-between px-4 sm:px-8 py-4 sm:py-5 border-t border-border shrink-0 bg-muted/30">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-11 px-5">
             Cancelar
           </Button>

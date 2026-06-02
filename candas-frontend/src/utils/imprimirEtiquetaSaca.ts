@@ -26,19 +26,16 @@ export function generarEtiquetaHTML(
   // Determinar si es destinatario directo o agencia
   const esDestinatarioDirecto = despacho.despachoDirecto?.destinatarioDirecto !== undefined
 
-  let destinoLabel: string
   let destinoNombre: string
   let destinoTelefono: string
   let destinoEncargado: string = ''
 
   if (esDestinatarioDirecto) {
     const dd = despacho.despachoDirecto!.destinatarioDirecto!
-    destinoLabel = 'Destinatario:'
     destinoNombre = dd.nombreDestinatario || 'N/A'
     destinoTelefono = dd.telefonoDestinatario || 'N/A'
     // No hay encargado para destinatario directo
   } else {
-    destinoLabel = 'Agencia:'
     destinoNombre = agencia?.nombre ? `${agencia.nombre}${agencia.canton ? ` - ${agencia.canton}` : ''}` : 'N/A'
     destinoTelefono = agencia?.telefonos?.find(t => t.principal)?.numero ||
       agencia?.telefonos?.[0]?.numero || 'N/A'
@@ -68,9 +65,9 @@ export function generarEtiquetaHTML(
          </div>
          
          <div class="info-group">
-            <div class="line">
-               <span class="label">${destinoLabel}</span>
-               <span class="value lg">${destinoNombre}</span>
+            <div class="dest-block">
+               <span class="dest-tag">${esDestinatarioDirecto ? 'Destinatario' : 'Agencia'}</span>
+               <span class="dest-name">${destinoNombre}</span>
             </div>
             ${destinoEncargado ? `
             <div class="line">
@@ -92,11 +89,12 @@ export function generarEtiquetaHTML(
             </div>
          </div>
       </div>
-      
+
       <div class="column-right">
          <div class="counter-box">
+            <div class="counter-label">Saca</div>
             <div class="counter-main">${ordenTexto}</div>
-            <div class="counter-sub">${numeroPaquetes} paq</div>
+            <div class="counter-sub">${numeroPaquetes} paquetes</div>
          </div>
       </div>
     </div>
@@ -274,6 +272,9 @@ function buildEtiquetasNormalesDocument(etiquetasHTML: string, titulo: string): 
       .logo-img { height: 8mm !important; width: auto !important; object-fit: contain !important; }
       .header-text { font-size: 10pt; font-weight: 600; text-transform: uppercase; line-height: 1; color: #171717; }
       .info-group { display: flex; flex-direction: column; gap: 1.5mm; }
+      .dest-block { display: flex; flex-direction: column; gap: 0.5mm; margin-bottom: 1mm; }
+      .dest-tag { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #1d4ed8; }
+      .dest-name { font-size: 12pt; font-weight: 700; color: #171717; line-height: 1.12; }
       .line { display: flex; align-items: baseline; gap: 2mm; font-size: 8.5pt; line-height: 1.1; }
       .label { font-weight: 600; color: #737373; font-size: 7.5pt; min-width: 18mm; text-transform: uppercase; letter-spacing: 0.05em; }
       .value { font-weight: 500; color: #171717; }
@@ -281,9 +282,10 @@ function buildEtiquetasNormalesDocument(etiquetasHTML: string, titulo: string): 
       .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: -0.5px; }
       .splitter { height: 1px; background: #f5f5f5; margin: 1mm 0; }
       .column-right { width: 45mm; display: flex; justify-content: center; align-items: center; }
-      .counter-box { border: 1px solid #e5e5e5; border-radius: 6px; width: 100%; padding: 3mm 0; text-align: center; background: #fcfcfc; }
-      .counter-main { font-size: 22pt; font-weight: 700; line-height: 1; margin-bottom: 1mm; color: #171717; }
-      .counter-sub { font-size: 10pt; font-weight: 500; color: #737373; text-transform: uppercase; }
+      .counter-box { border: 1px solid #c7dbff; border-radius: 6px; width: 100%; padding: 2.5mm 0; text-align: center; background: #eef4ff; }
+      .counter-label { font-size: 7pt; font-weight: 700; letter-spacing: 0.12em; color: #1d4ed8; text-transform: uppercase; margin-bottom: 0.5mm; }
+      .counter-main { font-size: 22pt; font-weight: 800; line-height: 1; margin-bottom: 1mm; color: #171717; }
+      .counter-sub { font-size: 9pt; font-weight: 500; color: #525252; text-transform: uppercase; }
       .leyenda-manifiesto {
         position: absolute; top: 2mm; right: 2mm; font-size: 7pt; font-weight: 600;
         background: #171717; color: #fff; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;

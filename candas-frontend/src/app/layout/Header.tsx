@@ -20,12 +20,12 @@ import { authService } from '@/lib/api/auth.service'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useNavigate } from '@tanstack/react-router'
-import { Bell,Loader2,LogOut,Monitor,Moon,Search,Shield,Sun,UserCog } from 'lucide-react'
+import { Bell,Loader2,LogOut,Menu,Monitor,Moon,Search,Shield,Sun,UserCog } from 'lucide-react'
 import { useEffect,useState } from 'react'
 
 export function Header() {
   const { user, activeAgencyId, setActiveAgencyId } = useAuthStore()
-  const { theme, resolvedTheme, toggleTheme } = useUIStore()
+  const { theme, resolvedTheme, toggleTheme, toggleMobileSidebar } = useUIStore()
   const navigate = useNavigate()
   const [isSwitchingAgency, setIsSwitchingAgency] = useState(false)
   const { data: agencias = [] } = useAgencias()
@@ -51,9 +51,22 @@ export function Header() {
     : '??'
 
   return (
-    <header className="sticky top-0 z-40 flex h-12 items-center gap-4 border-b border-border/40 bg-background/80 backdrop-blur-xl px-4">
+    <header className="sticky top-0 z-30 flex h-12 items-center gap-2 sm:gap-4 border-b border-border/40 bg-background/80 backdrop-blur-xl px-3 sm:px-4">
+      {/* Toggle del menú (solo móvil) */}
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        onClick={toggleMobileSidebar}
+        aria-label="Abrir menú"
+        title="Menú"
+        className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground lg:hidden"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
       {/* Search - Command Palette trigger */}
-      <div className="flex-1 max-w-lg">
+      <div className="flex-1 min-w-0 max-w-lg">
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 group-focus-within:text-muted-foreground transition-colors" />
           <Input
@@ -89,7 +102,7 @@ export function Header() {
             }}
           >
             <SelectTrigger
-              className="h-8 min-w-[210px] rounded-lg border-border/40 bg-muted/30 text-[12px]"
+              className="h-8 w-[130px] min-w-0 sm:w-auto sm:min-w-[210px] rounded-lg border-border/40 bg-muted/30 text-[12px]"
               disabled={isSwitchingAgency}
             >
               <SelectValue placeholder="Seleccionar agencia" />

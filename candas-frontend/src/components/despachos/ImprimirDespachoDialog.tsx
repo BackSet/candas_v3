@@ -8,7 +8,9 @@ DialogFooter,
 DialogHeader,
 DialogTitle,
 } from '@/components/ui/dialog'
+import { HelpTip } from '@/components/ui/help-tip'
 import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 import {
 Select,
 SelectContent,
@@ -149,27 +151,40 @@ export default function ImprimirDespachoDialog({
                 const requiereSacasAction =
                   action.value === 'todas' || action.value === 'todas-zebra'
                 const disabled = requiereSacasAction && sinSacas
+                const esDocumento = action.value === 'documento'
                 return (
-                  <Button
+                  <button
                     key={action.value}
                     type="button"
-                    variant="outline"
-                    className="h-auto py-3 px-3 flex flex-col items-start gap-1 text-left"
                     onClick={() => onQuickPrint(action.value)}
                     disabled={disabled || isPrinting}
+                    className={cn(
+                      'group flex flex-col items-start gap-2 rounded-xl border p-3 text-left transition-all disabled:pointer-events-none disabled:opacity-50',
+                      'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                      esDocumento
+                        ? 'border-primary/40 bg-primary/5 hover:border-primary/60'
+                        : 'border-border bg-card hover:border-primary/30 hover:bg-muted/30'
+                    )}
                   >
-                    <span className="flex items-center gap-2 text-sm font-medium">
+                    <span
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+                        esDocumento
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                      )}
+                    >
                       {quickActionLoading === action.value ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Icon className="h-4 w-4" />
                       )}
-                      {action.label}
                     </span>
+                    <span className="text-sm font-semibold text-foreground">{action.label}</span>
                     <span className="text-[11px] text-muted-foreground leading-tight">
                       {action.hint}
                     </span>
-                  </Button>
+                  </button>
                 )
               })}
             </div>
@@ -185,8 +200,9 @@ export default function ImprimirDespachoDialog({
             <p className="text-sm font-medium">Modo avanzado</p>
 
             <div className="space-y-2">
-              <Label variant="muted" className="text-xs uppercase tracking-wide">
+              <Label variant="muted" className="flex items-center gap-1.5 text-xs uppercase tracking-wide">
                 Tipo de impresión
+                <HelpTip>Formato “normal” imprime en hojas estándar. Formato “Zebra” genera etiquetas para impresoras térmicas de etiquetas (Zebra).</HelpTip>
               </Label>
               <Select
                 value={tipoImpresion}

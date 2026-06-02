@@ -91,15 +91,14 @@ function generarContenidoConsolidado(
             <h2>${tituloOrigen.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h2>
           </div>
         </div>
-        <div class="doc-meta">
-          <div class="meta-item"><span class="meta-label">Generado:</span> <span class="meta-value">${fechaGeneracion}</span></div>
-          <div class="meta-item"><span class="meta-label">Total Sacas:</span> <span class="meta-value">${totalSacas}</span></div>
-          <div class="meta-item"><span class="meta-label">Total Paquetes:</span> <span class="meta-value">${totalPaquetes}</span></div>
+        <div class="doc-stats">
+          <div class="doc-stat"><span class="stat-label">Despachos</span><span class="stat-value">${totalDespachos}</span></div>
+          <div class="doc-stat"><span class="stat-label">Sacas</span><span class="stat-value">${totalSacas}</span></div>
+          <div class="doc-stat accent"><span class="stat-label">Paquetes</span><span class="stat-value">${totalPaquetes}</span></div>
         </div>
       </div>
 
       <div class="meta-pills">
-        <span class="meta-pill">Despachos: <strong>${totalDespachos}</strong></span>
         <span class="meta-pill">Generado: <strong>${fechaGeneracion}</strong></span>
       </div>
 
@@ -215,7 +214,21 @@ function generarHTMLDespachos(
 /** Genera HTML por despacho usando solo clases del documento de despacho: section-title (opcional), saca-block, saca-header, paquetes-table, col-*. */
 function generarHTMLDespacho(despacho: DespachoDetalle, mostrarAgencia: boolean): string {
   const fecha = new Date(despacho.fechaDespacho).toLocaleDateString('es-ES')
+  const esDirecto = despacho.esDestinatarioDirecto === true
+  const tipoDestino = esDirecto ? 'Destinatario directo' : 'Agencia'
+  const nombreDestino = esDirecto
+    ? (despacho.nombreDestinatarioDirecto || 'N/A')
+    : (despacho.nombreAgencia || 'N/A')
+  const nombreDistribuidor = despacho.nombreDistribuidor || '—'
+  const guiaDistribuidor = despacho.numeroGuiaAgenciaDistribucion || '—'
+
   let html = `<div class="section-title" style="margin-top:6px">Manifiesto ${despacho.numeroManifiesto} — ${fecha}${mostrarAgencia ? ` — ${despacho.nombreAgencia || ''}` : ''}</div>`
+  html += `
+    <div class="meta-pills" style="margin: 2px 0 6px;">
+      <span class="meta-pill ${esDirecto ? 'tipo-directo' : 'tipo-agencia'}">${tipoDestino}: <strong>${nombreDestino}</strong></span>
+      <span class="meta-pill">Distribuidor: <strong>${nombreDistribuidor}</strong></span>
+      <span class="meta-pill">Guía distribuidor: <strong class="font-mono">${guiaDistribuidor}</strong></span>
+    </div>`
 
   if (despacho.sacas?.length) {
     for (const saca of despacho.sacas) {
@@ -251,8 +264,8 @@ function generarHTMLSaca(saca: SacaDetalle): string {
   return `
     <div class="saca-block">
       <div class="saca-header">
-        Saca #${saca.numeroOrden} ${saca.codigoQr ? `(${saca.codigoQr})` : ''}
-        <span style="font-weight:normal; color:#666">Tamaño: ${saca.tamano || '-'} | Paquetes: ${saca.cantidadPaquetes}</span>
+        <span>Saca #${saca.numeroOrden} ${saca.codigoQr ? `(${saca.codigoQr})` : ''}</span>
+        <span class="saca-header-meta">Tamaño: ${saca.tamano || '-'} · Paquetes: ${saca.cantidadPaquetes}</span>
       </div>
       <table class="paquetes-table">
         <thead>
@@ -450,12 +463,36 @@ export async function generarPDFManifiestoConsolidado(
 
   for (const despacho of despachosOrdenados) {
     const fechaDespacho = new Date(despacho.fechaDespacho).toLocaleDateString('es-ES')
-    if (currentY > MARGIN_Y + 30) {
-      doc.setFont(PDF_FONTS.family, 'bold')
-      doc.setFontSize(PDF_FONTS.sizes.subtitle)
-      doc.text(`Manifiesto ${despacho.numeroManifiesto} — ${fechaDespacho}`, MARGIN_X, currentY)
-      currentY += 4.5
+    const esDirecto = despacho.esDestinatarioDirecto === true
+    const tipoDestino = esDirecto ? 'Destinatario directo' : 'Agencia'
+    const nombreDestino = esDirecto
+      ? (despacho.nombreDestinatarioDirecto || 'N/A')
+      : (despacho.nombreAgencia || 'N/A')
+    const tipoColor = esDirecto ? '#7c3aed' : '#1d4ed8'
+    const segTipo = `${tipoDestino}: ${nombreDestino}`
+    const segResto = `   ·   Distribuidor: ${despacho.nombreDistribuidor || '—'}   ·   Guía distribuidor: ${despacho.numeroGuiaAgenciaDistribucion || '—'}`
+
+    // Salto de página si no cabe la cabecera del despacho
+    if (currentY + 12 > MAX_Y) {
+      doc.addPage('a4', 'landscape')
+      currentY = MARGIN_Y
     }
+
+    doc.setFont(PDF_FONTS.family, 'bold')
+    doc.setFontSize(PDF_FONTS.sizes.subtitle)
+    doc.setTextColor(PDF_COLORS.text.primary)
+    doc.text(`Manifiesto ${despacho.numeroManifiesto} — ${fechaDespacho}`, MARGIN_X, currentY)
+    currentY += 4.2
+    doc.setFontSize(PDF_FONTS.sizes.small)
+    doc.setFont(PDF_FONTS.family, 'bold')
+    doc.setTextColor(tipoColor)
+    doc.text(segTipo, MARGIN_X, currentY)
+    const segTipoW = doc.getTextWidth(segTipo)
+    doc.setFont(PDF_FONTS.family, 'normal')
+    doc.setTextColor(PDF_COLORS.text.secondary)
+    doc.text(segResto, MARGIN_X + segTipoW, currentY)
+    doc.setTextColor(PDF_COLORS.text.primary)
+    currentY += 4.2
 
     const sacas = [...(despacho.sacas || [])].sort((a, b) => a.numeroOrden - b.numeroOrden)
     for (const saca of sacas) {
@@ -511,6 +548,7 @@ export async function generarPDFManifiestoConsolidado(
         doc.text('Sin paquetes', MARGIN_X + PAGE_WIDTH / 2, currentY + 3.2, { align: 'center' })
         currentY += 6.2
       } else {
+        let rowIndex = 0
         for (const p of paquetes) {
           const d = [
             p.numeroGuia || '-',
@@ -530,7 +568,14 @@ export async function generarPDFManifiestoConsolidado(
             doc.rect(MARGIN_X, sacaHeaderY, PAGE_WIDTH, currentY - sacaHeaderY)
             doc.addPage('a4', 'landscape')
             currentY = MARGIN_Y
+            rowIndex = 0
             drawSacaSectionHeaders()
+          }
+
+          // Fila zebra para lectura en tablas densas
+          if (rowIndex % 2 === 1) {
+            doc.setFillColor('#fafafa')
+            doc.rect(MARGIN_X, currentY, PAGE_WIDTH, rowHeight, 'F')
           }
 
           let x = MARGIN_X + 2
@@ -556,6 +601,7 @@ export async function generarPDFManifiestoConsolidado(
           currentY += rowHeight
           doc.setDrawColor(PDF_COLORS.border.light)
           doc.line(MARGIN_X, currentY, MARGIN_X + PAGE_WIDTH, currentY)
+          rowIndex++
         }
       }
       doc.setDrawColor(PDF_COLORS.border.normal)

@@ -70,7 +70,11 @@ export function buildDocumentoManifiestoHTML(
       .doc-logo { height: 26px !important; max-height: 26px !important; max-width: 130px !important; }
       .doc-title h1 { font-size: 11pt; margin: 0; }
       .doc-title h2 { font-size: 7.6pt; }
-      .doc-meta { font-size: 7pt; gap: 1px; }
+      .doc-stats { gap: 6px; }
+      .doc-stat { padding: 2px 7px; min-width: 42px; }
+      .doc-stat .stat-label { font-size: 5.6pt; }
+      .doc-stat .stat-value { font-size: 11pt; }
+      .doc-stat .stat-value.is-code { font-size: 7.6pt; }
       .meta-pills { margin: 0 0 8px; gap: 5px; }
       .meta-pill { font-size: 6.7pt; padding: 1px 6px; }
       .info-grid { gap: 7px 8px; margin-bottom: 8px; }
@@ -79,7 +83,7 @@ export function buildDocumentoManifiestoHTML(
       .warning-box { padding: 5px 8px; margin-bottom: 7px; font-size: 6.8pt; }
       .section-title { font-size: 8.5pt; margin: 8px 0 5px; padding-bottom: 2px; }
       .saca-block { margin-bottom: 7px; }
-      .saca-header { padding: 3px 0; margin-bottom: 2px; font-size: 7pt; }
+      .saca-header { padding: 3px 6px; margin-bottom: 2px; font-size: 7pt; }
       .paquetes-table { font-size: 6.7pt; }
       .paquetes-table th { padding: 3px 3px; font-size: 6pt; }
       .paquetes-table td { padding: 2px 3px; line-height: 1.16; }
@@ -170,7 +174,7 @@ export async function generarManifiestoHTML(
 
   if (esDestinatarioDirecto) {
     const destinatario = despacho.despachoDirecto!.destinatarioDirecto!
-    entidadLabel = 'Destinatario'
+    entidadLabel = 'Destinatario directo'
     entidadNombre = destinatario.nombreDestinatario || 'N/A'
     entidadDireccion = destinatario.direccionDestinatario || 'N/A'
     entidadTelefonos = destinatario.telefonoDestinatario || 'N/A'
@@ -225,7 +229,7 @@ export async function generarManifiestoHTML(
         <div class="saca-block">
           <div class="saca-header">
             <span>Saca #${numeroSaca}${codigoQrTexto}</span>
-            <span style="font-weight:normal; color:#555">Tamaño: ${saca.tamano} | Paquetes: ${paquetes.length}</span>
+            <span class="saca-header-meta">Tamaño: ${saca.tamano} · Paquetes: ${paquetes.length}</span>
           </div>
           <table class="paquetes-table">
             <thead>
@@ -261,10 +265,10 @@ export async function generarManifiestoHTML(
               <h2>${tituloOrigen.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h2>
            </div>
         </div>
-        <div class="doc-meta">
-           <div class="meta-item"><span class="meta-label">Total Sacas:</span> <span class="meta-value">${totalSacas}</span></div>
-           <div class="meta-item"><span class="meta-label">Total Paquetes:</span> <span class="meta-value">${totalPaquetes}</span></div>
-           <div class="meta-item"><span class="meta-label">Presinto:</span> <span class="meta-value">${codigoPresinto}</span></div>
+        <div class="doc-stats">
+           <div class="doc-stat"><span class="stat-label">Sacas</span><span class="stat-value">${totalSacas}</span></div>
+           <div class="doc-stat"><span class="stat-label">Paquetes</span><span class="stat-value">${totalPaquetes}</span></div>
+           <div class="doc-stat accent"><span class="stat-label">Presinto</span><span class="stat-value is-code">${codigoPresinto}</span></div>
         </div>
       </div>
 
@@ -278,7 +282,7 @@ export async function generarManifiestoHTML(
             <span class="info-value">${fechaDespacho}</span>
          </div>
          <div class="info-item">
-            <span class="info-label">${entidadLabel}</span>
+            <span class="info-label ${esDestinatarioDirecto ? 'tipo-directo' : 'tipo-agencia'}">${entidadLabel}</span>
             <span class="info-value">${entidadNombre}</span>
          </div>
          <div class="info-item">
@@ -445,6 +449,8 @@ export async function generarPDFDespacho(
     ? new Date(despacho.fechaDespacho).toLocaleDateString('es-ES')
     : 'N/A'
 
+  const esDirectoPdf = !!despacho.despachoDirecto?.destinatarioDirecto
+  const tipoColorPdf = esDirectoPdf ? '#7c3aed' : '#1d4ed8'
   let entidadLabel = 'AGENCIA'
   let entidadNombre = agencia?.nombre || 'N/A'
   let entidadDireccion = `${agencia?.direccion || ''} ${agencia?.canton ? `(${agencia.canton})` : ''}`
@@ -452,7 +458,7 @@ export async function generarPDFDespacho(
 
   if (despacho.despachoDirecto?.destinatarioDirecto) {
     const dest = despacho.despachoDirecto.destinatarioDirecto
-    entidadLabel = 'DESTINATARIO'
+    entidadLabel = 'DESTINATARIO DIRECTO'
     entidadNombre = dest.nombreDestinatario || 'N/A'
     entidadDireccion = dest.direccionDestinatario || 'N/A'
     entidadTelefonos = dest.telefonoDestinatario || 'N/A'
@@ -474,7 +480,7 @@ export async function generarPDFDespacho(
   text(fechaDespacho, colX, gridStartY + 4, PDF_FONTS.sizes.subtitle, 'normal')
 
   colX += colWidth + colGap
-  text(entidadLabel, colX, gridStartY, PDF_FONTS.sizes.tiny, 'bold', 'left', PDF_COLORS.text.muted)
+  text(entidadLabel, colX, gridStartY, PDF_FONTS.sizes.tiny, 'bold', 'left', tipoColorPdf)
   text(entidadNombre, colX, gridStartY + 4, PDF_FONTS.sizes.subtitle, 'normal')
 
   colX += colWidth + colGap
@@ -597,6 +603,7 @@ export async function generarPDFDespacho(
       currentY += 6.2
     }
 
+    let rowIndex = 0
     for (const paq of paquetes) {
       const d = [
         paq.numeroGuia || '-',
@@ -619,7 +626,14 @@ export async function generarPDFDespacho(
         doc.rect(MARGIN_X, sacaHeaderY, PAGE_WIDTH, currentY - sacaHeaderY)
         doc.addPage()
         currentY = MARGIN_Y
+        rowIndex = 0
         drawSacaSectionHeaders()
+      }
+
+      // Fila zebra para lectura en tablas densas
+      if (rowIndex % 2 === 1) {
+        doc.setFillColor('#fafafa')
+        doc.rect(MARGIN_X, currentY, PAGE_WIDTH, rowHeight, 'F')
       }
 
       let x = MARGIN_X + 2
@@ -648,6 +662,7 @@ export async function generarPDFDespacho(
       currentY += rowHeight
       doc.setDrawColor(PDF_COLORS.border.light)
       doc.line(MARGIN_X, currentY, MARGIN_X + PAGE_WIDTH, currentY)
+      rowIndex++
     }
 
     doc.setDrawColor(PDF_COLORS.border.normal)

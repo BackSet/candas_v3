@@ -12,6 +12,10 @@ export type { ResolvedTheme,ThemeMode }
 
 interface UIState {
   sidebarCollapsed: boolean
+  /** Drawer del sidebar en pantallas pequeñas (no persistido). */
+  mobileSidebarOpen: boolean
+  setMobileSidebarOpen: (open: boolean) => void
+  toggleMobileSidebar: () => void
   theme: ThemeMode
   resolvedTheme: ResolvedTheme
   toggleSidebar: () => void
@@ -27,6 +31,9 @@ export const useUIStore = create<UIState>()(
   persist(
     (set, get) => ({
       sidebarCollapsed: false,
+      mobileSidebarOpen: false,
+      setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
+      toggleMobileSidebar: () => set((state) => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
       theme: 'system',
       resolvedTheme: resolveTheme('system'),
       toggleSidebar: () => {
