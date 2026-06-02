@@ -95,6 +95,14 @@ export function buildDocumentoManifiestoHTML(
       .col-tel { width: 9.5%; }
       .col-obs { width: 17%; }
       .col-firma { width: 12%; }
+      .print-manifest-page {
+        page-break-after: always;
+        break-after: page;
+      }
+      .print-manifest-page:last-of-type {
+        page-break-after: auto;
+        break-after: auto;
+      }
     </style>
   </head>
   <body>
@@ -332,9 +340,10 @@ export async function imprimirManifiestosMultiples(
   const manifiestosHTML = await Promise.all(
     datosDespachos.map(async ({ despacho, agencia, distribuidor }) => {
       try {
-        return await generarManifiestoHTML(despacho, agencia, distribuidor, nombreAgenciaOrigen)
+        return (await generarManifiestoHTML(despacho, agencia, distribuidor, nombreAgenciaOrigen))
+          .replace('class="manifiesto-wrapper"', 'class="manifiesto-wrapper print-manifest-page"')
       } catch (error) {
-        return `<div class="manifiesto-wrapper"><p>Error al generar el manifiesto para el despacho ${despacho.idDespacho || 'N/A'}</p></div>`
+        return `<div class="manifiesto-wrapper print-manifest-page"><p>Error al generar el manifiesto para el despacho ${despacho.idDespacho || 'N/A'}</p></div>`
       }
     })
   )

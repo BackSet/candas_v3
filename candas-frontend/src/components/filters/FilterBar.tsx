@@ -81,20 +81,25 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        'flex flex-col gap-2 px-4 sm:px-6 py-3 border-b border-border/30',
+        'w-full px-4 sm:px-6 py-3 border-b border-border/30',
         'bg-background/60 backdrop-blur-md shrink-0',
         className
       )}
     >
-      <div className={cn('flex flex-wrap items-center gap-3', filtersClassName)}>
+      <div
+        className={cn(
+          'flex min-w-0 flex-wrap items-center gap-2 rounded-lg border border-border/40 bg-card/70 p-2 shadow-sm',
+          filtersClassName
+        )}
+      >
         {showSearch && onSearchChange && (
-          <div className="relative w-full sm:w-72">
+          <div className="relative min-w-[220px] flex-1 sm:max-w-72">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               placeholder={searchPlaceholder}
-              className="h-9 pl-8 pr-8 text-sm"
+              className="h-9 border-border/50 bg-background pl-8 pr-8 text-sm"
               aria-label="Buscar"
             />
             {localSearch && (
@@ -109,15 +114,30 @@ export function FilterBar({
             )}
           </div>
         )}
-        <div className="flex flex-1 flex-wrap items-center gap-3 min-w-0">{children}</div>
-        {trailing && <div className="flex items-center gap-2 ml-auto">{trailing}</div>}
-      </div>
 
-      {chips && chips.length > 0 && (
-        <div className="flex items-center gap-2">
-          <FilterChips chips={chips} onClearAll={onClearAll} />
-        </div>
-      )}
+        {children && (
+          <div className="flex min-w-0 flex-wrap items-center gap-2">{children}</div>
+        )}
+
+        {chips && chips.length > 0 && (
+          <div className="flex min-w-0 max-w-full flex-1 items-center gap-2 border-border/40 md:border-l md:pl-2">
+            <FilterChips chips={chips} onClearAll={onClearAll} compact />
+          </div>
+        )}
+
+        {trailing && (
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {trailing}
+          </div>
+        )}
+
+        {chips && chips.length > 0 && !onClearAll && (
+          <span className="sr-only">{chips.length} filtros activos</span>
+        )}
+        {chips && chips.length === 0 && (
+          <span className="sr-only">Sin filtros activos</span>
+        )}
+      </div>
     </div>
   )
 }
