@@ -20,7 +20,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/manifiestos-consolidados")
 @Tag(name = "Manifiestos Consolidados", description = "Endpoints para gestión de manifiestos consolidados")
-@CrossOrigin(origins = "*")
 public class ManifiestoConsolidadoController {
 
     private final ManifiestoConsolidadoService manifiestoConsolidadoService;

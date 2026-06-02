@@ -1,27 +1,27 @@
-import React, { useMemo, useState, useEffect } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
-import { TipoDestino, type Paquete } from '@/types/paquete'
-import { Badge } from '@/components/ui/badge'
-import { useUpdatePaquete } from '@/hooks/usePaquetes'
-import { notify } from '@/lib/notify'
 import { useAgencias } from '@/hooks/useAgencias'
 import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
+import { useUpdatePaquete } from '@/hooks/usePaquetes'
+import { notify } from '@/lib/notify'
+import { TipoDestino,type Paquete } from '@/types/paquete'
+import React,{ useEffect,useMemo,useState } from 'react'
 
 interface CambiarTipoDestinoMasivoDialogProps {
   open: boolean

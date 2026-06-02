@@ -1,8 +1,8 @@
+import type { Cliente,ClientePage } from '@/types/cliente'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Cliente, ClientePage } from '@/types/cliente'
 
-export type { Cliente, ClientePage } from '@/types/cliente'
+export type { Cliente,ClientePage } from '@/types/cliente'
 
 export interface ClienteFindAllParams {
   page?: number

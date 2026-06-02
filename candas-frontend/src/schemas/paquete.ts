@@ -1,5 +1,5 @@
+import { EstadoPaquete,TipoDestino,TipoPaquete,type Paquete } from '@/types/paquete'
 import { z } from 'zod'
-import { EstadoPaquete, TipoDestino, TipoPaquete, type Paquete } from '@/types/paquete'
 
 export const paqueteSchema = z.object({
   numeroGuia: z.string().optional(),

@@ -1,21 +1,21 @@
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Loader2, Zap } from 'lucide-react'
+import { Label } from '@/components/ui/label'
 import { paqueteService } from '@/lib/api/paquete.service'
 import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2,Zap } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 const schema = z.object({

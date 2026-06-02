@@ -1,27 +1,27 @@
-import { Search, Bell, LogOut, Shield, Loader2, UserCog, Sun, Moon, Monitor } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import {
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
+} from '@/components/ui/select'
+import { useAgencias } from '@/hooks/useSelectOptions'
+import { authService } from '@/lib/api/auth.service'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu'
-import { authService } from '@/lib/api/auth.service'
 import { useNavigate } from '@tanstack/react-router'
-import { useAgencias } from '@/hooks/useSelectOptions'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Bell,Loader2,LogOut,Monitor,Moon,Search,Shield,Sun,UserCog } from 'lucide-react'
+import { useEffect,useState } from 'react'
 
 export function Header() {
   const { user, activeAgencyId, setActiveAgencyId } = useAuthStore()

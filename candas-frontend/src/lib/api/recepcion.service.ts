@@ -1,7 +1,7 @@
+import type { Paquete } from '@/types/paquete'
+import type { Recepcion,RecepcionEstadisticas,RecepcionImportResult,RecepcionPage } from '@/types/recepcion'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Recepcion, RecepcionPage, RecepcionImportResult, RecepcionEstadisticas } from '@/types/recepcion'
-import type { Paquete } from '@/types/paquete'
 
 export const recepcionService = {
   async findAll(page: number = 0, size: number = 20): Promise<RecepcionPage> {

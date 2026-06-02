@@ -13,8 +13,8 @@ export interface FormErrorProps {
 export function FormError({ message, showIcon = false, className }: FormErrorProps) {
   if (!message) return null
   return (
-    <p className={cn("text-xs text-error", className)}>
-      {showIcon && <span className="mr-1" aria-hidden>⚠</span>}
+    <p className={cn("flex items-center gap-1 text-xs text-error animate-in fade-in slide-in-from-top-1 duration-200", className)}>
+      {showIcon && <span aria-hidden>⚠</span>}
       {message}
     </p>
   )

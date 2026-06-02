@@ -1,25 +1,25 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useAgencia, useDeleteAgencia } from '@/hooks/useAgencias'
+import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import { Property } from '@/components/detail/InfoCard'
+import { QuickActions } from '@/components/detail/QuickActions'
+import { StatusBadge } from '@/components/detail/StatusBadge'
+import { EmptyState,LoadingState } from '@/components/states'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import { Edit, Trash2, ArrowLeft, MapPin, Phone, Mail, Clock, User, FileText } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
-import { Property } from '@/components/detail/InfoCard'
-import { StatusBadge } from '@/components/detail/StatusBadge'
-import { QuickActions } from '@/components/detail/QuickActions'
-import { EmptyState, LoadingState } from '@/components/states'
+import { useAgencia,useDeleteAgencia } from '@/hooks/useAgencias'
 import { useHasPermission } from '@/hooks/useHasRole'
 import { PERMISSIONS } from '@/types/permissions'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { ArrowLeft,Clock,Edit,FileText,Mail,MapPin,Phone,Trash2,User } from 'lucide-react'
+import { useState } from 'react'
 
 export default function AgenciaDetail() {
   const navigate = useNavigate()

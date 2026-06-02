@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 import { ReactNode } from 'react'
-import { StatusBadge, StatusVariant } from './StatusBadge'
+import { StatusBadge,StatusVariant } from './StatusBadge'
 
 interface DetailHeaderProps {
   title: string

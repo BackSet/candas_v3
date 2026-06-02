@@ -18,7 +18,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/clientes")
 @Tag(name = "Clientes", description = "Endpoints para gestión de clientes")
-@CrossOrigin(origins = "*")
 public class ClienteController {
 
     private final ClienteService clienteService;

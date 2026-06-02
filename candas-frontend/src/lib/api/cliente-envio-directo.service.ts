@@ -1,6 +1,6 @@
+import type { ClienteEnvioDirecto } from '@/types/cliente-envio-directo'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { ClienteEnvioDirecto } from '@/types/cliente-envio-directo'
 
 export const clienteEnvioDirectoService = {
   async getAll(): Promise<ClienteEnvioDirecto[]> {

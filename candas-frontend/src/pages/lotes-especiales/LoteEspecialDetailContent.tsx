@@ -1,56 +1,56 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useLoteRecepcion, usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
+import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
+import { DetailSkeleton } from '@/components/states'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
-import { Download, FileDown, FileSpreadsheet, Loader2, Printer, ScanLine, FileText, Package2, List, Edit } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
-import { imprimirLoteEspecial } from '@/utils/imprimirPdfLoteEspecial'
 import {
-  filtrarPaquetesPorTipo,
-  descargarPDFLoteEspecial,
-} from '@/utils/generarPdfLoteEspecial'
-import { generarExcelLoteRecepcion } from '@/utils/generarExcelLoteRecepcion'
-import { instruccionDeObservaciones } from '@/utils/observacionesDespacho'
-import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
-import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
-import { DetailSkeleton } from '@/components/states'
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
+} from '@/components/ui/table'
+import { useLoteRecepcion,usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
+import { getApiErrorMessage } from '@/lib/api/errors'
+import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
 import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
+import { generarExcelLoteRecepcion } from '@/utils/generarExcelLoteRecepcion'
+import {
+descargarPDFLoteEspecial,
+filtrarPaquetesPorTipo,
+} from '@/utils/generarPdfLoteEspecial'
+import { imprimirLoteEspecial } from '@/utils/imprimirPdfLoteEspecial'
+import { instruccionDeObservaciones } from '@/utils/observacionesDespacho'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import { Download,Edit,FileDown,FileSpreadsheet,FileText,List,Loader2,Package2,Printer,ScanLine } from 'lucide-react'
+import { useMemo,useState } from 'react'
 
 const SIN_ETIQUETA_KEY = '__SIN_ETIQUETA__'
 const VARIAS_LISTAS_KEY = 'VARIAS'

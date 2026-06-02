@@ -121,6 +121,7 @@ export const API_ENDPOINTS = {
     BASE: '/api/v1/ensacado',
     BUSCAR_PAQUETE: (numeroGuia: string) => `/api/v1/ensacado/buscar-paquete/${numeroGuia}`,
     MARCAR_ENSACADO: (idPaquete: number) => `/api/v1/ensacado/marcar-ensacado/${idPaquete}`,
+    DESMARCAR_ENSACADO: (idPaquete: number) => `/api/v1/ensacado/desmarcar-ensacado/${idPaquete}`,
     DESPACHO_INFO: (idDespacho: number) => `/api/v1/ensacado/despacho/${idDespacho}/info`,
     SESSION: '/api/v1/ensacado/session',
     SESSION_ULTIMA_BUSQUEDA: '/api/v1/ensacado/session/ultima-busqueda',

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react'
 import type { DataTableColumn } from './types'
 
 export type SortDir = 'asc' | 'desc'

@@ -2,7 +2,6 @@ package com.candas.candas_backend.security;
 
 import com.candas.candas_backend.entity.Usuario;
 import com.candas.candas_backend.repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,8 +16,11 @@ import java.util.Set;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    public CustomUserDetailsService(UsuarioRepository usuarioRepository) {
+        this.usuarioRepository = usuarioRepository;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -59,4 +61,3 @@ public class CustomUserDetailsService implements UserDetailsService {
         return usuarioRepository.findActivePermissionNamesByUsername(username).stream().sorted().toList();
     }
 }
-

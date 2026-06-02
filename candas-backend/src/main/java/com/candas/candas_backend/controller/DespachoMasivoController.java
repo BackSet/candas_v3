@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/despacho-masivo")
 @Tag(name = "Despacho Masivo", description = "Sesión para vista Ver despacho en curso. Endpoints aislados por usuario autenticado para soportar uso concurrente por varios operarios.")
-@CrossOrigin(origins = "*")
 public class DespachoMasivoController {
 
     private final DespachoMasivoSesionService despachoMasivoSesionService;

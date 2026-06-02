@@ -1,23 +1,23 @@
-import type { PaqueteEnsacadoInfo, SacaEnsacadoInfo } from '@/types/ensacado'
 import { AppIcon } from '@/components/icons'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import type { PaqueteEnsacadoInfo,SacaEnsacadoInfo } from '@/types/ensacado'
+import {
+calcularMetricasLlenadoSaca,
+formatearTamanoSaca,
+obtenerDestino,
+obtenerLabelDestino,
+} from '@/utils/ensacado'
 import { formatearFechaRelativa } from '@/utils/fechas'
 import {
-  obtenerDestino,
-  obtenerLabelDestino,
-  formatearTamanoSaca,
-  calcularMetricasLlenadoSaca,
-} from '@/utils/ensacado'
-import { cn } from '@/lib/utils'
-import {
-  Package,
-  Truck,
-  MapPin,
-  Hash,
-  Calendar,
-  CheckCircle2,
-  AlertTriangle,
-  Scale,
+AlertTriangle,
+Calendar,
+CheckCircle2,
+Hash,
+MapPin,
+Package,
+Scale,
+Truck,
 } from 'lucide-react'
 
 interface PaqueteInfoCardProps {

@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
-import { FilterChips } from './FilterChips'
 import type { ListFilterChip } from '@/hooks/useListFilters'
+import { cn } from '@/lib/utils'
+import { Search,X } from 'lucide-react'
+import { useEffect,useRef,useState,type ReactNode } from 'react'
+import { FilterChips } from './FilterChips'
 
 export interface FilterBarProps {
   /** Valor actual del campo de búsqueda. */

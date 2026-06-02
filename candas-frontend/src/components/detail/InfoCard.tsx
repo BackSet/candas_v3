@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
 import { LucideIcon } from 'lucide-react'
 import { ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
 
 interface InfoCardProps {
   title: string
@@ -68,11 +68,11 @@ export function Property({ icon: Icon, label, value, href, className }: Property
       <div className="flex-1 text-sm font-medium text-foreground break-words">
         {href ? (
           href.startsWith('http') ? (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="hover:underline decoration-primary underline-offset-4">
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary transition-colors hover:underline decoration-primary/50 underline-offset-4 hover:text-primary/80">
               {value}
             </a>
           ) : (
-            <Link to={href} className="hover:underline decoration-primary underline-offset-4">
+            <Link to={href} className="text-primary transition-colors hover:underline decoration-primary/50 underline-offset-4 hover:text-primary/80">
               {value}
             </Link>
           )

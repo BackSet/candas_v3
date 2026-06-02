@@ -1,44 +1,43 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { useDistribuidores, useDeleteDistribuidor } from '@/hooks/useDistribuidores'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Eye,
-  Edit,
-  Trash2,
-  Plus,
-  Building2,
-  MoreHorizontal,
-} from 'lucide-react'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
+import { StatusBadge } from '@/components/detail/StatusBadge'
+import { FilterBar,SelectFilter } from '@/components/filters'
 import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
-import { StatusBadge } from '@/components/detail/StatusBadge'
-import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
+import { EmptyState } from '@/components/states/EmptyState'
+import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useDeleteDistribuidor,useDistribuidores } from '@/hooks/useDistribuidores'
 import { useListFilters } from '@/hooks/useListFilters'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter } from '@/components/filters'
-import type { Distribuidor } from '@/types/distribuidor'
 import { getApiErrorMessage } from '@/lib/api/errors'
+import type { Distribuidor } from '@/types/distribuidor'
+import { PERMISSIONS } from '@/types/permissions'
+import { useNavigate } from '@tanstack/react-router'
+import {
+Edit,
+Eye,
+MoreHorizontal,
+Plus,
+Trash2
+} from 'lucide-react'
+import { useMemo,useState } from 'react'
 
 interface DistribuidoresFiltersState extends Record<string, string | number | undefined> {
   page: number

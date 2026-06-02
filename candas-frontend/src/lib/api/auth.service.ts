@@ -1,7 +1,7 @@
+import { useAuthStore } from '@/stores/authStore'
+import type { LoginRequest,LoginResponse,RegisterRequest,UpdateProfileRequest,User } from '@/types/user'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, User } from '@/types/user'
-import { useAuthStore } from '@/stores/authStore'
 
 export const authService = {
   /**

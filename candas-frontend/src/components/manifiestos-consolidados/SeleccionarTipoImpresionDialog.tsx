@@ -1,18 +1,18 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
-import type { ManifiestoConsolidadoDetalle } from '@/types/manifiesto-consolidado'
-import { imprimirManifiestoConsolidado, generarPDFManifiestoConsolidado } from '@/utils/imprimirManifiestoConsolidado'
-import { useAuthStore } from '@/stores/authStore'
 import { useAgencia } from '@/hooks/useAgencias'
-import { Printer, Download, Building2, Users, LayoutList, Loader2 } from 'lucide-react'
 import { notify } from '@/lib/notify'
+import { useAuthStore } from '@/stores/authStore'
+import type { ManifiestoConsolidadoDetalle } from '@/types/manifiesto-consolidado'
+import { generarPDFManifiestoConsolidado,imprimirManifiestoConsolidado } from '@/utils/imprimirManifiestoConsolidado'
+import { Building2,Download,LayoutList,Loader2,Printer,Users } from 'lucide-react'
 import { useState } from 'react'
 
 type TipoFiltro = 'todos' | 'agencias' | 'destinatarios-directos'

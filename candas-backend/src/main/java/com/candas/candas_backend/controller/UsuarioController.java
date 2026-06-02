@@ -19,7 +19,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/usuarios")
 @Tag(name = "Usuarios", description = "Endpoints para gestión de usuarios")
-@CrossOrigin(origins = "*")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;

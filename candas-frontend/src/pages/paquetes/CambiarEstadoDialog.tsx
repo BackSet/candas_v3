@@ -1,23 +1,23 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import {
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
 import { useCambiarEstadoPaquete } from '@/hooks/usePaquetes'
 import { EstadoPaquete } from '@/types/paquete'
-import { useState } from 'react'
 import { ClipboardList } from 'lucide-react'
+import { useState } from 'react'
 
 interface CambiarEstadoDialogProps {
   paqueteId: number

@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
-import type { LucideIcon } from 'lucide-react'
-import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/lib/utils'
 import { AppIcon } from '@/components/icons'
+import { cn } from '@/lib/utils'
+import { cva,type VariantProps } from 'class-variance-authority'
+import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 const noticeVariants = cva('rounded-lg border p-3', {
   variants: {

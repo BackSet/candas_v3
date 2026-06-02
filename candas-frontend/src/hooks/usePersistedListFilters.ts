@@ -1,5 +1,5 @@
+import { useFiltersStore,type ListFilterKey,type ListFiltersState } from '@/stores/filtersStore'
 import { useCallback } from 'react'
-import { useFiltersStore, type ListFilterKey, type ListFiltersState } from '@/stores/filtersStore'
 
 /**
  * Wrapper tipado para reducir boilerplate en listas con filtros persistidos.

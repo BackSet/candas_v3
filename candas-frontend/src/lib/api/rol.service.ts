@@ -1,6 +1,6 @@
+import type { Rol,RolPage } from '@/types/rol'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Rol, RolPage } from '@/types/rol'
 
 export interface RolListParams {
   page?: number

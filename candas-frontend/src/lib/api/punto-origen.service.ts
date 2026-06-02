@@ -1,8 +1,8 @@
+import type { PuntoOrigen,PuntoOrigenPage } from '@/types/punto-origen'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { PuntoOrigen, PuntoOrigenPage } from '@/types/punto-origen'
 
-export type { PuntoOrigen, PuntoOrigenPage } from '@/types/punto-origen'
+export type { PuntoOrigen,PuntoOrigenPage } from '@/types/punto-origen'
 
 export interface PuntoOrigenFindAllParams {
   page?: number

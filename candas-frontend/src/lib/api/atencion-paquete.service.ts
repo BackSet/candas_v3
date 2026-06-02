@@ -1,6 +1,6 @@
+import type { AtencionPaquete,AtencionPaquetePage } from '@/types/atencion-paquete'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { AtencionPaquete, AtencionPaquetePage } from '@/types/atencion-paquete'
 
 export interface AtencionPaqueteFindAllParams {
   page?: number

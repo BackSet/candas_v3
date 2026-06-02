@@ -1,5 +1,5 @@
-import * as React from "react"
 import { cn } from "@/lib/utils"
+import * as React from "react"
 
 interface TabsContextValue {
   value: string
@@ -69,7 +69,7 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
         className={cn(
           "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
           isActive && "bg-background text-foreground shadow-sm",
-          !isActive && "text-muted-foreground hover:text-foreground",
+          !isActive && "text-muted-foreground hover:bg-background/50 hover:text-foreground",
           className
         )}
         onClick={() => context.onValueChange(value)}
@@ -99,7 +99,7 @@ const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
       <div
         ref={ref}
         className={cn(
-          "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "mt-2 ring-offset-background animate-in fade-in-50 slide-in-from-bottom-1 duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           className
         )}
         {...props}
@@ -109,4 +109,4 @@ const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
 )
 TabsContent.displayName = "TabsContent"
 
-export { Tabs, TabsList, TabsTrigger, TabsContent }
+export { Tabs,TabsContent,TabsList,TabsTrigger }

@@ -1,59 +1,59 @@
-import { useState, useMemo } from 'react'
-import {
-  useManifiestosConsolidados,
-  useManifiestoConsolidado,
-  useDeleteManifiestoConsolidado,
-} from '@/hooks/useManifiestosConsolidados'
-import { manifiestoConsolidadoService } from '@/lib/api/manifiesto-consolidado.service'
-import type {
-  ManifiestoConsolidadoDetalle,
-  ManifiestoConsolidadoResumen,
-} from '@/types/manifiesto-consolidado'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Plus,
-  Printer,
-  Eye,
-  Trash2,
-  FileSpreadsheet,
-  FileText,
-  MoreHorizontal,
-  Calendar,
-  ArrowRight,
-  Clock,
-} from 'lucide-react'
-import GenerarManifiestoConsolidadoDialog from './GenerarManifiestoConsolidadoDialog'
-import ExportarExcelDialog from './ExportarExcelDialog'
-import SeleccionarTipoImpresionDialog from '@/components/manifiestos-consolidados/SeleccionarTipoImpresionDialog'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
-import { notify } from '@/lib/notify'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
+import { FilterBar,SelectFilter } from '@/components/filters'
 import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
+import SeleccionarTipoImpresionDialog from '@/components/manifiestos-consolidados/SeleccionarTipoImpresionDialog'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
-import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter } from '@/components/filters'
+import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useListFilters } from '@/hooks/useListFilters'
+import {
+useDeleteManifiestoConsolidado,
+useManifiestoConsolidado,
+useManifiestosConsolidados,
+} from '@/hooks/useManifiestosConsolidados'
 import { useAgencias } from '@/hooks/useSelectOptions'
+import { getApiErrorMessage,getInteragencyRestrictionMessage } from '@/lib/api/errors'
+import { manifiestoConsolidadoService } from '@/lib/api/manifiesto-consolidado.service'
+import { notify } from '@/lib/notify'
+import type {
+ManifiestoConsolidadoDetalle,
+ManifiestoConsolidadoResumen,
+} from '@/types/manifiesto-consolidado'
+import { PERMISSIONS } from '@/types/permissions'
+import {
+ArrowRight,
+Calendar,
+Clock,
+Eye,
+FileSpreadsheet,
+FileText,
+MoreHorizontal,
+Plus,
+Printer,
+Trash2,
+} from 'lucide-react'
+import { useMemo,useState } from 'react'
+import ExportarExcelDialog from './ExportarExcelDialog'
+import GenerarManifiestoConsolidadoDialog from './GenerarManifiestoConsolidadoDialog'
 
 const formatearFecha = (fecha: string) => {
   const date = new Date(fecha)

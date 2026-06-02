@@ -1,4 +1,4 @@
-import { notify, type ToastId } from '@/lib/notify'
+import { notify,type ToastId } from '@/lib/notify'
 
 /**
  * Wrappers retrocompatibles. Para nuevo código preferir `import { notify } from '@/lib/notify'`.

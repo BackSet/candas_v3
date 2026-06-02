@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { Rol } from '@/types/rol'
+import { z } from 'zod'
 
 export const rolSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),

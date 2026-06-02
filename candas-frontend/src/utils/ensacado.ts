@@ -1,4 +1,4 @@
-import type { PaqueteEnsacadoInfo, SacaEnsacadoInfo } from '@/types/ensacado'
+import type { PaqueteEnsacadoInfo,SacaEnsacadoInfo } from '@/types/ensacado'
 import { TamanoSaca } from '@/types/saca'
 
 export interface MetricasLlenadoSaca {

@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { LoteRecepcion } from '@/types/lote-recepcion'
+import { z } from 'zod'
 
 export const loteRecepcionSchema = z.object({
   numeroRecepcion: z.string().optional(),

@@ -1,62 +1,62 @@
-import { useState, useMemo } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useLoteRecepcion, usePaquetesLoteRecepcion, useDeleteLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { useAgencias } from '@/hooks/useAgencias'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import { Property } from '@/components/detail/InfoCard'
+import { QuickActions } from '@/components/detail/QuickActions'
+import { StatusBadge } from '@/components/detail/StatusBadge'
+import { DetailSkeleton,EmptyState } from '@/components/states'
+import { ErrorState } from '@/components/states/ErrorState'
 import { Button } from '@/components/ui/button'
+import { DateTimePicker } from '@/components/ui/date-time-picker'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuSub,
+DropdownMenuSubContent,
+DropdownMenuSubTrigger,
+DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Edit,
-  Trash2,
-  Upload,
-  Building2,
-  Package2,
-  FileSpreadsheet,
-  Download,
-  ChevronDown,
-  ArrowLeft,
-  MapPin,
-  Package,
-  FileDown,
-  Loader2,
-} from 'lucide-react'
-import ImportarPaquetesDialog from './ImportarPaquetesDialog'
-import { DateTimePicker } from '@/components/ui/date-time-picker'
-import { generarExcelTrackingSistemaExterno, generarExcelPorTipo, MSG_SIN_PAQUETES_TRACKING, type TipoExportacionTracking, type SubTipoClementinaTracking } from '@/utils/generarExcelLoteRecepcion'
-import { TipoPaquete } from '@/types/paquete'
 import { Label } from '@/components/ui/label'
-import { notify } from '@/lib/notify'
-import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
-import { Property } from '@/components/detail/InfoCard'
-import { StatusBadge } from '@/components/detail/StatusBadge'
-import { QuickActions } from '@/components/detail/QuickActions'
-import { EmptyState, DetailSkeleton } from '@/components/states'
-import { ErrorState } from '@/components/states/ErrorState'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
-import { cn } from '@/lib/utils'
-import LoteRecepcionOperador from './LoteRecepcionOperador'
-import LoteEspecialOperador from './LoteEspecialOperador'
+import { useAgencias } from '@/hooks/useAgencias'
 import { useHasPermission } from '@/hooks/useHasRole'
-import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
+import { useDeleteLoteRecepcion,useLoteRecepcion,usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
+import { getApiErrorMessage,getApiStatus } from '@/lib/api/errors'
+import { notify } from '@/lib/notify'
+import { cn } from '@/lib/utils'
+import { TipoPaquete } from '@/types/paquete'
+import { PERMISSIONS } from '@/types/permissions'
+import { generarExcelPorTipo,generarExcelTrackingSistemaExterno,MSG_SIN_PAQUETES_TRACKING,type SubTipoClementinaTracking,type TipoExportacionTracking } from '@/utils/generarExcelLoteRecepcion'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import {
+ArrowLeft,
+Building2,
+ChevronDown,
+Download,
+Edit,
+FileDown,
+FileSpreadsheet,
+Loader2,
+MapPin,
+Package,
+Package2,
+Trash2,
+Upload,
+} from 'lucide-react'
+import { useMemo,useState } from 'react'
+import ImportarPaquetesDialog from './ImportarPaquetesDialog'
+import LoteEspecialOperador from './LoteEspecialOperador'
+import LoteRecepcionOperador from './LoteRecepcionOperador'
 
 export default function LoteRecepcionDetail() {
   const navigate = useNavigate()

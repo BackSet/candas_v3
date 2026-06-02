@@ -1,8 +1,8 @@
-import { Building2, AlertTriangle } from 'lucide-react'
-import { useAuthStore } from '@/stores/authStore'
-import { useAgencias } from '@/hooks/useSelectOptions'
 import { SemanticNotice } from '@/components/ui/semantic-notice'
+import { useAgencias } from '@/hooks/useSelectOptions'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/authStore'
+import { AlertTriangle,Building2 } from 'lucide-react'
 
 interface AssignedAgencyNoticeProps {
   className?: string

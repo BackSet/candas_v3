@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { PuntoOrigen } from '@/types/punto-origen'
+import { z } from 'zod'
 
 export const puntoOrigenSchema = z.object({
   nombrePuntoOrigen: z.string().min(1, 'El nombre del punto de origen es requerido'),

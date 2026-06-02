@@ -18,7 +18,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/permisos")
 @Tag(name = "Permisos", description = "Consulta y renombrado de permisos (alta/baja solo desde código)")
-@CrossOrigin(origins = "*")
 public class PermisoController {
 
     private final PermisoService permisoService;

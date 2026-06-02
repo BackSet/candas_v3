@@ -1,32 +1,33 @@
-import { useState, useRef } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog'
+import { ResumenDestinoDespacho,type ResumenDestinoData } from '@/components/despacho/ResumenDestinoDespacho'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Box, FileText, MapPin, Truck, Package, SplitSquareVertical, Sparkles, Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
+import { Combobox,type ComboboxOption } from '@/components/ui/combobox'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import { HelpTip } from '@/components/ui/help-tip'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
+} from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
+import type { Paquete } from '@/types/paquete'
 import { TamanoSaca } from '@/types/saca'
 import { formatearTamanoSaca } from '@/utils/ensacado'
-import type { Paquete } from '@/types/paquete'
-import { CopyActionButton } from '@/components/ui/copy-action-button'
+import { Box,ClipboardList,FileText,MapPin,Package,Plus,Sparkles,SplitSquareVertical,Truck } from 'lucide-react'
+import { useRef,useState } from 'react'
 
 export interface AgenciaOption {
   idAgencia: number
@@ -213,6 +214,58 @@ export default function CrearDespachoMasivoDialog({
     setBulkCodigoPresinto(String(Math.floor(1000000000 + Math.random() * 9000000000)))
   }
 
+  /** Aplica el tamaño de la primera saca a todas las sacas (acción rápida). */
+  const handleIgualarTamanos = () => {
+    const n = sacaDistribution.split(',').filter((x) => parseInt(x.trim(), 10) > 0).length
+    if (n <= 0) return
+    const base = tamanosSacasBulk[0] ?? TamanoSaca.GRANDE
+    setTamanosSacasBulk(Array.from({ length: n }, () => base))
+  }
+
+  // Datos del destinatario para el resumen copiable (según el destino elegido)
+  const esDesdePaquete = bulkTipoDestino === 'DIRECTO' && bulkDestinatarioOrigen === 'DESDE_PAQUETE'
+  const agenciaSel = agencias.find((a) => String(a.idAgencia) === bulkIdDestino)
+  const destinatarioSel = destinatariosDirectos.find(
+    (d) => String(d.idDestinatarioDirecto) === bulkIdDestino
+  )
+  const tamanosSacasActivas = sacaDistribution
+    .split(',')
+    .map((n, i) => ({ count: parseInt(n.trim(), 10) || 0, i }))
+    .filter((x) => x.count > 0)
+    .map((x) => tamanosSacasBulk[x.i] ?? TamanoSaca.GRANDE)
+  const totalSacasBulk = tamanosSacasActivas.length
+  const sacasPorTamanoBulk = [
+    TamanoSaca.INDIVIDUAL,
+    TamanoSaca.PEQUENO,
+    TamanoSaca.MEDIANO,
+    TamanoSaca.GRANDE,
+  ]
+    .map((t) => ({ label: formatearTamanoSaca(t), count: tamanosSacasActivas.filter((s) => s === t).length }))
+    .filter((x) => x.count > 0)
+
+  const resumenData: ResumenDestinoData = {
+    tipoLabel: bulkTipoDestino === 'AGENCIA' ? 'Agencia' : 'Destinatario directo',
+    nombre: esDesdePaquete
+      ? bulkDesdePaqueteNombre
+      : bulkTipoDestino === 'AGENCIA'
+        ? agenciaSel?.nombre
+        : destinatarioSel?.nombreDestinatario,
+    nombreEmpresa:
+      !esDesdePaquete && bulkTipoDestino === 'DIRECTO' ? destinatarioSel?.nombreEmpresa : undefined,
+    codigoDestino: esDesdePaquete ? bulkDesdePaqueteCodigo || codigoDestinoBulk : codigoDestinoBulk,
+    telefono: esDesdePaquete ? bulkDesdePaqueteTelefono : undefined,
+    direccion: esDesdePaquete ? bulkDesdePaqueteDireccion : undefined,
+    ubicacion: esDesdePaquete
+      ? bulkDesdePaqueteCanton
+      : bulkTipoDestino === 'AGENCIA'
+        ? buildUbicacion(agenciaSel?.canton, agenciaSel?.provincia)
+        : buildUbicacion(destinatarioSel?.canton, destinatarioSel?.provincia),
+    pesoTotalKg: pesoTotalBulk,
+    totalSacas: totalSacasBulk,
+    totalPaquetes: packageCount,
+    sacasPorTamano: sacasPorTamanoBulk,
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent ref={dialogContentRef} className="max-w-4xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
@@ -257,7 +310,10 @@ export default function CrearDespachoMasivoDialog({
               )}
               <div className="space-y-4">
                 <div className="grid gap-2">
-                  <Label className="text-sm font-medium">Tipo destino</Label>
+                  <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    Tipo destino
+                    <HelpTip>“Agencia” envía a una sucursal de la red. “Destinatario directo” envía a un cliente final concreto.</HelpTip>
+                  </Label>
                   <Select
                     value={bulkTipoDestino}
                     onValueChange={(v) => {
@@ -315,7 +371,10 @@ export default function CrearDespachoMasivoDialog({
                 {bulkTipoDestino === 'DIRECTO' && (
                   <>
                     <div className="grid gap-2">
-                      <Label className="text-sm font-medium">Origen del destinatario</Label>
+                      <Label className="flex items-center gap-1.5 text-sm font-medium">
+                        Origen del destinatario
+                        <HelpTip>“Existente” usa un destinatario ya registrado. “Desde datos de un paquete” crea el destinatario tomando nombre, teléfono y dirección de una guía.</HelpTip>
+                      </Label>
                       <Select
                         value={bulkDestinatarioOrigen}
                         onValueChange={(v) => {
@@ -459,7 +518,10 @@ export default function CrearDespachoMasivoDialog({
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="bulk-codigo-presinto" className="text-sm font-medium">Código de presinto de seguridad</Label>
+                  <Label htmlFor="bulk-codigo-presinto" className="flex items-center gap-1.5 text-sm font-medium">
+                    Código de presinto de seguridad
+                    <HelpTip>Número del sello físico que cierra la valija. Permite verificar que no se abrió en tránsito. Escríbelo o genera uno.</HelpTip>
+                  </Label>
                   <div className="flex flex-wrap gap-3">
                     <Input
                       id="bulk-codigo-presinto"
@@ -492,7 +554,10 @@ export default function CrearDespachoMasivoDialog({
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label className="text-sm font-medium">Distribuidor</Label>
+                  <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    Distribuidor
+                    <HelpTip>Transportista responsable de llevar el despacho hasta su destino. Opcional.</HelpTip>
+                  </Label>
                   <Select value={bulkIdDistribuidor} onValueChange={setBulkIdDistribuidor}>
                     <SelectTrigger className="h-11 min-w-0 text-base">
                       <SelectValue placeholder="Responsable del traslado" />
@@ -507,7 +572,10 @@ export default function CrearDespachoMasivoDialog({
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="bulk-numero-guia" className="text-sm font-medium">Número de guía (opcional)</Label>
+                  <Label htmlFor="bulk-numero-guia" className="flex items-center gap-1.5 text-sm font-medium">
+                    Número de guía (opcional)
+                    <HelpTip>Número de guía/tracking que asigna el transportista externo a este despacho.</HelpTip>
+                  </Label>
                   <Input
                     id="bulk-numero-guia"
                     placeholder="Ej: GUIA-001"
@@ -515,44 +583,6 @@ export default function CrearDespachoMasivoDialog({
                     onChange={(e) => setBulkNumeroGuia(e.target.value)}
                     className="font-mono h-11 text-base"
                   />
-                </div>
-                <div className="rounded-xl border border-border bg-muted/40 p-5 space-y-4 shadow-sm">
-                  {codigoDestinoBulk != null && (
-                    <div className="space-y-2">
-                      <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Código destino</span>
-                      <div className="inline-flex items-center gap-3 rounded-lg border border-border bg-background/80 px-4 py-3 shadow-sm">
-                        <span className="font-mono text-lg font-semibold text-foreground select-all tabular-nums">
-                          {codigoDestinoBulk}
-                        </span>
-                        <CopyActionButton
-                          textToCopy={codigoDestinoBulk ?? ''}
-                          successMessage="Código copiado"
-                          errorMessage="No se pudo copiar el código"
-                          title="Copiar código"
-                          className="h-9 shrink-0 gap-2"
-                        >
-                          Copiar
-                        </CopyActionButton>
-                      </div>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Peso total</span>
-                    <div className="inline-flex items-center gap-3 rounded-lg border border-border bg-background/80 px-4 py-3 shadow-sm">
-                      <span className="font-mono text-2xl font-bold text-foreground select-all tabular-nums">
-                        {pesoTotalBulk.toFixed(2)} kg
-                      </span>
-                      <CopyActionButton
-                        textToCopy={`${pesoTotalBulk.toFixed(2)} kg`}
-                        successMessage="Peso copiado"
-                        errorMessage="No se pudo copiar el peso"
-                        title="Copiar peso"
-                        className="h-9 shrink-0 gap-2"
-                      >
-                        Copiar
-                      </CopyActionButton>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -563,6 +593,7 @@ export default function CrearDespachoMasivoDialog({
             <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
               <Box className="h-5 w-5 text-muted-foreground" />
               Distribución de Sacas
+              <HelpTip side="right">Define en cuántas sacas se reparten los paquetes y cuántos van en cada una. Usa las acciones rápidas para repartir automáticamente.</HelpTip>
             </h3>
             <p className="text-sm text-muted-foreground">
               Indique cuántos paquetes va en cada saca, separado por comas. El total debe ser <strong>{packageCount}</strong>.
@@ -646,7 +677,27 @@ export default function CrearDespachoMasivoDialog({
             </div>
 
             {sacaDistribution.split(',').filter((n) => parseInt(n.trim(), 10) > 0).length > 0 && (
-              <div className="flex flex-wrap gap-4 mt-4 bg-muted/50 p-5 rounded-xl border border-border">
+              <div className="mt-4 space-y-3 bg-muted/50 p-5 rounded-xl border border-border">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Tamaño de cada saca
+                    <HelpTip>Capacidad por peso: Individual ≤5 kg · Pequeño ≤15 kg · Mediano ≤30 kg · Grande ≤50 kg.</HelpTip>
+                  </span>
+                  {sacaDistribution.split(',').filter((n) => parseInt(n.trim(), 10) > 0).length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleIgualarTamanos}
+                      className="h-7 gap-1.5 text-xs"
+                      title="Aplicar el tamaño de la primera saca a todas"
+                    >
+                      <Box className="h-3.5 w-3.5" />
+                      Igualar tamaños
+                    </Button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-4">
                 {sacaDistribution.split(',').map((n, i) => {
                   const count = parseInt(n.trim(), 10) || 0
                   if (count <= 0) return null
@@ -685,8 +736,18 @@ export default function CrearDespachoMasivoDialog({
                     </div>
                   )
                 })}
+                </div>
               </div>
             )}
+          </div>
+
+          {/* Resumen del despacho y datos del destinatario (copiables para el courier) */}
+          <div className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-sm">
+            <h3 className="text-base font-semibold text-foreground flex items-center gap-2.5 border-b border-border pb-3">
+              <ClipboardList className="h-5 w-5 text-muted-foreground" />
+              Resumen y datos para el courier
+            </h3>
+            <ResumenDestinoDespacho data={resumenData} />
           </div>
         </div>
 

@@ -19,7 +19,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/roles")
 @Tag(name = "Roles", description = "Endpoints para gestión de roles")
-@CrossOrigin(origins = "*")
 public class RolController {
 
     private final RolService rolService;

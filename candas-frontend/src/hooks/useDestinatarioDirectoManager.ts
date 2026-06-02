@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import { notify } from '@/lib/notify'
-import { useSearchDestinatariosDirectos, useCreateDestinatarioDirecto } from './useDestinatariosDirectos'
-import type { DestinatarioDirecto } from '@/types/destinatario-directo'
 import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
+import type { DestinatarioDirecto } from '@/types/destinatario-directo'
+import { useState } from 'react'
+import { useCreateDestinatarioDirecto,useSearchDestinatariosDirectos } from './useDestinatariosDirectos'
 
 export function useDestinatarioDirectoManager(
   onDestinatarioSeleccionado?: (destinatario: DestinatarioDirecto) => void

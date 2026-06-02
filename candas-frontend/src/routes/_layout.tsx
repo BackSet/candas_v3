@@ -1,8 +1,7 @@
-import { createRoute } from '@tanstack/react-router'
-import { rootRoute } from './__root'
 import { MainLayout } from '@/app/layout/MainLayout'
 import { useAuthStore } from '@/stores/authStore'
-import { Navigate } from '@tanstack/react-router'
+import { createRoute,Navigate } from '@tanstack/react-router'
+import { rootRoute } from './__root'
 
 function ProtectedLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)

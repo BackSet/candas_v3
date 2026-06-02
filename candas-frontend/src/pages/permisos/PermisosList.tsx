@@ -1,31 +1,31 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { usePermisos } from '@/hooks/usePermisos'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Eye, Edit, Key, MoreHorizontal, Folder, Zap } from 'lucide-react'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
-import { AppIcon, ModulePageIcon } from '@/components/icons'
-import { ListPagination } from '@/components/list/ListPagination'
-import { EmptyState } from '@/components/states/EmptyState'
-import { ErrorState } from '@/components/states'
-import { useListFilters } from '@/hooks/useListFilters'
-import { useDebounce } from '@/hooks/useDebounce'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
 import { FilterBar } from '@/components/filters'
-import type { Permiso } from '@/types/permiso'
+import { AppIcon,ModulePageIcon } from '@/components/icons'
+import { ListPagination } from '@/components/list/ListPagination'
+import { ErrorState } from '@/components/states'
+import { EmptyState } from '@/components/states/EmptyState'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { useDebounce } from '@/hooks/useDebounce'
+import { useListFilters } from '@/hooks/useListFilters'
+import { usePermisos } from '@/hooks/usePermisos'
 import { getApiErrorMessage } from '@/lib/api/errors'
+import type { Permiso } from '@/types/permiso'
+import { PERMISSIONS } from '@/types/permissions'
+import { useNavigate } from '@tanstack/react-router'
+import { Edit,Eye,Folder,Key,MoreHorizontal,Zap } from 'lucide-react'
+import { useEffect,useMemo,useState } from 'react'
 
 interface PermisosFiltersState extends Record<string, string | number | undefined> {
   page: number

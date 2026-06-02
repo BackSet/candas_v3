@@ -269,6 +269,50 @@ public class EnsacadoService {
     }
 
     /**
+     * Deshace el ensacado de un paquete, devolviéndolo a estado ASIGNADO_SACA.
+     * Solo aplica a paquetes en estado ENSACADO; un paquete ya DESPACHADO no
+     * puede revertirse desde aquí.
+     */
+    public void desmarcarPaqueteEnsacado(Long idPaquete) {
+        Paquete paquete = paqueteRepository.findById(idPaquete)
+            .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
+
+        assertPaqueteAccesibleEnsacado(paquete);
+
+        if (paquete.getEstado() == EstadoPaquete.DESPACHADO) {
+            throw new IllegalArgumentException("El paquete ya fue despachado y no puede deshacerse desde ensacado");
+        }
+
+        if (paquete.getEstado() != EstadoPaquete.ENSACADO) {
+            throw new IllegalArgumentException("Solo se puede deshacer un paquete que esté ensacado. Estado actual: " +
+                (paquete.getEstado() != null ? paquete.getEstado().toString() : "null"));
+        }
+
+        if (paquete.getPaqueteSacas() == null || paquete.getPaqueteSacas().isEmpty()) {
+            throw new IllegalArgumentException("El paquete no está asociado a ninguna saca");
+        }
+
+        paquete.setEstado(EstadoPaquete.ASIGNADO_SACA);
+        paquete.setFechaEnsacado(null);
+        paqueteRepository.save(paquete);
+
+        // Recalcular peso total de la(s) saca(s) tras revertir el ensacado
+        for (PaqueteSaca ps : paquete.getPaqueteSacas()) {
+            Saca saca = ps.getSaca();
+            BigDecimal nuevoPeso = calcularPesoActualSaca(saca);
+            saca.setPesoTotal(nuevoPeso);
+            // Si ya no quedan paquetes ensacados en la saca, limpiar la marca de ensacado
+            if (contarPaquetesEnSaca(saca) == 0) {
+                saca.setFechaEnsacado(null);
+            }
+            sacaRepository.save(saca);
+        }
+
+        // Mantener sincronizada la vista móvil con el último paquete tocado
+        obtenerUsuarioActual().ifPresent(usuario -> actualizarSesionConPaquete(usuario, idPaquete));
+    }
+
+    /**
      * Obtiene la sesión activa de ensacado del usuario (para vista móvil en tiempo real).
      */
     public EnsacadoSessionResponseDTO getSesionActiva(String username) {

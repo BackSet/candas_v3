@@ -1,14 +1,14 @@
 import { printNotify } from '@/lib/print-notify'
 import type {
-  ManifiestoConsolidadoDetalle,
-  DespachoDetalle,
-  SacaDetalle,
-  PaqueteDetalle,
+DespachoDetalle,
+ManifiestoConsolidadoDetalle,
+PaqueteDetalle,
+SacaDetalle,
 } from '@/types/manifiesto-consolidado'
 import { buildDocumentoManifiestoHTML } from '@/utils/imprimirDespacho'
 import { observacionesParaDespacho } from '@/utils/observacionesDespacho'
 import { jsPDF } from 'jspdf'
-import { PDF_COLORS, PDF_FONTS, PDF_MARGINS } from './printTheme'
+import { PDF_COLORS,PDF_FONTS,PDF_MARGINS } from './printTheme'
 
 function loadImage(url: string): Promise<{ data: string; width: number; height: number }> {
   return new Promise((resolve, reject) => {

@@ -1,15 +1,15 @@
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import { Printer } from 'lucide-react'
 import type { Paquete } from '@/types/paquete'
 import { imprimirEtiqueta } from '@/utils/imprimirEtiqueta'
+import { Printer } from 'lucide-react'
 
 interface ImprimirEtiquetaDialogProps {
   open: boolean

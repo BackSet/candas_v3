@@ -1,6 +1,6 @@
-import { useNavigate } from '@tanstack/react-router'
-import { ChevronRight, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useNavigate } from '@tanstack/react-router'
+import { ChevronRight,type LucideIcon } from 'lucide-react'
 
 interface RelatedEntityLinkProps {
   icon: LucideIcon

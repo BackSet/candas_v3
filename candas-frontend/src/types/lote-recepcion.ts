@@ -1,5 +1,4 @@
-import type { PageResponse, PaqueteNoImportado } from './paquete'
-import type { Paquete } from './paquete'
+import type { PageResponse,Paquete,PaqueteNoImportado } from './paquete'
 
 export interface LoteRecepcion {
   idLoteRecepcion?: number

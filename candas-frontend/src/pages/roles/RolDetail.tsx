@@ -1,24 +1,24 @@
-import { useState, useMemo } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useRol, usePermisosRol, useDeleteRol } from '@/hooks/useRoles'
-import { usePermisos } from '@/hooks/usePermisos'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Edit, Trash2, ArrowLeft, Shield, Folder, Key, Calendar, FileText } from 'lucide-react'
-import AsignarPermisosDialog from './AsignarPermisosDialog'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
-import { LoadingState } from '@/components/states/LoadingState'
 import { EmptyState } from '@/components/states/EmptyState'
+import { LoadingState } from '@/components/states/LoadingState'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import { usePermisos } from '@/hooks/usePermisos'
+import { useDeleteRol,usePermisosRol,useRol } from '@/hooks/useRoles'
+import { PERMISSIONS } from '@/types/permissions'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { Calendar,Edit,FileText,Folder,Key,Shield,Trash2 } from 'lucide-react'
+import { useMemo,useState } from 'react'
+import AsignarPermisosDialog from './AsignarPermisosDialog'
 
 export default function RolDetail() {
   const navigate = useNavigate()

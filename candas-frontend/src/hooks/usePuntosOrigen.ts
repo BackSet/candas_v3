@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { puntoOrigenService } from '@/lib/api/punto-origen.service'
-import type { PuntoOrigen } from '@/types/punto-origen'
 import { notify } from '@/lib/notify'
+import type { PuntoOrigen } from '@/types/punto-origen'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 export interface UsePuntosOrigenParams {
   page?: number

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import type { ReactNode } from 'react'
 import { PageContainer } from './PageContainer'
 import { PageHeader } from './PageHeader'
 
@@ -70,7 +70,7 @@ export function StandardPageLayout({
           )}
         />
       </div>
-      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden animate-in fade-in duration-300">
         {children}
       </div>
     </PageContainer>

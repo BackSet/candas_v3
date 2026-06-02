@@ -1,10 +1,13 @@
-import type { ReactNode } from 'react'
+import { HelpTip } from '@/components/ui/help-tip'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import type { ReactNode } from 'react'
 
 export interface FieldRowProps {
   /** Etiqueta visible del campo. */
   label?: ReactNode
+  /** Leyenda explicativa mostrada en un tooltip (icono "?") junto a la etiqueta. */
+  help?: ReactNode
   /** Texto de ayuda secundario debajo del control. */
   hint?: ReactNode
   /** Mensaje de error inline (acepta string o `FieldError`). */
@@ -38,6 +41,7 @@ function resolveErrorMessage(error: FieldRowProps['error']): string | undefined 
 
 export function FieldRow({
   label,
+  help,
   hint,
   error,
   required,
@@ -55,10 +59,11 @@ export function FieldRow({
           {label ? (
             <Label
               htmlFor={htmlFor}
-              className="text-xs font-medium text-foreground/90"
+              className="flex items-center gap-1.5 text-xs font-medium text-foreground/90"
             >
               {label}
               {required && <span className="text-destructive ml-0.5">*</span>}
+              {help ? <HelpTip>{help}</HelpTip> : null}
             </Label>
           ) : (
             <span />

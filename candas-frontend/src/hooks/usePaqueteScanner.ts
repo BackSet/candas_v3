@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
 import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
+import { useEffect,useRef,useState } from 'react'
 
 export function usePaqueteScanner(
   paquetesDisponibles: Paquete[],

@@ -1,6 +1,6 @@
+import type { Usuario,UsuarioPage } from '@/types/usuario'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Usuario, UsuarioPage } from '@/types/usuario'
 
 export interface UsuarioListParams {
   page?: number

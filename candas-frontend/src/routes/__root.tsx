@@ -1,8 +1,8 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
-import { useEffect } from 'react'
 import { applyDefaultDocumentMeta } from '@/lib/document-meta'
-import { applyThemeClass, resolveTheme } from '@/lib/theme'
+import { applyThemeClass,resolveTheme } from '@/lib/theme'
 import { useUIStore } from '@/stores/uiStore'
+import { createRootRoute,Outlet } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
 function RootComponent() {
   const theme = useUIStore((s) => s.theme)

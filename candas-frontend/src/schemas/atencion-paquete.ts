@@ -1,9 +1,9 @@
-import { z } from 'zod'
 import {
-  EstadoAtencion,
-  TipoProblemaAtencion,
-  type AtencionPaquete,
+EstadoAtencion,
+TipoProblemaAtencion,
+type AtencionPaquete,
 } from '@/types/atencion-paquete'
+import { z } from 'zod'
 
 export const atencionPaqueteSchema = z.object({
   idPaquete: z.number().min(1, 'El paquete es requerido'),

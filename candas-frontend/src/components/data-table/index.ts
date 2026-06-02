@@ -1,6 +1,6 @@
 export { DataTable } from './DataTable'
 export type { DataTableProps } from './DataTable'
 export { DataTableToolbar } from './DataTableToolbar'
+export type { ColumnAlign,DataTableColumn,ResponsiveBreakpoint } from './types'
 export { useTableState } from './useTableState'
-export type { SortDir, SortState } from './useTableState'
-export type { DataTableColumn, ColumnAlign, ResponsiveBreakpoint } from './types'
+export type { SortDir,SortState } from './useTableState'

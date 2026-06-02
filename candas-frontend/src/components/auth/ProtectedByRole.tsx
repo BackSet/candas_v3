@@ -1,5 +1,5 @@
+import { useHasAnyRole,useHasRole } from '@/hooks/useHasRole'
 import { ReactNode } from 'react'
-import { useHasRole, useHasAnyRole } from '@/hooks/useHasRole'
 
 interface ProtectedByRoleProps {
   role?: string
@@ -21,10 +21,10 @@ export default function ProtectedByRole({
   fallback = null,
   children,
 }: ProtectedByRoleProps) {
-  const hasRole = role ? useHasRole(role) : false
-  const hasAnyRole = roles ? useHasAnyRole(roles) : false
+  const hasRole = useHasRole(role ?? '')
+  const hasAnyRole = useHasAnyRole(roles ?? [])
 
-  const isAuthorized = hasRole || hasAnyRole
+  const isAuthorized = Boolean(role && hasRole) || Boolean(roles?.length && hasAnyRole)
 
   if (!isAuthorized) {
     return <>{fallback}</>

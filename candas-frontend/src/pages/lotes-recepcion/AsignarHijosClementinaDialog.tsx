@@ -1,22 +1,20 @@
-import { useState } from 'react'
-import { usePaquetes } from '@/hooks/usePaquetes'
-import { usePaquete } from '@/hooks/usePaquetes'
-import { useAgregarHijosClementinaALote, useAgregarHijoClementinaPorGuiaALote } from '@/hooks/useLotesRecepcion'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Search, Package, Hash } from 'lucide-react'
-import { TipoPaquete } from '@/types/paquete'
+import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs'
+import { useAgregarHijoClementinaPorGuiaALote,useAgregarHijosClementinaALote } from '@/hooks/useLotesRecepcion'
+import { usePaquete,usePaquetes } from '@/hooks/usePaquetes'
 import { notify } from '@/lib/notify'
+import { Hash,Package,Search } from 'lucide-react'
+import { useState } from 'react'
 
 interface AsignarHijosClementinaDialogProps {
   loteRecepcionId: number

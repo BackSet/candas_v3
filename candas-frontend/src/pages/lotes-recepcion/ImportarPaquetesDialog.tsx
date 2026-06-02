@@ -1,30 +1,22 @@
-import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
-import type { LoteRecepcionImportResult } from '@/types/lote-recepcion'
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, XCircle, FileText, Download } from 'lucide-react'
 import { notify } from '@/lib/notify'
-import { useQueryClient } from '@tanstack/react-query'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import type { LoteRecepcionImportResult } from '@/types/lote-recepcion'
+import { useQueryClient } from '@tanstack/react-query'
+import { AlertCircle,CheckCircle2,FileSpreadsheet,FileText,Upload,XCircle } from 'lucide-react'
+import { useState } from 'react'
 
 interface ImportarPaquetesDialogProps {
   recepcionId: number

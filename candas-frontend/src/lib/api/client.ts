@@ -1,5 +1,5 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
+import axios,{ AxiosError,InternalAxiosRequestConfig } from 'axios'
 
 /**
  * Desarrollo / preview de Vite: permite LAN (`hostname:8080`) o `localhost:8080`.

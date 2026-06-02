@@ -1,30 +1,30 @@
-import { useState } from 'react'
-import { paqueteService } from '@/lib/api/paquete.service'
-import { useCambiarTipoMasivo } from '@/hooks/usePaquetes'
+import { ResultStatsGrid } from '@/components/dialogs/ResultStatsGrid'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
 } from '@/components/ui/table'
-import { Loader2, CheckCircle2, XCircle, PackageMinus } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { useCambiarTipoMasivo } from '@/hooks/usePaquetes'
+import { paqueteService } from '@/lib/api/paquete.service'
+import { cn } from '@/lib/utils'
 import { TipoPaquete } from '@/types/paquete'
 import { parseGuias } from '@/utils/parseGuias'
-import { ResultStatsGrid } from '@/components/dialogs/ResultStatsGrid'
-import { cn } from '@/lib/utils'
+import { CheckCircle2,Loader2,PackageMinus,XCircle } from 'lucide-react'
+import { useState } from 'react'
 
 interface ResultadoSeparar {
   numeroGuia: string

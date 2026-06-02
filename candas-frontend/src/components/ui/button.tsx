@@ -1,20 +1,20 @@
-import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
+import { cva,type VariantProps } from "class-variance-authority"
+import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.75]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 ease-[cubic-bezier(0.2,0,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.75] [&_svg]:transition-transform",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground hover:bg-primary/90 shadow-none border border-transparent",
+          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md border border-transparent",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-none",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:shadow-md",
         outline:
-          "border border-border bg-background shadow-none hover:bg-accent hover:text-accent-foreground dark:bg-card dark:hover:bg-accent/80",
+          "border border-border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground hover:border-border dark:bg-card dark:hover:bg-accent/80",
         secondary:
           "bg-secondary text-secondary-foreground shadow-none hover:bg-secondary/80 border border-transparent",
         ghost: "hover:bg-secondary hover:text-secondary-foreground",
@@ -54,4 +54,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 )
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
+export { Button,buttonVariants }

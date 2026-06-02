@@ -1,44 +1,43 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { useClientes, useDeleteCliente } from '@/hooks/useClientes'
+import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
+import { StatusBadge } from '@/components/detail/StatusBadge'
+import { FilterBar,SelectFilter } from '@/components/filters'
+import { ModulePageIcon } from '@/components/icons'
+import { ListPagination } from '@/components/list/ListPagination'
+import { ErrorState } from '@/components/states'
+import { EmptyState } from '@/components/states/EmptyState'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Eye,
-  Edit,
-  Trash2,
-  Plus,
-  MoreHorizontal,
-  Users,
-} from 'lucide-react'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { ListPageLayout } from '@/app/layout/ListPageLayout'
-import { ModulePageIcon } from '@/components/icons'
-import { StatusBadge } from '@/components/detail/StatusBadge'
-import { ListPagination } from '@/components/list/ListPagination'
-import { PERMISSIONS } from '@/types/permissions'
-import { EmptyState } from '@/components/states/EmptyState'
-import { ErrorState } from '@/components/states'
+import { useClientes,useDeleteCliente } from '@/hooks/useClientes'
 import { useListFilters } from '@/hooks/useListFilters'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter } from '@/components/filters'
-import type { Cliente } from '@/types/cliente'
 import { getApiErrorMessage } from '@/lib/api/errors'
+import type { Cliente } from '@/types/cliente'
+import { PERMISSIONS } from '@/types/permissions'
+import { useNavigate } from '@tanstack/react-router'
+import {
+Edit,
+Eye,
+MoreHorizontal,
+Plus,
+Trash2
+} from 'lucide-react'
+import { useMemo,useState } from 'react'
 
 interface ClientesFiltersState extends Record<string, string | number | undefined> {
   page: number

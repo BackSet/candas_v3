@@ -1,18 +1,18 @@
-import { useEffect } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm, type FieldValues, type UseFormReturn } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { FieldRow,FormPageLayout,FormSection } from '@/components/form'
 import { Input } from '@/components/ui/input'
-import { usePermiso, useUpdatePermisoNombre } from '@/hooks/usePermisos'
-import { Key, Folder, Zap, FileText } from 'lucide-react'
+import { usePermiso,useUpdatePermisoNombre } from '@/hooks/usePermisos'
 import { cn } from '@/lib/utils'
-import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
 import {
-  permisoEditSchema,
-  type PermisoEditFormData,
-  permisoEditFormDataToDto,
-  permisoToEditFormData,
+permisoEditFormDataToDto,
+permisoEditSchema,
+permisoToEditFormData,
+type PermisoEditFormData,
 } from '@/schemas/permiso'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { FileText,Folder,Key,Zap } from 'lucide-react'
+import { useEffect } from 'react'
+import { useForm,type FieldValues,type UseFormReturn } from 'react-hook-form'
 
 export default function PermisoForm() {
   const navigate = useNavigate()

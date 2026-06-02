@@ -18,7 +18,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/sacas")
 @Tag(name = "Sacas", description = "Endpoints para gestión de sacas")
-@CrossOrigin(origins = "*")
 public class SacaController {
 
     private final SacaService sacaService;

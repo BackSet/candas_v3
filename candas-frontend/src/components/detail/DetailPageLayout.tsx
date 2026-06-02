@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react'
-import { cn } from '@/lib/utils'
 import { DetailHeader } from '@/components/detail/DetailHeader'
 import type { StatusVariant } from '@/components/detail/StatusBadge'
+import { cn } from '@/lib/utils'
+import type { ReactNode } from 'react'
 
 type MaxWidth = 'md' | 'lg' | 'xl' | '2xl' | 'full'
 
@@ -62,7 +62,7 @@ export function DetailPageLayout({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-        <div className={cn('w-full mx-auto space-y-8', maxWidthClass[maxWidth], contentClassName)}>
+        <div className={cn('w-full mx-auto space-y-6 stagger-children', maxWidthClass[maxWidth], contentClassName)}>
           {children}
         </div>
       </div>

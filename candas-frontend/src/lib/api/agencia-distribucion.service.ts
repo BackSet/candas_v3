@@ -1,5 +1,5 @@
+import type { AgenciaDistribucion,AgenciaDistribucionPage } from '@/types/agencia-distribucion'
 import { apiClient } from './client'
-import type { AgenciaDistribucion, AgenciaDistribucionPage } from '@/types/agencia-distribucion'
 
 export const agenciaDistribucionService = {
   async findAll(page: number = 0, size: number = 20): Promise<AgenciaDistribucionPage> {

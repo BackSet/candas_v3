@@ -1,23 +1,23 @@
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
+import {
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
+} from '@/components/ui/select'
 import type { Saca } from '@/types/saca'
-import { FileText, Loader2, Printer, Tag, Tags } from 'lucide-react'
+import { FileText,Loader2,Printer,Tag,Tags } from 'lucide-react'
 
 export type TipoImpresion =
   | 'etiqueta'

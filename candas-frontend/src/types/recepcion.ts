@@ -1,5 +1,4 @@
-import type { PageResponse } from './paquete'
-import type { Paquete } from './paquete'
+import type { PageResponse,Paquete } from './paquete'
 
 export interface Recepcion {
   idRecepcion?: number

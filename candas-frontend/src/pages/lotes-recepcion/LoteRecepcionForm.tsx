@@ -1,38 +1,38 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm, Controller, type FieldValues, type UseFormReturn } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { useLoteRecepcion, useCreateLoteRecepcion, useUpdateLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { useAuthStore } from '@/stores/authStore'
-import { CheckCircle2, Package, ArrowRight } from 'lucide-react'
-import { DateTimePickerForm } from '@/components/ui/date-time-picker'
 import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
-import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
+import { FieldRow,FormPageLayout,FormSection } from '@/components/form'
+import { Button } from '@/components/ui/button'
+import { DateTimePickerForm } from '@/components/ui/date-time-picker'
 import {
-  loteRecepcionSchema,
-  loteRecepcionFormDataToDto,
-  loteRecepcionToFormData,
-  defaultLoteRecepcionFormData,
-  type LoteRecepcionFormData,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { useCreateLoteRecepcion,useLoteRecepcion,useUpdateLoteRecepcion } from '@/hooks/useLotesRecepcion'
+import {
+defaultLoteRecepcionFormData,
+loteRecepcionFormDataToDto,
+loteRecepcionSchema,
+loteRecepcionToFormData,
+type LoteRecepcionFormData,
 } from '@/schemas/lote-recepcion'
+import { useAuthStore } from '@/stores/authStore'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { ArrowRight,CheckCircle2,Package } from 'lucide-react'
+import { useEffect,useState } from 'react'
+import { Controller,useForm,type FieldValues,type UseFormReturn } from 'react-hook-form'
 
 interface LoteRecepcionFormProps {
   /** URL para volver (ej. /lotes-especiales) */
@@ -191,7 +191,12 @@ export default function LoteRecepcionForm({
             cols={2}
           >
             {!isEdit && (
-              <FieldRow label="Tipo de lote" htmlFor="tipoLote" hint="Especial: podrás tipiar paquetes y clasificarlos por etiqueta al abrir el lote.">
+              <FieldRow
+                label="Tipo de lote"
+                htmlFor="tipoLote"
+                help="Normal: importas paquetes desde Excel. Especial: tipeas los paquetes a mano y los clasificas por etiqueta. No se puede cambiar después de crear el lote."
+                hint="Especial: podrás tipiar paquetes y clasificarlos por etiqueta al abrir el lote."
+              >
                 <Select
                   value={watch('tipoLote') || 'NORMAL'}
                   onValueChange={(value) =>
@@ -254,6 +259,7 @@ export default function LoteRecepcionForm({
             <FieldRow
               label="Número de Recepción"
               htmlFor="numeroRecepcion"
+              help="Identificador interno del lote para buscarlo y referenciarlo. Si lo dejas vacío, el sistema genera uno automáticamente."
               hint="Si no ingresas un número, se generará automáticamente."
             >
               <Input

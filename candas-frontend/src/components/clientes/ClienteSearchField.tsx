@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, Plus, User, Trash2 } from 'lucide-react'
 import type { useClienteManager } from '@/hooks/useClienteManager'
+import { Plus,Search,Trash2,User } from 'lucide-react'
 
 interface ClienteSearchFieldProps {
   label: string

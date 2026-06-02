@@ -1,12 +1,12 @@
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { usePermiso } from '@/hooks/usePermisos'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Edit, Key, Folder, Zap, FileText } from 'lucide-react'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { LoadingState } from '@/components/states/LoadingState'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { usePermiso } from '@/hooks/usePermisos'
+import { PERMISSIONS } from '@/types/permissions'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { Edit,FileText,Folder,Key,Zap } from 'lucide-react'
 
 export default function PermisoDetail() {
   const navigate = useNavigate()

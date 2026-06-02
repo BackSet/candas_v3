@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react'
 import { notify } from '@/lib/notify'
 import { TamanoSaca } from '@/types/saca'
+import { useCallback,useState } from 'react'
 
 export interface SacaFormData {
   tamano: TamanoSaca
@@ -68,7 +68,7 @@ export function useSacasManager(initialSacas: SacaFormData[] = []) {
     paquetesDisponibles: Array<{ idPaquete?: number; numeroGuia?: string }>
   ) => {
     let encontrados = 0
-    let noEncontrados: string[] = []
+    const noEncontrados: string[] = []
     let yaAgregados = 0
 
     setSacas((prev) => {

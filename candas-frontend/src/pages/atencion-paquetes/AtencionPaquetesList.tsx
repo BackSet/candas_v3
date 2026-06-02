@@ -1,64 +1,64 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { useAtencionPaquetes, useAtencionPaquetesPendientes, useDeleteAtencionPaquete } from '@/hooks/useAtencionPaquetes'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  EstadoAtencion,
-  TipoProblemaAtencion,
-  TIPO_PROBLEMA_ATENCION_LABELS,
-  getTipoProblemaLabel,
-  type AtencionPaquete,
-} from '@/types/atencion-paquete'
-import {
-  Eye,
-  Edit,
-  Trash2,
-  Plus,
-  Printer,
-  Loader2,
-  CheckCircle,
-  MoreHorizontal,
-  AlertCircle,
-} from 'lucide-react'
-import { notify } from '@/lib/notify'
-import { paqueteService } from '@/lib/api/paquete.service'
-import { imprimirAtencionPaquetes } from '@/utils/imprimirAtencionPaquetes'
-import type { Paquete } from '@/types/paquete'
-import ResolverDialog from './ResolverDialog'
-import { Badge } from '@/components/ui/badge'
-import { StatusBadge } from '@/components/detail/StatusBadge'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
+import { StatusBadge } from '@/components/detail/StatusBadge'
+import { DateRangeFilter,FilterBar,SelectFilter,buildDateRangeChip } from '@/components/filters'
 import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
-import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter, DateRangeFilter, buildDateRangeChip } from '@/components/filters'
-import { useListFilters } from '@/hooks/useListFilters'
+import { EmptyState } from '@/components/states/EmptyState'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
-  showProcessError,
-  showProcessStart,
-  showProcessSuccess,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+showProcessError,
+showProcessStart,
+showProcessSuccess,
 } from '@/hooks/mutationFeedback'
+import { useAtencionPaquetes,useAtencionPaquetesPendientes,useDeleteAtencionPaquete } from '@/hooks/useAtencionPaquetes'
+import { useListFilters } from '@/hooks/useListFilters'
 import { getApiErrorMessage } from '@/lib/api/errors'
+import { paqueteService } from '@/lib/api/paquete.service'
+import { notify } from '@/lib/notify'
+import {
+EstadoAtencion,
+TIPO_PROBLEMA_ATENCION_LABELS,
+TipoProblemaAtencion,
+getTipoProblemaLabel,
+type AtencionPaquete,
+} from '@/types/atencion-paquete'
+import type { Paquete } from '@/types/paquete'
+import { PERMISSIONS } from '@/types/permissions'
+import { imprimirAtencionPaquetes } from '@/utils/imprimirAtencionPaquetes'
+import { useNavigate } from '@tanstack/react-router'
+import {
+AlertCircle,
+CheckCircle,
+Edit,
+Eye,
+Loader2,
+MoreHorizontal,
+Plus,
+Printer,
+Trash2,
+} from 'lucide-react'
+import { useMemo,useState } from 'react'
+import ResolverDialog from './ResolverDialog'
 
 const ESTADO_ATENCION_LABELS: Record<string, string> = {
   [EstadoAtencion.PENDIENTE]: 'Pendiente',

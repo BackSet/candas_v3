@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react'
-import { useRoles } from '@/hooks/useRoles'
-import { useRolesUsuario, useAsignarRolesUsuario } from '@/hooks/useUsuarios'
 import { Button } from '@/components/ui/button'
 import { CheckboxIndicator } from '@/components/ui/checkbox'
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Search, Shield, UserCog } from 'lucide-react'
+import { useRoles } from '@/hooks/useRoles'
+import { useAsignarRolesUsuario,useRolesUsuario } from '@/hooks/useUsuarios'
 import { cn } from '@/lib/utils'
+import { Search,Shield,UserCog } from 'lucide-react'
+import { useEffect,useState } from 'react'
 
 interface AsignarRolesDialogProps {
   usuarioId: number

@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { Permiso } from '@/types/permiso'
+import { z } from 'zod'
 
 /** Solo el nombre es editable desde la UI. */
 export const permisoEditSchema = z.object({

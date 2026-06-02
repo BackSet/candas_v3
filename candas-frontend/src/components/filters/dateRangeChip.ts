@@ -1,5 +1,5 @@
-import { formatDateRangeLabel, inferRangeMode } from '@/lib/date-range'
 import type { ListFilterChip } from '@/hooks/useListFilters'
+import { formatDateRangeLabel,inferRangeMode } from '@/lib/date-range'
 
 /**
  * Construye el chip de filtro de rango de fechas para `FilterBar`.

@@ -1,78 +1,79 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { useDespachos, useDeleteDespacho, useDespacho, useMarcarDespachado, useMarcarDespachadoBatch } from '@/hooks/useDespachos'
-import { useAgencia } from '@/hooks/useAgencias'
-import { useDistribuidor } from '@/hooks/useDistribuidores'
-import { despachoService } from '@/lib/api/despacho.service'
-import { agenciaService } from '@/lib/api/agencia.service'
-import { distribuidorService } from '@/lib/api/distribuidor.service'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  dialogContentPresets,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Eye,
-  Edit,
-  Trash2,
-  Plus,
-  Printer,
-  MessageSquare,
-  Copy,
-  Check,
-  MoreHorizontal,
-  Truck,
-  PackageCheck,
-  FileText,
-  Tag,
-  Tags,
-  Loader2,
-} from 'lucide-react'
-import { imprimirDespacho, imprimirManifiestosMultiples, generarPDFDespacho } from '@/utils/imprimirDespacho'
-import { imprimirEtiquetaSaca, imprimirEtiquetasSacas, imprimirEtiquetasZebraSacas, imprimirEtiquetaZebraSaca, imprimirEtiquetasMultiplesDespachos, imprimirEtiquetasZebraMultiplesDespachos } from '@/utils/imprimirEtiquetaSaca'
-import type { Saca } from '@/types/saca'
-import type { Despacho } from '@/types/despacho'
-import type { Agencia } from '@/types/agencia'
-import type { Distribuidor } from '@/types/distribuidor'
-import { Badge } from '@/components/ui/badge'
-import { notify } from '@/lib/notify'
-import { cn } from '@/lib/utils'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
+import ImprimirDespachoDialog,{ type TipoImpresion } from '@/components/despachos/ImprimirDespachoDialog'
+import { DateRangeFilter,FilterBar,SelectFilter,buildDateRangeChip } from '@/components/filters'
 import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
-import { useAuthStore } from '@/stores/authStore'
-import ImprimirDespachoDialog, { type TipoImpresion } from '@/components/despachos/ImprimirDespachoDialog'
+import { SelectionActionBar } from '@/components/list/SelectionActionBar'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
-import { usePlantillaWhatsAppDespacho } from '@/hooks/usePlantillaWhatsAppDespacho'
-import { reemplazarVariables, construirVariablesDesdeDespacho } from '@/utils/plantillaWhatsApp'
-import { copyTextToClipboard } from '@/utils/clipboard'
-import { useListFilters } from '@/hooks/useListFilters'
-import { formatearFechaCorta } from '@/utils/fechas'
-import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
-  showProcessError,
-  showProcessStart,
-  showProcessSuccess,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+dialogContentPresets,
+} from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Textarea } from '@/components/ui/textarea'
+import {
+showProcessError,
+showProcessStart,
+showProcessSuccess,
 } from '@/hooks/mutationFeedback'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter, DateRangeFilter, buildDateRangeChip } from '@/components/filters'
+import { useAgencia } from '@/hooks/useAgencias'
+import { useDeleteDespacho,useDespacho,useDespachos,useMarcarDespachado,useMarcarDespachadoBatch } from '@/hooks/useDespachos'
+import { useDistribuidor } from '@/hooks/useDistribuidores'
+import { useListFilters } from '@/hooks/useListFilters'
+import { usePlantillaWhatsAppDespacho } from '@/hooks/usePlantillaWhatsAppDespacho'
+import { agenciaService } from '@/lib/api/agencia.service'
+import { despachoService } from '@/lib/api/despacho.service'
+import { distribuidorService } from '@/lib/api/distribuidor.service'
+import { getApiErrorMessage,getInteragencyRestrictionMessage } from '@/lib/api/errors'
+import { notify } from '@/lib/notify'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/authStore'
+import type { Agencia } from '@/types/agencia'
+import type { Despacho } from '@/types/despacho'
+import type { Distribuidor } from '@/types/distribuidor'
+import { PERMISSIONS } from '@/types/permissions'
+import type { Saca } from '@/types/saca'
+import { copyTextToClipboard } from '@/utils/clipboard'
+import { formatearFechaCorta } from '@/utils/fechas'
+import { generarPDFDespacho,imprimirDespacho,imprimirManifiestosMultiples } from '@/utils/imprimirDespacho'
+import { imprimirEtiquetaSaca,imprimirEtiquetaZebraSaca,imprimirEtiquetasMultiplesDespachos,imprimirEtiquetasSacas,imprimirEtiquetasZebraMultiplesDespachos,imprimirEtiquetasZebraSacas } from '@/utils/imprimirEtiquetaSaca'
+import { construirVariablesDesdeDespacho,reemplazarVariables } from '@/utils/plantillaWhatsApp'
+import { useNavigate } from '@tanstack/react-router'
+import {
+Check,
+Copy,
+Edit,
+Eye,
+FileText,
+Loader2,
+MessageSquare,
+MoreHorizontal,
+PackageCheck,
+Plus,
+Printer,
+Tag,
+Tags,
+Trash2,
+Truck,
+} from 'lucide-react'
+import { useMemo,useState } from 'react'
 
 interface DespachosFiltersState extends Record<string, string | number | undefined> {
   page: number
@@ -849,32 +850,6 @@ export default function DespachosList() {
       className="py-2 animate-in fade-in duration-500"
       actions={
         <div className="flex flex-wrap items-center gap-2 justify-end">
-          {despachosSeleccionados.size > 0 && (
-            <>
-              <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.IMPRIMIR}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setMostrarDialogoMultiples(true)}
-                  className="h-8 shadow-sm text-xs"
-                >
-                  <Printer className="h-3.5 w-3.5 mr-1.5" />
-                  Imprimir ({despachosSeleccionados.size})
-                </Button>
-              </ProtectedByPermission>
-              <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.EDITAR}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setMostrarDialogoMarcarDespachadoBatch(true)}
-                  className="h-8 shadow-sm text-xs"
-                >
-                  <PackageCheck className="h-3.5 w-3.5 mr-1.5" />
-                  Marcar despachado ({despachosSeleccionados.size})
-                </Button>
-              </ProtectedByPermission>
-            </>
-          )}
           <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>
             <Button onClick={() => navigate({ to: '/despachos/new' })} size="sm" className="h-8 shadow-sm">
               <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -976,6 +951,34 @@ export default function DespachosList() {
         />
       }
     >
+
+      <SelectionActionBar
+        count={despachosSeleccionados.size}
+        onClear={() => setDespachosSeleccionados(new Set())}
+        itemLabel="despacho"
+      >
+        <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.IMPRIMIR}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMostrarDialogoMultiples(true)}
+            className="h-8 rounded-full text-xs"
+          >
+            <Printer className="h-3.5 w-3.5 mr-1.5" />
+            Imprimir
+          </Button>
+        </ProtectedByPermission>
+        <ProtectedByPermission permission={PERMISSIONS.DESPACHOS.EDITAR}>
+          <Button
+            size="sm"
+            onClick={() => setMostrarDialogoMarcarDespachadoBatch(true)}
+            className="h-8 rounded-full text-xs"
+          >
+            <PackageCheck className="h-3.5 w-3.5 mr-1.5" />
+            Marcar despachado
+          </Button>
+        </ProtectedByPermission>
+      </SelectionActionBar>
 
       <Dialog open={!!despachoAEliminar} onOpenChange={(open) => !open && setDespachoAEliminar(null)}>
         <DialogContent className={dialogContentPresets.compact}>

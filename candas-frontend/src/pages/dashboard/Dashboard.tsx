@@ -1,21 +1,27 @@
-import { useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { usePaquetesEstadisticas } from '@/hooks/usePaquetes'
+import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
+import { ModulePageIcon } from '@/components/icons'
+import { LoadingState } from '@/components/states/LoadingState'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useAtencionPaquetesPendientes } from '@/hooks/useAtencionPaquetes'
 import { useDespachos } from '@/hooks/useDespachos'
 import { useLotesRecepcion } from '@/hooks/useLotesRecepcion'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { getTipoProblemaLabel } from '@/types/atencion-paquete'
-import {
-  Package, AlertCircle, Truck, Inbox, ArrowRight,
-  CheckCircle2, Clock, Box, Activity,
-  TrendingUp, Boxes,
-} from 'lucide-react'
+import { usePaquetesEstadisticas } from '@/hooks/usePaquetes'
 import { cn } from '@/lib/utils'
-import { ModulePageIcon } from '@/components/icons'
-import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
-import { LoadingState } from '@/components/states/LoadingState'
+import { getTipoProblemaLabel } from '@/types/atencion-paquete'
+import { useNavigate } from '@tanstack/react-router'
+import {
+AlertCircle,
+ArrowRight,
+Box,
+Boxes,
+CheckCircle2,Clock,
+Inbox,
+Package,
+TrendingUp,
+Truck
+} from 'lucide-react'
+import { useMemo } from 'react'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -65,7 +71,7 @@ export default function Dashboard() {
           <div className="max-w-7xl mx-auto p-6 space-y-8">
 
             {/* KPI Metrics Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
               <MetricCard
                 label="Total Paquetes"
                 value={estadisticasPaquetes.total}
@@ -94,15 +100,15 @@ export default function Dashboard() {
             </div>
 
             {/* Three Column Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 stagger-children">
 
               {/* Column 1: Pipeline */}
-              <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
+              <div className="surface-panel elevate elevate-hover overflow-hidden">
                 <div className="px-5 py-4 border-b border-border/30 bg-muted/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-7 w-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                        <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
+                      <div className="h-7 w-7 rounded-lg bg-info/10 flex items-center justify-center">
+                        <TrendingUp className="h-3.5 w-3.5 text-info" />
                       </div>
                       <h3 className="text-sm font-semibold text-foreground">Pipeline de Paquetes</h3>
                     </div>
@@ -121,17 +127,17 @@ export default function Dashboard() {
               </div>
 
               {/* Column 2: Atenciones Pendientes */}
-              <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
+              <div className="surface-panel elevate elevate-hover overflow-hidden">
                 <div className="px-5 py-4 border-b border-border/30 bg-muted/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-7 w-7 rounded-lg bg-red-500/10 flex items-center justify-center">
-                        <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                      <div className="h-7 w-7 rounded-lg bg-error/10 flex items-center justify-center">
+                        <AlertCircle className="h-3.5 w-3.5 text-error" />
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-foreground">Atenciones Pendientes</h3>
                         {(atencionesPendientes?.length || 0) > 0 && (
-                          <p className="text-[10px] text-red-500 font-medium">{atencionesPendientes?.length} pendiente{(atencionesPendientes?.length || 0) !== 1 ? 's' : ''}</p>
+                          <p className="text-[10px] text-error font-medium">{atencionesPendientes?.length} pendiente{(atencionesPendientes?.length || 0) !== 1 ? 's' : ''}</p>
                         )}
                       </div>
                     </div>
@@ -155,7 +161,7 @@ export default function Dashboard() {
                           onKeyDown={(e) => { if (e.key === 'Enter') navigate({ to: `/atencion-paquetes/${item.idAtencion}` }) }}
                           className="group flex items-start gap-3 p-3 rounded-xl hover:bg-muted/40 transition-all cursor-pointer border border-transparent hover:border-border/30"
                         >
-                          <div className="mt-1.5 h-2 w-2 rounded-full bg-red-500 shrink-0 animate-pulse" />
+                          <div className="mt-1.5 h-2 w-2 rounded-full bg-error shrink-0 animate-pulse" />
                           <div className="space-y-1 overflow-hidden flex-1">
                             <p className="font-semibold text-sm leading-none group-hover:text-primary transition-colors">
                               {item.numeroGuia || `ID: ${item.idPaquete}`}
@@ -173,12 +179,12 @@ export default function Dashboard() {
               {/* Column 3: Recent Activity */}
               <div className="space-y-6">
                 {/* Despachos */}
-                <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
+                <div className="surface-panel elevate elevate-hover overflow-hidden">
                   <div className="px-5 py-4 border-b border-border/30 bg-muted/10">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="h-7 w-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                          <Truck className="h-3.5 w-3.5 text-amber-500" />
+                        <div className="h-7 w-7 rounded-lg bg-warning/10 flex items-center justify-center">
+                          <Truck className="h-3.5 w-3.5 text-warning" />
                         </div>
                         <h3 className="text-sm font-semibold text-foreground">Últimos Despachos</h3>
                       </div>
@@ -221,12 +227,12 @@ export default function Dashboard() {
                 </div>
 
                 {/* Lotes */}
-                <div className="border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm overflow-hidden">
+                <div className="surface-panel elevate elevate-hover overflow-hidden">
                   <div className="px-5 py-4 border-b border-border/30 bg-muted/10">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="h-7 w-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                          <Inbox className="h-3.5 w-3.5 text-emerald-500" />
+                        <div className="h-7 w-7 rounded-lg bg-success/10 flex items-center justify-center">
+                          <Inbox className="h-3.5 w-3.5 text-success" />
                         </div>
                         <h3 className="text-sm font-semibold text-foreground">Lotes Recientes</h3>
                       </div>
@@ -298,17 +304,17 @@ function MetricCard({ label, value, icon: Icon, color, alert }: {
   const c = colorMap[color]
   return (
     <div className={cn(
-      "border border-border/40 rounded-2xl bg-card/50 backdrop-blur-sm p-5 transition-all hover:shadow-sm hover:border-border/60",
+      "surface-panel elevate elevate-hover group p-5",
       alert && "border-error/30 bg-error/5"
     )}>
       <div className="flex items-center gap-2 mb-3">
-        <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", c.bg)}>
-          <Icon className={cn("h-3.5 w-3.5", c.text)} />
+        <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110", c.bg)}>
+          <Icon className={cn("h-4 w-4", c.text)} />
         </div>
         <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
       </div>
       <span className={cn(
-        "text-3xl font-bold tracking-tight",
+        "text-3xl font-bold tracking-tight tabular-nums",
         alert ? "text-error" : "text-foreground"
       )}>
         {value}

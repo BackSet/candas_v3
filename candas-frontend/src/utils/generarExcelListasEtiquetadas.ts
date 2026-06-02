@@ -39,9 +39,8 @@ export function generarExcelListasEtiquetadas(opts: {
   const fechaFormato = fecha.toISOString().split('T')[0]
   const horaFormato = fecha.toTimeString().split(' ')[0].replace(/:/g, '-')
 
-  const safe = (s: string) => s.replace(/[^\w\-]+/g, '_').slice(0, 60)
+  const safe = (s: string) => s.replace(/[^\w-]+/g, '_').slice(0, 60)
   const nombreArchivo = `listas-etiquetadas-${safe(filtroEstado)}-${safe(filtroEtiqueta)}-${fechaFormato}-${horaFormato}.xlsx`
 
   XLSX.writeFile(workbook, nombreArchivo)
 }
-

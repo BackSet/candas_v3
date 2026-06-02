@@ -1,19 +1,19 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { SacaGuiasPanel } from '@/components/ensacado/SacaGuiasPanel'
 import { EnsacadoLayoutHeader } from '@/components/ensacado/EnsacadoLayoutHeader'
-import { useSessionEnsacado, useInfoDespacho } from '@/hooks/useEnsacado'
-import { AppIcon, ModulePageIcon } from '@/components/icons'
+import { SacaGuiasPanel } from '@/components/ensacado/SacaGuiasPanel'
+import { AppIcon,ModulePageIcon } from '@/components/icons'
+import { Button } from '@/components/ui/button'
+import { Card,CardContent } from '@/components/ui/card'
 import { ENSACADO_POLL } from '@/constants/ensacado'
-import { formatearFechaRelativa } from '@/utils/fechas'
-import { obtenerDestino, obtenerLabelDestino, formatearTamanoSaca } from '@/utils/ensacado'
+import { useInfoDespacho,useSessionEnsacado } from '@/hooks/useEnsacado'
 import { cn } from '@/lib/utils'
+import { formatearTamanoSaca,obtenerDestino,obtenerLabelDestino } from '@/utils/ensacado'
+import { formatearFechaRelativa } from '@/utils/fechas'
 import {
-  CheckCircle2,
-  Loader2,
-  RefreshCw,
-  Smartphone,
-  WifiOff,
+CheckCircle2,
+Loader2,
+RefreshCw,
+Smartphone,
+WifiOff,
 } from 'lucide-react'
 
 interface VistaEnsacadoSoloLecturaProps {

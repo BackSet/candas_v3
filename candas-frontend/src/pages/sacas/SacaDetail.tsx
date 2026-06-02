@@ -1,40 +1,39 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useSaca, usePaquetesSaca, useCalcularPesoSaca, useDeleteSaca } from '@/hooks/useSacas'
-import { useDespacho } from '@/hooks/useDespachos'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import { StatusBadge } from '@/components/detail/StatusBadge'
+import { DetailSkeleton,EmptyState } from '@/components/states'
+import { ErrorState } from '@/components/states/ErrorState'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Edit,
-  Trash2,
-  ArrowLeft,
-  ShoppingBag,
-  Scale,
-  Package,
-  FileText,
-  Calculator,
-  Calendar,
-  ArrowRight
-} from 'lucide-react'
-import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
+import { useDespacho } from '@/hooks/useDespachos'
+import { useCalcularPesoSaca,useDeleteSaca,usePaquetesSaca,useSaca } from '@/hooks/useSacas'
+import { getApiErrorMessage,getApiStatus } from '@/lib/api/errors'
 import { cn } from '@/lib/utils'
-import AgregarPaquetesDialog from './AgregarPaquetesDialog'
 import { EstadoPaquete } from '@/types/paquete'
-import { StatusBadge } from '@/components/detail/StatusBadge'
-import { EmptyState, DetailSkeleton } from '@/components/states'
-import { ErrorState } from '@/components/states/ErrorState'
-import { CAPACIDADES_SACA_KG } from '@/types/saca'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { PERMISSIONS } from '@/types/permissions'
-import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
+import { CAPACIDADES_SACA_KG } from '@/types/saca'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import {
+ArrowLeft,
+ArrowRight,
+Calculator,
+Calendar,
+Edit,
+FileText,
+Package,
+Scale,
+Trash2
+} from 'lucide-react'
+import { useState } from 'react'
+import AgregarPaquetesDialog from './AgregarPaquetesDialog'
 
 export default function SacaDetail() {
   const navigate = useNavigate()

@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import {
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { useCreateAtencionPaquete } from '@/hooks/useAtencionPaquetes'
+import { EstadoAtencion,TIPO_PROBLEMA_ATENCION_LABELS,TipoProblemaAtencion } from '@/types/atencion-paquete'
 import type { Paquete } from '@/types/paquete'
-import { TipoProblemaAtencion, EstadoAtencion, TIPO_PROBLEMA_ATENCION_LABELS } from '@/types/atencion-paquete'
+import React,{ useEffect,useState } from 'react'
 
 interface AgregarAtencionDialogProps {
   open: boolean

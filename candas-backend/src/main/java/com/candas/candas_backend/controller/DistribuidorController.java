@@ -18,7 +18,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/distribuidores")
 @Tag(name = "Distribuidores", description = "Endpoints para gestión de distribuidores")
-@CrossOrigin(origins = "*")
 public class DistribuidorController {
 
     private final DistribuidorService distribuidorService;

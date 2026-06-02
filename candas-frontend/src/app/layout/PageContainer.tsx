@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import type { ReactNode } from 'react'
 
 type PageWidth = 'sm' | 'md' | 'lg' | 'xl' | 'full'
 type PageSpacing = '0' | '4' | '6' | '8'

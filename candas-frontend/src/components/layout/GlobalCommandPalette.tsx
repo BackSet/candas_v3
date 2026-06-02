@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { AppIcon,getModuleIcon } from '@/components/icons'
 import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
+CommandDialog,
+CommandEmpty,
+CommandGroup,
+CommandInput,
+CommandItem,
+CommandList,
 } from '@/components/ui/command'
-import { Plus, Upload } from 'lucide-react'
-import { useUIStore } from '@/stores/uiStore'
-import { usePaquetes } from '@/hooks/usePaquetes'
-import { useDebounce } from '@/hooks/useDebounce'
-import { AppIcon, getModuleIcon } from '@/components/icons'
 import { flattenNavigation } from '@/config/navigation'
+import { useDebounce } from '@/hooks/useDebounce'
+import { usePaquetes } from '@/hooks/usePaquetes'
+import { useUIStore } from '@/stores/uiStore'
+import { useNavigate } from '@tanstack/react-router'
+import { Plus,Upload } from 'lucide-react'
+import { useEffect,useState } from 'react'
 
 const NAV_ITEMS = flattenNavigation()
 

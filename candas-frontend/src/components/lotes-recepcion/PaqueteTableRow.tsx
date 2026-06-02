@@ -1,10 +1,10 @@
-import React from 'react'
-import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import { TableCell,TableRow } from '@/components/ui/table'
 import type { Paquete } from '@/types/paquete'
 import type { EtiquetaDestino } from '@/utils/clasificarEtiquetaDestino'
 import { guiaEfectiva } from '@/utils/paqueteGuia'
+import React from 'react'
 
 interface PaqueteTableRowProps {
   paquete: Paquete

@@ -1,6 +1,6 @@
+import type { Permiso,PermisoPage } from '@/types/permiso'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Permiso, PermisoPage } from '@/types/permiso'
 
 export interface PermisoListParams {
   page?: number

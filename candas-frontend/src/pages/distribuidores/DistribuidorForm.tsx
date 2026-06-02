@@ -1,28 +1,28 @@
-import { useEffect } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm, type FieldValues, type UseFormReturn } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { FieldRow,FormPageLayout,FormSection } from '@/components/form'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
 import {
-  useDistribuidor,
-  useCreateDistribuidor,
-  useUpdateDistribuidor,
+useCreateDistribuidor,
+useDistribuidor,
+useUpdateDistribuidor,
 } from '@/hooks/useDistribuidores'
-import { Building2, Mail } from 'lucide-react'
-import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
 import {
-  distribuidorSchema,
-  type DistribuidorFormData,
-  distribuidorFormDataToDto,
-  distribuidorToFormData,
+distribuidorFormDataToDto,
+distribuidorSchema,
+distribuidorToFormData,
+type DistribuidorFormData,
 } from '@/schemas/distribuidor'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { Building2,Mail } from 'lucide-react'
+import { useEffect } from 'react'
+import { useForm,type FieldValues,type UseFormReturn } from 'react-hook-form'
 
 export default function DistribuidorForm() {
   const navigate = useNavigate()

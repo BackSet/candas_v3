@@ -18,7 +18,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/puntos-origen")
 @Tag(name = "Puntos de Origen", description = "Endpoints para gestión de puntos de origen")
-@CrossOrigin(origins = "*")
 public class PuntoOrigenController {
 
     private final PuntoOrigenService puntoOrigenService;

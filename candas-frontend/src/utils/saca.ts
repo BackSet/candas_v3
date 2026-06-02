@@ -1,4 +1,4 @@
-import { TamanoSaca, CAPACIDADES_SACA_KG } from '@/types/saca'
+import { CAPACIDADES_SACA_KG,TamanoSaca } from '@/types/saca'
 
 /**
  * Recomienda el tamaño de saca según el peso total en kg (umbrales: 15, 30, 40, 50 kg).

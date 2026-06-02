@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useGruposPersonalizadosLocal, type GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
-import { Plus, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import { notify } from '@/lib/notify'
+import { useGruposPersonalizadosLocal,type GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
+import { Eye,EyeOff,Plus,Trash2 } from 'lucide-react'
+import { useEffect,useState } from 'react'
 
 interface GruposPersonalizadosPanelProps {
   loteRecepcionId?: number

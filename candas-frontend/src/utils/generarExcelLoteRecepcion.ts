@@ -1,10 +1,10 @@
-import * as XLSX from 'xlsx'
-import type { Paquete } from '@/types/paquete'
-import { TipoDestino, TipoPaquete } from '@/types/paquete'
-import { guiaEfectiva, tieneGuiaEfectiva } from '@/utils/paqueteGuia'
+import type { GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
 import type { Agencia } from '@/types/agencia'
 import type { DestinatarioDirecto } from '@/types/destinatario-directo'
-import type { GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
+import type { Paquete } from '@/types/paquete'
+import { TipoDestino,TipoPaquete } from '@/types/paquete'
+import { guiaEfectiva,tieneGuiaEfectiva } from '@/utils/paqueteGuia'
+import * as XLSX from 'xlsx'
 
 /**
  * Ordena paquetes por provincia, cantón y referencia (si existe)

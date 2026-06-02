@@ -1,7 +1,7 @@
-import { jsPDF } from 'jspdf'
 import type { Paquete } from '@/types/paquete'
-import { instruccionDeObservaciones, observacionesParaDespacho } from '@/utils/observacionesDespacho'
-import { PDF_COLORS, PDF_FONTS, PDF_MARGINS } from './printTheme'
+import { instruccionDeObservaciones,observacionesParaDespacho } from '@/utils/observacionesDespacho'
+import { jsPDF } from 'jspdf'
+import { PDF_COLORS,PDF_FONTS,PDF_MARGINS } from './printTheme'
 
 const loadImage = (url: string): Promise<{ data: string; width: number; height: number }> => {
   return new Promise((resolve, reject) => {

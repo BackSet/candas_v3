@@ -1,7 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { parametroSistemaService } from '@/lib/api/parametroSistema.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
 import { notify } from '@/lib/notify'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 const QUERY_KEY_PLANTILLA = ['parametros-sistema', 'whatsapp-despacho'] as const
 const QUERY_KEY_VARIABLES = ['parametros-sistema', 'whatsapp-despacho', 'variables'] as const

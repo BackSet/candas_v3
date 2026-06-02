@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
-import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 type LoadingStateVariant = 'page' | 'inline'
 
@@ -29,14 +29,14 @@ export function LoadingState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/5 p-8 text-center',
+        'flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/5 p-10 text-center animate-in fade-in duration-200',
         className
       )}
     >
-      <div className="h-11 w-11 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground">
-        {icon ?? <Loader2 className="h-5 w-5 animate-spin" />}
+      <div className="h-14 w-14 rounded-2xl bg-primary/10 ring-1 ring-primary/15 flex items-center justify-center text-primary">
+        {icon ?? <Loader2 className="h-6 w-6 animate-spin" />}
       </div>
-      <div className="mt-3 text-sm font-medium text-foreground">{label}</div>
+      <div className="mt-4 text-sm font-semibold text-foreground">{label}</div>
       {description ? <div className="mt-1 text-xs text-muted-foreground max-w-sm">{description}</div> : null}
     </div>
   )

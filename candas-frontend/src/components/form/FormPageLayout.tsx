@@ -1,16 +1,16 @@
-import { useEffect, useRef, type ComponentType, type ReactNode } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import type { FieldError } from 'react-hook-form'
-import { ArrowLeft, Loader2, Save, type LucideProps } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
-import { FormSkeleton } from '@/components/states/FormSkeleton'
 import { ErrorState } from '@/components/states'
-import { getApiErrorMessage } from '@/lib/api/errors'
+import { FormSkeleton } from '@/components/states/FormSkeleton'
+import { Button } from '@/components/ui/button'
 import { useDirtyGuard } from '@/hooks/useDirtyGuard'
+import { getApiErrorMessage } from '@/lib/api/errors'
 import { notify } from '@/lib/notify'
-import { UnsavedChangesDialog } from './UnsavedChangesDialog'
 import { cn } from '@/lib/utils'
+import { useNavigate } from '@tanstack/react-router'
+import { AlertCircle,ArrowLeft,Loader2,Save,type LucideProps } from 'lucide-react'
+import { useEffect,useRef,type ComponentType,type ReactNode } from 'react'
+import type { FieldError } from 'react-hook-form'
+import { UnsavedChangesDialog } from './UnsavedChangesDialog'
 
 interface PrimaryActionConfig {
   label: string
@@ -247,8 +247,9 @@ export function FormPageLayout({
         )}
 
         {flatErrors.length > 0 && !isLoading && !loadError ? (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            <p className="font-medium mb-1">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <p className="font-medium mb-1 flex items-center gap-1.5">
+              <AlertCircle className="h-4 w-4 shrink-0" />
               Revisa los siguientes campos antes de guardar:
             </p>
             <ul className="list-disc pl-5 space-y-0.5 text-xs">

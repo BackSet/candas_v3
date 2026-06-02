@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { Despacho } from '@/types/despacho'
+import { z } from 'zod'
 
 export const despachoSchema = z.object({
   fechaDespacho: z.string().min(1, 'La fecha de despacho es requerida'),

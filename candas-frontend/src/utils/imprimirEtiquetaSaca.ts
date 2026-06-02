@@ -1,8 +1,8 @@
 import { printNotify } from '@/lib/print-notify'
-import type { Saca } from '@/types/saca'
-import type { Despacho } from '@/types/despacho'
 import type { Agencia } from '@/types/agencia'
+import type { Despacho } from '@/types/despacho'
 import type { Distribuidor } from '@/types/distribuidor'
+import type { Saca } from '@/types/saca'
 import QRCode from 'qrcode'
 import { PRINT_CSS_BASE } from './printTheme'
 

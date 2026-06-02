@@ -1,34 +1,34 @@
-import { useEffect } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm, type FieldValues, type UseFormReturn } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
-import { usePaquete, useCreatePaquete, useUpdatePaquete } from '@/hooks/usePaquetes'
-import { useAgencias, usePuntosOrigen } from '@/hooks/useSelectOptions'
-import { useClienteManager } from '@/hooks/useClienteManager'
-import { useCliente } from '@/hooks/useClientes'
-import { EstadoPaquete, TipoPaquete, TipoDestino } from '@/types/paquete'
-import { Package, MapPin, FileText, Building2, Wand2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { ClienteSearchField } from '@/components/clientes/ClienteSearchField'
 import { CrearClienteFormDialog } from '@/components/clientes/CrearClienteFormDialog'
-import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
+import { FieldRow,FormPageLayout,FormSection } from '@/components/form'
+import { Button } from '@/components/ui/button'
+import { Combobox,type ComboboxOption } from '@/components/ui/combobox'
+import { Input } from '@/components/ui/input'
 import {
-  paqueteFormDataToDto,
-  paqueteSchema,
-  paqueteToFormData,
-  type PaqueteFormData,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { useClienteManager } from '@/hooks/useClienteManager'
+import { useCliente } from '@/hooks/useClientes'
+import { useCreatePaquete,usePaquete,useUpdatePaquete } from '@/hooks/usePaquetes'
+import { useAgencias,usePuntosOrigen } from '@/hooks/useSelectOptions'
+import { cn } from '@/lib/utils'
+import {
+paqueteFormDataToDto,
+paqueteSchema,
+paqueteToFormData,
+type PaqueteFormData,
 } from '@/schemas/paquete'
+import { EstadoPaquete,TipoDestino,TipoPaquete } from '@/types/paquete'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { Building2,FileText,MapPin,Package,Wand2 } from 'lucide-react'
+import { useEffect } from 'react'
+import { useForm,type FieldValues,type UseFormReturn } from 'react-hook-form'
 
 const parseOptionalNumberInput = (value: unknown): number | '' => {
   if (value === '' || value === null || value === undefined) {
@@ -193,6 +193,7 @@ export default function PaqueteForm() {
             htmlFor="numeroGuia"
             error={errors.numeroGuia}
             span={2}
+            help="Código único que identifica al paquete y se escanea en bodega (recepción, ensacado, despacho). Debe ser único."
           >
             <Input
               id="numeroGuia"
@@ -202,7 +203,11 @@ export default function PaqueteForm() {
             />
           </FieldRow>
 
-          <FieldRow label="Número master" htmlFor="numeroMaster">
+          <FieldRow
+            label="Número master"
+            htmlFor="numeroMaster"
+            help="Guía maestra que agrupa varios paquetes en un mismo envío consolidado. Opcional."
+          >
             <Input id="numeroMaster" {...register('numeroMaster')} placeholder="Opcional" />
           </FieldRow>
 
@@ -211,6 +216,7 @@ export default function PaqueteForm() {
             required
             htmlFor="estado"
             error={errors.estado}
+            help="Etapa del paquete en el flujo: registrado → recibido → asignado a saca → ensacado → despachado. Normalmente cambia solo al operar en bodega."
           >
             <Select
               value={estado}
@@ -231,7 +237,11 @@ export default function PaqueteForm() {
             </Select>
           </FieldRow>
 
-          <FieldRow label="Tipo de paquete" htmlFor="tipoPaquete">
+          <FieldRow
+            label="Tipo de paquete"
+            htmlFor="tipoPaquete"
+            help="Clasificación especial (p. ej. SEPARAR, CLEMENTINA, CADENITA) que cambia cómo se agrupa y procesa. Déjalo sin tipo si es un paquete normal."
+          >
             <Select
               value={tipoPaquete || 'none'}
               onValueChange={(value) =>
@@ -256,11 +266,20 @@ export default function PaqueteForm() {
             </Select>
           </FieldRow>
 
-          <FieldRow label="REF" htmlFor="ref" hint="Referencia interna">
+          <FieldRow
+            label="REF"
+            htmlFor="ref"
+            help="Referencia interna libre para agrupar o localizar el paquete según tus criterios."
+            hint="Referencia interna"
+          >
             <Input id="ref" {...register('ref')} placeholder="Referencia interna" />
           </FieldRow>
 
-          <FieldRow label="SED" htmlFor="sed">
+          <FieldRow
+            label="SED"
+            htmlFor="sed"
+            help="Número de declaración de exportación (Shipper's Export Declaration) asociado al paquete, cuando aplica."
+          >
             <Input id="sed" {...register('sed')} placeholder="Número SED" />
           </FieldRow>
 
@@ -269,6 +288,7 @@ export default function PaqueteForm() {
               label="Etiqueta del destinatario"
               htmlFor="etiquetaDestinatario"
               span={2}
+              help="Texto que agrupa los paquetes SEPARAR del mismo destinatario para clasificarlos juntos."
             >
               <Input
                 id="etiquetaDestinatario"
@@ -311,7 +331,11 @@ export default function PaqueteForm() {
             />
           </FieldRow>
 
-          <FieldRow label="Origen USA" htmlFor="idPuntoOrigen">
+          <FieldRow
+            label="Origen USA"
+            htmlFor="idPuntoOrigen"
+            help="Punto de origen en EE. UU. desde donde llegó el paquete (bodega/sucursal de recepción inicial)."
+          >
             <Select
               value={watch('idPuntoOrigen')?.toString() || 'none'}
               onValueChange={(value) =>
@@ -336,7 +360,11 @@ export default function PaqueteForm() {
             </Select>
           </FieldRow>
 
-          <FieldRow label="Destino" htmlFor="tipoDestino">
+          <FieldRow
+            label="Destino"
+            htmlFor="tipoDestino"
+            help="Define hacia dónde va el paquete: AGENCIA (a una sucursal) o el tipo general. Si eliges AGENCIA, deberás seleccionar la agencia destino."
+          >
             <Select
               value={tipoDestino || 'none'}
               onValueChange={(value) =>
@@ -404,7 +432,25 @@ export default function PaqueteForm() {
           icon={FileText}
           cols={4}
         >
-          <FieldRow label="Peso (kg)" htmlFor="pesoKilos">
+          <FieldRow
+            label="Peso (kg)"
+            htmlFor="pesoKilos"
+            action={
+              <button
+                type="button"
+                onClick={() => {
+                  const lbs = Number(watch('pesoLibras'))
+                  if (Number.isFinite(lbs) && lbs > 0) {
+                    setValue('pesoKilos', Number((lbs / 2.20462).toFixed(2)), { shouldDirty: true })
+                  }
+                }}
+                className="text-[11px] font-medium text-primary hover:underline"
+                title="Calcular kg a partir del peso en libras"
+              >
+                Desde lbs
+              </button>
+            }
+          >
             <Input
               id="pesoKilos"
               type="number"
@@ -414,7 +460,25 @@ export default function PaqueteForm() {
             />
           </FieldRow>
 
-          <FieldRow label="Peso (lbs)" htmlFor="pesoLibras">
+          <FieldRow
+            label="Peso (lbs)"
+            htmlFor="pesoLibras"
+            action={
+              <button
+                type="button"
+                onClick={() => {
+                  const kg = Number(watch('pesoKilos'))
+                  if (Number.isFinite(kg) && kg > 0) {
+                    setValue('pesoLibras', Number((kg * 2.20462).toFixed(2)), { shouldDirty: true })
+                  }
+                }}
+                className="text-[11px] font-medium text-primary hover:underline"
+                title="Calcular libras a partir del peso en kg"
+              >
+                Desde kg
+              </button>
+            }
+          >
             <Input
               id="pesoLibras"
               type="number"
@@ -428,7 +492,11 @@ export default function PaqueteForm() {
             <Input id="medidas" {...register('medidas')} placeholder="Ej: 30x20x10" />
           </FieldRow>
 
-          <FieldRow label="Valor declarado" htmlFor="valor">
+          <FieldRow
+            label="Valor declarado"
+            htmlFor="valor"
+            help="Valor en USD del contenido declarado por el cliente. Se usa para aduana y seguro."
+          >
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
               <Input
@@ -442,7 +510,12 @@ export default function PaqueteForm() {
             </div>
           </FieldRow>
 
-          <FieldRow label="Tarifa position" htmlFor="tarifaPosition" span={2}>
+          <FieldRow
+            label="Tarifa position"
+            htmlFor="tarifaPosition"
+            span={2}
+            help="Código de posición arancelaria/tarifa usado para calcular el costo o la clasificación aduanera."
+          >
             <Input
               id="tarifaPosition"
               {...register('tarifaPosition')}
@@ -459,7 +532,12 @@ export default function PaqueteForm() {
             />
           </FieldRow>
 
-          <FieldRow label="Observaciones internas" htmlFor="observaciones" span="full">
+          <FieldRow
+            label="Observaciones internas"
+            htmlFor="observaciones"
+            span="full"
+            help="Notas para uso interno del equipo. No se muestran al cliente ni en la etiqueta (a diferencia de la descripción del contenido)."
+          >
             <Textarea
               id="observaciones"
               {...register('observaciones')}

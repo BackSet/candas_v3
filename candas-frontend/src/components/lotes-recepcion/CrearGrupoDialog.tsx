@@ -1,25 +1,25 @@
-import React, { useState, useMemo } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
 import { useGruposPersonalizadosLocal } from '@/hooks/useGruposPersonalizadosLocal'
 import type { Paquete } from '@/types/paquete'
-import { Badge } from '@/components/ui/badge'
+import React,{ useMemo,useState } from 'react'
 
 interface CrearGrupoDialogProps {
   open: boolean

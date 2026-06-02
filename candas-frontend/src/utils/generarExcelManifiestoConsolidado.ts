@@ -1,5 +1,5 @@
+import type { DespachoDetalle,ManifiestoConsolidadoDetalle,PaqueteDetalle } from '@/types/manifiesto-consolidado'
 import * as XLSX from 'xlsx'
-import type { ManifiestoConsolidadoDetalle, DespachoDetalle, PaqueteDetalle } from '@/types/manifiesto-consolidado'
 
 /**
  * Construye el texto de observación según el formato especificado

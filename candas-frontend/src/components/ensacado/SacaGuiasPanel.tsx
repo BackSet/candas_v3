@@ -1,8 +1,8 @@
-import { CheckCircle2, Package } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { AppIcon } from '@/components/icons'
+import { Card,CardContent } from '@/components/ui/card'
 import { ENSACADO_SCAN } from '@/constants/ensacado'
 import { cn } from '@/lib/utils'
+import { CheckCircle2,Package } from 'lucide-react'
 
 interface SacaGuiasPanelProps {
   ensacados: string[]

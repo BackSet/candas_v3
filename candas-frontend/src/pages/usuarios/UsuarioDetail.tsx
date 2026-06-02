@@ -1,27 +1,27 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useQueries } from '@tanstack/react-query'
-import { useUsuario, useRolesUsuario, useDeleteUsuario, useAgenciasUsuario } from '@/hooks/useUsuarios'
-import { useRoles } from '@/hooks/useRoles'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Edit, Trash2, UserCog, Mail, Calendar, Hash, Shield, User, Building2 } from 'lucide-react'
-import AsignarRolesDialog from './AsignarRolesDialog'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
-import { LoadingState } from '@/components/states/LoadingState'
 import { EmptyState } from '@/components/states/EmptyState'
+import { LoadingState } from '@/components/states/LoadingState'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import { useRoles } from '@/hooks/useRoles'
+import { useAgenciasUsuario,useDeleteUsuario,useRolesUsuario,useUsuario } from '@/hooks/useUsuarios'
 import { agenciaService } from '@/lib/api/agencia.service'
+import { cn } from '@/lib/utils'
+import { PERMISSIONS } from '@/types/permissions'
+import { useQueries } from '@tanstack/react-query'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { Building2,Calendar,Edit,Hash,Mail,Shield,Trash2,User,UserCog } from 'lucide-react'
+import { useState } from 'react'
+import AsignarRolesDialog from './AsignarRolesDialog'
 
 const AGENCY_TONE_CLASSES = [
   'border-sky-300/70 bg-sky-50 text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/35 dark:text-sky-200',

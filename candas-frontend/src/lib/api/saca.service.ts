@@ -1,7 +1,7 @@
+import type { Paquete } from '@/types/paquete'
+import type { Saca,SacaPage } from '@/types/saca'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Saca, SacaPage } from '@/types/saca'
-import type { Paquete } from '@/types/paquete'
 
 export interface SacaFindAllParams {
   page?: number

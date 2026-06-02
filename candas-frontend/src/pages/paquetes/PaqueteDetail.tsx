@@ -1,69 +1,69 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import {
-  usePaquete,
-  usePaquetesHijos,
-  useDeletePaquete,
-  useMarcarEtiquetaCambiada,
-  useMarcarSeparado,
-  useMarcarUnidoEnCaja,
-} from '@/hooks/usePaquetes'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Edit,
-  Trash2,
-  Package,
-  Calendar,
-  MapPin,
-  User,
-  Building2,
-  Boxes,
-  FileText,
-  Package2,
-  Scale,
-  DollarSign,
-  Ruler,
-  Tag,
-  Scissors,
-  Box,
-  CheckCircle2,
-  MoreHorizontal,
-  ArrowLeft,
-  ChevronRight,
-  ClipboardList,
-  Share2,
-  Activity
-} from 'lucide-react'
-import { RelatedEntityLink } from '@/components/detail/RelatedEntityLink'
-import { TipoPaquete } from '@/types/paquete'
-import { guiaEfectiva } from '@/utils/paqueteGuia'
-import SepararPaqueteDialog from './SepararPaqueteDialog'
-import CambiarEstadoDialog from './CambiarEstadoDialog'
-import { cn } from '@/lib/utils'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { Property } from '@/components/detail/InfoCard'
-import { SectionTitle } from '@/components/ui/section-title'
+import { RelatedEntityLink } from '@/components/detail/RelatedEntityLink'
 import { StatusBadge } from '@/components/detail/StatusBadge'
-import { EmptyState, DetailSkeleton } from '@/components/states'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DetailSkeleton,EmptyState } from '@/components/states'
+import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { SectionTitle } from '@/components/ui/section-title'
+import {
+useDeletePaquete,
+useMarcarEtiquetaCambiada,
+useMarcarSeparado,
+useMarcarUnidoEnCaja,
+usePaquete,
+usePaquetesHijos,
+} from '@/hooks/usePaquetes'
+import { cn } from '@/lib/utils'
+import { TipoPaquete } from '@/types/paquete'
 import { PERMISSIONS } from '@/types/permissions'
 import { getEstadoPaqueteBadgeVariant } from '@/utils/paqueteEstado'
+import { guiaEfectiva } from '@/utils/paqueteGuia'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import {
+Activity,
+ArrowLeft,
+Box,
+Boxes,
+Building2,
+Calendar,
+CheckCircle2,
+ChevronRight,
+ClipboardList,
+DollarSign,
+Edit,
+FileText,
+MapPin,
+MoreHorizontal,
+Package,
+Package2,
+Ruler,
+Scale,
+Scissors,
+Share2,
+Tag,
+Trash2,
+User
+} from 'lucide-react'
+import { useState } from 'react'
+import CambiarEstadoDialog from './CambiarEstadoDialog'
+import SepararPaqueteDialog from './SepararPaqueteDialog'
 
 export default function PaqueteDetail() {
   const navigate = useNavigate()

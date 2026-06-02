@@ -3,7 +3,7 @@
 
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { Button } from '@/components/ui/button'
-import { Eye, Edit, Trash2 } from 'lucide-react'
+import { Edit,Eye,Trash2 } from 'lucide-react'
 
 
 interface ActionButtonsProps {

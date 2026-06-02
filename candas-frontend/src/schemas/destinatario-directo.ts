@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { DestinatarioDirecto } from '@/types/destinatario-directo'
+import { z } from 'zod'
 
 export const destinatarioDirectoSchema = z.object({
   nombreDestinatario: z.string().min(1, 'El nombre del destinatario es requerido'),

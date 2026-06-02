@@ -1,16 +1,14 @@
-import { printNotify } from '@/lib/print-notify'
-import type { Despacho } from '@/types/despacho'
-import type { Agencia } from '@/types/agencia'
-import type { Distribuidor } from '@/types/distribuidor'
-import type { Saca } from '@/types/saca'
-import type { Paquete } from '@/types/paquete'
 import { paqueteService } from '@/lib/api/paquete.service'
+import { printNotify } from '@/lib/print-notify'
+import type { Agencia } from '@/types/agencia'
+import type { Despacho } from '@/types/despacho'
+import type { Distribuidor } from '@/types/distribuidor'
+import type { Paquete } from '@/types/paquete'
+import type { Saca } from '@/types/saca'
 import { jsPDF } from 'jspdf'
-import { generarEtiquetaHTML } from './imprimirEtiquetaSaca'
 import { observacionesParaDespacho } from './observacionesDespacho'
-import QRCode from 'qrcode'
 
-import { PRINT_CSS_BASE, PDF_COLORS, PDF_FONTS, PDF_MARGINS } from './printTheme'
+import { PDF_COLORS,PDF_FONTS,PDF_MARGINS,PRINT_CSS_BASE } from './printTheme'
 
 // Helper to load image
 const loadImage = (url: string): Promise<{ data: string; width: number; height: number }> => {

@@ -1,15 +1,14 @@
+import {
+applyThemeClass,
+resolveTheme,
+UI_STORAGE_KEY,
+type ResolvedTheme,
+type ThemeMode
+} from '@/lib/theme'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import {
-  applyThemeClass,
-  getSystemTheme,
-  resolveTheme,
-  UI_STORAGE_KEY,
-  type ResolvedTheme,
-  type ThemeMode,
-} from '@/lib/theme'
 
-export type { ResolvedTheme, ThemeMode }
+export type { ResolvedTheme,ThemeMode }
 
 interface UIState {
   sidebarCollapsed: boolean

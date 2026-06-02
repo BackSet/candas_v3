@@ -1,19 +1,19 @@
-import { useState, useEffect, useMemo } from 'react'
-import { usePermisos } from '@/hooks/usePermisos'
-import { usePermisosRol, useAsignarPermisosRol } from '@/hooks/useRoles'
 import { Button } from '@/components/ui/button'
 import { CheckboxIndicator } from '@/components/ui/checkbox'
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Search, Key, Folder } from 'lucide-react'
+import { usePermisos } from '@/hooks/usePermisos'
+import { useAsignarPermisosRol,usePermisosRol } from '@/hooks/useRoles'
 import { cn } from '@/lib/utils'
+import { Folder,Key,Search } from 'lucide-react'
+import { useEffect,useMemo,useState } from 'react'
 
 interface AsignarPermisosDialogProps {
   rolId: number

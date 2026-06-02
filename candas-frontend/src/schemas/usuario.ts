@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { Usuario } from '@/types/usuario'
+import { z } from 'zod'
 
 export const usuarioSchema = z.object({
   username: z.string().min(1, 'El username es requerido'),

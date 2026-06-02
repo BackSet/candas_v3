@@ -1,8 +1,8 @@
+import type { Agencia,AgenciaPage } from '@/types/agencia'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Agencia, AgenciaPage } from '@/types/agencia'
 
-export type { Agencia, AgenciaPage } from '@/types/agencia'
+export type { Agencia,AgenciaPage } from '@/types/agencia'
 
 export interface AgenciaFindAllParams {
   page?: number

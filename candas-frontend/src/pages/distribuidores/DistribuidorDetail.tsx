@@ -1,24 +1,24 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useDistribuidor, useDeleteDistribuidor } from '@/hooks/useDistribuidores'
+import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import { Property } from '@/components/detail/InfoCard'
+import { QuickActions } from '@/components/detail/QuickActions'
+import { StatusBadge } from '@/components/detail/StatusBadge'
+import { EmptyState,LoadingState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import { Edit, Trash2, ArrowLeft, Building2, Mail, Hash, FileText } from 'lucide-react'
-import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
-import { Property } from '@/components/detail/InfoCard'
-import { StatusBadge } from '@/components/detail/StatusBadge'
-import { QuickActions } from '@/components/detail/QuickActions'
-import { EmptyState, LoadingState } from '@/components/states'
+import { useDeleteDistribuidor,useDistribuidor } from '@/hooks/useDistribuidores'
 import { useHasPermission } from '@/hooks/useHasRole'
 import { PERMISSIONS } from '@/types/permissions'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { ArrowLeft,Edit,FileText,Hash,Mail,Trash2 } from 'lucide-react'
+import { useState } from 'react'
 
 export default function DistribuidorDetail() {
   const navigate = useNavigate()

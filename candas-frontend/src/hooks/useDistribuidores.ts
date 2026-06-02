@@ -1,7 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { distribuidorService } from '@/lib/api/distribuidor.service'
-import type { Distribuidor } from '@/types/distribuidor'
 import { notify } from '@/lib/notify'
+import type { Distribuidor } from '@/types/distribuidor'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 export interface UseDistribuidoresParams {
   page?: number

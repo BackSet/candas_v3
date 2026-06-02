@@ -1,61 +1,61 @@
-import { useState, useMemo, useCallback } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { usePaquetes, useDeletePaquete } from '@/hooks/usePaquetes'
-import { Button } from '@/components/ui/button'
-import { ConfirmDeleteDialog } from '@/components/dialogs/ConfirmDeleteDialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { EstadoPaquete, TipoPaquete } from '@/types/paquete'
-import {
-  Eye,
-  Edit,
-  Trash2,
-  Plus,
-  Upload,
-  Printer,
-  Package,
-  MoreHorizontal,
-  PackagePlus,
-  PackageMinus,
-  Link2,
-  Tag,
-  AlertTriangle,
-} from 'lucide-react'
-import { notify } from '@/lib/notify'
-import ImportarPaquetesDialog from './ImportarPaquetesDialog'
-import ImportarRefDialog from './ImportarRefDialog'
-import ImportarActualizarPaquetesDialog from './ImportarActualizarPaquetesDialog'
-import ImportarPaquetesEspecialesMiamiDialog from './ImportarPaquetesEspecialesMiamiDialog'
-import AsociarClementinaLoteDialog from './AsociarClementinaLoteDialog'
-import AsociarCadenitaDialog from './AsociarCadenitaDialog'
-import AsociarSepararDialog from './AsociarSepararDialog'
-import ImprimirPaqueteDialog, { type ModoImpresionPaquete } from '@/components/paquetes/ImprimirPaqueteDialog'
-import { useQueryClient } from '@tanstack/react-query'
-import { imprimirEtiqueta, imprimirEtiquetasMultiples } from '@/utils/imprimirEtiqueta'
-import { imprimirEtiquetaZebraPaquete, imprimirEtiquetasZebraPaquetes } from '@/utils/imprimirEtiquetaZebraPaquete'
-import type { Paquete } from '@/types/paquete'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { cn } from '@/lib/utils'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
+import { StatusBadge } from '@/components/detail/StatusBadge'
+import { ConfirmDeleteDialog } from '@/components/dialogs/ConfirmDeleteDialog'
+import { DateRangeFilter,FilterBar,SelectFilter,buildDateRangeChip } from '@/components/filters'
 import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
-import { StatusBadge } from '@/components/detail/StatusBadge'
-import { PERMISSIONS } from '@/types/permissions'
+import { SelectionActionBar } from '@/components/list/SelectionActionBar'
+import ImprimirPaqueteDialog,{ type ModoImpresionPaquete } from '@/components/paquetes/ImprimirPaqueteDialog'
 import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states/ErrorState'
-import { getEstadoPaqueteBadgeVariant } from '@/utils/paqueteEstado'
+import { Button } from '@/components/ui/button'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useListFilters } from '@/hooks/useListFilters'
+import { useDeletePaquete,usePaquetes } from '@/hooks/usePaquetes'
 import { useAgencias } from '@/hooks/useSelectOptions'
+import { getApiErrorMessage,getInteragencyRestrictionMessage } from '@/lib/api/errors'
+import { notify } from '@/lib/notify'
+import { cn } from '@/lib/utils'
+import type { Paquete } from '@/types/paquete'
+import { EstadoPaquete,TipoPaquete } from '@/types/paquete'
+import { PERMISSIONS } from '@/types/permissions'
 import { formatearFechaCorta } from '@/utils/fechas'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter, DateRangeFilter, buildDateRangeChip } from '@/components/filters'
-import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
+import { imprimirEtiqueta,imprimirEtiquetasMultiples } from '@/utils/imprimirEtiqueta'
+import { imprimirEtiquetaZebraPaquete,imprimirEtiquetasZebraPaquetes } from '@/utils/imprimirEtiquetaZebraPaquete'
+import { getEstadoPaqueteBadgeVariant } from '@/utils/paqueteEstado'
+import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import {
+AlertTriangle,
+Edit,
+Eye,
+Link2,
+MoreHorizontal,
+PackageMinus,
+PackagePlus,
+Plus,
+Printer,
+Tag,
+Trash2,
+Upload
+} from 'lucide-react'
+import { useCallback,useMemo,useState } from 'react'
+import AsociarCadenitaDialog from './AsociarCadenitaDialog'
+import AsociarClementinaLoteDialog from './AsociarClementinaLoteDialog'
+import AsociarSepararDialog from './AsociarSepararDialog'
+import ImportarActualizarPaquetesDialog from './ImportarActualizarPaquetesDialog'
+import ImportarPaquetesDialog from './ImportarPaquetesDialog'
+import ImportarPaquetesEspecialesMiamiDialog from './ImportarPaquetesEspecialesMiamiDialog'
+import ImportarRefDialog from './ImportarRefDialog'
 
 interface PaquetesFiltersState extends Record<string, string | number | undefined> {
   page: number
@@ -332,24 +332,6 @@ export default function PaquetesList() {
       icon={<ModulePageIcon module="paquetes" />}
       actions={
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          {paquetesSeleccionados.size > 0 && (
-            <ProtectedByPermission permission={PERMISSIONS.PAQUETES.IMPRIMIR}>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setImprimirPaqueteDialogMode('multi')
-                  setPaqueteParaImprimir(null)
-                  setImprimirPaqueteDialogOpen(true)
-                }}
-                className="h-8 text-xs shadow-sm"
-              >
-                <Printer className="h-3.5 w-3.5 mr-1.5" />
-                Imprimir ({paquetesSeleccionados.size})
-              </Button>
-            </ProtectedByPermission>
-          )}
-
           <ProtectedByPermission permissions={[PERMISSIONS.PAQUETES.CREAR, PERMISSIONS.PAQUETES.EDITAR]}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -576,6 +558,28 @@ export default function PaquetesList() {
         />
       }
     >
+      <SelectionActionBar
+        count={paquetesSeleccionados.size}
+        onClear={() => setPaquetesSeleccionados(new Set())}
+        itemLabel="paquete"
+      >
+        <ProtectedByPermission permission={PERMISSIONS.PAQUETES.IMPRIMIR}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setImprimirPaqueteDialogMode('multi')
+              setPaqueteParaImprimir(null)
+              setImprimirPaqueteDialogOpen(true)
+            }}
+            className="h-8 rounded-full text-xs"
+          >
+            <Printer className="h-3.5 w-3.5 mr-1.5" />
+            Imprimir
+          </Button>
+        </ProtectedByPermission>
+      </SelectionActionBar>
+
       <ConfirmDeleteDialog
         open={!!paqueteAEliminar}
         onOpenChange={(open) => !open && setPaqueteAEliminar(null)}

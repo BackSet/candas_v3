@@ -1,21 +1,19 @@
-import { useState } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useSepararPaquete, usePaquete } from '@/hooks/usePaquetes'
-import { Plus, Trash2, Scissors } from 'lucide-react'
-import { EstadoPaquete, TipoPaquete } from '@/types/paquete'
-import { cn } from '@/lib/utils'
+import { usePaquete,useSepararPaquete } from '@/hooks/usePaquetes'
+import { EstadoPaquete,TipoPaquete } from '@/types/paquete'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Plus,Scissors,Trash2 } from 'lucide-react'
+import { useFieldArray,useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const paqueteHijoSchema = z.object({
   numeroGuia: z.string().optional(),

@@ -4,6 +4,7 @@ import com.candas.candas_backend.entity.*;
 import com.candas.candas_backend.repository.*;
 import com.candas.candas_backend.util.PermissionConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,11 @@ public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final UsuarioRolRepository usuarioRolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final boolean createDefaultAdmin;
+    private final String defaultAdminUsername;
+    private final String defaultAdminPassword;
+    private final String defaultAdminEmail;
+    private final String defaultAdminFullName;
 
     public DataInitializer(
             PermisoRepository permisoRepository,
@@ -30,13 +36,23 @@ public class DataInitializer implements CommandLineRunner {
             RolPermisoRepository rolPermisoRepository,
             UsuarioRepository usuarioRepository,
             UsuarioRolRepository usuarioRolRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            @Value("${app.bootstrap.create-default-admin:true}") boolean createDefaultAdmin,
+            @Value("${app.bootstrap.admin.username:admin}") String defaultAdminUsername,
+            @Value("${app.bootstrap.admin.password:admin123}") String defaultAdminPassword,
+            @Value("${app.bootstrap.admin.email:admin@candas.com}") String defaultAdminEmail,
+            @Value("${app.bootstrap.admin.full-name:Administrador del Sistema}") String defaultAdminFullName) {
         this.permisoRepository = permisoRepository;
         this.rolRepository = rolRepository;
         this.rolPermisoRepository = rolPermisoRepository;
         this.usuarioRepository = usuarioRepository;
         this.usuarioRolRepository = usuarioRolRepository;
         this.passwordEncoder = passwordEncoder;
+        this.createDefaultAdmin = createDefaultAdmin;
+        this.defaultAdminUsername = defaultAdminUsername;
+        this.defaultAdminPassword = defaultAdminPassword;
+        this.defaultAdminEmail = defaultAdminEmail;
+        this.defaultAdminFullName = defaultAdminFullName;
     }
 
     @Override
@@ -129,12 +145,21 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeAdminUser(Rol rolAdmin) {
-        if (!usuarioRepository.existsByUsername("admin")) {
+        if (!createDefaultAdmin) {
+            log.info("Creacion de usuario ADMIN por defecto deshabilitada.");
+            return;
+        }
+
+        if (defaultAdminPassword == null || defaultAdminPassword.isBlank()) {
+            throw new IllegalStateException("La contrasena del usuario ADMIN por defecto no puede estar vacia.");
+        }
+
+        if (!usuarioRepository.existsByUsername(defaultAdminUsername)) {
             Usuario admin = new Usuario();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123")); // Contraseña por defecto
-            admin.setEmail("admin@candas.com");
-            admin.setNombreCompleto("Administrador del Sistema");
+            admin.setUsername(defaultAdminUsername);
+            admin.setPassword(passwordEncoder.encode(defaultAdminPassword));
+            admin.setEmail(defaultAdminEmail);
+            admin.setNombreCompleto(defaultAdminFullName);
             admin.setActivo(true);
             admin.setCuentaNoExpirada(true);
             admin.setCuentaNoBloqueada(true);
@@ -151,7 +176,7 @@ public class DataInitializer implements CommandLineRunner {
             usuarioRol.setFechaAsignacion(LocalDateTime.now());
             usuarioRolRepository.save(usuarioRol);
 
-            log.info("Usuario ADMIN creado por defecto con contraseña 'admin123'");
+            log.warn("Usuario ADMIN por defecto creado desde variables de entorno. Cambie la contrasena antes de exponer el sistema.");
         }
     }
 }

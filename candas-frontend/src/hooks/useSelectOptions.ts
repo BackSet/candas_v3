@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
-import { clienteService } from '@/lib/api/cliente.service'
 import { agenciaService } from '@/lib/api/agencia.service'
+import { clienteService } from '@/lib/api/cliente.service'
 import { puntoOrigenService } from '@/lib/api/punto-origen.service'
+import { useQuery } from '@tanstack/react-query'
 
 export interface SelectOption {
   value: number

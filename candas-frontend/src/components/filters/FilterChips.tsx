@@ -1,7 +1,7 @@
-import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import type { ListFilterChip } from '@/hooks/useListFilters'
+import { cn } from '@/lib/utils'
+import { X } from 'lucide-react'
 
 export interface FilterChipsProps {
   chips: ListFilterChip[]

@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { ChevronLeft, Moon, Sun, Monitor, ChevronsLeft, Search } from 'lucide-react'
-import { useUIStore } from '@/stores/uiStore'
-import { cn } from '@/lib/utils'
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { AppIcon, getModuleIcon } from '@/components/icons'
+import { AppIcon,getModuleIcon } from '@/components/icons'
 import { NAVIGATION_SECTIONS } from '@/config/navigation'
+import { cn } from '@/lib/utils'
+import { useUIStore } from '@/stores/uiStore'
+import { Link } from '@tanstack/react-router'
+import { ChevronLeft,ChevronsLeft,Monitor,Moon,Search,Sun } from 'lucide-react'
+import { useState } from 'react'
 
 export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, theme, resolvedTheme, toggleTheme } = useUIStore()

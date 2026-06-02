@@ -1,7 +1,7 @@
+import type { Despacho,DespachoPage } from '@/types/despacho'
+import type { Saca } from '@/types/saca'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Despacho, DespachoPage } from '@/types/despacho'
-import type { Saca } from '@/types/saca'
 
 export type TipoDestinoDespacho = 'all' | 'agencia' | 'directo'
 

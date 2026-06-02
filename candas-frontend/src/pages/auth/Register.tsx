@@ -1,16 +1,15 @@
-import { useState } from 'react'
-import { useNavigate, Link } from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Button } from '@/components/ui/button'
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { authService } from '@/lib/api/auth.service'
 import { API_BASE_URL } from '@/lib/api/client'
-import { getNetworkErrorHint, isNetworkOrCorsError } from '@/lib/api/errors'
-import { getApiErrorMessage } from '@/lib/api/errors'
+import { getApiErrorMessage,getNetworkErrorHint,isNetworkOrCorsError } from '@/lib/api/errors'
 import type { RegisterRequest } from '@/types/user'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link,useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const registerSchema = z.object({
   username: z.string().min(3, 'El nombre de usuario debe tener al menos 3 caracteres'),

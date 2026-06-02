@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react'
-import { notify } from '@/lib/notify'
-import { useClientes, useCreateCliente } from './useClientes'
-import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { clienteService } from '@/lib/api/cliente.service'
+import { notify } from '@/lib/notify'
+import { clienteFormDataToDto,type ClienteFormData } from '@/schemas/cliente'
 import { type Cliente } from '@/types/cliente'
-import { clienteFormDataToDto, type ClienteFormData } from '@/schemas/cliente'
+import { useQuery,useQueryClient } from '@tanstack/react-query'
+import { useMemo,useState } from 'react'
+import { useClientes,useCreateCliente } from './useClientes'
 
 export function useClienteManager(
   onClienteSeleccionado?: (cliente: Cliente) => void

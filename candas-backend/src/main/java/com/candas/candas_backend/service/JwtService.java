@@ -3,6 +3,7 @@ package com.candas.candas_backend.service;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -17,14 +18,27 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    private static final int MIN_HMAC_SHA_BYTES = 32;
+
     @Value("${jwt.secret:candas-secret-key-very-long-secret-key-for-jwt-token-generation-minimum-256-bits}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}") // 24 horas por defecto
     private Long expiration;
 
+    private SecretKey signingKey;
+
+    @PostConstruct
+    void initializeSigningKey() {
+        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (secretBytes.length < MIN_HMAC_SHA_BYTES) {
+            throw new IllegalStateException("jwt.secret debe tener al menos 32 bytes para firmar tokens HS256.");
+        }
+        signingKey = Keys.hmacShaKeyFor(secretBytes);
+    }
+
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return signingKey;
     }
 
     public String extractUsername(String token) {

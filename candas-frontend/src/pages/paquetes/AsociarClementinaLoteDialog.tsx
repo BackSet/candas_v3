@@ -1,31 +1,31 @@
-import { useState } from 'react'
-import { useAsociarClementinaPorLote } from '@/hooks/usePaquetes'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
 } from '@/components/ui/table'
-import { Loader2, CheckCircle2, XCircle, ArrowRight, PackagePlus } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { useAsociarClementinaPorLote } from '@/hooks/usePaquetes'
+import { ArrowRight,CheckCircle2,Loader2,PackagePlus,XCircle } from 'lucide-react'
+import { useState } from 'react'
 
 
-import type { ResultadoAsociacion } from '@/types/paquete'
-import { parseGuias } from '@/utils/parseGuias'
 import { ResultStatsGrid } from '@/components/dialogs/ResultStatsGrid'
 import { cn } from '@/lib/utils'
+import type { ResultadoAsociacion } from '@/types/paquete'
+import { parseGuias } from '@/utils/parseGuias'
 
 interface AsociarClementinaLoteDialogProps {
   open: boolean

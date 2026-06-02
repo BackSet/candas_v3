@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
-import { Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { copyTextToClipboard } from '@/utils/clipboard'
 import { notify } from '@/lib/notify'
+import { copyTextToClipboard } from '@/utils/clipboard'
+import { Copy } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 interface CopyActionButtonProps {
   textToCopy: string

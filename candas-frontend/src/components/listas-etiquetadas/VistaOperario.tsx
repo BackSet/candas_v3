@@ -1,15 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
 import { notify } from '@/lib/notify'
-import { Loader2, ArrowLeft, CheckCircle2, XCircle, Download, Printer, History, Hash, Trash2, AlertTriangle, Tag } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { obtenerColorEtiqueta } from '@/utils/coloresEtiquetas'
-import { useNavigate } from '@tanstack/react-router'
 import { generarExcelEscaneos } from '@/utils/generarExcelEscaneos'
 import { imprimirEscaneos } from '@/utils/imprimirEscaneos'
-import { cn } from '@/lib/utils'
+import { useNavigate } from '@tanstack/react-router'
+import { AlertTriangle,ArrowLeft,CheckCircle2,Download,Hash,History,Loader2,Printer,Tag,Trash2,XCircle } from 'lucide-react'
+import React,{ useEffect,useRef,useState } from 'react'
 
 interface EscaneoResultado {
   numeroGuia: string

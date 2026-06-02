@@ -1,6 +1,6 @@
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { ChevronLeft,ChevronRight,ChevronsLeft,ChevronsRight } from 'lucide-react'
 
 export interface ListPaginationProps {
   page: number

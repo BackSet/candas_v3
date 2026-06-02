@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
-import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Check,X } from 'lucide-react'
 
 export interface BooleanFilterProps {
   /** Valor actual: undefined = "Todos", true = activos, false = inactivos. */

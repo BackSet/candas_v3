@@ -1,8 +1,8 @@
-import { Link } from '@tanstack/react-router'
-import { ArrowRight, Settings2 } from 'lucide-react'
 import { ModulePageIcon } from '@/components/icons'
-import { PARAMETROS_MODULES } from './submenuItems'
 import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
+import { ArrowRight,Settings2 } from 'lucide-react'
+import { PARAMETROS_MODULES } from './submenuItems'
 
 /**
  * Hub de parámetros: lista las configuraciones disponibles para abrir cada una.

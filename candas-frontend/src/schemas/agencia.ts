@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { Agencia } from '@/types/agencia'
+import { z } from 'zod'
 
 export const telefonoSchema = z.object({
   numero: z.string().min(1, 'El número de teléfono es requerido'),

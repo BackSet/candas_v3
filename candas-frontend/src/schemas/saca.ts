@@ -1,5 +1,5 @@
+import { TamanoSaca,type Saca } from '@/types/saca'
 import { z } from 'zod'
-import { TamanoSaca, type Saca } from '@/types/saca'
 
 export const sacaSchema = z.object({
   codigoQr: z.string().optional(),

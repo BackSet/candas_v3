@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 /**
  * Hook genérico para filtrar listas de elementos.

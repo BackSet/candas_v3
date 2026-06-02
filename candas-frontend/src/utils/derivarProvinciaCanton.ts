@@ -1,4 +1,4 @@
-import type { Paquete } from '@/types/paquete'
+import type { Paquete } from '@/types/paquete';
 
 const SIN_ESPECIFICAR = 'Sin especificar'
 

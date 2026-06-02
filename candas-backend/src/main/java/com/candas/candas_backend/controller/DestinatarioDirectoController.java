@@ -18,7 +18,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/destinatarios-directos")
 @Tag(name = "Destinatarios Directos", description = "Endpoints para gestión de destinatarios directos")
-@CrossOrigin(origins = "*")
 public class DestinatarioDirectoController {
 
     private final DestinatarioDirectoService destinatarioDirectoService;

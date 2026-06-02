@@ -1,5 +1,5 @@
-import type { Despacho } from '@/types/despacho'
 import type { Agencia } from '@/types/agencia'
+import type { Despacho } from '@/types/despacho'
 import type { Distribuidor } from '@/types/distribuidor'
 
 /**

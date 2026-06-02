@@ -1,6 +1,6 @@
+import type { DestinatarioDirecto,DestinatarioDirectoPage } from '@/types/destinatario-directo'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { DestinatarioDirecto, DestinatarioDirectoPage } from '@/types/destinatario-directo'
 
 export interface DestinatarioDirectoFindAllParams {
   page?: number

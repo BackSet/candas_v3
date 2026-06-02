@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Theme: semantic colors reference :root/.dark variables for dark mode support */
 @theme inline {
@@ -36,13 +37,24 @@
   --color-sidebar-active: hsl(var(--sidebar-active));
   --color-sidebar-active-foreground: hsl(var(--sidebar-active-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
-  --radius-lg: 8px;
-  --radius-md: 6px;
-  --radius-sm: 4px;
+  --radius-xl: 14px;
+  --radius-lg: 10px;
+  --radius-md: 7px;
+  --radius-sm: 5px;
   --motion-duration-fast: 150ms;
-  --motion-duration-base: 200ms;
+  --motion-duration-base: 220ms;
+  --motion-duration-slow: 320ms;
   --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Elevation scale — visible in light mode, subtle in dark */
+  --shadow-xs: 0 1px 2px 0 hsl(220 25% 12% / 0.05);
+  --shadow-sm: 0 1px 3px 0 hsl(220 25% 12% / 0.07), 0 1px 2px -1px hsl(220 25% 12% / 0.06);
+  --shadow-md: 0 4px 12px -2px hsl(220 25% 12% / 0.09), 0 2px 6px -2px hsl(220 25% 12% / 0.06);
+  --shadow-lg: 0 12px 28px -6px hsl(220 25% 12% / 0.14), 0 4px 10px -4px hsl(220 25% 12% / 0.08);
+  --shadow-xl: 0 24px 50px -12px hsl(220 25% 12% / 0.22);
 }
 
 @layer base {
@@ -288,6 +300,119 @@
   .motion-transition-base {
     transition-duration: var(--motion-duration-base);
     transition-timing-function: var(--motion-ease-standard);
+  }
+
+  /* ── Elevation helpers ─────────────────────────────────────────── */
+  .elevate {
+    transition: box-shadow var(--motion-duration-base) var(--motion-ease-out),
+      transform var(--motion-duration-base) var(--motion-ease-out),
+      border-color var(--motion-duration-base) var(--motion-ease-out);
+  }
+
+  .elevate-hover:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* ── Brand gradient ────────────────────────────────────────────── */
+  .brand-gradient {
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.78));
+  }
+
+  .brand-gradient-text {
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(265 80% 60%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ── Subtle surface (frosted panels) ───────────────────────────── */
+  .surface-panel {
+    @apply rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm;
+  }
+
+  /* ── Entrance animations (work without JS) ─────────────────────── */
+  @keyframes candas-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes candas-scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fade-up {
+    animation: candas-fade-up var(--motion-duration-slow) var(--motion-ease-out) both;
+  }
+
+  .animate-scale-in {
+    animation: candas-scale-in var(--motion-duration-base) var(--motion-ease-out) both;
+  }
+
+  /* Stagger children: apply to a container, children fade up in sequence */
+  .stagger-children > * {
+    animation: candas-fade-up var(--motion-duration-slow) var(--motion-ease-out) both;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 40ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 80ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(7) { animation-delay: 240ms; }
+  .stagger-children > *:nth-child(8) { animation-delay: 280ms; }
+
+  /* ── Shimmer skeleton ──────────────────────────────────────────── */
+  @keyframes candas-shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skeleton-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--foreground) / 0.06),
+      transparent
+    );
+    animation: candas-shimmer 1.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-up,
+    .animate-scale-in,
+    .stagger-children > * {
+      animation: none !important;
+    }
+    .elevate-hover:hover {
+      transform: none;
+    }
+    .skeleton-shimmer::after {
+      animation: none;
+    }
   }
 
   .no-scrollbar::-webkit-scrollbar {

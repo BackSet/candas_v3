@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { Distribuidor } from '@/types/distribuidor'
+import { z } from 'zod'
 
 export const distribuidorSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),

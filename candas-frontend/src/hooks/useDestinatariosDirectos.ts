@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
-import type { DestinatarioDirecto } from '@/types/destinatario-directo'
 import { notify } from '@/lib/notify'
+import type { DestinatarioDirecto } from '@/types/destinatario-directo'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 export interface UseDestinatariosDirectosParams {
   page?: number

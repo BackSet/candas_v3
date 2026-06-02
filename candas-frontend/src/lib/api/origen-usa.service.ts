@@ -1,6 +1,6 @@
+import type { OrigenUsa,OrigenUsaPage } from '@/types/origen-usa'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { OrigenUsa, OrigenUsaPage } from '@/types/origen-usa'
 
 export const origenUsaService = {
   async findAll(page: number = 0, size: number = 20): Promise<OrigenUsaPage> {

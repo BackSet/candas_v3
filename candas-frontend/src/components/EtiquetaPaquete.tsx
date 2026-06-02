@@ -1,5 +1,5 @@
-import Barcode from 'react-barcode'
 import type { Paquete } from '@/types/paquete'
+import Barcode from 'react-barcode'
 
 interface EtiquetaPaqueteProps {
   paquete: Paquete

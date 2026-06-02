@@ -1,6 +1,6 @@
-import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, LogIn } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { ArrowRight,LogIn } from 'lucide-react'
 
 export default function HomePage() {
   return (

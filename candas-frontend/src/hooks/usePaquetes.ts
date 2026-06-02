@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { paqueteService, type PaqueteFindAllParams, type PaqueteEstadisticas } from '@/lib/api/paquete.service'
-import type { Paquete, EstadoPaquete, TipoPaquete } from '@/types/paquete'
+import { paqueteService,type PaqueteFindAllParams } from '@/lib/api/paquete.service'
 import { notify } from '@/lib/notify'
+import type { EstadoPaquete,Paquete,TipoPaquete } from '@/types/paquete'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 export type UsePaquetesParams = PaqueteFindAllParams
 

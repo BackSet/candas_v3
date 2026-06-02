@@ -1,8 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { usuarioService, type UsuarioListParams } from '@/lib/api/usuario.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
-import type { Usuario } from '@/types/usuario'
+import { usuarioService,type UsuarioListParams } from '@/lib/api/usuario.service'
 import { notify } from '@/lib/notify'
+import type { Usuario } from '@/types/usuario'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 export function useUsuarios(params: UsuarioListParams = {}) {
   const { page = 0, size = 20, search, username, email, activo } = params

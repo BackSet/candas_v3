@@ -1,11 +1,11 @@
+import type {
+CrearManifiestoConsolidadoDTO,
+ManifiestoConsolidadoDetalle,
+ManifiestoConsolidadoPage,
+ManifiestoConsolidadoResumen,
+} from '@/types/manifiesto-consolidado'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type {
-  ManifiestoConsolidadoPage,
-  ManifiestoConsolidadoDetalle,
-  ManifiestoConsolidadoResumen,
-  CrearManifiestoConsolidadoDTO,
-} from '@/types/manifiesto-consolidado'
 
 export interface ManifiestoConsolidadoFindAllParams {
   page?: number

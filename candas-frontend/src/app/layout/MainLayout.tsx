@@ -1,13 +1,13 @@
-import { Suspense, useEffect, useMemo, useState } from 'react'
-import { Outlet, useLocation } from '@tanstack/react-router'
-import { Toaster } from 'sonner'
-import { Sidebar } from './Sidebar'
-import { Header } from './Header'
 import { GlobalCommandPalette } from '@/components/layout/GlobalCommandPalette'
-import { useAuthStore } from '@/stores/authStore'
-import { useUIStore } from '@/stores/uiStore'
 import { LoadingState } from '@/components/states'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useAuthStore } from '@/stores/authStore'
+import { useUIStore } from '@/stores/uiStore'
+import { Outlet,useLocation } from '@tanstack/react-router'
+import { Suspense,useEffect,useMemo,useState } from 'react'
+import { Toaster } from 'sonner'
+import { Header } from './Header'
+import { Sidebar } from './Sidebar'
 
 function mainUsesContentPadding(pathname: string): boolean {
   if (pathname === '/dashboard' || pathname === '/mi-perfil') return true

@@ -1,26 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
 } from '@/components/ui/table'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
 import { notify } from '@/lib/notify'
-import { Loader2, Scan, CheckCircle2, XCircle, Trash2, Download, Printer } from 'lucide-react'
+import { obtenerColorEtiqueta } from '@/utils/coloresEtiquetas'
 import { generarExcelEscaneos } from '@/utils/generarExcelEscaneos'
 import { imprimirEscaneos } from '@/utils/imprimirEscaneos'
-import { obtenerColorEtiqueta } from '@/utils/coloresEtiquetas'
+import { CheckCircle2,Download,Loader2,Printer,Trash2,XCircle } from 'lucide-react'
+import React,{ useEffect,useRef,useState } from 'react'
 
-import { AlertTriangle, Info, ShieldAlert } from 'lucide-react'
+import { AlertTriangle,ShieldAlert } from 'lucide-react'
 
 interface EscaneoResultado {
   numeroGuia: string

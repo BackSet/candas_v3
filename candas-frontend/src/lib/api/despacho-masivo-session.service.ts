@@ -1,6 +1,6 @@
+import type { DespachoMasivoSessionPayload,DespachoMasivoSessionResponse } from '@/types/despacho-masivo-session'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { DespachoMasivoSessionPayload, DespachoMasivoSessionResponse } from '@/types/despacho-masivo-session'
 
 export const despachoMasivoSessionService = {
   async getSession(): Promise<DespachoMasivoSessionResponse> {

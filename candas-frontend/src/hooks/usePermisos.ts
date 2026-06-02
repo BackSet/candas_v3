@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { permisoService, type PermisoListParams } from '@/lib/api/permiso.service'
-import type { Permiso } from '@/types/permiso'
+import { permisoService,type PermisoListParams } from '@/lib/api/permiso.service'
 import { notify } from '@/lib/notify'
+import type { Permiso } from '@/types/permiso'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 export function usePermisos(params: PermisoListParams = {}) {
   const { page = 0, size = 20, search, recurso, accion } = params

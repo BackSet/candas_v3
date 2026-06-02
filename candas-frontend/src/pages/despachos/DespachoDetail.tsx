@@ -1,29 +1,30 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useDespacho, useSacasDespacho, useDeleteDespacho } from '@/hooks/useDespachos'
-import { useAgencia } from '@/hooks/useAgencias'
-import { useDistribuidor } from '@/hooks/useDistribuidores'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Edit, Trash2, Boxes, Calendar, MapPin, Building2, Truck, User, FileText, Package2 } from 'lucide-react'
-import AgregarSacasDialog from './AgregarSacasDialog'
-import { Badge } from '@/components/ui/badge'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
-import { SectionTitle } from '@/components/ui/section-title'
 import { Property } from '@/components/detail/InfoCard'
 import { QuickActions } from '@/components/detail/QuickActions'
 import { DetailSkeleton } from '@/components/states'
 import { ErrorState } from '@/components/states/ErrorState'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import { SectionTitle } from '@/components/ui/section-title'
+import { useAgencia } from '@/hooks/useAgencias'
+import { useDeleteDespacho,useDespacho,useSacasDespacho } from '@/hooks/useDespachos'
+import { useDistribuidor } from '@/hooks/useDistribuidores'
 import { useHasPermission } from '@/hooks/useHasRole'
+import { getApiErrorMessage,getApiStatus } from '@/lib/api/errors'
+import { cn } from '@/lib/utils'
 import { PERMISSIONS } from '@/types/permissions'
-import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { Boxes,Building2,Calendar,ChevronRight,Edit,FileText,MapPin,Package2,Trash2,Truck,User } from 'lucide-react'
+import { useState } from 'react'
+import AgregarSacasDialog from './AgregarSacasDialog'
 
 export default function DespachoDetail() {
   const navigate = useNavigate()
@@ -313,10 +314,31 @@ export default function DespachoDetail() {
                 const numPaquetes = saca.idPaquetes?.length || 0
                 const peso = saca.pesoTotal || 0
 
+                const irASaca = saca.idSaca
+                  ? () => navigate({ to: `/sacas/${saca.idSaca}` })
+                  : undefined
+
                 return (
                   <div
                     key={saca.idSaca || index}
-                    className="flex items-center p-4 hover:bg-muted/30 transition-colors group"
+                    role={irASaca ? 'button' : undefined}
+                    tabIndex={irASaca ? 0 : undefined}
+                    onClick={irASaca}
+                    onKeyDown={
+                      irASaca
+                        ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              irASaca()
+                            }
+                          }
+                        : undefined
+                    }
+                    className={cn(
+                      'flex items-center p-4 transition-colors group',
+                      irASaca &&
+                        'cursor-pointer hover:bg-accent/40 focus-visible:bg-accent/40 focus-visible:outline-none'
+                    )}
                   >
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold mr-4">
                       {saca.numeroOrden || index + 1}
@@ -354,14 +376,10 @@ export default function DespachoDetail() {
                     </div>
 
                     {saca.idSaca && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => navigate({ to: `/sacas/${saca.idSaca}` })}
-                      >
-                        Ver Detalles &rarr;
-                      </Button>
+                      <div className="ml-2 flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary">
+                        <span className="hidden sm:inline">Ver detalles</span>
+                        <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      </div>
                     )}
                   </div>
                 )

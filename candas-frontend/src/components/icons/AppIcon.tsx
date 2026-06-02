@@ -1,5 +1,5 @@
-import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { LucideIcon } from 'lucide-react'
 
 /** Tamaños en px enteros para evitar iconos borrosos (subpíxeles). */
 const SIZE_CLASS = {

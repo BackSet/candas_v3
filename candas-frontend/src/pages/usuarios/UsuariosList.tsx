@@ -1,37 +1,37 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { useUsuarios, useDeleteUsuario } from '@/hooks/useUsuarios'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Badge } from '@/components/ui/badge'
-import { Eye, Edit, Trash2, Plus, MoreHorizontal, Users, Mail } from 'lucide-react'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
+import { BooleanFilter,FilterBar } from '@/components/filters'
 import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
-import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
+import { EmptyState } from '@/components/states/EmptyState'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useListFilters } from '@/hooks/useListFilters'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, BooleanFilter } from '@/components/filters'
-import type { Usuario } from '@/types/usuario'
+import { useDeleteUsuario,useUsuarios } from '@/hooks/useUsuarios'
 import { getApiErrorMessage } from '@/lib/api/errors'
+import { PERMISSIONS } from '@/types/permissions'
+import type { Usuario } from '@/types/usuario'
+import { useNavigate } from '@tanstack/react-router'
+import { Edit,Eye,Mail,MoreHorizontal,Plus,Trash2 } from 'lucide-react'
+import { useMemo,useState } from 'react'
 
 interface UsuariosFiltersState extends Record<string, string | number | undefined> {
   page: number

@@ -18,7 +18,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/paquetes/listas-etiquetadas")
 @Tag(name = "Listas etiquetadas", description = "Flujo de listas etiquetadas (GEO, MIA) basado en Paquete")
-@CrossOrigin(origins = "*")
 public class ListasEtiquetadasController {
 
     private final ListasEtiquetadasService service;

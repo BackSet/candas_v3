@@ -1,31 +1,31 @@
-import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
 import { Button } from '@/components/ui/button'
+import { Combobox,type ComboboxOption } from '@/components/ui/combobox'
 import { DatePickerForm } from '@/components/ui/date-time-picker'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import {
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
 import { useAgencias } from '@/hooks/useAgencias'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
 import { useCreateManifiestoConsolidado } from '@/hooks/useManifiestosConsolidados'
-import type { CrearManifiestoConsolidadoDTO } from '@/types/manifiesto-consolidado'
-import { FilePlus, Calendar, Globe, Building2, CalendarRange, CalendarDays } from 'lucide-react'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
-import { Label } from '@/components/ui/label'
-import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
+import type { CrearManifiestoConsolidadoDTO } from '@/types/manifiesto-consolidado'
+import { Building2,CalendarDays,CalendarRange,FilePlus,Globe } from 'lucide-react'
+import { useState } from 'react'
 
 interface GenerarManifiestoConsolidadoDialogProps {
   open: boolean

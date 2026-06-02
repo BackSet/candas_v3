@@ -1,30 +1,28 @@
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DateRangeFilter } from '@/components/filters'
-import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
+import {
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
+} from '@/components/ui/table'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
-import { Loader2, Search, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, AlertTriangle, ShieldAlert, CheckCircle2, Send } from 'lucide-react'
 import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
-import { Badge } from '@/components/ui/badge'
 import { obtenerColorEtiqueta } from '@/utils/coloresEtiquetas'
-import { cn } from '@/lib/utils'
+import { AlertTriangle,CheckCircle2,ChevronLeft,ChevronRight,ChevronsLeft,ChevronsRight,Loader2,Search,Send,ShieldAlert,X } from 'lucide-react'
+import React,{ useEffect,useState } from 'react'
 
 export default function HistorialEtiquetasCard() {
     const [page, setPage] = useState(0)

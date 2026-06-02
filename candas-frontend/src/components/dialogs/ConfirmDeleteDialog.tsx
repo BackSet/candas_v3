@@ -1,15 +1,15 @@
-import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+dialogContentPresets,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import { dialogContentPresets } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { Trash2 } from 'lucide-react'
 
 export interface ConfirmDeleteDialogProps {
   open: boolean

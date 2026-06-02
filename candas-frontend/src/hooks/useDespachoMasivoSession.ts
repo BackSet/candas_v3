@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { despachoMasivoSessionService } from '@/lib/api/despacho-masivo-session.service'
-import type { DespachoMasivoSessionPayload } from '@/types/despacho-masivo-session'
-import { notify } from '@/lib/notify'
+import { despachoMasivoSessionService } from '@/lib/api/despacho-masivo-session.service';
+import { notify } from '@/lib/notify';
+import type { DespachoMasivoSessionPayload } from '@/types/despacho-masivo-session';
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query';
 
 /**
  * Sesión de despacho masivo del usuario autenticado (cola de paquetes, Ver despacho en curso).

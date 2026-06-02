@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react'
-import { applyPageMeta } from '@/lib/document-meta'
-import { useNavigate, Link } from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/lib/api/auth.service'
 import { API_BASE_URL } from '@/lib/api/client'
-import { getApiErrorMessage, getNetworkErrorHint, isNetworkOrCorsError } from '@/lib/api/errors'
+import { getApiErrorMessage,getNetworkErrorHint,isNetworkOrCorsError } from '@/lib/api/errors'
+import { applyPageMeta } from '@/lib/document-meta'
 import type { LoginRequest } from '@/types/user'
-import { AlertCircle, ArrowRight, Loader2, Lock, User } from 'lucide-react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link,useNavigate } from '@tanstack/react-router'
+import { AlertCircle,ArrowRight,Loader2,Lock,User } from 'lucide-react'
+import { useEffect,useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const loginSchema = z.object({
   username: z.string().min(1, 'El nombre de usuario es requerido'),
@@ -65,25 +65,30 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground font-sans">
-      <div className="w-full max-w-[320px] space-y-8">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/30 p-4 text-foreground font-sans">
+      {/* Ambient brand glow */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 translate-x-1/3 translate-y-1/3 rounded-full bg-primary/5 blur-3xl" aria-hidden />
 
-        {/* Header */}
-        <div className="flex flex-col items-center space-y-2 text-center">
-          {/* Logo placeholder or Icon */}
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/5 text-primary mb-2">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-6 w-6">
-              <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-            </svg>
+      <div className="relative w-full max-w-[360px] animate-scale-in">
+        <div className="rounded-2xl border border-border/60 bg-card/80 p-8 shadow-xl backdrop-blur-xl">
+
+          {/* Header */}
+          <div className="flex flex-col items-center space-y-2 text-center">
+            {/* Logo */}
+            <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl brand-gradient text-primary-foreground shadow-lg shadow-primary/20">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-7 w-7">
+                <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">Iniciar Sesión</h1>
+            <p className="text-sm text-muted-foreground">
+              Bienvenido a Candas V3
+            </p>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Iniciar Sesión</h1>
-          <p className="text-sm text-muted-foreground">
-            Bienvenido a Candas V3
-          </p>
-        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
           {error && (
             <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive animate-in slide-in-from-top-2 fade-in">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -132,15 +137,16 @@ export default function Login() {
               <>Ingresar <ArrowRight className="ml-2 h-4 w-4 opacity-50" /></>
             )}
           </Button>
-        </form>
+          </form>
 
-        <div className="text-center text-xs text-muted-foreground">
-          ¿No tienes acceso?{' '}
-          <Link to="/register" className="text-primary hover:underline underline-offset-4 transition-all">
-            Solicitar cuenta
-          </Link>
+          <div className="mt-6 text-center text-xs text-muted-foreground">
+            ¿No tienes acceso?{' '}
+            <Link to="/register" className="font-medium text-primary hover:underline underline-offset-4 transition-all">
+              Solicitar cuenta
+            </Link>
+          </div>
+
         </div>
-
       </div>
     </div>
   )

@@ -1,12 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  atencionPaqueteService,
-  type AtencionPaqueteFindAllParams,
+atencionPaqueteService,
+type AtencionPaqueteFindAllParams,
 } from '@/lib/api/atencion-paquete.service'
-import type { AtencionPaquete } from '@/types/atencion-paquete'
-import { useAuthStore } from '@/stores/authStore'
-import { notify } from '@/lib/notify'
 import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
+import { notify } from '@/lib/notify'
+import { useAuthStore } from '@/stores/authStore'
+import type { AtencionPaquete } from '@/types/atencion-paquete'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 function assertAgenciaActivaSeleccionada() {
   assertAgenciaOrigenActivaSeleccionadaParaCreacion()

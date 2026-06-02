@@ -1,8 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { rolService, type RolListParams } from '@/lib/api/rol.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
-import type { Rol } from '@/types/rol'
+import { rolService,type RolListParams } from '@/lib/api/rol.service'
 import { notify } from '@/lib/notify'
+import type { Rol } from '@/types/rol'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 export function useRoles(params: RolListParams = {}) {
   const { page = 0, size = 20, search, activo } = params

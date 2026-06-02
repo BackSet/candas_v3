@@ -1,7 +1,7 @@
-import { Link, Outlet, useLocation } from '@tanstack/react-router'
 import { StandardPageLayout } from '@/app/layout/StandardPageLayout'
-import { ArrowLeft } from 'lucide-react'
 import { ModulePageIcon } from '@/components/icons'
+import { Link,Outlet,useLocation } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 import { PARAMETROS_MODULES } from './submenuItems'
 
 export default function ParametrosSistemaLayout() {

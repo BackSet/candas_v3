@@ -1,7 +1,7 @@
+import { cn } from '@/lib/utils'
+import { AppIcon } from './AppIcon'
 import type { ModuleId } from './module-icons'
 import { MODULE_ICONS } from './module-icons'
-import { AppIcon } from './AppIcon'
-import { cn } from '@/lib/utils'
 
 export interface ModulePageIconProps {
   module: ModuleId

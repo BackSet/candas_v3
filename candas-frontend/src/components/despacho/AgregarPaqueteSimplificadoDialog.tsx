@@ -1,17 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Table,TableBody,TableCell,TableHead,TableHeader,TableRow } from '@/components/ui/table'
+import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { paqueteService } from '@/lib/api/paquete.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
-import type { PaqueteSimplificado } from '@/types/paquete'
-import type { Paquete } from '@/types/paquete'
 import { notify } from '@/lib/notify'
-import { Loader2, Plus, Trash2, X } from 'lucide-react'
+import type { Paquete,PaqueteSimplificado } from '@/types/paquete'
+import { Loader2,Plus,Trash2,X } from 'lucide-react'
+import React,{ useEffect,useRef,useState } from 'react'
 
 interface PaqueteTemporal {
   numeroGuia: string

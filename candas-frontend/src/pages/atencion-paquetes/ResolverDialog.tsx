@@ -1,24 +1,24 @@
-import { useState } from 'react'
-import { useResolverAtencionPaquete, useUpdateAtencionPaquete, useAtencionPaquete } from '@/hooks/useAtencionPaquetes'
-import { EstadoAtencion } from '@/types/atencion-paquete'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { CheckCircle, Edit } from 'lucide-react'
+import { useAtencionPaquete,useResolverAtencionPaquete,useUpdateAtencionPaquete } from '@/hooks/useAtencionPaquetes'
+import { EstadoAtencion } from '@/types/atencion-paquete'
+import { CheckCircle,Edit } from 'lucide-react'
+import { useState } from 'react'
 
 interface ResolverDialogProps {
   atencionId: number

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
-import { useFiltersStore, type ListFilterKey } from '@/stores/filtersStore'
+import { useFiltersStore,type ListFilterKey } from '@/stores/filtersStore'
+import { useCallback,useEffect,useMemo,useRef,useSyncExternalStore } from 'react'
 
 /**
  * Estado de filtros tipado y serializable. Cada valor debe ser:

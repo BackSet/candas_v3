@@ -1,7 +1,7 @@
 import { useSessionEnsacado } from '@/hooks/useEnsacado'
 import { cn } from '@/lib/utils'
 import { formatearFechaRelativa } from '@/utils/fechas'
-import { Loader2, Radio, WifiOff } from 'lucide-react'
+import { Loader2,Radio,WifiOff } from 'lucide-react'
 
 interface SyncStatusIndicatorProps {
   className?: string

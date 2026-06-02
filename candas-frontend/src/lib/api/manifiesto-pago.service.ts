@@ -1,11 +1,11 @@
+import type {
+CrearManifiestoPagoDTO,
+ManifiestoPagoDetalle,
+ManifiestoPagoPage,
+ManifiestoPagoResumen,
+} from '@/types/manifiesto-pago'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type {
-  ManifiestoPagoPage,
-  ManifiestoPagoDetalle,
-  ManifiestoPagoResumen,
-  CrearManifiestoPagoDTO,
-} from '@/types/manifiesto-pago'
 
 export const manifiestoPagoService = {
   async crearManifiestoPago(dto: CrearManifiestoPagoDTO): Promise<ManifiestoPagoResumen> {

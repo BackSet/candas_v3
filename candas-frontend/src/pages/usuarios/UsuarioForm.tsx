@@ -1,39 +1,39 @@
-import { useEffect, useState, useMemo, useRef } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm, type FieldValues, type UseFormReturn } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { FieldRow,FormPageLayout,FormSection } from '@/components/form'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { CheckboxIndicator } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
-import {
-  useUsuario,
-  useCreateUsuario,
-  useUpdateUsuario,
-  useRolesUsuario,
-  useAgenciasUsuario,
-  useAsignarRolesUsuario,
-  useAsignarAgenciasUsuario,
-} from '@/hooks/useUsuarios'
-import { useClientes, useAgencias } from '@/hooks/useSelectOptions'
-import { useRoles } from '@/hooks/useRoles'
-import { Search, Shield, Building2, User, Lock } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { useHasAnyRole } from '@/hooks/useHasRole'
-import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
+import { useRoles } from '@/hooks/useRoles'
+import { useAgencias,useClientes } from '@/hooks/useSelectOptions'
 import {
-  usuarioSchema,
-  type UsuarioFormData,
-  usuarioFormDataToDto,
-  usuarioToFormData,
+useAgenciasUsuario,
+useAsignarAgenciasUsuario,
+useAsignarRolesUsuario,
+useCreateUsuario,
+useRolesUsuario,
+useUpdateUsuario,
+useUsuario,
+} from '@/hooks/useUsuarios'
+import { cn } from '@/lib/utils'
+import {
+usuarioFormDataToDto,
+usuarioSchema,
+usuarioToFormData,
+type UsuarioFormData,
 } from '@/schemas/usuario'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { Building2,Lock,Search,Shield,User } from 'lucide-react'
+import { useEffect,useMemo,useRef,useState } from 'react'
+import { useForm,type FieldValues,type UseFormReturn } from 'react-hook-form'
 
 export default function UsuarioForm() {
   const navigate = useNavigate()

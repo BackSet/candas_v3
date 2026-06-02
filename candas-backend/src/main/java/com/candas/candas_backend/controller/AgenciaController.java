@@ -18,7 +18,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/agencias")
 @Tag(name = "Agencias", description = "Endpoints para gestión de agencias")
-@CrossOrigin(origins = "*")
 public class AgenciaController {
 
     private final AgenciaService agenciaService;

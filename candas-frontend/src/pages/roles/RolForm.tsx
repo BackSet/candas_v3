@@ -1,30 +1,30 @@
-import { useEffect, useState, useMemo } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useForm, type FieldValues, type UseFormReturn } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { FieldRow,FormPageLayout,FormSection } from '@/components/form'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { CheckboxIndicator } from '@/components/ui/checkbox'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useRol, useCreateRol, useUpdateRol, useAsignarPermisosRol, usePermisosRol } from '@/hooks/useRoles'
-import { usePermisos } from '@/hooks/usePermisos'
-import { Search, Key, Folder, FileText } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { FormPageLayout, FormSection, FieldRow } from '@/components/form'
 import {
-  rolSchema,
-  type RolFormData,
-  rolFormDataToDto,
-  rolToFormData,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { usePermisos } from '@/hooks/usePermisos'
+import { useAsignarPermisosRol,useCreateRol,usePermisosRol,useRol,useUpdateRol } from '@/hooks/useRoles'
+import { cn } from '@/lib/utils'
+import {
+rolFormDataToDto,
+rolSchema,
+rolToFormData,
+type RolFormData,
 } from '@/schemas/rol'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { FileText,Folder,Key,Search } from 'lucide-react'
+import { useEffect,useMemo,useState } from 'react'
+import { useForm,type FieldValues,type UseFormReturn } from 'react-hook-form'
 
 export default function RolForm() {
   const navigate = useNavigate()

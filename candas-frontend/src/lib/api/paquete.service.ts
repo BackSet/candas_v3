@@ -1,14 +1,14 @@
+import type {
+AsociarCadenitaLoteResult,
+AsociarClementinaLoteResult,
+EstadoPaquete,
+Paquete,
+PaquetePage,
+PaqueteSimplificado,
+TipoPaquete
+} from '@/types/paquete'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type {
-  Paquete,
-  PaquetePage,
-  EstadoPaquete,
-  TipoPaquete,
-  PaqueteSimplificado,
-  AsociarClementinaLoteResult,
-  AsociarCadenitaLoteResult
-} from '@/types/paquete'
 
 export interface PaqueteRapidoDTO {
   peso: number

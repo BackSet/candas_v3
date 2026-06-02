@@ -1,26 +1,25 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { useAtencionPaquete, useDeleteAtencionPaquete } from '@/hooks/useAtencionPaquetes'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import { DetailSkeleton,EmptyState } from '@/components/states'
+import { ErrorState } from '@/components/states/ErrorState'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import { Edit, Trash2, ArrowLeft, CheckCircle, Package, Calendar, AlertTriangle } from 'lucide-react'
-import { EstadoAtencion, getTipoProblemaLabel } from '@/types/atencion-paquete'
-import ResolverDialog from './ResolverDialog'
-import { cn } from '@/lib/utils'
-import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { SectionTitle } from '@/components/ui/section-title'
-import { EmptyState, DetailSkeleton } from '@/components/states'
-import { ErrorState } from '@/components/states/ErrorState'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { useAtencionPaquete,useDeleteAtencionPaquete } from '@/hooks/useAtencionPaquetes'
+import { getApiErrorMessage,getApiStatus } from '@/lib/api/errors'
+import { EstadoAtencion,getTipoProblemaLabel } from '@/types/atencion-paquete'
 import { PERMISSIONS } from '@/types/permissions'
-import { getApiErrorMessage, getApiStatus } from '@/lib/api/errors'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { AlertTriangle,ArrowLeft,Calendar,CheckCircle,Edit,Package,Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import ResolverDialog from './ResolverDialog'
 
 export default function AtencionPaqueteDetail() {
   const navigate = useNavigate()

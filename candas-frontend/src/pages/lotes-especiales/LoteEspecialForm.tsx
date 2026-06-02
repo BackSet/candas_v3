@@ -1,5 +1,5 @@
-import { useParams } from '@tanstack/react-router'
 import LoteRecepcionForm from '@/pages/lotes-recepcion/LoteRecepcionForm'
+import { useParams } from '@tanstack/react-router'
 
 export default function LoteEspecialForm() {
   const { id } = useParams({ strict: false })

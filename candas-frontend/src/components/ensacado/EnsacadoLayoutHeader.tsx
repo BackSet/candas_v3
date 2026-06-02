@@ -1,10 +1,9 @@
-import type { ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { AppIcon,ModulePageIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
-import { ModulePageIcon } from '@/components/icons'
-import { AppIcon } from '@/components/icons'
-import { ArrowLeft, ScanBarcode } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
+import { ArrowLeft,ScanBarcode } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 interface EnsacadoLayoutHeaderProps {
   title: string

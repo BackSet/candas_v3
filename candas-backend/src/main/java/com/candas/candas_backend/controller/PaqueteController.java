@@ -35,7 +35,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/paquetes")
 @Tag(name = "Paquetes", description = "Endpoints para gestión de paquetes")
-@CrossOrigin(origins = "*")
 public class PaqueteController {
 
     private final PaqueteService paqueteService;

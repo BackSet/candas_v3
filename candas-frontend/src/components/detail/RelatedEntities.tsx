@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight, LucideIcon } from 'lucide-react'
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
 import { useNavigate } from '@tanstack/react-router'
+import { ArrowRight,LucideIcon } from 'lucide-react'
 
 interface RelatedEntity {
   id: number | string

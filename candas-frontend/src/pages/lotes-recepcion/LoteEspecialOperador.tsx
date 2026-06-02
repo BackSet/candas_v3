@@ -1,80 +1,76 @@
-import { useState, useRef, useEffect, useMemo, Fragment } from 'react'
-import { useParams, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useLoteRecepcion, usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
-import { useAgencias, useCreateAgencia } from '@/hooks/useAgencias'
-import { useDistribuidores } from '@/hooks/useDistribuidores'
-import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
-import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
-import { useAuthStore } from '@/stores/authStore'
-import { useDraftStore } from '@/stores/draftStore'
-import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
-import { paqueteService } from '@/lib/api/paquete.service'
-import { despachoService } from '@/lib/api/despacho.service'
-import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
-import { TamanoSaca } from '@/types/saca'
-import { calcularTamanoSugerido } from '@/utils/saca'
-import { formatearTamanoSaca } from '@/utils/ensacado'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import CrearDespachoMasivoDialog from '@/components/despachos/CrearDespachoMasivoDialog'
+import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
+import { LoadingState } from '@/components/states'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card,CardContent,CardHeader,CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { type ComboboxOption } from '@/components/ui/combobox'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+import { SelectionActionBar } from '@/components/list/SelectionActionBar'
 import { Separator } from '@/components/ui/separator'
-import { DateTimePickerForm } from '@/components/ui/date-time-picker'
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { ScanLine, Loader2, List as ListIcon, FileText, X, Box, Truck, MapPin, QrCode, CheckCircle2, Download, FileDown, FileSpreadsheet, Printer, Edit, ChevronDown, Trash2, Upload, ChevronsUpDown, Plus, Sparkles } from 'lucide-react'
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
+} from '@/components/ui/table'
+import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import { useAgencias,useCreateAgencia } from '@/hooks/useAgencias'
+import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
+import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
+import { useDistribuidores } from '@/hooks/useDistribuidores'
+import { useLoteRecepcion,usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
+import { despachoService } from '@/lib/api/despacho.service'
+import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
+import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
+import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
+import { paqueteService } from '@/lib/api/paquete.service'
+import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
-import { LoadingState } from '@/components/states'
-import { PERMISSIONS } from '@/types/permissions'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import type { TelefonoFormItem } from '@/schemas/agencia'
+import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
+import { useAuthStore } from '@/stores/authStore'
+import { useDraftStore } from '@/stores/draftStore'
 import type { GuiaListaEtiquetadaConsultaDTO } from '@/types/listas-etiquetadas'
 import type { Paquete } from '@/types/paquete'
-import { filtrarPaquetesPorTipo, descargarPDFLoteEspecial } from '@/utils/generarPdfLoteEspecial'
-import { imprimirLoteEspecial } from '@/utils/imprimirPdfLoteEspecial'
+import { TamanoSaca } from '@/types/saca'
 import { generarExcelLoteRecepcion } from '@/utils/generarExcelLoteRecepcion'
-import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
-import CrearDespachoMasivoDialog from '@/components/despachos/CrearDespachoMasivoDialog'
-import { getApiErrorMessage } from '@/lib/api/errors'
-import { hasDespacho, buildClienteDestinoFromPaquete, SIN_ETIQUETA_KEY, VARIAS_LISTAS_KEY } from './loteEspecialOperadorUtils'
-import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
-import type { TelefonoFormItem } from '@/schemas/agencia'
-import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
+import { descargarPDFLoteEspecial,filtrarPaquetesPorTipo } from '@/utils/generarPdfLoteEspecial'
+import { imprimirLoteEspecial } from '@/utils/imprimirPdfLoteEspecial'
+import { calcularTamanoSugerido } from '@/utils/saca'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { Box,CheckCircle2,ChevronDown,Download,Edit,FileDown,FileSpreadsheet,List as ListIcon,Loader2,Plus,Printer,QrCode,ScanLine,Sparkles,Trash2,Truck,Upload,X } from 'lucide-react'
+import { Fragment,useEffect,useMemo,useRef,useState } from 'react'
+import { buildClienteDestinoFromPaquete,hasDespacho,SIN_ETIQUETA_KEY,VARIAS_LISTAS_KEY } from './loteEspecialOperadorUtils'
 
 export interface LoteEspecialOperadorProps {
   embedded?: boolean
@@ -1438,18 +1434,16 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
             )}
           </CardContent>
         </Card>
-        {listFilter === 'PENDIENTES' && selectedPackageIds.size > 0 && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-popover border border-border text-popover-foreground px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-in fade-in duration-200 z-50 ring-1 ring-border/50">
-            <span className="font-medium text-sm">{selectedPackageIds.size} seleccionados</span>
-            <Button size="sm" variant="secondary" onClick={handleBulkCreateDespacho} className="h-8 text-xs font-bold hover:bg-emerald-600 hover:text-white transition-colors shadow-sm">
-              <Truck className="h-3 w-3 mr-2" />
-              Crear Despacho
-            </Button>
-            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-muted hover:text-destructive" onClick={() => { setSelectedPackageIds(new Set()); setSelectedPackageIdsOrder([]); setScannedPackagesForDespacho([]) }}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <SelectionActionBar
+          count={listFilter === 'PENDIENTES' ? selectedPackageIds.size : 0}
+          onClear={() => { setSelectedPackageIds(new Set()); setSelectedPackageIdsOrder([]); setScannedPackagesForDespacho([]) }}
+          itemLabel="paquete"
+        >
+          <Button size="sm" onClick={handleBulkCreateDespacho} className="h-8 rounded-full text-xs font-semibold">
+            <Truck className="h-3 w-3 mr-2" />
+            Crear Despacho
+          </Button>
+        </SelectionActionBar>
         </div>
       </TabsContent>
 

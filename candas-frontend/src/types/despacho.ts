@@ -1,6 +1,6 @@
+import type { DespachoDirecto } from './despacho-directo'
 import type { PageResponse } from './paquete'
 import type { Saca } from './saca'
-import type { DespachoDirecto } from './despacho-directo'
 
 export interface Despacho {
   idDespacho?: number

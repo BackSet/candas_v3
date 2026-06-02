@@ -1,4 +1,4 @@
-import type { Paquete } from '@/types/paquete'
+import type { Paquete } from '@/types/paquete';
 
 /**
  * Calcula la provincia y el cantón más frecuentes entre los paquetes (destinatario).

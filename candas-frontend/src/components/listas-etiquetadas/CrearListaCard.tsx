@@ -1,21 +1,20 @@
-import React, { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
-import { getApiErrorMessage } from '@/lib/api/errors'
-import { notify } from '@/lib/notify'
-import { Loader2, Plus, AlertTriangle, ShieldAlert, BadgeHelp, Info } from 'lucide-react'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { getApiErrorMessage } from '@/lib/api/errors'
+import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
+import { notify } from '@/lib/notify'
+import { AlertTriangle,BadgeHelp,Info,Loader2,Plus,ShieldAlert } from 'lucide-react'
+import { useState } from 'react'
 
 export default function CrearListaCard() {
   const [etiqueta, setEtiqueta] = useState('')

@@ -1,6 +1,6 @@
+import type { Distribuidor,DistribuidorPage } from '@/types/distribuidor'
 import { apiClient } from './client'
 import { API_ENDPOINTS } from './endpoints'
-import type { Distribuidor, DistribuidorPage } from '@/types/distribuidor'
 
 export interface DistribuidorFindAllParams {
   page?: number

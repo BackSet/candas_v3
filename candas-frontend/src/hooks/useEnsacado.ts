@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ENSACADO_POLL,ENSACADO_SCAN } from '@/constants/ensacado'
 import { ensacadoService } from '@/lib/api/ensacado.service'
 import { notify } from '@/lib/notify'
-import { ENSACADO_POLL, ENSACADO_SCAN } from '@/constants/ensacado'
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
 export const ensacadoKeys = {
   all: ['ensacado'] as const,
@@ -44,6 +44,23 @@ export function useMarcarEnsacado() {
     },
     onError: (error: unknown) => {
       notify.error(error, 'No se pudo marcar el paquete como ensacado')
+    },
+  })
+}
+
+export function useDesmarcarEnsacado() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (idPaquete: number) => ensacadoService.desmarcarEnsacado(idPaquete),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.session })
+      void queryClient.invalidateQueries({ queryKey: ['ensacado-despacho'] })
+      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.paquete() })
+    },
+    onError: (error: unknown) => {
+      notify.error(error, 'No se pudo deshacer el ensacado')
     },
   })
 }

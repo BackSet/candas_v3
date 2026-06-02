@@ -1,47 +1,47 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useDespacho, useCreateDespacho, useUpdateDespacho, useSacasDespacho } from '@/hooks/useDespachos'
-import { usePaquete } from '@/hooks/usePaquetes'
-import { paqueteService } from '@/lib/api/paquete.service'
-import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
-import { useAgencias, useAgencia, useSearchAgencias, useCreateAgencia } from '@/hooks/useAgencias'
-import { useDistribuidores } from '@/hooks/useDistribuidores'
-import { usePaquetes } from '@/hooks/usePaquetes'
-import { useDestinatarioDirecto, useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
-import type { Despacho } from '@/types/despacho'
-import { TamanoSaca } from '@/types/saca'
-import { calcularTamanoSugerido } from '@/utils/saca'
-import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
-import { formatearTamanoSaca } from '@/utils/ensacado'
-import type { Paquete } from '@/types/paquete'
-import { Trash2, Plus, Copy, Loader2, Sparkles, Truck, ArrowLeft, Check, User, ArrowRight, List as ListIcon, Package, SplitSquareVertical, Zap, Link2, RotateCcw } from 'lucide-react'
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { notify } from '@/lib/notify'
-import { Controller, type FieldValues, type UseFormReturn } from 'react-hook-form'
-import { useDespachoForm, type DespachoFormData } from '@/hooks/useDespachoForm'
-import { DateTimePickerForm } from '@/components/ui/date-time-picker'
-import { SectionTitle } from '@/components/ui/section-title'
-import { Label } from '@/components/ui/label'
-import { FormError } from '@/components/ui/form-error'
-import { useSacasManager, type SacaFormData } from '@/hooks/useSacasManager'
-import { useDistribuidorManager } from '@/hooks/useDistribuidorManager'
-import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
+import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
 import AgregarCadenitaFormDialog from '@/components/despacho/AgregarCadenitaFormDialog'
 import PaqueteRapidoFormDialog from '@/components/despacho/PaqueteRapidoFormDialog'
-import { Separator } from '@/components/ui/separator'
+import { ResumenDestinoDespacho } from '@/components/despacho/ResumenDestinoDespacho'
 import { FormPageLayout } from '@/components/form'
-import { useDraftStore } from '@/stores/draftStore'
-import { CopyActionButton } from '@/components/ui/copy-action-button'
-import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Combobox,type ComboboxOption } from '@/components/ui/combobox'
+import { DateTimePickerForm } from '@/components/ui/date-time-picker'
+import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from '@/components/ui/dialog'
+import { FormError } from '@/components/ui/form-error'
+import { HelpTip } from '@/components/ui/help-tip'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { SectionTitle } from '@/components/ui/section-title'
+import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import { useAgencia,useAgencias,useCreateAgencia,useSearchAgencias } from '@/hooks/useAgencias'
+import { useDespachoForm,type DespachoFormData } from '@/hooks/useDespachoForm'
+import { useCreateDespacho,useDespacho,useSacasDespacho,useUpdateDespacho } from '@/hooks/useDespachos'
+import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
+import { useDestinatarioDirecto,useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
+import { useDistribuidores } from '@/hooks/useDistribuidores'
+import { useDistribuidorManager } from '@/hooks/useDistribuidorManager'
+import { usePaquete,usePaquetes } from '@/hooks/usePaquetes'
+import { useSacasManager,type SacaFormData } from '@/hooks/useSacasManager'
+import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
+import { paqueteService } from '@/lib/api/paquete.service'
+import { notify } from '@/lib/notify'
 import type { TelefonoFormItem } from '@/schemas/agencia'
-import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
+import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
+import { useDraftStore } from '@/stores/draftStore'
+import type { Despacho } from '@/types/despacho'
+import type { Paquete } from '@/types/paquete'
+import { TamanoSaca } from '@/types/saca'
+import { formatearTamanoSaca } from '@/utils/ensacado'
+import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
+import { calcularTamanoSugerido } from '@/utils/saca'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { ArrowLeft,ArrowRight,Check,Link2,List as ListIcon,Loader2,MapPin,Package,Plus,RotateCcw,Sparkles,SplitSquareVertical,Trash2,Truck,User,Zap } from 'lucide-react'
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react'
+import { Controller,type FieldValues,type UseFormReturn } from 'react-hook-form'
 
 const DESPACHO_DRAFT_KEY = 'despacho-new'
 
@@ -638,7 +638,7 @@ export default function DespachoForm() {
     )
     if (!p && guiaNorm.length >= 4) {
       try { p = await paqueteService.findByNumeroGuia(guiaNorm) }
-      catch { try { p = await paqueteService.findByNumeroGuia(guia.trim()) } catch { } }
+      catch { try { p = await paqueteService.findByNumeroGuia(guia.trim()) } catch { p = undefined } }
     }
     return p ?? null
   }
@@ -737,6 +737,40 @@ export default function DespachoForm() {
       nombreEmpresa: (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreEmpresa,
     }
 
+  const pesoTotalEstimado = useMemo(
+    () =>
+      sacas.reduce(
+        (acc, s) =>
+          acc +
+          s.idPaquetes.reduce((sum, pid) => {
+            const p = paquetesAgregados.get(pid) || todosLosPaquetes.find((x) => x.idPaquete === pid)
+            return sum + (p?.pesoKilos || 0)
+          }, 0),
+        0
+      ),
+    [sacas, paquetesAgregados, todosLosPaquetes]
+  )
+
+  const telefonoAgenciaResumen =
+    agenciaSeleccionada?.telefonos?.find((t) => t.principal)?.numero ??
+    agenciaSeleccionada?.telefonos?.[0]?.numero
+
+  const resumenDestinoData = {
+    tipoLabel: tipoEnvio === 'agencia' ? 'Agencia' : 'Destinatario directo',
+    nombre: tipoEnvio === 'agencia' ? agenciaSeleccionada?.nombre : destinatarioResumen.nombreDestinatario,
+    nombreEmpresa: tipoEnvio === 'directo' ? destinatarioResumen.nombreEmpresa : undefined,
+    codigoDestino: tipoEnvio === 'agencia' ? agenciaSeleccionada?.codigo : destinatarioResumen.codigo,
+    telefono: tipoEnvio === 'agencia' ? telefonoAgenciaResumen : destinatarioResumen.telefonoDestinatario,
+    direccion: tipoEnvio === 'agencia' ? agenciaSeleccionada?.direccion : destinatarioResumen.direccionDestinatario,
+    ubicacion: tipoEnvio === 'agencia' ? agenciaSeleccionada?.canton : destinatarioResumen.canton,
+    pesoTotalKg: pesoTotalEstimado,
+    totalSacas: sacas.length,
+    totalPaquetes: sacas.reduce((acc, s) => acc + s.idPaquetes.length, 0),
+    sacasPorTamano: [TamanoSaca.INDIVIDUAL, TamanoSaca.PEQUENO, TamanoSaca.MEDIANO, TamanoSaca.GRANDE]
+      .map((t) => ({ label: formatearTamanoSaca(t), count: sacas.filter((s) => s.tamano === t).length }))
+      .filter((x) => x.count > 0),
+  }
+
   const paquetesFaltantes = useMemo(() => idsPaquetesEnSacas.filter(id => !paquetesDeSacas.has(id)), [idsPaquetesEnSacas, paquetesDeSacas])
 
   useEffect(() => {
@@ -747,7 +781,9 @@ export default function DespachoForm() {
           try {
             const p = await paqueteService.findById(id)
             nuevos.set(id, p)
-          } catch (e) { }
+          } catch {
+            continue
+          }
         }
         if (nuevos.size > 0) {
           setPaquetesAgregados(prev => {
@@ -884,7 +920,7 @@ export default function DespachoForm() {
     setResultadoProcesamiento(null)
 
     let encontrados = 0, yaAgregados = 0
-    let noEncontrados: string[] = [], enEstadoInvalido: string[] = []
+    const noEncontrados: string[] = [], enEstadoInvalido: string[] = []
     const nuevasSacas = [...sacas]
     const mapParaSugerido = new Map(paquetesAgregados)
 
@@ -1171,7 +1207,12 @@ export default function DespachoForm() {
           {pasoActual === 1 && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-6">
-                <SectionTitle title="Información del Despacho" variant="form" />
+                <SectionTitle
+                  title="Información del Despacho"
+                  variant="form"
+                  icon={<Truck className="h-4 w-4 text-muted-foreground" />}
+                  description="Datos generales del despacho. Podrás añadir sacas y el destino en los siguientes pasos."
+                />
                 <div className="space-y-4">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Datos del despacho</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1202,11 +1243,17 @@ export default function DespachoForm() {
                 <Separator />
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Observaciones</Label>
+                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                      Observaciones
+                      <HelpTip>Notas internas del despacho (instrucciones, incidencias). No se imprimen en la etiqueta.</HelpTip>
+                    </Label>
                     <Textarea {...register('observaciones')} rows={2} placeholder="Notas adicionales del despacho..." className="resize-none" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="codigoPresinto" className="text-sm font-medium">Código de presinto de seguridad</Label>
+                    <Label htmlFor="codigoPresinto" className="flex items-center gap-1.5 text-sm font-medium">
+                      Código de presinto de seguridad
+                      <HelpTip>Número del sello/precinto físico que cierra la valija o saca. Sirve para verificar que no se abrió en tránsito. Puedes escribirlo o generar uno.</HelpTip>
+                    </Label>
                     <div className="flex flex-wrap gap-2">
                       <Input
                         id="codigoPresinto"
@@ -1239,22 +1286,27 @@ export default function DespachoForm() {
           {/* PASO 2: SACAS */}
           {pasoActual === 2 && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4">
-                <SectionTitle title="Gestionar Sacas" variant="form" className="border-0 pb-0 mb-0" />
-                {sacas.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" onClick={handleAgregarSaca}>
-                      <Plus className="h-4 w-4 mr-2" /> Agregar saca
-                    </Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => setShowListadoAgrupacionDialog(true)} title="Pega un listado completo de guías y distribúyelas en sacas">
-                      <ListIcon className="h-4 w-4 mr-2" /> Carga masiva
-                    </Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => setShowAgregarCadenitaDialog(true)} title="Agregar guías hijas tipo CADENITA en una nueva saca">
-                      <Link2 className="h-4 w-4 mr-2" /> Cadenita
-                    </Button>
-                  </div>
-                )}
-              </div>
+              <SectionTitle
+                title="Gestionar Sacas"
+                variant="form"
+                icon={<Package className="h-4 w-4 text-muted-foreground" />}
+                description="Agrupa los paquetes en sacas. Cada saca tiene un tamaño y reúne las guías que viajarán juntas."
+                actions={
+                  sacas.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" size="sm" onClick={handleAgregarSaca} title="Crear una saca vacía">
+                        <Plus className="h-4 w-4 mr-2" /> Agregar saca
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setShowListadoAgrupacionDialog(true)} title="Pega un listado completo de guías y distribúyelas automáticamente en sacas">
+                        <ListIcon className="h-4 w-4 mr-2" /> Carga masiva
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setShowAgregarCadenitaDialog(true)} title="Ingresa una guía padre y agrupa sus guías hijas tipo CADENITA en una nueva saca">
+                        <Link2 className="h-4 w-4 mr-2" /> Cadenita
+                      </Button>
+                    </div>
+                  ) : null
+                }
+              />
 
               {sacas.length === 0 ? (
                 <div className="rounded-lg border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
@@ -1315,6 +1367,7 @@ export default function DespachoForm() {
                               <SelectItem value="GRANDE">Grande</SelectItem>
                             </SelectContent>
                           </Select>
+                          <HelpTip>Capacidad de la saca por peso: Individual ≤5 kg · Pequeño ≤15 kg · Mediano ≤30 kg · Grande ≤50 kg.</HelpTip>
                         </div>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-error shrink-0" onClick={() => handleEliminarSaca(index)}>
                           <Trash2 className="h-4 w-4" />
@@ -1368,7 +1421,12 @@ export default function DespachoForm() {
           {pasoActual === 3 && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-6">
-                <SectionTitle title="Destino del Despacho" variant="form" />
+                <SectionTitle
+                  title="Destino del Despacho"
+                  variant="form"
+                  icon={<MapPin className="h-4 w-4 text-muted-foreground" />}
+                  description="¿A dónde va el despacho? Elige enviarlo a una agencia/sucursal o directamente a un cliente final."
+                />
                 <AssignedAgencyNotice />
 
                 {(provinciaOCantonPredominante.canton || provinciaOCantonPredominante.provincia) && (
@@ -1413,7 +1471,10 @@ export default function DespachoForm() {
 
                 {tipoEnvio === 'agencia' ? (
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Agencia destino</Label>
+                    <Label className="flex items-center gap-1.5 text-sm font-medium">
+                      Agencia destino
+                      <HelpTip>Sucursal que recibirá el despacho. Si no existe, créala con el botón “+”.</HelpTip>
+                    </Label>
                     <div className="flex gap-2 items-end flex-wrap">
                       <div className="flex-1 min-w-[200px]">
                         <Combobox
@@ -1425,7 +1486,7 @@ export default function DespachoForm() {
                           searchValue={busquedaAgencia}
                         />
                       </div>
-                      <Button type="button" variant="outline" className="h-9 w-9 p-0 rounded-md" onClick={() => setShowCrearAgenciaDialog(true)}>
+                      <Button type="button" variant="outline" className="h-9 w-9 p-0 rounded-md" onClick={() => setShowCrearAgenciaDialog(true)} title="Crear nueva agencia">
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -1440,7 +1501,10 @@ export default function DespachoForm() {
                 ) : (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">Origen del destinatario</Label>
+                      <Label className="flex items-center gap-1.5 text-sm font-medium">
+                        Origen del destinatario
+                        <HelpTip>“Existente” usa un destinatario ya registrado. “Desde paquete” crea el destinatario tomando los datos de una de las guías del despacho.</HelpTip>
+                      </Label>
                       <Select
                         value={destinatarioOrigenDirecto}
                         onValueChange={(value) => {
@@ -1551,13 +1615,21 @@ export default function DespachoForm() {
           {pasoActual === 4 && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <section className="space-y-6">
-                <SectionTitle title="Distribución y Finalización" variant="form" />
+                <SectionTitle
+                  title="Distribución y Finalización"
+                  variant="form"
+                  icon={<Check className="h-4 w-4 text-muted-foreground" />}
+                  description="Revisa el resumen y, si aplica, indica el transportista. Al confirmar se creará el despacho."
+                />
 
                 <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm space-y-4">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Logística (opcional)</p>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">Distribuidor</Label>
+                      <Label className="flex items-center gap-1.5 text-sm font-medium">
+                        Distribuidor
+                        <HelpTip>Empresa o transportista que llevará el despacho hasta su destino. Opcional.</HelpTip>
+                      </Label>
                       <div className="flex flex-wrap gap-2">
                         <Select value={idDistribuidor?.toString() || ''} onValueChange={(v) => setValue('idDistribuidor', Number(v))}>
                           <SelectTrigger className="flex-1 min-w-[200px]">
@@ -1569,155 +1641,31 @@ export default function DespachoForm() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button type="button" variant="outline" onClick={() => setCrearNuevoDistribuidor(true)}>
+                        <Button type="button" variant="outline" onClick={() => setCrearNuevoDistribuidor(true)} title="Crear nuevo distribuidor">
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">Guía Agencia Distribución</Label>
+                      <Label className="flex items-center gap-1.5 text-sm font-medium">
+                        Guía Agencia Distribución
+                        <HelpTip>Número de guía/tracking que asigna el transportista externo a este despacho. Úsalo para rastrearlo con ellos.</HelpTip>
+                      </Label>
                       <Input {...register('numeroGuiaAgenciaDistribucion')} placeholder="Número de guía..." />
                     </div>
                   </div>
                 </div>
 
                 <div className="rounded-lg border border-border bg-card p-6 shadow-sm bg-primary/5 border-primary/10">
-                  <SectionTitle title="Resumen" variant="form" as="h3" />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Total Sacas</span>
-                      <p className="text-2xl font-bold">{sacas.length}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Total Paquetes</span>
-                      <p className="text-2xl font-bold">{sacas.reduce((acc, s) => acc + s.idPaquetes.length, 0)}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Peso Total Est.</span>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xl font-semibold select-all">
-                          {sacas.reduce((acc, s) => acc + s.idPaquetes.reduce((sum, pid) => {
-                            const p = paquetesAgregados.get(pid) || todosLosPaquetes.find(x => x.idPaquete === pid);
-                            return sum + (p?.pesoKilos || 0)
-                          }, 0), 0).toFixed(2)} kg
-                        </p>
-                        <CopyActionButton
-                          textToCopy={`${sacas.reduce((acc, s) => acc + s.idPaquetes.reduce((sum, pid) => {
-                            const p = paquetesAgregados.get(pid) || todosLosPaquetes.find(x => x.idPaquete === pid);
-                            return sum + (p?.pesoKilos || 0)
-                          }, 0), 0).toFixed(2)} kg`}
-                          successMessage="Peso copiado"
-                          errorMessage="No se pudo copiar el peso"
-                          title="Copiar peso"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                        >
-                          <Copy className="h-4 w-4 text-muted-foreground" />
-                        </CopyActionButton>
-                      </div>
-                    </div>
-                  </div>
+                  <SectionTitle
+                    title="Resumen"
+                    variant="form"
+                    as="h3"
+                    description="Verifica los datos y copia la información del destinatario para registrarla en la plataforma del courier."
+                  />
 
-                  {/* Total de sacas por tamaño */}
-                  <div className="mb-6">
-                    <span className="text-xs text-muted-foreground uppercase tracking-wide block mb-2">Sacas por tamaño</span>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">Individual</span>
-                        <p className="text-lg font-semibold">{sacas.filter(s => s.tamano === TamanoSaca.INDIVIDUAL).length}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">Pequeño</span>
-                        <p className="text-lg font-semibold">{sacas.filter(s => s.tamano === TamanoSaca.PEQUENO).length}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">Mediano</span>
-                        <p className="text-lg font-semibold">{sacas.filter(s => s.tamano === TamanoSaca.MEDIANO).length}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground">Grande</span>
-                        <p className="text-lg font-semibold">{sacas.filter(s => s.tamano === TamanoSaca.GRANDE).length}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <ResumenDestinoDespacho data={resumenDestinoData} />
 
-                  {/* Información de destino */}
-                  {(tipoEnvio === 'agencia' && agenciaSeleccionada) || (tipoEnvio === 'directo' && !!destinatarioResumen.nombreDestinatario) ? (
-                    <div className="pt-4 border-t border-primary/20">
-                      <span className="text-xs text-muted-foreground uppercase tracking-wide block mb-2">
-                        {tipoEnvio === 'agencia' ? 'Agencia' : 'Destinatario Directo'}
-                      </span>
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-xs text-muted-foreground">Nombre:</span>
-                          <p className="text-sm font-medium">
-                            {tipoEnvio === 'agencia'
-                              ? agenciaSeleccionada?.nombre
-                              : destinatarioResumen.nombreDestinatario}
-                          </p>
-                          {tipoEnvio === 'agencia' && agenciaSeleccionada?.codigo && (
-                            <div className="mt-2">
-                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Código</span>
-                              <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 shadow-sm">
-                                <span className="font-mono text-base font-semibold text-foreground select-all tabular-nums">
-                                  {agenciaSeleccionada.codigo}
-                                </span>
-                                <CopyActionButton
-                                  textToCopy={agenciaSeleccionada.codigo}
-                                  successMessage="Código copiado"
-                                  errorMessage="No se pudo copiar el código"
-                                  title="Copiar código"
-                                  className="h-8 shrink-0 gap-1.5"
-                                >
-                                  <Copy className="h-3.5 w-3.5" />
-                                  Copiar
-                                </CopyActionButton>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-xs text-muted-foreground">Teléfono:</span>
-                          <p className="text-sm font-medium">
-                            {tipoEnvio === 'agencia'
-                              ? (agenciaSeleccionada?.telefonos?.find(t => t.principal)?.numero || agenciaSeleccionada?.telefonos?.[0]?.numero || 'N/A')
-                              : destinatarioResumen.telefonoDestinatario || 'N/A'}
-                          </p>
-                        </div>
-                        {tipoEnvio === 'directo' && (destinatarioResumen.codigo || destinatarioResumen.nombreEmpresa) && (
-                          <>
-                            {destinatarioResumen.codigo && (
-                              <div className="mt-2">
-                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block mb-1">Código</span>
-                                <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 shadow-sm">
-                                  <span className="font-mono text-base font-semibold text-foreground select-all tabular-nums">
-                                    {destinatarioResumen.codigo}
-                                  </span>
-                                  <CopyActionButton
-                                    textToCopy={destinatarioResumen.codigo ?? ''}
-                                    successMessage="Código copiado"
-                                    errorMessage="No se pudo copiar el código"
-                                    title="Copiar código"
-                                    className="h-8 shrink-0 gap-1.5"
-                                  >
-                                    <Copy className="h-3.5 w-3.5" />
-                                    Copiar
-                                  </CopyActionButton>
-                                </div>
-                              </div>
-                            )}
-                            {destinatarioResumen.nombreEmpresa && (
-                              <div>
-                                <span className="text-xs text-muted-foreground">Nombre empresa:</span>
-                                <p className="text-sm text-muted-foreground">{destinatarioResumen.nombreEmpresa}</p>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
                 </div>
               </section>
 

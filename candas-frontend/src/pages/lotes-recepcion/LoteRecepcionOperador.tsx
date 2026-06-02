@@ -1,97 +1,81 @@
-import { useState, useRef, useEffect, useMemo, Fragment } from 'react'
-import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { useParams, useNavigate } from '@tanstack/react-router'
-import { useQueryClient } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-    ArrowLeft,
-    Box,
-    QrCode,
-    ScanLine,
-    Truck,
-    MapPin,
-    FileText,
-    List as ListIcon,
-    CheckCircle2,
-    Link as LinkIcon,
-    Scissors,
-    Sparkles,
-    X,
-    Clock,
-    MoreHorizontal,
-    ChevronsUpDown,
-    Plus,
-    Trash2,
-    ClipboardPaste,
-    Loader2,
-    AlertCircle,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { notify } from '@/lib/notify'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
-import { usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
-import { useUpdatePaquete } from '@/hooks/usePaquetes'
+import CrearDespachoMasivoDialog from '@/components/despachos/CrearDespachoMasivoDialog'
 import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
 import CambiarTipoMasivoDialog from '@/components/lotes-recepcion/CambiarTipoMasivoDialog'
-import { useAgencias, useCreateAgencia } from '@/hooks/useAgencias'
-import { useDistribuidores } from '@/hooks/useDistribuidores'
-import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
-import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
 import { LoadingState } from '@/components/states'
-import { TipoPaquete, TipoDestino, type Paquete } from '@/types/paquete'
-import { paqueteService } from '@/lib/api/paquete.service'
-import { sacaService } from '@/lib/api/saca.service'
+import { Badge } from "@/components/ui/badge"
+import { Button } from '@/components/ui/button'
+import { Card,CardContent,CardHeader,CardTitle } from '@/components/ui/card'
+import { Checkbox } from "@/components/ui/checkbox"
+import { type ComboboxOption } from '@/components/ui/combobox'
+import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from "@/components/ui/dialog"
+import { Input } from '@/components/ui/input'
+import { Label } from "@/components/ui/label"
+import { SegmentedToggle } from '@/components/ui/segmented-toggle'
+import {
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
+} from "@/components/ui/select"
+import { SelectionActionBar } from '@/components/list/SelectionActionBar'
+import { Separator } from '@/components/ui/separator'
+import {
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
+} from '@/components/ui/table'
+import { Tabs,TabsList,TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import { useAgencias,useCreateAgencia } from '@/hooks/useAgencias'
+import { useDespachoMasivoSession,useUpdateDespachoMasivoSession } from '@/hooks/useDespachoMasivoSession'
+import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoManager'
+import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
+import { useDistribuidores } from '@/hooks/useDistribuidores'
+import { useInfiniteList } from '@/hooks/useInfiniteList'
+import { usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
+import { useUpdatePaquete } from '@/hooks/usePaquetes'
 import { despachoService } from '@/lib/api/despacho.service'
 import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
+import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
+import { paqueteService } from '@/lib/api/paquete.service'
+import { sacaService } from '@/lib/api/saca.service'
+import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
+import { notify } from '@/lib/notify'
+import { cn } from '@/lib/utils'
+import type { TelefonoFormItem } from '@/schemas/agencia'
+import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
+import { useAuthStore } from '@/stores/authStore'
+import type { DespachoMasivoSessionPaqueteItem,DespachoMasivoSessionPayload } from '@/types/despacho-masivo-session'
+import { TipoDestino,TipoPaquete,type Paquete } from '@/types/paquete'
 import { TamanoSaca } from '@/types/saca'
-import { calcularTamanoSugerido } from '@/utils/saca'
-import { formatearTamanoSaca } from '@/utils/ensacado'
 import { guiaEfectiva } from '@/utils/paqueteGuia'
 import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
-import { DateTimePickerForm } from '@/components/ui/date-time-picker'
-import { useAuthStore } from '@/stores/authStore'
-import { Textarea } from '@/components/ui/textarea'
-import { SegmentedToggle } from '@/components/ui/segmented-toggle'
-import { useInfiniteList } from '@/hooks/useInfiniteList'
-import { PERMISSIONS } from '@/types/permissions'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import CrearDespachoMasivoDialog from '@/components/despachos/CrearDespachoMasivoDialog'
-import { useDespachoMasivoSession, useUpdateDespachoMasivoSession } from '@/hooks/useDespachoMasivoSession'
-import type { DespachoMasivoSessionPayload, DespachoMasivoSessionPaqueteItem } from '@/types/despacho-masivo-session'
-import { generarCodigo10Digitos } from '@/schemas/destinatario-directo'
-import type { TelefonoFormItem } from '@/schemas/agencia'
-import { assertAgenciaOrigenActivaSeleccionadaParaCreacion } from '@/lib/auth/agencia-origen-activa'
+import { calcularTamanoSugerido } from '@/utils/saca'
+import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import {
+AlertCircle,
+Box,
+CheckCircle2,
+ClipboardPaste,
+Link as LinkIcon,
+List as ListIcon,
+Loader2,
+MapPin,
+Plus,
+QrCode,
+ScanLine,
+Scissors,
+Sparkles,
+Trash2,
+Truck,
+X
+} from 'lucide-react'
+import { Fragment,useEffect,useMemo,useRef,useState } from 'react'
 
 // Types for local state (Mock for "Despacho" scanning session)
 interface ScannedPackage {
@@ -1988,24 +1972,21 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         </Table>
                     </CardContent>
 
-                    {/* Floating Action Bar: solo en pestaña Pendientes */}
-                    {listFilter === 'PENDIENTES' && selectedPackageIds.size > 0 && (
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-popover border border-border text-popover-foreground px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-in fade-in duration-200 z-50 ring-1 ring-border/50">
-                            <span className="font-medium text-sm">{selectedPackageIds.size} seleccionados</span>
-                            <Separator orientation="vertical" className="h-4 bg-border" />
-                            <Button size="sm" variant="outline" onClick={() => setShowCambiarTipoDialog(true)} className="h-8 text-xs font-medium">
-                                <Box className="h-3 w-3 mr-2" />
-                                Cambiar tipo
-                            </Button>
-                            <Button size="sm" variant="secondary" onClick={handleBulkCreateDespacho} className="h-8 text-xs font-bold hover:bg-emerald-600 hover:text-white transition-colors shadow-sm">
-                                <Truck className="h-3 w-3 mr-2" />
-                                Crear Despacho
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-muted hover:text-destructive" onClick={() => { setSelectedPackageIds(new Set()); setSelectedPackageIdsOrder([]); setScannedPackagesForDespacho([]) }}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    )}
+                    {/* Barra flotante de selección: solo en pestaña Pendientes */}
+                    <SelectionActionBar
+                        count={listFilter === 'PENDIENTES' ? selectedPackageIds.size : 0}
+                        onClear={() => { setSelectedPackageIds(new Set()); setSelectedPackageIdsOrder([]); setScannedPackagesForDespacho([]) }}
+                        itemLabel="paquete"
+                    >
+                        <Button size="sm" variant="outline" onClick={() => setShowCambiarTipoDialog(true)} className="h-8 rounded-full text-xs font-medium">
+                            <Box className="h-3 w-3 mr-2" />
+                            Cambiar tipo
+                        </Button>
+                        <Button size="sm" onClick={handleBulkCreateDespacho} className="h-8 rounded-full text-xs font-semibold">
+                            <Truck className="h-3 w-3 mr-2" />
+                            Crear Despacho
+                        </Button>
+                    </SelectionActionBar>
                 </Card>
             )}
 

@@ -1,26 +1,32 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
+import CambiarTipoDestinoDialog from '@/components/lotes-recepcion/CambiarTipoDestinoDialog'
+import CambiarTipoDestinoMasivoDialog from '@/components/lotes-recepcion/CambiarTipoDestinoMasivoDialog'
+import ExportarClementinaHijosDialog from '@/components/lotes-recepcion/ExportarClementinaHijosDialog'
+import { PaqueteTableRow } from '@/components/lotes-recepcion/PaqueteTableRow'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import {
+Table,
+TableBody,
+TableHead,
+TableHeader,
+TableRow
+} from '@/components/ui/table'
+import { useAgencias } from '@/hooks/useAgencias'
+import type { GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
+import { useGruposPersonalizadosLocal } from '@/hooks/useGruposPersonalizadosLocal'
+import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
 import { TipoDestino } from '@/types/paquete'
-import type { GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
-import { Button } from '@/components/ui/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Copy, Check, Download, MapPin, Package, Edit, X } from 'lucide-react'
-import { useQueryClient } from '@tanstack/react-query'
-import { notify } from '@/lib/notify'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
-import { useGruposPersonalizadosLocal } from '@/hooks/useGruposPersonalizadosLocal'
-import { PaqueteTableRow } from '@/components/lotes-recepcion/PaqueteTableRow'
 import { clasificarEtiquetaDestino } from '@/utils/clasificarEtiquetaDestino'
-import { derivarProvinciaCantonDeDireccion } from '@/utils/derivarProvinciaCanton'
 import { copyTextToClipboard } from '@/utils/clipboard'
+import { derivarProvinciaCantonDeDireccion } from '@/utils/derivarProvinciaCanton'
+import { useQueryClient } from '@tanstack/react-query'
+import { SelectionActionBar } from '@/components/list/SelectionActionBar'
+import { Check,Copy,Download,MapPin,Package } from 'lucide-react'
+import React,{ useCallback,useMemo,useState } from 'react'
 
 /** Calcula el máximo de grupos que se pueden formar con la secuencia para N paquetes. */
 function maxGruposFromSecuencia(secuencia: string, totalPaquetes: number): number {
@@ -34,12 +40,6 @@ function maxGruposFromSecuencia(secuencia: string, totalPaquetes: number): numbe
   const suma = numeros.reduce((a, b) => a + b, 0)
   return suma > 0 ? Math.floor(totalPaquetes / suma) : 0
 }
-import CambiarTipoDestinoDialog from '@/components/lotes-recepcion/CambiarTipoDestinoDialog'
-import CambiarTipoDestinoMasivoDialog from '@/components/lotes-recepcion/CambiarTipoDestinoMasivoDialog'
-import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
-import ExportarClementinaHijosDialog from '@/components/lotes-recepcion/ExportarClementinaHijosDialog'
-import { Badge } from '@/components/ui/badge'
-import { useAgencias } from '@/hooks/useAgencias'
 
 interface PaquetesClementinaHijosListProps {
   paquetes: Paquete[]
@@ -424,58 +424,36 @@ export default function PaquetesClementinaHijosList({
         </Button>
       </div>
 
-      {/* Floating Toolbar for selection */}
-      {paquetesSeleccionados.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-background/90 backdrop-blur-md border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 animate-in fade-in duration-200 ring-1 ring-black/5 dark:ring-white/10">
-          <div className="flex items-center gap-2 mr-2">
-            <div className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-              {paquetesSeleccionados.size}
-            </div>
-            <span className="text-sm font-medium">seleccionados</span>
-          </div>
-
-          <div className="h-4 w-px bg-border mx-1" />
-
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              const first = paquetesSeleccionadosArray[0]
-              if (first) {
-                setPaqueteParaAtencion(first)
-                setShowAgregarAtencionDialog(true)
-              }
-            }}
-            disabled={paquetesSeleccionadosArray.length === 0}
-            className="h-8 text-xs shadow-sm hover:bg-muted"
-          >
-            Agregar a atención
-          </Button>
-
-          <div className="h-4 w-px bg-border mx-1" />
-
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setShowCambiarTipoDestinoMasivoDialog(true)}
-            className="h-8 text-xs shadow-sm hover:bg-muted"
-          >
-            Cambiar Tipo Destino
-          </Button>
-
-          <div className="h-4 w-px bg-border mx-1" />
-
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleDeseleccionarTodos}
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-full"
-            title="Deseleccionar todos"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      {/* Barra flotante de selección */}
+      <SelectionActionBar
+        count={paquetesSeleccionados.size}
+        onClear={handleDeseleccionarTodos}
+        itemLabel="paquete"
+      >
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            const first = paquetesSeleccionadosArray[0]
+            if (first) {
+              setPaqueteParaAtencion(first)
+              setShowAgregarAtencionDialog(true)
+            }
+          }}
+          disabled={paquetesSeleccionadosArray.length === 0}
+          className="h-8 rounded-full text-xs"
+        >
+          Agregar a atención
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setShowCambiarTipoDestinoMasivoDialog(true)}
+          className="h-8 rounded-full text-xs"
+        >
+          Cambiar Tipo Destino
+        </Button>
+      </SelectionActionBar>
 
       {/* Accordion principal por CIUDAD (misma estructura que paquetes normales: Bucket → SubRef → TipoDestino → GrupoPersonalizado) */}
       <div className="space-y-4">

@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+Select,
+SelectContent,
+SelectItem,
+SelectTrigger,
+SelectValue,
 } from '@/components/ui/select'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
 } from '@/components/ui/table'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
 import { notify } from '@/lib/notify'
-import { Loader2, RefreshCw, ListFilter } from 'lucide-react'
 import type { GuiaListaEtiquetadaConsultaDTO } from '@/types/listas-etiquetadas'
-import { Button } from '@/components/ui/button'
+import { ListFilter,Loader2,RefreshCw } from 'lucide-react'
+import { useCallback,useEffect,useState } from 'react'
 
 export default function GuiasEnVariasListasCard() {
   const [guias, setGuias] = useState<GuiaListaEtiquetadaConsultaDTO[]>([])

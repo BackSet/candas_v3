@@ -22,7 +22,6 @@ import com.candas.candas_backend.util.PermissionConstants;
 @RestController
 @RequestMapping("/api/v1/lotes-recepcion")
 @Tag(name = "Lotes de Recepción", description = "Endpoints para gestión de lotes de recepción")
-@CrossOrigin(origins = "*")
 public class LoteRecepcionController {
 
     private final LoteRecepcionService loteRecepcionService;

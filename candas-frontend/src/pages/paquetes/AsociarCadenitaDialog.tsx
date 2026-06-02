@@ -1,30 +1,30 @@
-import { useState } from 'react'
-import { useAsociarCadenitaPorLote } from '@/hooks/usePaquetes'
+import { ResultStatsGrid } from '@/components/dialogs/ResultStatsGrid'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+Table,
+TableBody,
+TableCell,
+TableHead,
+TableHeader,
+TableRow,
 } from '@/components/ui/table'
-import { Loader2, CheckCircle2, XCircle, Link2 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { useAsociarCadenitaPorLote } from '@/hooks/usePaquetes'
+import { cn } from '@/lib/utils'
 import type { ResultadoCadenita } from '@/types/paquete'
 import { parseGuias } from '@/utils/parseGuias'
-import { ResultStatsGrid } from '@/components/dialogs/ResultStatsGrid'
-import { cn } from '@/lib/utils'
+import { CheckCircle2,Link2,Loader2,XCircle } from 'lucide-react'
+import { useState } from 'react'
 
 interface AsociarCadenitaDialogProps {
   open: boolean

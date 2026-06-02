@@ -1,5 +1,5 @@
-import { ReactNode, memo } from 'react'
-import { useHasPermission, useHasAnyPermission, useHasRole } from '@/hooks/useHasRole'
+import { useHasAnyPermission,useHasPermission,useHasRole } from '@/hooks/useHasRole'
+import { ReactNode,memo } from 'react'
 
 interface ProtectedByPermissionProps {
   permission?: string

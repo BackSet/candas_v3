@@ -1,6 +1,6 @@
-import type { ComponentType, ReactNode } from 'react'
-import type { LucideProps } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { LucideProps } from 'lucide-react'
+import type { ComponentType,ReactNode } from 'react'
 
 export interface FormSectionProps {
   title: string
@@ -64,7 +64,7 @@ export function FormSection({
   return (
     <section
       className={cn(
-        'rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-4',
+        'rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-4 transition-shadow duration-200 hover:shadow-md animate-fade-up',
         className
       )}
     >

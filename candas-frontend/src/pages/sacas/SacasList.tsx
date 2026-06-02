@@ -1,36 +1,36 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { useSacas, useDeleteSaca } from '@/hooks/useSacas'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Eye, Edit, Trash2, Plus, ShoppingBag, MoreHorizontal } from 'lucide-react'
-import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
-import { PERMISSIONS } from '@/types/permissions'
 import { ListPageLayout } from '@/app/layout/ListPageLayout'
+import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
+import { DataTable,type DataTableColumn } from '@/components/data-table'
+import { FilterBar,SelectFilter } from '@/components/filters'
 import { ModulePageIcon } from '@/components/icons'
 import { ListPagination } from '@/components/list/ListPagination'
-import { EmptyState } from '@/components/states/EmptyState'
 import { ErrorState } from '@/components/states'
-import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { FilterBar, SelectFilter } from '@/components/filters'
+import { EmptyState } from '@/components/states/EmptyState'
+import { Button } from '@/components/ui/button'
+import {
+Dialog,
+DialogContent,
+DialogDescription,
+DialogFooter,
+DialogHeader,
+DialogTitle,
+} from '@/components/ui/dialog'
+import {
+DropdownMenu,
+DropdownMenuContent,
+DropdownMenuItem,
+DropdownMenuLabel,
+DropdownMenuSeparator,
+DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useListFilters } from '@/hooks/useListFilters'
-import { TamanoSaca, type Saca } from '@/types/saca'
-import { getApiErrorMessage, getInteragencyRestrictionMessage } from '@/lib/api/errors'
+import { useDeleteSaca,useSacas } from '@/hooks/useSacas'
+import { getApiErrorMessage,getInteragencyRestrictionMessage } from '@/lib/api/errors'
+import { PERMISSIONS } from '@/types/permissions'
+import { TamanoSaca,type Saca } from '@/types/saca'
+import { useNavigate } from '@tanstack/react-router'
+import { Edit,Eye,MoreHorizontal,Plus,Trash2 } from 'lucide-react'
+import { useMemo,useState } from 'react'
 
 const TAMANO_LABELS: Record<string, string> = {
   [TamanoSaca.INDIVIDUAL]: 'Individual',

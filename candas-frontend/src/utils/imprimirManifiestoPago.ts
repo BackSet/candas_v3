@@ -1,8 +1,8 @@
 import type { ManifiestoConsolidadoDetalle } from '@/types/manifiesto-consolidado'
 import type { ManifiestoPagoDetalle } from '@/types/manifiesto-pago'
 import {
-  imprimirManifiestoConsolidado as imprimirConsolidadoBase,
-  generarPDFManifiestoConsolidado as generarPdfConsolidadoBase,
+generarPDFManifiestoConsolidado as generarPdfConsolidadoBase,
+imprimirManifiestoConsolidado as imprimirConsolidadoBase,
 } from '@/utils/imprimirManifiestoConsolidado'
 
 /**

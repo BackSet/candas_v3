@@ -1,12 +1,12 @@
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
 import type {
-  ListasEtiquetadasBatchRequest,
-  ListasEtiquetadasBatchResult,
-  GuiaListaEtiquetadaConsultaDTO,
-  ConsultaListasEtiquetadasResponse,
+ConsultaListasEtiquetadasResponse,
+GuiaListaEtiquetadaConsultaDTO,
+ListasEtiquetadasBatchRequest,
+ListasEtiquetadasBatchResult,
 } from '@/types/listas-etiquetadas'
 import type { Paquete } from '@/types/paquete'
+import { apiClient } from './client'
+import { API_ENDPOINTS } from './endpoints'
 
 export const listasEtiquetadasService = {
   async createBatch(request: ListasEtiquetadasBatchRequest): Promise<ListasEtiquetadasBatchResult> {

@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/parametros-sistema")
 @Tag(name = "Parámetros del sistema", description = "Configuración del sistema (plantillas WhatsApp, etc.)")
-@CrossOrigin(origins = "*")
 public class ParametroSistemaController {
 
     private final ParametroSistemaService parametroSistemaService;

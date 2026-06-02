@@ -1,8 +1,8 @@
-import { useParams, useNavigate } from '@tanstack/react-router'
-import { useLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { LoteEspecialDetailContent } from './LoteEspecialDetailContent'
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
 import { DetailSkeleton } from '@/components/states'
+import { useLoteRecepcion } from '@/hooks/useLotesRecepcion'
+import { useNavigate,useParams } from '@tanstack/react-router'
+import { LoteEspecialDetailContent } from './LoteEspecialDetailContent'
 
 /** Vista de detalle de lote especial. Redirige a lotes-recepcion para unificar URL; renderiza contenido compartido. */
 export default function LoteEspecialDetail() {

@@ -1,40 +1,39 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React,{ useCallback,useMemo,useState } from 'react'
 
-import type { Paquete } from '@/types/paquete'
-import { TipoPaquete, TipoDestino } from '@/types/paquete'
-import type { GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Package, Copy, MapPin, Edit, X, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { useQueryClient } from '@tanstack/react-query'
-import { notify } from '@/lib/notify'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import AsignarHijosClementinaDialog from './AsignarHijosClementinaDialog'
+import { Input } from '@/components/ui/input'
+import {
+Table,
+TableBody,
+TableHead,
+TableHeader,
+TableRow
+} from '@/components/ui/table'
+import type { GrupoPersonalizadoLocal } from '@/hooks/useGruposPersonalizadosLocal'
 import { useGruposPersonalizadosLocal } from '@/hooks/useGruposPersonalizadosLocal'
+import { notify } from '@/lib/notify'
+import type { Paquete } from '@/types/paquete'
+import { TipoDestino,TipoPaquete } from '@/types/paquete'
+import { useQueryClient } from '@tanstack/react-query'
+import { SelectionActionBar } from '@/components/list/SelectionActionBar'
+import { AlertTriangle,CheckCircle2,Copy,Info,MapPin,Package } from 'lucide-react'
+import AsignarHijosClementinaDialog from './AsignarHijosClementinaDialog'
 
 
-import { guiaEfectiva } from '@/utils/paqueteGuia'
-import CrearGrupoDialog from '@/components/lotes-recepcion/CrearGrupoDialog'
-import CambiarTipoDialog from '@/components/lotes-recepcion/CambiarTipoDialog'
+import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
 import CambiarTipoDestinoDialog from '@/components/lotes-recepcion/CambiarTipoDestinoDialog'
 import CambiarTipoDestinoMasivoDialog from '@/components/lotes-recepcion/CambiarTipoDestinoMasivoDialog'
+import CambiarTipoDialog from '@/components/lotes-recepcion/CambiarTipoDialog'
 import CambiarTipoMasivoDialog from '@/components/lotes-recepcion/CambiarTipoMasivoDialog'
-import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
+import CrearGrupoDialog from '@/components/lotes-recepcion/CrearGrupoDialog'
 import { PaqueteTableRow } from '@/components/lotes-recepcion/PaqueteTableRow'
-import { clasificarEtiquetaDestino } from '@/utils/clasificarEtiquetaDestino'
-import { derivarProvinciaCantonDeDireccion } from '@/utils/derivarProvinciaCanton'
 import { cn } from '@/lib/utils'
+import { clasificarEtiquetaDestino } from '@/utils/clasificarEtiquetaDestino'
 import { copyTextToClipboard } from '@/utils/clipboard'
+import { derivarProvinciaCantonDeDireccion } from '@/utils/derivarProvinciaCanton'
+import { guiaEfectiva } from '@/utils/paqueteGuia'
 
 /** Calcula el máximo de grupos que se pueden formar con la secuencia para N ítems (guías). */
 function maxGruposFromSecuencia(secuencia: string, totalItems: number): number {
@@ -653,80 +652,55 @@ export default function PaquetesAgrupadosList({
   return (
     <div className="space-y-6 py-6">
 
-      {/* Floating Toolbar for selection */}
-      {paquetesSeleccionados.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-background/90 backdrop-blur-md border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 animate-in fade-in duration-200 ring-1 ring-black/5 dark:ring-white/10">
-          <div className="flex items-center gap-2 mr-2">
-            <div className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-              {paquetesSeleccionados.size}
-            </div>
-            <span className="text-sm font-medium">seleccionados</span>
-          </div>
-
-          <div className="h-4 w-px bg-border mx-1" />
-
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setShowCambiarTipoMasivoDialog(true)}
-            className="h-8 text-xs shadow-sm hover:bg-muted"
-          >
-            Cambiar tipo
-          </Button>
-
-          <div className="h-4 w-px bg-border mx-1" />
-
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              if (paquetesParaDestinoYAtencion.length === 0) {
-                notify.info('Para paquetes CLEMENTINA use la sección CLEMENTINA Hijos.')
-                return
-              }
-              const first = paquetesParaDestinoYAtencion[0]
-              if (first) {
-                setPaqueteParaAtencion(first)
-                setShowAgregarAtencionDialog(true)
-              }
-            }}
-            disabled={paquetesSeleccionadosArray.length === 0}
-            className="h-8 text-xs shadow-sm hover:bg-muted"
-          >
-            Agregar a atención
-          </Button>
-
-          <div className="h-4 w-px bg-border mx-1" />
-
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              if (paquetesParaDestinoYAtencion.length === 0) {
-                notify.info('Para paquetes CLEMENTINA use la sección CLEMENTINA Hijos.')
-                return
-              }
-              setShowCambiarTipoDestinoMasivoDialog(true)
-            }}
-            disabled={paquetesSeleccionadosArray.length === 0}
-            className="h-8 text-xs shadow-sm hover:bg-muted"
-          >
-            Cambiar Tipo Destino
-          </Button>
-
-          <div className="h-4 w-px bg-border mx-1" />
-
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleDeseleccionarTodos}
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-full"
-            title="Deseleccionar todos"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      {/* Barra flotante de selección */}
+      <SelectionActionBar
+        count={paquetesSeleccionados.size}
+        onClear={handleDeseleccionarTodos}
+        itemLabel="paquete"
+      >
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setShowCambiarTipoMasivoDialog(true)}
+          className="h-8 rounded-full text-xs"
+        >
+          Cambiar tipo
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            if (paquetesParaDestinoYAtencion.length === 0) {
+              notify.info('Para paquetes CLEMENTINA use la sección CLEMENTINA Hijos.')
+              return
+            }
+            const first = paquetesParaDestinoYAtencion[0]
+            if (first) {
+              setPaqueteParaAtencion(first)
+              setShowAgregarAtencionDialog(true)
+            }
+          }}
+          disabled={paquetesSeleccionadosArray.length === 0}
+          className="h-8 rounded-full text-xs"
+        >
+          Agregar a atención
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            if (paquetesParaDestinoYAtencion.length === 0) {
+              notify.info('Para paquetes CLEMENTINA use la sección CLEMENTINA Hijos.')
+              return
+            }
+            setShowCambiarTipoDestinoMasivoDialog(true)
+          }}
+          disabled={paquetesSeleccionadosArray.length === 0}
+          className="h-8 rounded-full text-xs"
+        >
+          Cambiar Tipo Destino
+        </Button>
+      </SelectionActionBar>
 
       {/* Lista principal: Provincia → Cantón → Tipo de destino → REF */}
       <div className="space-y-4">
@@ -768,12 +742,12 @@ export default function PaquetesAgrupadosList({
                           const parsedSec = parsearSecuencia(secuencia)
                           const sumaSecuencia = parsedSec?.suma ?? 0
 
-                          const statusSuma = useMemo(() => {
+                          const statusSuma = (() => {
                             if (!parsedSec || totalAgrupable === 0) return null
                             if (sumaSecuencia > totalAgrupable) return 'error'
                             if (sumaSecuencia < totalAgrupable) return 'warning'
                             return 'success'
-                          }, [parsedSec, sumaSecuencia, totalAgrupable])
+                          })()
 
                           const renderMensajeSuma = () => {
                             if (!statusSuma) return null
