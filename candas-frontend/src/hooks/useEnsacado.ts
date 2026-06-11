@@ -1,5 +1,6 @@
 import { ENSACADO_POLL,ENSACADO_SCAN } from '@/constants/ensacado'
 import { ensacadoService } from '@/lib/api/ensacado.service'
+import { getApiErrorMessage,isPaqueteYaEnsacadoError } from '@/lib/api/errors'
 import { notify } from '@/lib/notify'
 import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'
 
@@ -43,6 +44,10 @@ export function useMarcarEnsacado() {
       return idPaquete
     },
     onError: (error: unknown) => {
+      if (isPaqueteYaEnsacadoError(error)) {
+        notify.warning(getApiErrorMessage(error, 'Este paquete ya está ensacado'))
+        return
+      }
       notify.error(error, 'No se pudo marcar el paquete como ensacado')
     },
   })

@@ -40,6 +40,18 @@ export function getApiStatus(error: unknown): number | null {
   return typeof status === 'number' ? status : null
 }
 
+export function isPaqueteYaEnsacadoError(error: unknown): boolean {
+  const status = getApiStatus(error)
+  if (status !== 400 && status !== 409) return false
+
+  const message = getApiErrorMessage(error, '')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+
+  return message.includes('ya esta ensacado')
+}
+
 /** Sin respuesta HTTP: red caída, CORS bloqueado por el navegador, etc. */
 export function isNetworkOrCorsError(error: unknown): boolean {
   const err = error as { code?: string; response?: unknown; message?: string }

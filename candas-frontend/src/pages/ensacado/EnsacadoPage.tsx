@@ -14,7 +14,7 @@ useDesmarcarEnsacado,
 useInfoDespacho,
 useMarcarEnsacado,
 } from '@/hooks/useEnsacado'
-import { getApiErrorMessage,getApiStatus } from '@/lib/api/errors'
+import { getApiErrorMessage,getApiStatus,isPaqueteYaEnsacadoError } from '@/lib/api/errors'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import { useScanFeedback } from '@/hooks/useScanFeedback'
@@ -196,10 +196,17 @@ function EnsacadoPage() {
         limpiarInput()
         inputRef.current?.focus()
       },
-      onError: () => {
+      onError: (error) => {
         // Bloquear reintentos automáticos para el mismo paquete hasta escanear otra guía
         ultimoIdMarcadoRef.current = idPaquete
         setUltimoPaqueteMostrado(paqueteInfo)
+        if (isPaqueteYaEnsacadoError(error)) {
+          feedback.warning()
+          registrarEnHistorial(paqueteInfo.numeroGuia, 'duplicado')
+          limpiarInput()
+          inputRef.current?.focus()
+          return
+        }
         feedback.error()
         registrarEnHistorial(paqueteInfo.numeroGuia, 'error')
       },
