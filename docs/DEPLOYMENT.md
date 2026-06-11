@@ -71,7 +71,7 @@ Notas:
 
 1. Desplegar backend.
 2. Confirmar que backend responde:
-   - `https://<backend>.up.railway.app/v3/api-docs`
+   - `https://<backend>.up.railway.app/actuator/health`
 3. Configurar/validar `VITE_API_BASE_URL` en frontend.
 4. Desplegar frontend.
 5. Validar login y llamadas a `/api`.
@@ -138,7 +138,7 @@ Ese mensaje indica que el [Edge Proxy no puede alcanzar tu aplicación](https://
    No dejes `PORT` **vacía** ni un valor que no coincida con el **target port** del dominio. Si añadiste `PORT` a mano y duda, elimínala y vuelve a desplegar para que Railway la inyecte; o usa **Generate Domain** en ese servicio para alinear dominio y puerto.
 
 5. **Healthcheck**  
-   `candas-frontend/railway.json` define `healthcheckPath: "/"` para que el despliegue no se marque listo hasta que Nginx responda. Si falla, revisa **Deploy logs** (p. ej. `listen` mal formado si `PORT` no se sustituyó).
+   `candas-backend/railway.json` usa `/actuator/health`, que permanece disponible aunque Swagger esté deshabilitado en producción. `candas-frontend/railway.json` usa `/` para que el despliegue no se marque listo hasta que Nginx responda. Si falla, revisa **Deploy logs** (p. ej. `listen` mal formado si `PORT` no se sustituyó).
 
 6. **Build del frontend**  
    `VITE_API_BASE_URL` no corrige un 502 en `/`, pero es necesaria para el login y las llamadas al API tras cargar la SPA.
