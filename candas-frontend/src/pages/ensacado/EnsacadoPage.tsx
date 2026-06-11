@@ -31,6 +31,7 @@ interface ScanHistorial {
   id: number
   guia: string
   status: ScanStatus
+  mensaje?: string
   hora: string
   idPaquete?: number
 }
@@ -55,13 +56,14 @@ function EnsacadoPage() {
 
   const feedback = useScanFeedback()
 
-  const registrarEnHistorial = useCallback((guia: string, status: ScanStatus, idPaquete?: number) => {
+  const registrarEnHistorial = useCallback((guia: string, status: ScanStatus, idPaquete?: number, mensaje?: string) => {
     if (!guia) return
     historialIdRef.current += 1
     const entrada: ScanHistorial = {
       id: historialIdRef.current,
       guia,
       status,
+      mensaje,
       idPaquete,
       hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     }
@@ -208,7 +210,12 @@ function EnsacadoPage() {
           return
         }
         feedback.error()
-        registrarEnHistorial(paqueteInfo.numeroGuia, 'error')
+        registrarEnHistorial(
+          paqueteInfo.numeroGuia,
+          'error',
+          undefined,
+          getApiErrorMessage(error, 'No se pudo ensacar el paquete')
+        )
       },
       onSettled: () => {
         marcandoRef.current = false
@@ -224,7 +231,11 @@ function EnsacadoPage() {
     if (ultimoErrorGuiaRef.current === guia) return
     ultimoErrorGuiaRef.current = guia
     feedback.error()
-    registrarEnHistorial(guia, 'error')
+    const mensaje =
+      getApiStatus(errorPaquete) === 404
+        ? 'Paquete no encontrado'
+        : getApiErrorMessage(errorPaquete, 'Error al buscar el paquete')
+    registrarEnHistorial(guia, 'error', undefined, mensaje)
   }, [modo, errorPaquete, numeroGuiaDebounced, feedback, registrarEnHistorial])
 
   useEffect(() => {
@@ -472,15 +483,19 @@ function HistorialSesion({
               className="flex items-center gap-3 px-4 py-2 text-sm animate-in fade-in slide-in-from-top-1 duration-200"
             >
               <Icon className={cn('size-4 shrink-0', cfg.className)} />
-              <span
-                className={cn(
-                  'flex-1 truncate font-mono',
-                  item.status === 'deshecho' && 'text-muted-foreground line-through'
-                )}
-              >
-                {item.guia}
-              </span>
-              <span className={cn('text-[11px] font-medium', cfg.className)}>{cfg.label}</span>
+              <div className="min-w-0 flex-1">
+                <p
+                  className={cn(
+                    'truncate font-mono',
+                    item.status === 'deshecho' && 'text-muted-foreground line-through'
+                  )}
+                >
+                  {item.guia}
+                </p>
+                <p className={cn('truncate text-[11px] font-medium', cfg.className)}>
+                  {item.mensaje ?? cfg.label}
+                </p>
+              </div>
               {puedeDeshacer ? (
                 <Button
                   type="button"
