@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Theme: semantic colors reference :root/.dark variables for dark mode support */
 @theme inline {
   --color-background: hsl(var(--background));
@@ -24,12 +26,24 @@
   --color-ring: hsl(var(--ring));
   --color-error: hsl(var(--error));
   --color-error-foreground: hsl(var(--error-foreground));
+  --color-error-surface: hsl(var(--error-surface));
+  --color-error-border: hsl(var(--error-border));
+  --color-error-content: hsl(var(--error-content));
   --color-success: hsl(var(--success));
   --color-success-foreground: hsl(var(--success-foreground));
+  --color-success-surface: hsl(var(--success-surface));
+  --color-success-border: hsl(var(--success-border));
+  --color-success-content: hsl(var(--success-content));
   --color-info: hsl(var(--info));
   --color-info-foreground: hsl(var(--info-foreground));
+  --color-info-surface: hsl(var(--info-surface));
+  --color-info-border: hsl(var(--info-border));
+  --color-info-content: hsl(var(--info-content));
   --color-warning: hsl(var(--warning));
   --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-warning-surface: hsl(var(--warning-surface));
+  --color-warning-border: hsl(var(--warning-border));
+  --color-warning-content: hsl(var(--warning-content));
   --color-sidebar-background: hsl(var(--sidebar-background));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-muted: hsl(var(--sidebar-muted));
@@ -92,15 +106,27 @@
 
     --error: 0 72% 51%;
     --error-foreground: 0 0% 98%;
+    --error-surface: 0 72% 97%;
+    --error-border: 0 62% 84%;
+    --error-content: 0 62% 36%;
 
     --success: 142 55% 32%;
     --success-foreground: 0 0% 98%;
+    --success-surface: 142 45% 96%;
+    --success-border: 142 38% 78%;
+    --success-content: 142 55% 27%;
 
     --info: 215 75% 45%;
     --info-foreground: 0 0% 98%;
+    --info-surface: 215 75% 97%;
+    --info-border: 215 62% 82%;
+    --info-content: 215 75% 34%;
 
     --warning: 38 92% 45%;
-    --warning-foreground: 30 7% 18%;
+    --warning-foreground: 32 80% 28%;
+    --warning-surface: 40 100% 96%;
+    --warning-border: 38 78% 72%;
+    --warning-content: 32 80% 28%;
 
     --sidebar-background: 40 5% 96%;
     --sidebar-foreground: 30 5% 40%;
@@ -123,7 +149,7 @@
     --popover-foreground: 210 10% 92%;
 
     --primary: 215 85% 58%;
-    --primary-foreground: 220 20% 10%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 220 10% 20%;
     --secondary-foreground: 210 10% 92%;
@@ -143,15 +169,27 @@
 
     --error: 0 62% 55%;
     --error-foreground: 0 0% 98%;
+    --error-surface: 0 42% 15%;
+    --error-border: 0 42% 34%;
+    --error-content: 0 78% 78%;
 
     --success: 142 45% 48%;
-    --success-foreground: 220 20% 10%;
+    --success-foreground: 220 20% 8%;
+    --success-surface: 142 34% 14%;
+    --success-border: 142 34% 30%;
+    --success-content: 142 55% 72%;
 
     --info: 215 70% 62%;
-    --info-foreground: 220 20% 10%;
+    --info-foreground: 220 20% 8%;
+    --info-surface: 215 42% 16%;
+    --info-border: 215 42% 34%;
+    --info-content: 215 78% 78%;
 
     --warning: 38 85% 52%;
-    --warning-foreground: 220 20% 10%;
+    --warning-foreground: 42 90% 74%;
+    --warning-surface: 38 44% 15%;
+    --warning-border: 38 52% 34%;
+    --warning-content: 42 90% 74%;
 
     --sidebar-background: 220 14% 8%;
     --sidebar-foreground: 215 8% 68%;
@@ -172,6 +210,11 @@
   :host {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   html, body, #root {
@@ -185,6 +228,21 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv11', 'ss01';
     font-variation-settings: 'opsz' 32;
+    transition:
+      background-color var(--motion-duration-base) var(--motion-ease-standard),
+      color var(--motion-duration-base) var(--motion-ease-standard);
+  }
+
+  input,
+  textarea,
+  select {
+    color-scheme: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body {
+      transition: none;
+    }
   }
 
   /* Iconos vectoriales nítidos (Lucide) */

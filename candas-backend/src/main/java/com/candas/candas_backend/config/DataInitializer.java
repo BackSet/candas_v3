@@ -37,9 +37,9 @@ public class DataInitializer implements CommandLineRunner {
             UsuarioRepository usuarioRepository,
             UsuarioRolRepository usuarioRolRepository,
             PasswordEncoder passwordEncoder,
-            @Value("${app.bootstrap.create-default-admin:true}") boolean createDefaultAdmin,
+            @Value("${app.bootstrap.create-default-admin:false}") boolean createDefaultAdmin,
             @Value("${app.bootstrap.admin.username:admin}") String defaultAdminUsername,
-            @Value("${app.bootstrap.admin.password:admin123}") String defaultAdminPassword,
+            @Value("${app.bootstrap.admin.password:}") String defaultAdminPassword,
             @Value("${app.bootstrap.admin.email:admin@candas.com}") String defaultAdminEmail,
             @Value("${app.bootstrap.admin.full-name:Administrador del Sistema}") String defaultAdminFullName) {
         this.permisoRepository = permisoRepository;

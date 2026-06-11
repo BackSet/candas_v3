@@ -72,7 +72,7 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
     }
   }, [etiquetaSeleccionada])
 
-  const cargarEtiquetas = async () => {
+  async function cargarEtiquetas() {
     setCargandoEtiquetas(true)
     try {
       const list = await listasEtiquetadasService.getAllEtiquetas()
@@ -84,7 +84,7 @@ export default function ListaGuiasPorEtiqueta({ modoOperario = false }: ListaGui
     }
   }
 
-  const cargarGuias = async (etiqueta: string) => {
+  async function cargarGuias(etiqueta: string) {
     setCargandoGuias(true)
     try {
       const guiasList = await listasEtiquetadasService.findByEtiqueta(etiqueta)

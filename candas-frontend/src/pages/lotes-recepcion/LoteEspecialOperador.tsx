@@ -101,6 +101,7 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
   const { data: distribuidoresResponse } = useDistribuidores({ page: 0, size: 100 })
   const { data: destinatariosDirectos = [] } = useDestinatariosDirectosAll()
   const user = useAuthStore((s) => s.user)
+  const [bulkIdDestino, setBulkIdDestino] = useState<string>('')
 
   const destinatarioManager = useDestinatarioDirectoManager((destinatario) => {
     if (destinatario?.idDestinatarioDirecto) {
@@ -249,7 +250,6 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
   const [sacaDistribution, setSacaDistribution] = useState('')
   const [tamanosSacasBulk, setTamanosSacasBulk] = useState<TamanoSaca[]>([])
   const [bulkTipoDestino, setBulkTipoDestino] = useState<'AGENCIA' | 'DIRECTO'>('AGENCIA')
-  const [bulkIdDestino, setBulkIdDestino] = useState<string>('')
   const [bulkDestinatarioOrigen, setBulkDestinatarioOrigen] = useState<'EXISTENTE' | 'DESDE_PAQUETE'>('EXISTENTE')
   const [bulkIdPaqueteOrigenDestinatario, setBulkIdPaqueteOrigenDestinatario] = useState<string>('')
   const [bulkDesdePaqueteNombre, setBulkDesdePaqueteNombre] = useState('')

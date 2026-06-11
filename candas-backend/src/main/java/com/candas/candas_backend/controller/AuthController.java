@@ -16,6 +16,7 @@ import com.candas.candas_backend.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,9 @@ import java.util.List;
 @RequestMapping("/api/auth")
 @Tag(name = "Autenticación", description = "Endpoints para autenticación de usuarios")
 public class AuthController {
+
+    @Value("${app.auth.public-registration-enabled:false}")
+    private boolean publicRegistrationEnabled;
 
     private final AuthService authService;
     private final UsuarioService usuarioService;
@@ -92,6 +96,12 @@ public class AuthController {
     @PostMapping("/register")
     @Operation(summary = "Registrar nuevo usuario", description = "Crea un nuevo usuario en el sistema. Por defecto se asigna el rol OPERARIO")
     public ResponseEntity<UsuarioDTO> register(@Valid @RequestBody UsuarioDTO dto) {
+        if (!publicRegistrationEnabled) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "El registro público está deshabilitado"
+            );
+        }
         // Asignar rol OPERARIO por defecto si no se especifica
         if (dto.getRoles() == null || dto.getRoles().isEmpty()) {
             Rol rolOperario = rolRepository.findByNombre("OPERARIO")

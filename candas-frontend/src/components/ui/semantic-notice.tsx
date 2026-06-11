@@ -8,12 +8,13 @@ const noticeVariants = cva('rounded-lg border p-3', {
   variants: {
     variant: {
       warning:
-        'border-warning/40 bg-warning/15 text-warning-foreground [&_.semantic-notice-icon]:text-warning',
+        'border-warning-border bg-warning-surface text-warning-content [&_.semantic-notice-icon]:text-warning-content',
       error:
-        'border-error/40 bg-error/10 text-foreground [&_.semantic-notice-icon]:text-error',
-      info: 'border-info/40 bg-info/10 text-foreground [&_.semantic-notice-icon]:text-info',
+        'border-error-border bg-error-surface text-error-content [&_.semantic-notice-icon]:text-error-content',
+      info:
+        'border-info-border bg-info-surface text-info-content [&_.semantic-notice-icon]:text-info-content',
       success:
-        'border-success/40 bg-success/10 text-foreground [&_.semantic-notice-icon]:text-success',
+        'border-success-border bg-success-surface text-success-content [&_.semantic-notice-icon]:text-success-content',
       muted: 'border-border bg-muted/50 text-foreground [&_.semantic-notice-icon]:text-muted-foreground',
     },
   },

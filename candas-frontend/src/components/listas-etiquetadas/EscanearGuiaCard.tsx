@@ -48,7 +48,7 @@ export default function EscanearGuiaCard() {
     cargarHistorial(true)
   }, [])
 
-  const cargarHistorial = async (silent = false) => {
+  async function cargarHistorial(silent = false) {
     try {
       const datos = await listasEtiquetadasService.getHistorialReceptados()
       const formateados: EscaneoResultado[] = datos.map(d => ({
@@ -446,7 +446,7 @@ export default function EscanearGuiaCard() {
                     {resultadoActual.etiqueta ? (
                       <>
                         <div
-                          className="h-14 w-14 rounded-full flex items-center justify-center bg-white/50 backdrop-blur-sm shadow-sm"
+                          className="h-14 w-14 rounded-full flex items-center justify-center border border-border/50 bg-card/70 backdrop-blur-sm shadow-sm"
                           style={{ color: obtenerColorEtiqueta(resultadoActual.etiqueta).text }}
                         >
                           <CheckCircle2 className="h-8 w-8" />
@@ -460,7 +460,7 @@ export default function EscanearGuiaCard() {
                       </>
                     ) : (
                       <>
-                        <div className="h-14 w-14 rounded-full flex items-center justify-center bg-white/50 backdrop-blur-sm shadow-sm text-error">
+                        <div className="h-14 w-14 rounded-full flex items-center justify-center border border-error-border bg-error-surface backdrop-blur-sm shadow-sm text-error-content">
                           <XCircle className="h-8 w-8" />
                         </div>
                         <span className="text-xs font-bold uppercase tracking-wider text-center text-error">
