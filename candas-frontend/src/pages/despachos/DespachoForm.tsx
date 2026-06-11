@@ -37,7 +37,7 @@ import type { Paquete } from '@/types/paquete'
 import { TamanoSaca } from '@/types/saca'
 import { formatearTamanoSaca } from '@/utils/ensacado'
 import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
-import { calcularTamanoSugerido } from '@/utils/saca'
+import { calcularTamanoSugerido,capacidadMaximaKg } from '@/utils/saca'
 import { useNavigate,useParams } from '@tanstack/react-router'
 import { ArrowLeft,ArrowRight,Check,Link2,List as ListIcon,Loader2,MapPin,Package,Plus,RotateCcw,Sparkles,SplitSquareVertical,Trash2,Truck,User,Zap } from 'lucide-react'
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react'
@@ -399,24 +399,6 @@ export default function DespachoForm() {
     }
   }, [agrupacionGroups.length, agrupacionGroups.join(','), listadoProcesadoPaquetes, tamanosSacasAgrupacion.length])
 
-  useEffect(() => {
-    if (despacho && isEdit) {
-      if (despacho.idAgencia) {
-        setTipoEnvio('agencia')
-      } else if (despacho.idDestinatarioDirecto || despacho.despachoDirecto) {
-        setTipoEnvio('directo')
-        setDestinatarioOrigenDirecto('existente')
-        if (despacho.despachoDirecto?.destinatarioDirecto) {
-          const destinatario = despacho.despachoDirecto.destinatarioDirecto
-          setDestinatarioSeleccionado(destinatario)
-          setValue('idDestinatarioDirecto', destinatario.idDestinatarioDirecto)
-        } else if (despacho.idDestinatarioDirecto) {
-          setValue('idDestinatarioDirecto', despacho.idDestinatarioDirecto)
-        }
-      }
-    }
-  }, [despacho, isEdit, setValue])
-
   const distribuidorManager = useDistribuidorManager((idDistribuidor) => {
     setValue('idDistribuidor', idDistribuidor)
   })
@@ -430,7 +412,6 @@ export default function DespachoForm() {
 
   const destinatarioManager = useDestinatarioDirectoManager((destinatario) => {
     setValue('idDestinatarioDirecto', destinatario.idDestinatarioDirecto)
-    setDestinatarioSeleccionado(destinatario)
   })
   const createAgenciaMutation = useCreateAgencia()
   const [showCrearAgenciaDialog, setShowCrearAgenciaDialog] = useState(false)
@@ -460,6 +441,24 @@ export default function DespachoForm() {
     generarCodigo,
     handleCrearCliente,
   } = destinatarioManager
+
+  useEffect(() => {
+    if (despacho && isEdit) {
+      if (despacho.idAgencia) {
+        setTipoEnvio('agencia')
+      } else if (despacho.idDestinatarioDirecto || despacho.despachoDirecto) {
+        setTipoEnvio('directo')
+        setDestinatarioOrigenDirecto('existente')
+        if (despacho.despachoDirecto?.destinatarioDirecto) {
+          const destinatario = despacho.despachoDirecto.destinatarioDirecto
+          setDestinatarioSeleccionado(destinatario)
+          setValue('idDestinatarioDirecto', destinatario.idDestinatarioDirecto)
+        } else if (despacho.idDestinatarioDirecto) {
+          setValue('idDestinatarioDirecto', despacho.idDestinatarioDirecto)
+        }
+      }
+    }
+  }, [despacho, isEdit, setDestinatarioSeleccionado, setValue])
 
   const handleAgregarTelefonoAgencia = () => {
     setNuevaAgenciaTelefonos((prev) => [...prev, { numero: '', principal: false }])
@@ -580,6 +579,14 @@ export default function DespachoForm() {
     paquetesDeSacas.forEach((p, id) => { paquetesMap.set(id, p) })
     return Array.from(paquetesMap.values())
   }, [paquetesDisponibles, paquetesAgregados, paquetesDeSacas])
+
+  const paquetesPorId = useMemo(() => {
+    const paquetesMap = new Map<number, Paquete>()
+    todosLosPaquetes.forEach((paquete) => {
+      if (paquete.idPaquete != null) paquetesMap.set(paquete.idPaquete, paquete)
+    })
+    return paquetesMap
+  }, [todosLosPaquetes])
 
   const paquetesEnSacas = useMemo(() => {
     const ids = new Set<number>()
@@ -737,18 +744,34 @@ export default function DespachoForm() {
       nombreEmpresa: (destinatarioDirectoData || destinatarioDirectoSeleccionado)?.nombreEmpresa,
     }
 
+  const detalleSacasResumen = useMemo(() => {
+    return sacas.map((saca, index) => {
+      const paquetes = saca.idPaquetes.map((idPaquete) => {
+        const paquete = paquetesAgregados.get(idPaquete) || paquetesPorId.get(idPaquete)
+        return {
+          idPaquete,
+          numeroGuia: paquete?.numeroGuia || `#${idPaquete}`,
+          pesoKg: Number(paquete?.pesoKilos || 0),
+        }
+      })
+      const pesoKg = paquetes.reduce((acc, paquete) => acc + paquete.pesoKg, 0)
+      const capacidadKg = capacidadMaximaKg(saca.tamano)
+
+      return {
+        numeroOrden: index + 1,
+        tamano: saca.tamano,
+        tamanoLabel: formatearTamanoSaca(saca.tamano),
+        capacidadKg,
+        pesoKg,
+        totalPaquetes: saca.idPaquetes.length,
+        paquetes,
+      }
+    })
+  }, [sacas, paquetesAgregados, paquetesPorId])
+
   const pesoTotalEstimado = useMemo(
-    () =>
-      sacas.reduce(
-        (acc, s) =>
-          acc +
-          s.idPaquetes.reduce((sum, pid) => {
-            const p = paquetesAgregados.get(pid) || todosLosPaquetes.find((x) => x.idPaquete === pid)
-            return sum + (p?.pesoKilos || 0)
-          }, 0),
-        0
-      ),
-    [sacas, paquetesAgregados, todosLosPaquetes]
+    () => detalleSacasResumen.reduce((acc, saca) => acc + saca.pesoKg, 0),
+    [detalleSacasResumen]
   )
 
   const telefonoAgenciaResumen =
@@ -766,6 +789,7 @@ export default function DespachoForm() {
     pesoTotalKg: pesoTotalEstimado,
     totalSacas: sacas.length,
     totalPaquetes: sacas.reduce((acc, s) => acc + s.idPaquetes.length, 0),
+    sacasDetalle: detalleSacasResumen,
     sacasPorTamano: [TamanoSaca.INDIVIDUAL, TamanoSaca.PEQUENO, TamanoSaca.MEDIANO, TamanoSaca.GRANDE]
       .map((t) => ({ label: formatearTamanoSaca(t), count: sacas.filter((s) => s.tamano === t).length }))
       .filter((x) => x.count > 0),

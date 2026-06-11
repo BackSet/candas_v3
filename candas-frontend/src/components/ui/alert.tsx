@@ -3,18 +3,19 @@ import { cva,type VariantProps } from "class-variance-authority"
 import * as React from "react"
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
+        default: "border-border bg-card text-card-foreground [&>svg]:text-foreground",
         destructive:
-          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+          "border-error-border bg-error-surface text-error-content [&>svg]:text-error-content",
         warning:
-          "border-warning/40 bg-warning/15 text-warning-foreground [&>svg]:text-warning",
+          "border-warning-border bg-warning-surface text-warning-content [&>svg]:text-warning-content",
         success:
-          "border-success/40 bg-success/10 text-foreground [&>svg]:text-success",
-        info: "border-info/40 bg-info/10 text-foreground [&>svg]:text-info",
+          "border-success-border bg-success-surface text-success-content [&>svg]:text-success-content",
+        info:
+          "border-info-border bg-info-surface text-info-content [&>svg]:text-info-content",
       },
     },
     defaultVariants: {

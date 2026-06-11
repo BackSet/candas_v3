@@ -36,6 +36,9 @@ export { API_BASE_URL }
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000,
+  allowAbsoluteUrls: false,
+  maxContentLength: 100 * 1024 * 1024,
+  maxBodyLength: 100 * 1024 * 1024,
   headers: {
     'Content-Type': 'application/json',
   },

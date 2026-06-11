@@ -39,9 +39,13 @@ public class CorsConfig {
 
         configuration.setAllowedOriginPatterns(parsedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Agencia-Origen-Activa-Id"
+        ));
+        configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);
 
         var source = new UrlBasedCorsConfigurationSource();

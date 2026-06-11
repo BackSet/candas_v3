@@ -14,24 +14,40 @@ import {
   Phone,
   Scale,
   User,
+  Weight,
 } from 'lucide-react'
 import type { ComponentType, ReactNode } from 'react'
 
+export interface ResumenSacaDetalle {
+  numeroOrden: number
+  tamanoLabel: string
+  capacidadKg: number
+  pesoKg: number
+  totalPaquetes: number
+  paquetes: {
+    idPaquete: number
+    numeroGuia: string
+    pesoKg: number
+  }[]
+}
+
 export interface ResumenDestinoData {
-  /** "Agencia" | "Destinatario directo" */
   tipoLabel: string
   nombre?: string | null
   nombreEmpresa?: string | null
   codigoDestino?: string | null
   telefono?: string | null
   direccion?: string | null
-  /** Cantón / provincia. */
   ubicacion?: string | null
   pesoTotalKg: number
   totalSacas: number
   totalPaquetes: number
-  /** Desglose de sacas por tamaño (solo tamaños con count > 0, ya ordenados). */
   sacasPorTamano?: { label: string; count: number }[]
+  sacasDetalle?: ResumenSacaDetalle[]
+}
+
+function formatKg(value: number): string {
+  return `${value.toFixed(2)} kg`
 }
 
 function formatBreakdown(items?: { label: string; count: number }[]): string {
@@ -44,7 +60,22 @@ function val(v?: string | null): string | undefined {
   return t ? t : undefined
 }
 
-/** Construye un bloque de texto listo para pegar en plataformas del courier. */
+function buildSacaText(saca: ResumenSacaDetalle): string {
+  return [
+    `Saca ${saca.numeroOrden}`,
+    `Tamaño: ${saca.tamanoLabel}`,
+    `Peso: ${formatKg(saca.pesoKg)}`,
+  ].filter(Boolean).join(' | ')
+}
+
+function buildPesoSacasText(sacas: ResumenSacaDetalle[]): string {
+  const total = sacas.reduce((acc, saca) => acc + saca.pesoKg, 0)
+  return [
+    ...sacas.map(buildSacaText),
+    `Total sacas: ${formatKg(total)}`,
+  ].join('\n')
+}
+
 export function buildCourierText(d: ResumenDestinoData): string {
   const lines: string[] = []
   if (val(d.nombre)) lines.push(`Destinatario: ${val(d.nombre)}`)
@@ -53,11 +84,18 @@ export function buildCourierText(d: ResumenDestinoData): string {
   if (val(d.telefono)) lines.push(`Teléfono: ${val(d.telefono)}`)
   if (val(d.direccion)) lines.push(`Dirección: ${val(d.direccion)}`)
   if (val(d.ubicacion)) lines.push(`Ciudad/Provincia: ${val(d.ubicacion)}`)
-  lines.push(`Peso total: ${d.pesoTotalKg.toFixed(2)} kg`)
+  lines.push(`Peso total: ${formatKg(d.pesoTotalKg)}`)
   lines.push(`Sacas: ${d.totalSacas}`)
   const breakdown = formatBreakdown(d.sacasPorTamano)
   if (breakdown) lines.push(`Sacas por tamaño: ${breakdown}`)
   lines.push(`Paquetes: ${d.totalPaquetes}`)
+
+  if (d.sacasDetalle?.length) {
+    lines.push('')
+    lines.push('Detalle de sacas:')
+    d.sacasDetalle.forEach((saca) => lines.push(buildSacaText(saca)))
+  }
+
   return lines.join('\n')
 }
 
@@ -144,11 +182,84 @@ function CopyField({
   )
 }
 
-/**
- * Resumen del despacho con sus métricas clave (sacas, paquetes, peso, código de
- * destino) y los datos del destinatario, todos copiables individualmente y como
- * bloque de texto para pegar en plataformas del courier de distribución.
- */
+function PesosPorSaca({ sacas }: { sacas: ResumenSacaDetalle[] }) {
+  return (
+    <div className="rounded-xl border border-border bg-background p-4 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Weight className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground">Sacas para courier</span>
+        </div>
+        <CopyActionButton
+          textToCopy={buildPesoSacasText(sacas)}
+          successMessage="Detalle de pesos copiado"
+          errorMessage="No se pudo copiar el detalle de pesos"
+          title="Copiar detalle de sacas"
+          size="sm"
+          className="h-8 gap-1.5"
+        >
+          <ClipboardCopy className="h-3.5 w-3.5" />
+          Copiar sacas
+        </CopyActionButton>
+      </div>
+
+      <div className="space-y-3">
+        {sacas.map((saca) => {
+          return (
+            <div key={saca.numeroOrden} className="rounded-lg border border-border/70 bg-muted/20 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-foreground">Saca {saca.numeroOrden}</span>
+                    <span className="rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium">
+                      {saca.tamanoLabel}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{saca.totalPaquetes} paquete(s)</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    <CopyActionButton
+                      textToCopy={saca.tamanoLabel}
+                      successMessage="Tamaño copiado"
+                      title="Copiar tamaño"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7"
+                    >
+                      Tamaño: {saca.tamanoLabel}
+                    </CopyActionButton>
+                    <CopyActionButton
+                      textToCopy={formatKg(saca.pesoKg)}
+                      successMessage="Peso de saca copiado"
+                      title="Copiar peso de saca"
+                      variant="secondary"
+                      size="sm"
+                      className="h-7"
+                    >
+                      Peso: {formatKg(saca.pesoKg)}
+                    </CopyActionButton>
+                  </div>
+                </div>
+                <CopyActionButton
+                  textToCopy={buildSacaText(saca)}
+                  successMessage={`Saca ${saca.numeroOrden} copiada`}
+                  errorMessage="No se pudo copiar la saca"
+                  title={`Copiar saca ${saca.numeroOrden}`}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                >
+                  <Copy className="h-4 w-4 text-muted-foreground" />
+                </CopyActionButton>
+              </div>
+
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function ResumenDestinoDespacho({
   data,
   className,
@@ -172,16 +283,10 @@ export function ResumenDestinoDespacho({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Métricas clave */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Metric icon={Boxes} label="Sacas" value={data.totalSacas} />
-        <Metric icon={Package} label="Paquetes" value={data.totalPaquetes} />
-        <Metric
-          icon={Scale}
-          label="Peso total"
-          value={`${data.pesoTotalKg.toFixed(2)} kg`}
-          copyText={`${data.pesoTotalKg.toFixed(2)} kg`}
-        />
+        <Metric icon={Boxes} label="Sacas" value={data.totalSacas} copyText={String(data.totalSacas)} />
+        <Metric icon={Package} label="Paquetes" value={data.totalPaquetes} copyText={String(data.totalPaquetes)} />
+        <Metric icon={Scale} label="Peso total" value={formatKg(data.pesoTotalKg)} copyText={formatKg(data.pesoTotalKg)} />
         {val(data.codigoDestino) ? (
           <Metric
             icon={Hash}
@@ -191,41 +296,12 @@ export function ResumenDestinoDespacho({
             accent
           />
         ) : (
-          <Metric icon={Hash} label="Código destino" value={<span className="text-base text-muted-foreground">—</span>} />
+          <Metric icon={Hash} label="Código destino" value={<span className="text-base text-muted-foreground">-</span>} />
         )}
       </div>
 
-      {/* Desglose de sacas por tamaño */}
-      {data.sacasPorTamano && data.sacasPorTamano.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-3">
-          <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Boxes className="h-3.5 w-3.5" />
-            Sacas por tamaño
-          </span>
-          {data.sacasPorTamano.map((s) => (
-            <span
-              key={s.label}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1 text-xs font-medium text-foreground"
-            >
-              <span className="font-mono font-bold tabular-nums">{s.count}</span>
-              {s.label}
-            </span>
-          ))}
-          <CopyActionButton
-            textToCopy={formatBreakdown(data.sacasPorTamano)}
-            successMessage="Desglose copiado"
-            errorMessage="No se pudo copiar el desglose"
-            title="Copiar desglose de sacas"
-            variant="ghost"
-            size="icon"
-            className="ml-auto h-8 w-8 shrink-0"
-          >
-            <Copy className="h-4 w-4 text-muted-foreground" />
-          </CopyActionButton>
-        </div>
-      ) : null}
+      {data.sacasDetalle && data.sacasDetalle.length > 0 ? <PesosPorSaca sacas={data.sacasDetalle} /> : null}
 
-      {/* Datos del destinatario (copiables para el courier) */}
       {hayDestinatario ? (
         <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">

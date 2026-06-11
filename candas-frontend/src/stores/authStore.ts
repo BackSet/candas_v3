@@ -1,7 +1,7 @@
 import { authService } from '@/lib/api/auth.service'
 import type { User } from '@/types/user'
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 interface AuthState {
   user: User | null
@@ -89,6 +89,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'candas-auth-storage',
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => {
         return {
           user: state.user,

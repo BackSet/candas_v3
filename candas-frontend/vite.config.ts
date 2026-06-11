@@ -21,6 +21,13 @@ function resolveAppUrl(env: Record<string, string>, isProd: boolean): string {
   return `${protocol}://${host}:${port}`
 }
 
+function resolveAllowedHosts(env: Record<string, string>): string[] {
+  return (env.VITE_ALLOWED_HOSTS ?? '')
+    .split(',')
+    .map((host) => host.trim())
+    .filter(Boolean)
+}
+
 function injectAppUrlPlugin(appUrl: string): Plugin {
   return {
     name: 'candas-inject-app-url',
@@ -53,6 +60,10 @@ export default defineConfig(({ mode }) => {
       // Solo `VITE_NETWORK_MODE=lan` expone el dev server en la LAN (0.0.0.0).
       host: isLanMode ? true : undefined,
       port: Number(env.VITE_PORT ?? DEFAULT_DEV_PORT),
+      allowedHosts: resolveAllowedHosts(env),
+    },
+    preview: {
+      allowedHosts: resolveAllowedHosts(env),
     },
     build: {
       rollupOptions: {

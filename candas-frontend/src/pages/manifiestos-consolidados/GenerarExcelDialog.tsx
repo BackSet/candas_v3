@@ -8,6 +8,7 @@ DialogFooter,
 DialogHeader,
 DialogTitle,
 } from '@/components/ui/dialog'
+import { SemanticNotice } from '@/components/ui/semantic-notice'
 import { notify } from '@/lib/notify'
 import type { ManifiestoConsolidadoDetalle } from '@/types/manifiesto-consolidado'
 import { generarExcelManifiestoConsolidado } from '@/utils/generarExcelManifiestoConsolidado'
@@ -114,12 +115,16 @@ export default function GenerarExcelDialog({
 
         <div className="p-6 space-y-4 overflow-y-auto min-h-0 flex-1">
           {totalPaquetes === 0 ? (
-            <div className="flex items-center gap-3 rounded-xl border border-warning/40 bg-warning/15 p-4">
-              <AlertCircle className="size-5 shrink-0 text-warning" strokeWidth={1.75} />
-              <p className="text-sm text-warning-foreground">
+            <SemanticNotice
+              icon={AlertCircle}
+              title="Sin paquetes para exportar"
+              variant="warning"
+              className="rounded-xl p-4"
+            >
+              <p>
                 No hay paquetes con número de guía en este manifiesto. El archivo Excel podría estar vacío.
               </p>
-            </div>
+            </SemanticNotice>
           ) : (
             <>
               <div className="p-4 bg-muted/20 rounded-xl border border-border/30">

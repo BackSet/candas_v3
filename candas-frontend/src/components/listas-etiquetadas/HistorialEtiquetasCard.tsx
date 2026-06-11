@@ -44,7 +44,7 @@ export default function HistorialEtiquetasCard() {
         loadData()
     }, [fechaInicio, fechaFin, etiquetaFiltro])
 
-    const loadData = async () => {
+    async function loadData() {
         setLoading(true)
         try {
             const list = etiquetaFiltro === 'TODAS'

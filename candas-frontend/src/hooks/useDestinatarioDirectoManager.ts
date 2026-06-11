@@ -60,8 +60,9 @@ export function useDestinatarioDirectoManager(
       setNuevoClienteNombreEmpresa('')
       setNuevoClienteActivo(true)
       
-      if (nuevoCliente && onDestinatarioSeleccionado) {
-        onDestinatarioSeleccionado(nuevoCliente)
+      if (nuevoCliente) {
+        setDestinatarioSeleccionado(nuevoCliente)
+        onDestinatarioSeleccionado?.(nuevoCliente)
       }
       
       notify.success('Destinatario directo creado exitosamente')
