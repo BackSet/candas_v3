@@ -40,14 +40,14 @@ public class EnsacadoController {
     @Operation(summary = "Marcar paquete como ensacado")
     public ResponseEntity<Void> marcarEnsacado(@PathVariable Long idPaquete) {
         ensacadoService.marcarPaqueteComoEnsacado(idPaquete);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/desmarcar-ensacado/{idPaquete}")
     @Operation(summary = "Deshacer el ensacado de un paquete (vuelve a ASIGNADO_SACA)")
     public ResponseEntity<Void> desmarcarEnsacado(@PathVariable Long idPaquete) {
         ensacadoService.desmarcarPaqueteEnsacado(idPaquete);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/despachos/en-progreso")
@@ -94,7 +94,7 @@ public class EnsacadoController {
     public ResponseEntity<Void> actualizarUltimaBusqueda(@Valid @RequestBody EnsacadoUltimaBusquedaRequestDTO body) {
         String username = getCurrentUsername();
         ensacadoService.actualizarUltimaBusqueda(username, body.getNumeroGuia());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     private String getCurrentUsername() {
