@@ -1,0 +1,160 @@
+# Candas - Contexto tecnico del proyecto
+
+## Identificacion
+
+- Proyecto: Candas v3. [verificado en documentacion: `README.md`]
+- Repositorio remoto: `https://github.com/BackSet/candas_v3.git`. [verificado en Git]
+- Rama base de trabajo para agentes: `dev`. [verificado en Git]
+- Ruta de contexto IA: `docs/ai`. [verificado en Git]
+- Proposito declarado: sistema de gestion logistica y operativa. [verificado en documentacion: `README.md`]
+
+## Estado de inspeccion
+
+- La rama activa al crear este contexto era `dev`. [verificado en Git]
+- `git status --short --branch` estaba limpio antes de editar. [verificado en Git]
+- Los cuatro archivos canonicos de `docs/ai` no existian antes de esta implementacion. [verificado en Git]
+- Este documento usa como fuente principal el codigo y la configuracion ejecutable de la rama `dev`. [verificado en Git]
+
+## Estructura principal
+
+- `candas-backend/`: API REST Spring Boot, recursos, migraciones Flyway, Dockerfile y configuracion Railway. [verificado en Git]
+- `candas-frontend/`: SPA React/Vite/TypeScript, rutas, paginas, hooks, services API, stores, componentes UI, Dockerfile y configuracion Railway. [verificado en Git]
+- `docs/`: documentacion funcional, tecnica, despliegue, UX/UI y arquitectura. [verificado en documentacion]
+- `docs/ai/`: contexto tecnico canonico para IA y agentes. [verificado en Git]
+- `archivos de prueba/`, `resmas/`, `scripts/`, `.cursor/`, `.agent/`, `.obsidian/`, `.vscode/`: artefactos auxiliares o locales; no son fuente primaria salvo que una tarea lo indique. [inferido]
+
+## Stack confirmado
+
+### Backend
+
+- Java 25. [verificado en Git: `candas-backend/pom.xml`, `candas-backend/Dockerfile`]
+- Spring Boot `4.1.0` como parent Maven. [verificado en Git: `candas-backend/pom.xml`]
+- Starters: Web MVC, Security, Data JPA, Validation, Flyway, Actuator, Test. [verificado en Git: `candas-backend/pom.xml`]
+- PostgreSQL JDBC runtime y Flyway PostgreSQL. [verificado en Git: `candas-backend/pom.xml`]
+- JJWT `0.13.0`. [verificado en Git: `candas-backend/pom.xml`]
+- Springdoc OpenAPI `3.0.3`. [verificado en Git: `candas-backend/pom.xml`]
+- MapStruct `1.6.3`, Lombok, Apache POI `5.5.1`, JasperReports `7.0.7`, Barbecue `1.5-beta1`. [verificado en Git: `candas-backend/pom.xml`]
+- Nota: algunas docs historicas mencionan Spring Boot `4.0.1`, JJWT `0.12.5` y Springdoc `2.7.0`; las versiones ejecutables del `pom.xml` prevalecen. [verificado en documentacion] [verificado en Git]
+
+### Frontend
+
+- React `19.2.7`, React DOM `19.2.7`, TypeScript `~5.9.3`, Vite `^7.3.5`. [verificado en Git: `candas-frontend/package.json`]
+- TanStack Router `^1.170.15`, TanStack Query `^5.101.0`, Zustand `^5.0.14`. [verificado en Git]
+- React Hook Form, Zod, Radix UI, Axios, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
+- Build con Vite y TypeScript; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
+
+## Arquitectura por capa
+
+### Backend
+
+- Paquete base: `com.candas.candas_backend`. [verificado en Git]
+- Capas principales: `controller` -> `service` -> `repository`/`repository/spec` -> entidades JPA. [verificado en Git] [verificado en documentacion: `docs/ARQUITECTURA_BACKEND.md`]
+- DTOs en `dto`; validacion con Jakarta Validation en entradas donde aplica. [verificado en Git]
+- Mapeo: `PaqueteMapper` para Paquete; otros modulos hacen mapeo en servicios. [verificado en Git] [verificado en documentacion]
+- Manejo de errores: `GlobalExceptionHandler`, `ApiErrorResponse`, `ResourceNotFoundException`, `BadRequestException`, `AgenciaAccessDeniedException`. [verificado en Git]
+- Seguridad: JWT stateless con `JwtAuthenticationFilter`, `JwtService`, `CustomUserDetailsService`, `SecurityConfig` y `@PreAuthorize` en controladores. [verificado en Git]
+
+### Frontend
+
+- Rutas TanStack centralizadas en `src/routeTree.gen.tsx` y layout protegido en `src/routes/_layout.tsx`. [verificado en Git]
+- Layout y navegacion en `src/app/layout` y `src/config/navigation.ts`. [verificado en Git]
+- Paginas por modulo en `src/pages/<modulo>`. [verificado en Git]
+- Services API en `src/lib/api/*.service.ts`, endpoints en `src/lib/api/endpoints.ts` y cliente Axios en `src/lib/api/client.ts`. [verificado en Git]
+- Hooks por dominio en `src/hooks`, schemas Zod en `src/schemas`, tipos en `src/types`, stores Zustand en `src/stores`. [verificado en Git]
+- Componentes reutilizables en `src/components`, incluyendo UI base, tablas, filtros, dialogs, estados y componentes por modulo. [verificado en Git]
+
+## Contratos y convenciones
+
+- API publica backend: `/api/auth/*` para autenticacion y `/api/v1/*` para dominios. [verificado en Git]
+- Frontend consume `VITE_API_BASE_URL` en produccion; en desarrollo usa variable si existe, modo LAN o `http://localhost:8080`. [verificado en Git: `client.ts`]
+- Cliente Axios agrega `Authorization: Bearer <token>` y, si existe, `X-Agencia-Origen-Activa-Id`. [verificado en Git]
+- Endpoints canonicos frontend: `src/lib/api/endpoints.ts`. [verificado en Git]
+- Permisos canonicos backend: `PermissionConstants.java`; espejo frontend: `src/types/permissions.ts`. [verificado en Git]
+- Alias frontend: `@` apunta a `candas-frontend/src`. [verificado en Git: `vite.config.ts`]
+- No usar `VITE_API_URL`; la variable vigente es `VITE_API_BASE_URL`. [verificado en documentacion: `docs/DEPLOYMENT.md`, `.env.example`]
+
+## Seguridad y permisos
+
+- Spring Security deshabilita CSRF, usa sesiones stateless y JWT. [verificado en Git]
+- Endpoints publicos: `OPTIONS /**`, `/api/auth/login`, `/api/auth/register`, `/actuator/health`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html`. [verificado en Git: `SecurityConfig.java`]
+- Todo lo demas requiere autenticacion por defecto. [verificado en Git]
+- `@EnableMethodSecurity(prePostEnabled = true)` habilita reglas `@PreAuthorize`. [verificado en Git]
+- CORS se configura por `app.cors.allowed-origins` / `CORS_ALLOWED_ORIGINS`; allowed methods: `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`, `PATCH`; headers: `Authorization`, `Content-Type`, `Accept`, `X-Agencia-Origen-Activa-Id`; credentials deshabilitado. [verificado en Git: `CorsConfig.java`]
+- BCrypt usa `app.security.bcrypt-strength`, default `12`. [verificado en Git]
+- Registro publico se controla con `PUBLIC_REGISTRATION_ENABLED` / `app.auth.public-registration-enabled`; en `dev` default `true`, en properties base default `false`. [verificado en Git]
+- Alcance/agencia activa: existen `AgenciaScopeResolver`, campo de usuario/agencias y header `X-Agencia-Origen-Activa-Id`. [verificado en Git]
+
+## Base de datos y migraciones
+
+- Base de datos: PostgreSQL. [verificado en Git]
+- Configuracion datasource via `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`. [verificado en Git]
+- Flyway habilitado con migraciones en `candas-backend/src/main/resources/db/migration`. [verificado en Git]
+- Migraciones observadas: `V1__Create_base_tables.sql` a `V134__Fix_despacho_sequence_desync.sql`, con huecos historicos propios del proyecto. [verificado en Git]
+- `application.properties` activa Flyway, `baseline-on-migrate=true`, `validate-on-migrate=false`; `application-prod.properties` cambia a `validate-on-migrate=true` y `ddl-auto=validate`. [verificado en Git]
+- `application.properties` mantiene `spring.jpa.hibernate.ddl-auto=update`; en produccion se sobreescribe a `validate`. [verificado en Git]
+- No modificar migraciones historicas salvo instruccion explicita y plan de reparacion. [verificado en documentacion de la solicitud]
+
+## Infraestructura y CI/CD
+
+- Despliegue documentado: Railway con dos servicios Docker separados, backend y frontend. [verificado en documentacion: `docs/DEPLOYMENT.md`]
+- Backend Docker: build Maven con `eclipse-temurin:25-jdk`, runtime `eclipse-temurin:25-jre`, JAR en `/opt/app/app.jar`, healthcheck `/actuator/health`. [verificado en Git]
+- Frontend Docker: build Node `20-alpine`, runtime `nginx:1.27-alpine`, `VITE_API_BASE_URL` y `VITE_APP_URL` como build args, healthcheck `/`. [verificado en Git]
+- Railway backend: Dockerfile, start command `java -Dspring.profiles.active=prod -jar /opt/app/app.jar`, healthcheck `/actuator/health`. [verificado en Git]
+- Railway frontend: Dockerfile, healthcheck `/`. [verificado en Git]
+- No se encontro configuracion CI en `.github`, `.gitlab` o `.circleci` en la inspeccion local. [verificado en Git]
+
+## Comandos confirmados
+
+Backend:
+
+```bash
+cd candas-backend
+./mvnw spring-boot:run
+./mvnw -DskipTests compile
+./mvnw -DskipTests package
+```
+
+- Confirmados por `README.md`, `docs/DEPLOYMENT.md` y `Dockerfile`; no se ejecutaron build/test completos durante esta auditoria para evitar cambios funcionales o ruido de artefactos. [verificado en documentacion] [verificado en Git]
+
+Frontend:
+
+```bash
+cd candas-frontend
+npm install
+npm ci
+npm run dev
+npm run build
+npm run lint
+npm run preview
+```
+
+- `dev`, `build`, `lint`, `preview` estan en `package.json`; `npm ci` esta en Dockerfile y docs de despliegue; `npm install` esta en README. [verificado en Git] [verificado en documentacion]
+
+Validacion Git:
+
+```bash
+git status --short
+```
+
+- Requerido como validacion final de cambios. [verificado en documentacion de la solicitud]
+
+## Fuentes canonicas
+
+- Primero: codigo, manifiestos, configuracion ejecutable, migraciones y contratos de la rama `dev`. [verificado en Git]
+- Segundo: README y documentacion vigente en `docs/`, cuando no contradiga configuracion ejecutable. [verificado en documentacion]
+- Tercero: archivos de ejemplo `.env.example` para variables, no secretos reales. [verificado en Git]
+- No usar `.env`, `node_modules`, `dist`, `target`, logs o archivos locales como fuente canonica. [inferido]
+
+## Reglas criticas
+
+- No modificar codigo funcional, migraciones historicas ni dependencias cuando la tarea sea solo documentacion IA. [verificado en documentacion de la solicitud]
+- Mantener `docs/ai/PROJECT_CONTEXT.md`, `MODULE_MAP.md`, `NAMING.md` y `PROJECT_INSTRUCTIONS.md` actualizados despues de implementaciones que cambien arquitectura, rutas, permisos, stack, comandos, DB o convenciones. [verificado en documentacion de la solicitud]
+- Toda informacion no respaldada debe marcarse como `pendiente de confirmar`. [verificado en documentacion de la solicitud]
+- Si una doc historica contradice codigo ejecutable, registrar la discrepancia y priorizar el codigo. [inferido]
+
+## Pendientes de confirmar
+
+- Estrategia formal de CI/CD fuera de Railway; no se encontro workflow local. [pendiente de confirmar]
+- Suite de pruebas automatizadas: no se detectaron archivos `*.test.*` o `*.spec.*` relevantes en `src`; puede existir validacion manual no documentada. [pendiente de confirmar]
+- Politica final de perfiles locales y puertos entre `README.md`, `CONFIGURACION_RED_LOCAL.md` y `.env.example`, que muestran valores distintos por contexto. [pendiente de confirmar]
+- Estado actual de documentos historicos con versiones antiguas del stack. [pendiente de confirmar]
