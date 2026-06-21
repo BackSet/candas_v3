@@ -134,13 +134,14 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 ## Tests y documentacion relacionada
 
 - Backend declara `spring-boot-starter-test` en `pom.xml`. [verificado en Git]
+- Tests backend detectados: `CandasBackendApplicationTests`, `JwtAuthenticationEntryPointTest`, `EnsacadoControllerTest`. [verificado en Git]
 - Frontend no declara script `test` en `package.json`. [verificado en Git]
-- No se detectaron archivos `*.test.*` o `*.spec.*` relevantes durante la auditoria. [verificado en Git]
+- No se detectaron archivos frontend `*.test.*` o `*.spec.*` relevantes durante la auditoria. [verificado en Git]
 - Documentacion relacionada: `docs/README.md`, `docs/TECH-STACK.md`, `docs/ARQUITECTURA_BACKEND.md`, `docs/DEPLOYMENT.md`, `candas-frontend/docs/DESIGN_SYSTEM.md`, `candas-frontend/docs/XLSX_SECURITY_MITIGATION.md`, `candas-backend/docs/JasperReportsUsage.md`. [verificado en documentacion]
 
 ## Pendientes de confirmar
 
 - Contrato detallado campo por campo de cada DTO/API; no se genero OpenAPI durante esta auditoria. [pendiente de confirmar]
-- Cobertura real de pruebas automatizadas y criterio de QA manual. [pendiente de confirmar]
+- Cobertura real de pruebas automatizadas mas alla de los tests backend detectados y criterio de QA manual. [pendiente de confirmar]
 - Estado funcional de rutas legacy/redireccion (`lotes-especiales`, `listas-etiquetadas`, `operario-etiquetas`) y si deben mantenerse publicamente. [pendiente de confirmar]
 - Politica definitiva para permisos de impresion presentes en frontend (`sacas:imprimir`, `despachos:imprimir`, `manifiestos_consolidados:imprimir`) pero no en `PermissionConstants.java`. [pendiente de confirmar]
