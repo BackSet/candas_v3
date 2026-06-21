@@ -112,9 +112,10 @@ cd candas-backend
 ./mvnw spring-boot:run
 ./mvnw -DskipTests compile
 ./mvnw -DskipTests package
+./mvnw test
 ```
 
-- Confirmados por `README.md`, `docs/DEPLOYMENT.md` y `Dockerfile`; no se ejecutaron build/test completos durante esta auditoria para evitar cambios funcionales o ruido de artefactos. [verificado en documentacion] [verificado en Git]
+- Confirmados por `README.md`, `docs/DEPLOYMENT.md`, `Dockerfile`, `pom.xml` y la presencia de tests en `candas-backend/src/test`. No se ejecutaron build/test completos durante esta auditoria para evitar cambios funcionales o ruido de artefactos. [verificado en documentacion] [verificado en Git]
 
 Frontend:
 
@@ -155,6 +156,6 @@ git status --short
 ## Pendientes de confirmar
 
 - Estrategia formal de CI/CD fuera de Railway; no se encontro workflow local. [pendiente de confirmar]
-- Suite de pruebas automatizadas: no se detectaron archivos `*.test.*` o `*.spec.*` relevantes en `src`; puede existir validacion manual no documentada. [pendiente de confirmar]
+- Cobertura completa de pruebas automatizadas y matriz de QA: existen tests backend en `candas-backend/src/test`, pero no se confirmo cobertura integral ni pruebas frontend. [pendiente de confirmar]
 - Politica final de perfiles locales y puertos entre `README.md`, `CONFIGURACION_RED_LOCAL.md` y `.env.example`, que muestran valores distintos por contexto. [pendiente de confirmar]
 - Estado actual de documentos historicos con versiones antiguas del stack. [pendiente de confirmar]
