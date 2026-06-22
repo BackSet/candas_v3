@@ -103,6 +103,7 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 - Paquetes es modulo central: se relaciona con clientes, agencias/destinatarios directos, lote recepcion, sacas, despachos, atencion y manifiestos. [inferido desde entidades, services y endpoints]
 - Lotes Recepcion crea/importa/organiza paquetes; Lotes Especiales reutiliza infraestructura de Lotes Recepcion. [verificado en Git] [inferido]
 - Sacas agrupa paquetes mediante `paquete_saca`; Despachos agrupa sacas y puede agregar cadenitas. [verificado en Git]
+- Cada saca tiene su propio presinto de seguridad (`saca.codigo_presinto`, `Saca.codigoPresinto`, `SacaDTO.codigoPresinto`), colocado al ensacar; el backend lo genera por saca si no se informa y se imprime en la etiqueta de la saca. `despacho.codigo_presinto` es legacy (deprecado, no fuente de verdad). [verificado en Git]
 - Ensacado opera sobre despachos, sacas y paquetes, guardando sesion de trabajo. [verificado en Git]
 - Manifiestos consolidados dependen de agencias/despachos/paquetes para consolidacion e impresion/exportacion. [inferido]
 - Usuarios, roles y permisos alimentan autorizacion backend y gating frontend. [verificado en Git]

@@ -92,7 +92,7 @@ const VALORES_EJEMPLO: Record<string, string> = {
   detalle_sacas: '1. Saca #1 (4 paq) - Individual - Código: SAC-2026-01\n2. Saca #2 (5 paq) - Mediano - Código: SAC-2026-02\n3. Saca #3 (3 paq) - Pequeño - Código: SAC-2026-03',
   agencia: 'Agencia Ventanas Centro',
   observaciones: 'Entregar en horario laboral. Verificar identidad del receptor y estado de los paquetes.',
-  codigo_presinto: 'PRES-2026-AB123',
+  codigo_presinto: 'Saca 1: PRES-AB123, Saca 2: PRES-CD456',
 }
 
 interface CursorPosition {

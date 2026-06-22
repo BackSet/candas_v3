@@ -239,11 +239,13 @@ export default function DespachoForm() {
       return sacasDespacho.map(s => ({
         tamano: s.tamano,
         idPaquetes: s.idPaquetes || [],
+        codigoPresinto: s.codigoPresinto ?? '',
       }))
     } else if (despacho?.sacas && despacho.sacas.length > 0) {
       return despacho.sacas.map(s => ({
         tamano: s.tamano,
         idPaquetes: s.idPaquetes || [],
+        codigoPresinto: s.codigoPresinto ?? '',
       }))
     }
     return []
@@ -258,6 +260,7 @@ export default function DespachoForm() {
       const nuevasSacas: SacaFormData[] = sacasDespacho.map(s => ({
         tamano: s.tamano,
         idPaquetes: s.idPaquetes || [],
+        codigoPresinto: s.codigoPresinto ?? '',
       }))
       setSacas(nuevasSacas)
       return
@@ -266,6 +269,7 @@ export default function DespachoForm() {
       const nuevasSacas: SacaFormData[] = despacho.sacas.map(s => ({
         tamano: s.tamano,
         idPaquetes: s.idPaquetes || [],
+        codigoPresinto: s.codigoPresinto ?? '',
       }))
       setSacas(nuevasSacas)
     }
@@ -293,7 +297,6 @@ export default function DespachoForm() {
       const fv = d.formValues
       if (fv.fechaDespacho) setValue('fechaDespacho', fv.fechaDespacho)
       if (fv.observaciones) setValue('observaciones', fv.observaciones)
-      if (fv.codigoPresinto) setValue('codigoPresinto', fv.codigoPresinto)
       if (fv.idAgencia) setValue('idAgencia', fv.idAgencia)
       if (fv.idDistribuidor) setValue('idDistribuidor', fv.idDistribuidor)
       if (fv.numeroGuiaAgenciaDistribucion) setValue('numeroGuiaAgenciaDistribucion', fv.numeroGuiaAgenciaDistribucion)
@@ -311,7 +314,7 @@ export default function DespachoForm() {
   useEffect(() => {
     if (isEdit || !draftRestored.current) return
     const haySacas = sacas.length > 0
-    const hayDatos = formValues.observaciones || formValues.codigoPresinto || formValues.idAgencia || formValues.idDestinatarioDirecto || formValues.idDistribuidor
+    const hayDatos = formValues.observaciones || formValues.idAgencia || formValues.idDestinatarioDirecto || formValues.idDistribuidor
     if (!haySacas && !hayDatos && pasoActual === 1) return
     const draftData: DespachoDraftData = {
       pasoActual,
@@ -327,7 +330,6 @@ export default function DespachoForm() {
       formValues: {
         fechaDespacho: formValues.fechaDespacho,
         observaciones: formValues.observaciones,
-        codigoPresinto: formValues.codigoPresinto,
         idAgencia: formValues.idAgencia,
         idDistribuidor: formValues.idDistribuidor,
         numeroGuiaAgenciaDistribucion: formValues.numeroGuiaAgenciaDistribucion,
@@ -335,7 +337,7 @@ export default function DespachoForm() {
       },
     }
     saveDraft(DESPACHO_DRAFT_KEY, draftData as unknown as Record<string, unknown>)
-  }, [isEdit, pasoActual, tipoEnvio, destinatarioOrigenDirecto, idPaqueteOrigenDestinatario, desdePaqueteNombre, desdePaqueteTelefono, desdePaqueteDireccion, desdePaqueteCanton, desdePaqueteCodigo, sacas, formValues.observaciones, formValues.codigoPresinto, formValues.idAgencia, formValues.idDestinatarioDirecto, formValues.idDistribuidor, formValues.numeroGuiaAgenciaDistribucion, formValues.fechaDespacho, saveDraft])
+  }, [isEdit, pasoActual, tipoEnvio, destinatarioOrigenDirecto, idPaqueteOrigenDestinatario, desdePaqueteNombre, desdePaqueteTelefono, desdePaqueteDireccion, desdePaqueteCanton, desdePaqueteCodigo, sacas, formValues.observaciones, formValues.idAgencia, formValues.idDestinatarioDirecto, formValues.idDistribuidor, formValues.numeroGuiaAgenciaDistribucion, formValues.fechaDespacho, saveDraft])
 
   const cantidadesPaquetesStr = useMemo(() =>
     sacas.map(s => s.idPaquetes.length).join(','),
@@ -1281,13 +1283,16 @@ export default function DespachoForm() {
         fechaDespacho: new Date(data.fechaDespacho).toISOString(),
         usuarioRegistro: data.usuarioRegistro,
         observaciones: data.observaciones || undefined,
-        codigoPresinto: data.codigoPresinto?.trim() || undefined,
         idAgencia: tipoEnvio === 'agencia' ? data.idAgencia : undefined,
         idDistribuidor: data.idDistribuidor,
         numeroGuiaAgenciaDistribucion: data.numeroGuiaAgenciaDistribucion || undefined,
         idDestinatarioDirecto: idDestinatarioDirectoPayload,
         idPaqueteOrigenDestinatario: undefined,
-        sacas: sacas.map(s => ({ tamano: s.tamano, idPaquetes: s.idPaquetes })),
+        sacas: sacas.map(s => ({
+          tamano: s.tamano,
+          idPaquetes: s.idPaquetes,
+          codigoPresinto: s.codigoPresinto?.trim() || undefined,
+        })),
       }
 
       if (isEdit) await updateMutation.mutateAsync({ id: Number(id), dto: despachoData })
@@ -1445,30 +1450,9 @@ export default function DespachoForm() {
                     </Label>
                     <Textarea {...register('observaciones')} rows={2} placeholder="Notas adicionales del despacho..." className="resize-none" />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="codigoPresinto" className="flex items-center gap-1.5 text-sm font-medium">
-                      Código de presinto de seguridad
-                      <HelpTip>Número del sello/precinto físico que cierra la valija o saca. Sirve para verificar que no se abrió en tránsito. Puedes escribirlo o generar uno.</HelpTip>
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      <Input
-                        id="codigoPresinto"
-                        {...register('codigoPresinto')}
-                        placeholder="Escribir o generar"
-                        className="font-mono flex-1 min-w-[200px]"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="shrink-0"
-                        onClick={() => setValue('codigoPresinto', String(Math.floor(1000000000 + Math.random() * 9000000000)))}
-                      >
-                        <Sparkles className="h-3.5 w-3.5 mr-1" />
-                        Generar
-                      </Button>
-                    </div>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    El presinto de seguridad se registra ahora en cada saca (paso 2), ya que el sello se coloca al ensacar.
+                  </p>
                 </div>
               </div>
               <div className="flex justify-end pt-2">
@@ -1778,6 +1762,36 @@ export default function DespachoForm() {
                         </Button>
                       </div>
                       <div className="p-4 space-y-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor={`saca-presinto-${index}`} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            Presinto de seguridad
+                            <HelpTip>Número del sello/precinto físico que cierra esta saca. Déjalo vacío para que el sistema lo genere. Se imprime en la etiqueta de la saca.</HelpTip>
+                          </Label>
+                          <div className="flex flex-wrap gap-2">
+                            <Input
+                              id={`saca-presinto-${index}`}
+                              value={saca.codigoPresinto ?? ''}
+                              onChange={(e) => {
+                                const ms = [...sacas]; ms[index] = { ...ms[index], codigoPresinto: e.target.value }; setSacas(ms)
+                              }}
+                              maxLength={64}
+                              placeholder="Escribir o generar (opcional)"
+                              className="font-mono flex-1 min-w-[160px] h-9"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="shrink-0"
+                              onClick={() => {
+                                const ms = [...sacas]; ms[index] = { ...ms[index], codigoPresinto: String(Math.floor(1000000000 + Math.random() * 9000000000)) }; setSacas(ms)
+                              }}
+                            >
+                              <Sparkles className="h-3.5 w-3.5 mr-1" />
+                              Generar
+                            </Button>
+                          </div>
+                        </div>
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <span className="text-sm font-medium text-muted-foreground">{saca.idPaquetes.length} paquetes</span>
                           <div className="flex flex-wrap gap-2">

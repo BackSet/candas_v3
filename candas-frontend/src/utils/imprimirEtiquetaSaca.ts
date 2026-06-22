@@ -114,6 +114,11 @@ export function generarTokenSeguridad(saca: Saca, despacho: Despacho): string {
   return `SEA-${hex.slice(0, 4)}-${hex.slice(4, 8)}`
 }
 
+/** Presinto a imprimir para una saca: usa el presinto propio de la saca; fallback claro si falta. */
+export function presintoParaEtiqueta(saca: Saca): string {
+  return saca.codigoPresinto?.trim() || 'SIN PRESINTO'
+}
+
 /** Genera HTML de una etiqueta Zebra (layout compacto térmico) con un diseño ultra-optimizado. */
 export function generarEtiquetaZebraHTML(
   saca: Saca,
@@ -741,7 +746,7 @@ export async function imprimirEtiquetaZebraSaca(
 ) {
   const total = totalSacas ?? despacho.sacas?.length ?? 1
   const orden = saca.numeroOrden ?? 1
-  const codigoPresinto = despacho.codigoPresinto ?? ''
+  const codigoPresinto = presintoParaEtiqueta(saca)
   const idSaca = saca.codigoQr || saca.idSaca?.toString() || ''
   let qrDataURL = ''
   try {
@@ -783,7 +788,6 @@ export async function imprimirEtiquetasZebraSacas(
     printNotify.nothingToPrint('No hay sacas para imprimir')
     return
   }
-  const codigoPresinto = despacho.codigoPresinto ?? ''
   const sacasOrdenadas = [...sacas].sort((a, b) => (a.numeroOrden ?? 0) - (b.numeroOrden ?? 0))
   const totalSacas = sacasOrdenadas.length
   const indiceLeyenda = indiceSacaConLeyenda !== undefined ? indiceSacaConLeyenda : totalSacas - 1
@@ -798,7 +802,7 @@ export async function imprimirEtiquetasZebraSacas(
   const etiquetasHTML = sacasOrdenadas.map((saca, index) => {
     const orden = saca.numeroOrden ?? index + 1
     const mostrarLeyenda = index === indiceLeyenda
-    return generarEtiquetaZebraHTML(saca, despacho, agencia, distribuidor, orden, totalSacas, qrDataURLs[index], codigoPresinto, mostrarLeyenda, nombreAgenciaOrigen)
+    return generarEtiquetaZebraHTML(saca, despacho, agencia, distribuidor, orden, totalSacas, qrDataURLs[index], presintoParaEtiqueta(saca), mostrarLeyenda, nombreAgenciaOrigen)
   }).join('')
   const printWindow = window.open('', '_blank', 'width=400,height=600')
   if (!printWindow) {
@@ -835,7 +839,6 @@ export async function imprimirEtiquetasZebraMultiplesDespachos(
     const totalSacasDespacho = sacasOrdenadas.length
     const indiceLeyenda =
       indiceSacaConLeyenda !== undefined ? indiceSacaConLeyenda : totalSacasDespacho - 1
-    const codigoPresinto = despacho.codigoPresinto ?? ''
     sacasOrdenadas.forEach((saca, index) => {
       const ordenSaca = saca.numeroOrden ?? index + 1
       todosLosItems.push({
@@ -846,7 +849,7 @@ export async function imprimirEtiquetasZebraMultiplesDespachos(
         mostrarLeyenda: index === indiceLeyenda,
         ordenSaca,
         totalSacasDespacho,
-        codigoPresinto
+        codigoPresinto: presintoParaEtiqueta(saca)
       })
     })
   })

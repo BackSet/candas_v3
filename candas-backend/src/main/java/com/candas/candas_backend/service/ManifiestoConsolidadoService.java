@@ -375,7 +375,7 @@ public class ManifiestoConsolidadoService {
         dto.setNumeroManifiesto(despacho.getNumeroManifiesto());
         dto.setFechaDespacho(despacho.getFechaDespacho());
         dto.setNumeroGuiaAgenciaDistribucion(despacho.getNumeroGuiaAgenciaDistribucion());
-        dto.setCodigoPresinto(despacho.getCodigoPresinto());
+        // El presinto ya no es dato del despacho: viaja por saca (ver SacaDetalleDTO.codigoPresinto).
 
         // Mapear agencia normal (para agrupación)
         if (despacho.getAgencia() != null) {
@@ -423,6 +423,7 @@ public class ManifiestoConsolidadoService {
         dto.setNumeroOrden(saca.getNumeroOrden());
         dto.setTamano(saca.getTamano());
         dto.setCodigoQr(saca.getCodigoQr());
+        dto.setCodigoPresinto(saca.getCodigoPresinto());
 
         List<PaqueteSaca> paqueteSacas = saca.getPaqueteSacas() != null ? new ArrayList<>(saca.getPaqueteSacas()) : new ArrayList<>();
         paqueteSacas.sort(Comparator.comparing(PaqueteSaca::getOrdenEnSaca, Comparator.nullsLast(Comparator.naturalOrder())));

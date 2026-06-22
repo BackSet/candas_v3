@@ -21,7 +21,8 @@ export interface Despacho {
   /** Alternativa para generar destinatario desde datos del paquete; se ignora si se envía idDestinatarioDirecto. */
   idPaqueteOrigenDestinatario?: number
   despachoDirecto?: DespachoDirecto // Para lectura
-  codigoPresinto?: string // Código del presinto (etiqueta Zebra/normal); opcional, puede enviarse al crear/editar o generarse en backend
+  /** @deprecated Legacy. El presinto operativo vive en cada saca (Saca.codigoPresinto). El backend aún lo devuelve por compatibilidad histórica; la UI no lo usa. */
+  codigoPresinto?: string
   sacas?: Saca[]
 }
 

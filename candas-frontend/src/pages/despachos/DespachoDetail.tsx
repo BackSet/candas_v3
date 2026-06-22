@@ -149,9 +149,6 @@ export default function DespachoDetail() {
                 value={despacho.numeroGuiaAgenciaDistribucion}
               />
             )}
-            {despacho.codigoPresinto && (
-              <Property icon={FileText} label="Código Presinto" value={despacho.codigoPresinto} />
-            )}
           </div>
         </div>
 
@@ -371,6 +368,14 @@ export default function DespachoDetail() {
                             Peso
                           </span>
                           <span>{peso > 0 ? `${peso} kg` : '-'}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase text-muted-foreground font-medium">
+                            Presinto
+                          </span>
+                          <span className="font-mono text-xs">
+                            {saca.codigoPresinto?.trim() || '—'}
+                          </span>
                         </div>
                       </div>
                     </div>

@@ -5,6 +5,7 @@ import { useCallback,useState } from 'react'
 export interface SacaFormData {
   tamano: TamanoSaca
   idPaquetes: number[]
+  codigoPresinto?: string // Presinto propio de la saca; opcional, el backend lo genera si se deja vacío
 }
 
 export function useSacasManager(initialSacas: SacaFormData[] = []) {
@@ -22,6 +23,14 @@ export function useSacasManager(initialSacas: SacaFormData[] = []) {
     setSacas((prev) => {
       const nuevas = [...prev]
       nuevas[index].tamano = tamano
+      return nuevas
+    })
+  }, [])
+
+  const actualizarCodigoPresintoSaca = useCallback((index: number, codigoPresinto: string) => {
+    setSacas((prev) => {
+      const nuevas = [...prev]
+      nuevas[index] = { ...nuevas[index], codigoPresinto }
       return nuevas
     })
   }, [])
@@ -140,6 +149,7 @@ export function useSacasManager(initialSacas: SacaFormData[] = []) {
     agregarSaca,
     eliminarSaca,
     actualizarTamanoSaca,
+    actualizarCodigoPresintoSaca,
     agregarPaqueteASaca,
     eliminarPaqueteDeSaca,
     moverPaqueteASaca,

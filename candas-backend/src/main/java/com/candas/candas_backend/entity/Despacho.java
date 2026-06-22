@@ -54,6 +54,13 @@ public class Despacho {
     @JoinColumn(name = "id_destinatario_directo")
     private DestinatarioDirecto destinatarioDirecto;
 
+    /**
+     * @deprecated Legacy. El presinto de seguridad pertenece ahora a cada saca
+     * ({@link Saca#getCodigoPresinto()}), pues el sello se coloca al ensacar.
+     * Se conserva la columna para no perder datos históricos; no es fuente de verdad.
+     * Su eliminación requiere una migración dedicada (fuera de alcance de este cambio).
+     */
+    @Deprecated
     @Column(name = "codigo_presinto", length = 64)
     private String codigoPresinto;
 

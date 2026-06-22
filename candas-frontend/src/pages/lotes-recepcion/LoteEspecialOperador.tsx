@@ -613,11 +613,14 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         await loteRecepcionService.agregarPaquetes(Number(id), selectedIdsArray)
       }
       let idx = 0
+      // El presinto se registra por saca. En carga masiva, si el operador escribió uno,
+      // se aplica a todas las sacas; si lo deja vacío, el backend genera uno propio por saca.
+      const presintoBulk = bulkCodigoPresinto.trim() || undefined
       const sacasPayload = groups.map((qty, i) => {
         const idPaquetes = selectedPackageIdsOrder.slice(idx, idx + qty)
         idx += qty
         const tamano = tamanosSacasBulk[i] ?? TamanoSaca.GRANDE
-        return { tamano, idPaquetes }
+        return { tamano, idPaquetes, codigoPresinto: presintoBulk }
       })
       const fechaDespachoValue = bulkFechaDespacho
         ? bulkFechaDespacho.length === 16
@@ -628,7 +631,6 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
         fechaDespacho: fechaDespachoValue,
         usuarioRegistro: user?.nombreCompleto ?? 'OPERARIO',
         observaciones: bulkObservaciones.trim() || undefined,
-        codigoPresinto: bulkCodigoPresinto.trim() || undefined,
         idAgencia: bulkTipoDestino === 'AGENCIA' ? Number(bulkIdDestino) : undefined,
         idDestinatarioDirecto: idDestinatarioDirectoPayload,
         idPaqueteOrigenDestinatario: undefined,

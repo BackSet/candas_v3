@@ -15,6 +15,7 @@ public class SacaDetalleDTO {
     private Integer numeroOrden;
     private TamanoSaca tamano;
     private String codigoQr;
+    private String codigoPresinto; // Presinto de seguridad propio de la saca
     private Integer cantidadPaquetes;
     private List<PaqueteDetalleDTO> paquetes;
 }

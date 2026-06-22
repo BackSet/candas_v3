@@ -5,7 +5,7 @@ export const despachoSchema = z.object({
   fechaDespacho: z.string().min(1, 'La fecha de despacho es requerida'),
   usuarioRegistro: z.string().min(1, 'El usuario de registro es requerido'),
   observaciones: z.string().optional(),
-  codigoPresinto: z.string().optional(),
+  // El presinto ya no es un dato global del despacho: se registra por cada saca (ver SacaFormData).
   idAgencia: z.number().int().positive().optional(),
   idDistribuidor: z.number().int().positive().optional(),
   numeroGuiaAgenciaDistribucion: z.string().optional(),
@@ -32,7 +32,6 @@ export function defaultDespachoFormData(user?: { nombreCompleto?: string; userna
   return {
     fechaDespacho: toDateTimeLocalString(new Date()),
     usuarioRegistro: user?.nombreCompleto || user?.username || '',
-    codigoPresinto: '',
   }
 }
 
@@ -42,7 +41,6 @@ export function despachoFormDataToDto(data: DespachoFormData): Partial<Despacho>
     fechaDespacho: data.fechaDespacho,
     usuarioRegistro: data.usuarioRegistro,
     observaciones: data.observaciones?.trim() || undefined,
-    codigoPresinto: data.codigoPresinto?.trim() || undefined,
     idAgencia: data.idAgencia,
     idDistribuidor: data.idDistribuidor,
     numeroGuiaAgenciaDistribucion: data.numeroGuiaAgenciaDistribucion?.trim() || undefined,
@@ -59,7 +57,6 @@ export function despachoToFormData(despacho: Despacho): DespachoFormData {
       : '',
     usuarioRegistro: despacho.usuarioRegistro,
     observaciones: despacho.observaciones || '',
-    codigoPresinto: despacho.codigoPresinto ?? '',
     idAgencia: despacho.idAgencia ?? undefined,
     idDistribuidor: despacho.idDistribuidor ?? undefined,
     numeroGuiaAgenciaDistribucion: despacho.numeroGuiaAgenciaDistribucion ?? undefined,

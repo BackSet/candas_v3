@@ -30,6 +30,10 @@ public class Saca {
     @Column(name = "numero_orden", nullable = false)
     private Integer numeroOrden;
 
+    /** Código del presinto de seguridad colocado al ensacar esta saca. Fuente de verdad por saca. */
+    @Column(name = "codigo_presinto", length = 64)
+    private String codigoPresinto;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "tamano", nullable = false)
     private TamanoSaca tamano;
