@@ -17,6 +17,7 @@ import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { PaqueteCompactListItem } from '@/components/lotes-recepcion/PaqueteCompactListItem'
 import { useAgencia,useAgencias,useCreateAgencia,useSearchAgencias } from '@/hooks/useAgencias'
 import { useDespachoForm,type DespachoFormData } from '@/hooks/useDespachoForm'
 import { useCreateDespacho,useDespacho,useSacasDespacho,useUpdateDespacho } from '@/hooks/useDespachos'
@@ -38,6 +39,7 @@ import { TamanoSaca } from '@/types/saca'
 import { formatearTamanoSaca } from '@/utils/ensacado'
 import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
 import { calcularTamanoSugerido,capacidadMaximaKg } from '@/utils/saca'
+import { parsearPatron,repartirEnNSacas as repartirPaquetesEnNSacas,repartirPorPatron,repartirTodoEnUnaSaca } from '@/utils/sacaDistribution'
 import { useNavigate,useParams } from '@tanstack/react-router'
 import { ArrowLeft,ArrowRight,Check,Link2,List as ListIcon,Loader2,MapPin,Package,Plus,RotateCcw,Sparkles,SplitSquareVertical,Trash2,Truck,User,Zap } from 'lucide-react'
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react'
@@ -379,6 +381,17 @@ export default function DespachoForm() {
   const [scanHistory, setScanHistory] = useState<Array<{ guia: string, status: 'success' | 'error' | 'warning', message: string, timestamp: Date }>>([])
   const [procesandoScan, setProcesandoScan] = useState(false)
 
+  // MVP 1: Cola global de paquetes tipeados en el paso "Gestionar Sacas" (aún sin distribuir en sacas).
+  const [colaGlobal, setColaGlobal] = useState<Paquete[]>([])
+  const [colaInput, setColaInput] = useState('')
+  const [procesandoCola, setProcesandoCola] = useState(false)
+  const [colaFeedback, setColaFeedback] = useState<{ guia: string; status: 'success' | 'error' | 'warning'; message: string } | null>(null)
+  const [showColaPaste, setShowColaPaste] = useState(false)
+  const [colaPasteText, setColaPasteText] = useState('')
+  const [procesandoColaPaste, setProcesandoColaPaste] = useState(false)
+  const [colaPasteResult, setColaPasteResult] = useState<{ agregados: number; yaAgregados: string[]; noEncontrados: string[]; invalidos: string[] } | null>(null)
+  const colaInputRef = useRef<HTMLInputElement>(null)
+
   const agrupacionGroups = useMemo(
     () => distribucionAgrupacion.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0),
     [distribucionAgrupacion]
@@ -648,6 +661,165 @@ export default function DespachoForm() {
       catch { try { p = await paqueteService.findByNumeroGuia(guia.trim()) } catch { p = undefined } }
     }
     return p ?? null
+  }
+
+  // --- MVP 1: Cola global de paquetes tipeados (paso "Gestionar Sacas") ---
+  const estaEnColaGlobal = useCallback(
+    (idPaquete: number) => colaGlobal.some(p => p.idPaquete === idPaquete),
+    [colaGlobal]
+  )
+  const estaEnAlgunaSaca = useCallback(
+    (idPaquete: number) => sacas.some(s => s.idPaquetes.includes(idPaquete)),
+    [sacas]
+  )
+
+  /**
+   * Busca una guía y la agrega a la cola global si es válida y no está duplicada
+   * (ni en la cola ni en una saca). Devuelve el resultado para feedback/resumen.
+   */
+  const agregarGuiaAColaGlobal = async (
+    guia: string
+  ): Promise<{ status: 'success' | 'error' | 'warning'; message: string }> => {
+    const guiaTrim = guia.trim()
+    if (!guiaTrim) return { status: 'error', message: 'Guía vacía' }
+    const p = await buscarPaquetePorGuia(guiaTrim)
+    if (!p || p.idPaquete == null) return { status: 'error', message: 'No encontrado' }
+    if (p.estado === 'DESPACHADO') return { status: 'error', message: 'Ya despachado' }
+    if (estaEnAlgunaSaca(p.idPaquete)) return { status: 'warning', message: 'Ya está en una saca' }
+    if (estaEnColaGlobal(p.idPaquete)) return { status: 'warning', message: 'Ya agregado a la cola' }
+    setColaGlobal(prev => [p, ...prev])
+    setPaquetesAgregados(prev => {
+      const m = new Map(prev)
+      m.set(p.idPaquete!, p)
+      return m
+    })
+    return { status: 'success', message: 'Agregado' }
+  }
+
+  const handleColaSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    const guia = colaInput.trim()
+    if (!guia || procesandoCola) return
+    setProcesandoCola(true)
+    try {
+      const res = await agregarGuiaAColaGlobal(guia)
+      setColaFeedback({ guia, status: res.status, message: res.message })
+      if (res.status === 'success') {
+        setColaInput('')
+      } else {
+        notify[res.status === 'error' ? 'error' : 'warning'](`${guia}: ${res.message}`)
+      }
+    } finally {
+      setProcesandoCola(false)
+      // Mantener el foco en el input tras agregar
+      requestAnimationFrame(() => colaInputRef.current?.focus())
+    }
+  }
+
+  const handleEliminarDeColaGlobal = (idPaquete: number) => {
+    setColaGlobal(prev => prev.filter(p => p.idPaquete !== idPaquete))
+  }
+
+  const handleProcesarColaPaste = async () => {
+    const guias = colaPasteText
+      .split(/[\n,;\t]/)
+      .map(g => g.trim())
+      .filter(g => g.length > 0)
+    if (guias.length === 0 || procesandoColaPaste) return
+    setProcesandoColaPaste(true)
+    const resumen = { agregados: 0, yaAgregados: [] as string[], noEncontrados: [] as string[], invalidos: [] as string[] }
+    try {
+      // Procesar secuencialmente para respetar dedupe contra lo recién agregado
+      for (const guia of guias) {
+        const res = await agregarGuiaAColaGlobal(guia)
+        if (res.status === 'success') resumen.agregados++
+        else if (res.status === 'warning') resumen.yaAgregados.push(guia)
+        else if (res.message === 'No encontrado') resumen.noEncontrados.push(guia)
+        else resumen.invalidos.push(guia)
+      }
+      setColaPasteResult(resumen)
+      setColaPasteText('')
+      notify.success(`${resumen.agregados} paquete(s) agregados a la cola`)
+    } finally {
+      setProcesandoColaPaste(false)
+    }
+  }
+
+  // --- MVP 2: Distribución de la cola global hacia sacas ---
+  const [vistaSacas, setVistaSacas] = useState<'todos' | 'porSaca'>('todos')
+  const [nSacasInput, setNSacasInput] = useState('')
+  const [patronInput, setPatronInput] = useState('')
+
+  /** Paquetes a distribuir en orden de tipiado: primero los ya en sacas (orden de saca), luego la cola (más antiguo primero). */
+  const paquetesDistribuibles = useMemo(() => {
+    const result: Paquete[] = []
+    for (const s of sacas) {
+      for (const idP of s.idPaquetes) {
+        const p = paquetesAgregados.get(idP) ?? todosLosPaquetes.find(x => x.idPaquete === idP)
+        if (p) result.push(p)
+      }
+    }
+    // La cola se muestra con el más reciente arriba; al distribuir se respeta el orden de tipiado (más antiguo primero)
+    for (const p of [...colaGlobal].reverse()) result.push(p)
+    return result
+  }, [sacas, colaGlobal, paquetesAgregados, todosLosPaquetes])
+
+  /** Aplica una nueva distribución de sacas; si ya había sacas con paquetes, pide confirmación. Devuelve true si se aplicó. */
+  const aplicarDistribucion = (nuevasSacas: SacaFormData[]): boolean => {
+    if (nuevasSacas.length === 0) {
+      notify.error('No hay paquetes para distribuir')
+      return false
+    }
+    if (paquetesEnSacas.length > 0 && !window.confirm('Esto reemplazará la distribución actual de sacas y redistribuirá todos los paquetes. ¿Continuar?')) {
+      return false
+    }
+    setSacas(nuevasSacas)
+    setColaGlobal([])
+    setVistaSacas('porSaca')
+    return true
+  }
+
+  const handleTodoEnUnaSaca = () => {
+    const nuevas = repartirTodoEnUnaSaca(paquetesDistribuibles)
+    if (aplicarDistribucion(nuevas)) {
+      notify.success(`1 saca con ${paquetesDistribuibles.length} paquete(s)`)
+    }
+  }
+
+  const handleCrearNSacas = () => {
+    const n = parseInt(nSacasInput.trim(), 10)
+    if (Number.isNaN(n) || n < 1) {
+      notify.error('Indica un número de sacas válido (≥ 1)')
+      return
+    }
+    if (n > paquetesDistribuibles.length) {
+      notify.error(`No puedes crear más sacas (${n}) que paquetes (${paquetesDistribuibles.length})`)
+      return
+    }
+    const nuevas = repartirPaquetesEnNSacas(paquetesDistribuibles, n)
+    if (aplicarDistribucion(nuevas)) {
+      setNSacasInput('')
+      notify.success(`${nuevas.length} saca(s) creadas`)
+    }
+  }
+
+  const handleAplicarPatron = () => {
+    const { grupos, error } = parsearPatron(patronInput)
+    if (error) {
+      notify.error(error)
+      return
+    }
+    const { sacas: nuevas, sobrantes, faltantes } = repartirPorPatron(paquetesDistribuibles, grupos)
+    if (aplicarDistribucion(nuevas)) {
+      setPatronInput('')
+      if (faltantes > 0) {
+        notify.warning(`El patrón pide ${grupos.reduce((a, b) => a + b, 0)} pero solo hay ${paquetesDistribuibles.length} paquete(s); se crearon ${nuevas.length} saca(s).`)
+      } else if (sobrantes > 0) {
+        notify.warning(`${sobrantes} paquete(s) sobrante(s) se agruparon en una última saca.`)
+      } else {
+        notify.success(`${nuevas.length} saca(s) creadas`)
+      }
+    }
   }
 
   const provinciaOCantonPredominante = useMemo(() => {
@@ -1332,7 +1504,215 @@ export default function DespachoForm() {
                 }
               />
 
-              {sacas.length === 0 ? (
+              {/* MVP 1: Captura global de paquetes (tipiar/pegar antes de distribuir en sacas) */}
+              <div className="rounded-lg border border-border bg-card p-4 shadow-sm space-y-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-foreground">Tipiar paquetes</h3>
+                  <p className="text-xs text-muted-foreground">Escanea o pega las guías para reunirlas en una cola; luego se distribuirán en sacas.</p>
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    ref={colaInputRef}
+                    value={colaInput}
+                    onChange={(e) => setColaInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleColaSubmit()
+                      }
+                    }}
+                    placeholder="Escanea o escribe guía..."
+                    className="font-mono"
+                    autoFocus
+                    disabled={procesandoCola}
+                    aria-label="Guía del paquete"
+                  />
+                  <Button type="button" size="icon" onClick={() => handleColaSubmit()} disabled={!colaInput.trim() || procesandoCola} title="Agregar a la cola">
+                    {procesandoCola ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setShowColaPaste(v => !v)} className="shrink-0">
+                    <ListIcon className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Pegar lista masiva</span>
+                  </Button>
+                </div>
+
+                {colaFeedback && (
+                  <div
+                    role="status"
+                    className={`text-xs rounded-md px-3 py-2 border ${
+                      colaFeedback.status === 'success'
+                        ? 'bg-success/10 text-success border-success/20'
+                        : colaFeedback.status === 'warning'
+                          ? 'bg-warning/10 text-warning border-warning/20'
+                          : 'bg-error/10 text-error border-error/20'
+                    }`}
+                  >
+                    <span className="font-mono font-medium">{colaFeedback.guia}</span>: {colaFeedback.message}
+                  </div>
+                )}
+
+                {showColaPaste && (
+                  <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">
+                    <Textarea
+                      value={colaPasteText}
+                      onChange={(e) => setColaPasteText(e.target.value)}
+                      placeholder={"Pega una guía por línea...\nECA7800083946\nECA7800083947"}
+                      rows={5}
+                      className="font-mono text-sm"
+                      disabled={procesandoColaPaste}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setColaPasteText(''); setShowColaPaste(false); setColaPasteResult(null) }} disabled={procesandoColaPaste}>
+                        Cerrar
+                      </Button>
+                      <Button type="button" size="sm" onClick={handleProcesarColaPaste} disabled={!colaPasteText.trim() || procesandoColaPaste}>
+                        {procesandoColaPaste ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                        Procesar lista
+                      </Button>
+                    </div>
+                    {colaPasteResult && (
+                      <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-border/50">
+                        <p className="text-success">Agregados: {colaPasteResult.agregados}</p>
+                        {colaPasteResult.yaAgregados.length > 0 && <p className="text-warning">Ya agregados/en saca: {colaPasteResult.yaAgregados.join(', ')}</p>}
+                        {colaPasteResult.noEncontrados.length > 0 && <p className="text-error">No encontrados: {colaPasteResult.noEncontrados.join(', ')}</p>}
+                        {colaPasteResult.invalidos.length > 0 && <p className="text-error">Inválidos: {colaPasteResult.invalidos.join(', ')}</p>}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+              {/* MVP 2: Panel de distribución de la cola hacia sacas */}
+              <div className="rounded-lg border border-border bg-card p-4 shadow-sm space-y-3">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-foreground">Distribuir en sacas</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {paquetesDistribuibles.length} paquete(s) por distribuir{paquetesEnSacas.length > 0 ? ' (redistribuir reemplaza las sacas actuales)' : ''}. Se respeta el orden de tipiado.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                  <Button type="button" variant="outline" size="sm" onClick={handleTodoEnUnaSaca} disabled={paquetesDistribuibles.length === 0}>
+                    <Package className="h-4 w-4 mr-2" /> Todo en una saca
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={nSacasInput}
+                      onChange={(e) => setNSacasInput(e.target.value)}
+                      placeholder="N sacas"
+                      className="h-9 w-24"
+                      disabled={paquetesDistribuibles.length === 0}
+                      aria-label="Número de sacas iguales"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={handleCrearNSacas} disabled={paquetesDistribuibles.length === 0 || !nSacasInput.trim()}>
+                      Crear N sacas
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={patronInput}
+                      onChange={(e) => setPatronInput(e.target.value)}
+                      placeholder="Patrón: 2,3,5"
+                      className="h-9 w-32 font-mono"
+                      disabled={paquetesDistribuibles.length === 0}
+                      aria-label="Patrón manual de distribución"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={handleAplicarPatron} disabled={paquetesDistribuibles.length === 0 || !patronInput.trim()}>
+                      <SplitSquareVertical className="h-4 w-4 mr-2" /> Aplicar patrón
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* MVP 2: Tabs de validación Todos / Por saca */}
+              <div className="inline-flex rounded-lg border border-border bg-muted/40 p-1">
+                <button
+                  type="button"
+                  onClick={() => setVistaSacas('todos')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${vistaSacas === 'todos' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Todos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVistaSacas('porSaca')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${vistaSacas === 'porSaca' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Por saca
+                </button>
+              </div>
+
+              {/* Vista TODOS: cola pendiente + paquetes ya en sacas */}
+              {vistaSacas === 'todos' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Todos los paquetes ({colaGlobal.length + paquetesEnSacas.length})
+                    </h4>
+                    {colaGlobal.length > 0 && (
+                      <Button type="button" variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-error" onClick={() => setColaGlobal([])}>
+                        Limpiar cola
+                      </Button>
+                    )}
+                  </div>
+                  {colaGlobal.length + paquetesEnSacas.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic py-2">Aún no hay paquetes. Escanea o pega guías arriba.</p>
+                  ) : (
+                    <div className="rounded-md border border-border bg-background divide-y divide-border/50 max-h-[420px] overflow-y-auto">
+                      {colaGlobal.map((p) => (
+                        <PaqueteCompactListItem
+                          key={`cola-${p.idPaquete}`}
+                          paquete={p}
+                          direccionFallback="Sin destino"
+                          statusLabel="Pendiente de saca"
+                          action={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => p.idPaquete != null && handleEliminarDeColaGlobal(p.idPaquete)}
+                              title="Quitar de la cola"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          }
+                        />
+                      ))}
+                      {sacas.flatMap((s, sIdx) =>
+                        s.idPaquetes.map((idP) => {
+                          const p = paquetesAgregados.get(idP) ?? todosLosPaquetes.find(x => x.idPaquete === idP)
+                          if (!p) return null
+                          return (
+                            <PaqueteCompactListItem
+                              key={`saca-${sIdx}-${idP}`}
+                              paquete={p}
+                              direccionFallback="Sin destino"
+                              statusLabel={`Saca ${sIdx + 1}`}
+                              action={
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={() => handleEliminarPaqueteDeSaca(sIdx, idP)}
+                                  title="Quitar de la saca"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              }
+                            />
+                          )
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {vistaSacas === 'porSaca' && (sacas.length === 0 ? (
                 <div className="rounded-lg border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
                   <h3 className="text-lg font-semibold text-foreground text-center">¿Cómo quieres cargar los paquetes?</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1428,13 +1808,25 @@ export default function DespachoForm() {
                     </div>
                   ))}
                 </div>
+              ))}
+
+              {colaGlobal.length > 0 && (
+                <p role="alert" className="text-sm text-warning bg-warning/10 border border-warning/20 rounded-md px-3 py-2">
+                  Tienes {colaGlobal.length} paquete(s) sin distribuir en sacas. Distribúyelos antes de continuar.
+                </p>
               )}
 
               <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => setPasoActual(1)}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
                 </Button>
-                <Button type="button" onClick={() => setPasoActual(3)} className="sm:ml-auto">
+                <Button
+                  type="button"
+                  onClick={() => setPasoActual(3)}
+                  className="sm:ml-auto"
+                  disabled={colaGlobal.length > 0}
+                  title={colaGlobal.length > 0 ? 'Distribuye los paquetes pendientes en sacas antes de continuar' : undefined}
+                >
                   Siguiente <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>

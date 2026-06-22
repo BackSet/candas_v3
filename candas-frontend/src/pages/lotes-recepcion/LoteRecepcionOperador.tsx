@@ -1,6 +1,7 @@
 import CrearDespachoMasivoDialog from '@/components/despachos/CrearDespachoMasivoDialog'
 import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
 import CambiarTipoMasivoDialog from '@/components/lotes-recepcion/CambiarTipoMasivoDialog'
+import { PaqueteCompactListItem } from '@/components/lotes-recepcion/PaqueteCompactListItem'
 import { LoadingState } from '@/components/states'
 import { Badge } from "@/components/ui/badge"
 import { Button } from '@/components/ui/button'
@@ -52,6 +53,7 @@ import { useAuthStore } from '@/stores/authStore'
 import type { DespachoMasivoSessionPaqueteItem,DespachoMasivoSessionPayload } from '@/types/despacho-masivo-session'
 import { TipoDestino,TipoPaquete,type Paquete } from '@/types/paquete'
 import { TamanoSaca } from '@/types/saca'
+import { formatDireccionPaquete, formatPesoKg } from '@/utils/paqueteDisplay'
 import { guiaEfectiva } from '@/utils/paqueteGuia'
 import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
 import { calcularTamanoSugerido } from '@/utils/saca'
@@ -155,21 +157,6 @@ function buildClienteDestinoFromPaquete(p: Paquete): ScannedPackage['clienteDest
         pais: pais || undefined,
         telefono: telefono || undefined
     }
-}
-
-/** Para la lista: dirección sin el sufijo ", Provincia, Cantón, País" (evita duplicados). */
-function getDireccionLimpiaParaLista(p: Paquete): string {
-    let dir = (p.direccionDestinatarioCompleta || p.direccionDestinatario)?.trim() ?? ''
-    const provincia = p.provinciaDestinatario?.trim()
-    const canton = p.cantonDestinatario?.trim()
-    const pais = p.paisDestinatario?.trim()
-    const sufijo = [provincia, canton, pais].filter(Boolean).join(', ')
-    if (sufijo && dir.endsWith(sufijo)) {
-        dir = dir.slice(0, -sufijo.length).replace(/,?\s*$/, '').trim()
-    } else {
-        dir = dir.replace(/,(\s*[^,]+,\s*[^,]+,\s*[^,]+)\s*$/, '').trim()
-    }
-    return dir
 }
 
 /** Clave de ordenación por dirección del paquete (destino) para agrupar en lista. */
@@ -1500,23 +1487,23 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                     (lastScanned.tipoPaquete === 'CLEMENTINA' || lastScanned.tipoPaquete === 'SEPARAR') && "border-l-orange-500 bg-orange-500/5",
                                     lastScanned.tipoPaquete === 'CADENITA' && "border-l-violet-500 bg-violet-500/5"
                                 )}>
-                                    <CardContent className="p-8 space-y-6">
+                                    <CardContent className="p-5 space-y-4">
                                         {/* Header: Icon + Guia + Badge */}
-                                        <div className="flex items-center gap-6 border-b border-border/50 pb-6">
-                                            <div className="p-4 bg-background rounded-full shadow-sm border border-border shrink-0">
-                                                {lastScanned.destinoType === 'DESPACHO' && <CheckCircle2 className="h-12 w-12 text-emerald-500" />}
-                                                {lastScanned.destinoType === 'DOMICILIO' && <MapPin className="h-12 w-12 text-blue-500" />}
-                                                {lastScanned.tipoPaquete === 'CLEMENTINA' && <Box className="h-12 w-12 text-orange-500" />}
-                                                {lastScanned.tipoPaquete === 'SEPARAR' && <Scissors className="h-12 w-12 text-red-500" />}
-                                                {lastScanned.tipoPaquete === 'CADENITA' && <LinkIcon className="h-12 w-12 text-violet-500" />}
+                                        <div className="flex items-center gap-4 border-b border-border/50 pb-4">
+                                            <div className="p-3 bg-background rounded-full shadow-sm border border-border shrink-0">
+                                                {lastScanned.destinoType === 'DESPACHO' && <CheckCircle2 className="h-8 w-8 text-emerald-500" />}
+                                                {lastScanned.destinoType === 'DOMICILIO' && <MapPin className="h-8 w-8 text-blue-500" />}
+                                                {lastScanned.tipoPaquete === 'CLEMENTINA' && <Box className="h-8 w-8 text-orange-500" />}
+                                                {lastScanned.tipoPaquete === 'SEPARAR' && <Scissors className="h-8 w-8 text-red-500" />}
+                                                {lastScanned.tipoPaquete === 'CADENITA' && <LinkIcon className="h-8 w-8 text-violet-500" />}
                                             </div>
-                                            <div className="flex-1">
-                                                <h2 className="text-5xl font-black tracking-tight text-foreground font-mono leading-none">
+                                            <div className="flex-1 min-w-0">
+                                                <h2 className="text-3xl font-black tracking-tight text-foreground font-mono leading-none truncate">
                                                     {lastScanned.guia}
                                                 </h2>
-                                                <div className="mt-2 flex flex-wrap items-center gap-3">
+                                                <div className="mt-2 flex flex-wrap items-center gap-2">
                                                     <Badge variant="outline" className={cn(
-                                                        "text-lg px-3 py-1 font-bold uppercase",
+                                                        "text-sm px-2.5 py-0.5 font-bold uppercase",
                                                         lastScanned.destinoType === 'DESPACHO' && "bg-emerald-100 text-emerald-700 border-emerald-500",
                                                         lastScanned.destinoType === 'DOMICILIO' && "bg-blue-100 text-blue-700 border-blue-500",
                                                         (lastScanned.tipoPaquete === 'CLEMENTINA' || lastScanned.tipoPaquete === 'SEPARAR') && "bg-orange-100 text-orange-700 border-orange-500",
@@ -1525,7 +1512,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                         {lastScanned.tipoPaquete === 'CADENITA' ? 'Cadenita' : lastScanned.tipoPaquete || (lastScanned.destinoType === 'DESPACHO' ? 'Agregado a Despacho' : 'Domicilio')}
                                                     </Badge>
                                                     {lastScanned.sacaId && (
-                                                        <Badge variant="secondary" className="text-lg px-3 py-1 font-mono">
+                                                        <Badge variant="secondary" className="text-sm px-2.5 py-0.5 font-mono">
                                                             Saca: {lastScanned.sacaId}
                                                         </Badge>
                                                     )}
@@ -1534,18 +1521,17 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                         </div>
 
                                         {/* Details Grid */}
-                                        <div className="grid grid-cols-1 gap-6">
+                                        <div className="grid grid-cols-1 gap-3">
                                             {lastScanned.ref && (
-                                                <div className="space-y-1">
-                                                    <span className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Referencia</span>
-                                                    <p className="text-lg font-medium text-foreground font-mono">{lastScanned.ref}</p>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Ref:</span>
+                                                    <p className="text-sm font-medium text-foreground font-mono">{lastScanned.ref}</p>
                                                 </div>
                                             )}
                                             {lastScanned.clienteDestino && (
-                                                <div className="col-span-2 space-y-2">
-                                                    <span className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Dirección</span>
+                                                <div className="col-span-2 space-y-1">
                                                     {lastScanned.clienteDestino.direccion && (
-                                                        <p className="text-lg font-medium text-foreground leading-relaxed break-words">{lastScanned.clienteDestino.direccion}</p>
+                                                        <p className="text-sm font-medium text-foreground leading-snug break-words">{lastScanned.clienteDestino.direccion}</p>
                                                     )}
                                                     {(lastScanned.clienteDestino.pais ?? lastScanned.clienteDestino.provincia ?? lastScanned.clienteDestino.canton) && (
                                                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm pt-1 border-t border-border/50">
@@ -1564,9 +1550,9 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                             )}
 
                                             {lastScanned.observacion && (
-                                                <div className="col-span-2 rounded-lg border border-warning/40 bg-warning/15 p-4">
-                                                    <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-warning">Observaciones</span>
-                                                    <p className="text-lg font-medium text-warning-foreground">{lastScanned.observacion}</p>
+                                                <div className="col-span-2 rounded-lg border border-warning/40 bg-warning/15 p-3">
+                                                    <span className="mb-0.5 block text-xs font-bold uppercase tracking-wider text-warning">Obs</span>
+                                                    <p className="text-sm font-medium text-warning-foreground">{lastScanned.observacion}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -1612,23 +1598,24 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                         <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-border bg-background p-1">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1 font-medium">Paquetes tipiados (orden de despacho)</p>
                                             {selectedPackagesForDestinatario.map((p, idx) => (
-                                                <div key={p.idPaquete} className="text-xs font-mono text-foreground py-2 px-2 border-b border-border/50 last:border-0 hover:bg-muted/50 flex items-center gap-2 group">
-                                                    <span className="text-muted-foreground w-6 text-right shrink-0">{idx + 1}.</span>
-                                                    <div className="flex-1 min-w-0">
-                                                        <span className="font-medium block truncate">{p.numeroGuia ?? `#${p.idPaquete}`}</span>
-                                                        {p.ref && <span className="text-[10px] text-muted-foreground truncate block">Ref: {p.ref}</span>}
-                                                    </div>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 shrink-0 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                                                        onClick={() => p.idPaquete != null && toggleSelectPackage(p.idPaquete, false)}
-                                                        title="Quitar del despacho"
-                                                    >
-                                                        <X className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </div>
+                                                <PaqueteCompactListItem
+                                                    key={p.idPaquete}
+                                                    paquete={p}
+                                                    index={idx + 1}
+                                                    direccionFallback="Sin destino"
+                                                    action={
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                                                            onClick={() => p.idPaquete != null && toggleSelectPackage(p.idPaquete, false)}
+                                                            title="Quitar del despacho"
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    }
+                                                />
                                             ))}
                                         </div>
                                     ) : (
@@ -1706,23 +1693,23 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                     <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-border bg-background p-1">
                                                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1 font-medium">Paquetes tipiados</p>
                                                         {typedPackagesForCurrentMode.map((p, idx) => (
-                                                            <div key={p.idPaquete} className="text-xs font-mono text-foreground py-2 px-2 border-b border-border/50 last:border-0 hover:bg-muted/50 flex items-center gap-2 group">
-                                                                <span className="text-muted-foreground w-6 text-right shrink-0">{idx + 1}.</span>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <span className="font-medium block truncate">{p.numeroGuia ?? `#${p.idPaquete}`}</span>
-                                                                    {p.ref && <span className="text-[10px] text-muted-foreground truncate block">Ref: {p.ref}</span>}
-                                                                </div>
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-7 w-7 shrink-0 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                                                                    onClick={() => p.idPaquete != null && removeFromTypedQueue(mode, p.idPaquete)}
-                                                                    title="Quitar de la cola"
-                                                                >
-                                                                    <X className="h-3.5 w-3.5" />
-                                                                </Button>
-                                                            </div>
+                                                            <PaqueteCompactListItem
+                                                                key={p.idPaquete}
+                                                                paquete={p}
+                                                                index={idx + 1}
+                                                                action={
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-7 w-7 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                                                                        onClick={() => p.idPaquete != null && removeFromTypedQueue(mode, p.idPaquete)}
+                                                                        title="Quitar de la cola"
+                                                                    >
+                                                                        <X className="h-3.5 w-3.5" />
+                                                                    </Button>
+                                                                }
+                                                            />
                                                         ))}
                                                     </div>
                                                 ) : (
@@ -1882,7 +1869,10 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                         )}
                                                         <TableCell className="align-top py-3">
                                                             <div className="flex flex-col gap-1">
-                                                                <span className="font-mono font-medium text-sm">{guiaEfectiva(pkg) || '-'}</span>
+                                                                <span className="flex items-baseline gap-2">
+                                                                    <span className="font-mono font-medium text-sm">{guiaEfectiva(pkg) || '-'}</span>
+                                                                    {formatPesoKg(pkg) && <span className="text-xs text-muted-foreground tabular-nums">{formatPesoKg(pkg)}</span>}
+                                                                </span>
                                                                 {pkg.ref && <span className="text-xs text-muted-foreground">Ref: {pkg.ref}</span>}
                                                                 {pkg.idPaquetePadre != null && (
                                                                     <Badge variant="outline" className="w-fit text-[10px] px-1 py-0 h-5 border-orange-200 text-orange-700 bg-orange-50">
@@ -1892,39 +1882,24 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="align-top py-3 max-w-[340px]">
-                                                            {(() => {
-                                                                const direccionLimpia = pkg.tipoDestino === 'DOMICILIO' ? getDireccionLimpiaParaLista(pkg) : ''
-                                                                return (
-                                                                    <div className="flex flex-col gap-1.5 text-sm">
-                                                                        <span className="font-semibold text-foreground">
-                                                                            {pkg.tipoDestino === 'AGENCIA'
-                                                                                ? (pkg.nombreAgenciaDestino || '—')
-                                                                                : (pkg.nombreClienteDestinatario || '—')}
-                                                                        </span>
-                                                                        {pkg.tipoDestino === 'AGENCIA' ? (
-                                                                            pkg.cantonAgenciaDestino && (
-                                                                                <span className="text-xs text-muted-foreground">{pkg.cantonAgenciaDestino}</span>
-                                                                            )
-                                                                        ) : (
-                                                                            <>
-                                                                                {pkg.telefonoDestinatario && (
-                                                                                    <p className="text-xs font-mono text-muted-foreground">Tel: {pkg.telefonoDestinatario}</p>
-                                                                                )}
-                                                                                {direccionLimpia && (
-                                                                                    <p className="text-xs text-muted-foreground leading-snug break-words">{direccionLimpia}</p>
-                                                                                )}
-                                                                                {(pkg.paisDestinatario ?? pkg.provinciaDestinatario ?? pkg.cantonDestinatario) && (
-                                                                                    <p className="text-xs text-foreground/80 flex flex-wrap gap-x-2 gap-y-0">
-                                                                                        {pkg.paisDestinatario && <span>País: {pkg.paisDestinatario}</span>}
-                                                                                        {pkg.provinciaDestinatario && <span>Provincia: {pkg.provinciaDestinatario}</span>}
-                                                                                        {pkg.cantonDestinatario && <span>Cantón: {pkg.cantonDestinatario}</span>}
-                                                                                    </p>
-                                                                                )}
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-                                                                )
-                                                            })()}
+                                                            <div className="flex flex-col gap-0.5 text-sm">
+                                                                <span className="font-semibold text-foreground truncate">
+                                                                    {pkg.tipoDestino === 'AGENCIA'
+                                                                        ? (pkg.nombreAgenciaDestino || '—')
+                                                                        : (pkg.nombreClienteDestinatario || '—')}
+                                                                </span>
+                                                                {pkg.tipoDestino !== 'AGENCIA' && pkg.telefonoDestinatario && (
+                                                                    <p className="text-xs font-mono text-muted-foreground truncate">Tel: {pkg.telefonoDestinatario}</p>
+                                                                )}
+                                                                {(() => {
+                                                                    const direccion = formatDireccionPaquete(pkg, { fallback: 'Sin destino' })
+                                                                    return (
+                                                                        <p className="text-xs text-muted-foreground leading-snug break-words" title={direccion}>
+                                                                            {direccion}
+                                                                        </p>
+                                                                    )
+                                                                })()}
+                                                            </div>
                                                         </TableCell>
                                                         <TableCell className="align-top py-3">
                                                             {hasDespacho(pkg) ? (
