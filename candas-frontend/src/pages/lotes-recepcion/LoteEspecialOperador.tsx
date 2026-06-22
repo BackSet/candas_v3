@@ -1,5 +1,6 @@
 import CrearDespachoMasivoDialog from '@/components/despachos/CrearDespachoMasivoDialog'
 import AgregarAtencionDialog from '@/components/lotes-recepcion/AgregarAtencionDialog'
+import { PaqueteCompactListItem } from '@/components/lotes-recepcion/PaqueteCompactListItem'
 import { LoadingState } from '@/components/states'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -63,6 +64,7 @@ import type { GuiaListaEtiquetadaConsultaDTO } from '@/types/listas-etiquetadas'
 import type { Paquete } from '@/types/paquete'
 import { TamanoSaca } from '@/types/saca'
 import { generarExcelLoteRecepcion } from '@/utils/generarExcelLoteRecepcion'
+import { formatPesoKg } from '@/utils/paqueteDisplay'
 import { descargarPDFLoteEspecial,filtrarPaquetesPorTipo } from '@/utils/generarPdfLoteEspecial'
 import { imprimirLoteEspecial } from '@/utils/imprimirPdfLoteEspecial'
 import { calcularTamanoSugerido } from '@/utils/saca'
@@ -1026,34 +1028,33 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
             <div className="flex-1 min-h-0">
               {operacionModo === 'DESPACHO' && showFeedbackDespacho && lastScannedDespacho ? (
                 <Card className="h-full border-l-[8px] border-l-emerald-500 bg-emerald-500/5 border border-border shadow-sm flex flex-col justify-center animate-in fade-in duration-200">
-                  <CardContent className="p-8 space-y-6">
-                    <div className="flex items-center gap-6 border-b border-border/50 pb-6">
-                      <div className="p-4 bg-background rounded-full shadow-sm border border-border shrink-0">
-                        <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex items-center gap-4 border-b border-border/50 pb-4">
+                      <div className="p-3 bg-background rounded-full shadow-sm border border-border shrink-0">
+                        <CheckCircle2 className="h-8 w-8 text-emerald-500" />
                       </div>
-                      <div className="flex-1">
-                        <h2 className="text-5xl font-black tracking-tight text-foreground font-mono leading-none">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-3xl font-black tracking-tight text-foreground font-mono leading-none truncate">
                           {lastScannedDespacho.guia}
                         </h2>
                         <div className="mt-2">
-                          <Badge variant="outline" className="text-lg px-3 py-1 font-bold uppercase bg-emerald-100 text-emerald-700 border-emerald-500 dark:bg-emerald-900/30 dark:text-emerald-300">
+                          <Badge variant="outline" className="text-sm px-2.5 py-0.5 font-bold uppercase bg-emerald-100 text-emerald-700 border-emerald-500 dark:bg-emerald-900/30 dark:text-emerald-300">
                             Agregado a despacho
                           </Badge>
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-6">
+                    <div className="grid grid-cols-1 gap-3">
                       {lastScannedDespacho.ref && (
-                        <div className="space-y-1">
-                          <span className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Referencia</span>
-                          <p className="text-lg font-medium text-foreground font-mono">{lastScannedDespacho.ref}</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Ref:</span>
+                          <p className="text-sm font-medium text-foreground font-mono">{lastScannedDespacho.ref}</p>
                         </div>
                       )}
                       {lastScannedDespacho.clienteDestino && (
-                        <div className="space-y-2">
-                          <span className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Dirección</span>
+                        <div className="space-y-1">
                           {lastScannedDespacho.clienteDestino.direccion && (
-                            <p className="text-lg font-medium text-foreground leading-relaxed break-words">{lastScannedDespacho.clienteDestino.direccion}</p>
+                            <p className="text-sm font-medium text-foreground leading-snug break-words">{lastScannedDespacho.clienteDestino.direccion}</p>
                           )}
                           {(lastScannedDespacho.clienteDestino.pais ?? lastScannedDespacho.clienteDestino.provincia ?? lastScannedDespacho.clienteDestino.canton) && (
                             <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm pt-1 border-t border-border/50">
@@ -1065,9 +1066,9 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
                         </div>
                       )}
                       {lastScannedDespacho.observacion && (
-                        <div className="rounded-lg border border-warning/40 bg-warning/15 p-4">
-                          <span className="mb-1 block text-xs font-bold uppercase tracking-wider text-warning">Observaciones</span>
-                          <p className="text-lg font-medium text-warning-foreground">{lastScannedDespacho.observacion}</p>
+                        <div className="rounded-lg border border-warning/40 bg-warning/15 p-3">
+                          <span className="mb-0.5 block text-xs font-bold uppercase tracking-wider text-warning">Obs</span>
+                          <p className="text-sm font-medium text-warning-foreground">{lastScannedDespacho.observacion}</p>
                         </div>
                       )}
                     </div>
@@ -1163,23 +1164,24 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
                     <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-border bg-background p-1">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1 font-medium">Paquetes tipiados (orden de despacho)</p>
                       {selectedPackagesForDestinatario.map((p, idx) => (
-                        <div key={p.idPaquete} className="text-xs font-mono text-foreground py-2 px-2 border-b border-border/50 last:border-0 hover:bg-muted/50 flex items-center gap-2 group">
-                          <span className="text-muted-foreground w-6 text-right shrink-0">{idx + 1}.</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="font-medium block truncate">{p.numeroGuia ?? `#${p.idPaquete}`}</span>
-                            {p.ref && <span className="text-[10px] text-muted-foreground truncate block">Ref: {p.ref}</span>}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 shrink-0 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => p.idPaquete != null && quitarDeDespacho(p.idPaquete)}
-                            title="Quitar del despacho"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                        <PaqueteCompactListItem
+                          key={p.idPaquete}
+                          paquete={p}
+                          index={idx + 1}
+                          direccionFallback="Sin destino"
+                          action={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => p.idPaquete != null && quitarDeDespacho(p.idPaquete)}
+                              title="Quitar del despacho"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          }
+                        />
                       ))}
                     </div>
                   ) : (
@@ -1363,7 +1365,10 @@ export default function LoteEspecialOperador({ embedded = false, onImportar, onE
                                   />
                                 </TableCell>
                               )}
-                              <TableCell className="font-mono text-sm">{p.numeroGuia ?? '-'}</TableCell>
+                              <TableCell className="font-mono text-sm">
+                                <span className="block">{p.numeroGuia ?? '-'}</span>
+                                {formatPesoKg(p) && <span className="text-xs text-muted-foreground tabular-nums">{formatPesoKg(p)}</span>}
+                              </TableCell>
                               <TableCell>
                                 <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
                                   {p.ref?.trim() || '—'}
