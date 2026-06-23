@@ -597,9 +597,6 @@ export default function DespachosList() {
       if (despacho.nombreAgenciaPropietaria) {
         mensaje += `*Agencia propietaria:* ${despacho.nombreAgenciaPropietaria}\n`
       }
-      if (despacho.codigoPresinto) {
-        mensaje += `*Presinto:* ${despacho.codigoPresinto}\n`
-      }
       mensaje += '\n'
       if (despacho.idAgencia && agencia) {
         mensaje += `*Destino:* ${agencia.nombre}${agencia.canton ? ` - ${agencia.canton}` : ''}\n`
@@ -618,7 +615,9 @@ export default function DespachosList() {
         mensaje += '*Detalle de sacas*\n'
         const sacasOrdenadas = [...sacas].sort((a, b) => (a.numeroOrden ?? 0) - (b.numeroOrden ?? 0))
         sacasOrdenadas.forEach((saca, index) => {
-          mensaje += `${index + 1}. Saca #${saca.numeroOrden ?? 'N/A'} (${saca.idPaquetes?.length ?? 0} paq)\n`
+          const presinto = saca.codigoPresinto?.trim()
+          const presintoTxt = presinto ? ` · Presinto: ${presinto}` : ''
+          mensaje += `${index + 1}. Saca #${saca.numeroOrden ?? 'N/A'} (${saca.idPaquetes?.length ?? 0} paq)${presintoTxt}\n`
         })
         mensaje += '\n'
       }
@@ -819,15 +818,25 @@ export default function DespachosList() {
     },
     {
       id: 'presinto',
-      header: 'Presinto',
+      header: 'Presintos (sacas)',
       defaultHidden: true,
-      accessor: (d) =>
-        d.codigoPresinto ? (
-          <span className="font-mono text-[11px] text-muted-foreground">{d.codigoPresinto}</span>
+      accessor: (d) => {
+        const presintos = (d.sacas ?? [])
+          .map((s) => s.codigoPresinto?.trim())
+          .filter((p): p is string => !!p)
+        return presintos.length > 0 ? (
+          <span className="font-mono text-[11px] text-muted-foreground" title={presintos.join(', ')}>
+            {presintos.join(', ')}
+          </span>
         ) : (
           <span className="text-xs text-muted-foreground/60">—</span>
-        ),
-      sortValue: (d) => d.codigoPresinto ?? '',
+        )
+      },
+      sortValue: (d) =>
+        (d.sacas ?? [])
+          .map((s) => s.codigoPresinto?.trim())
+          .filter(Boolean)
+          .join(', '),
     },
     {
       id: 'usuario',

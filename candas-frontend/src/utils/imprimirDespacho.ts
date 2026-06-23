@@ -195,7 +195,6 @@ export async function generarManifiestoHTML(
 
   const nombreDistribuidor = distribuidor?.nombre || 'N/A'
   const numeroGuiaAgenciaDistribucion = despacho.numeroGuiaAgenciaDistribucion || 'N/A'
-  const codigoPresinto = despacho.codigoPresinto || 'N/A'
 
   // Procesar sacas y cargar paquetes
   const sacas = despacho.sacas || []
@@ -232,12 +231,13 @@ export async function generarManifiestoHTML(
 
       const numeroSaca = saca.numeroOrden || 'N/A'
       const codigoQrTexto = saca.codigoQr ? ` (${saca.codigoQr})` : ''
+      const presintoSaca = saca.codigoPresinto?.trim() || 'SIN PRESINTO'
 
       return `
         <div class="saca-block">
           <div class="saca-header">
             <span>Saca #${numeroSaca}${codigoQrTexto}</span>
-            <span class="saca-header-meta">Tamaño: ${saca.tamano} · Paquetes: ${paquetes.length}</span>
+            <span class="saca-header-meta">Tamaño: ${saca.tamano} · Paquetes: ${paquetes.length} · Presinto: ${presintoSaca}</span>
           </div>
           <table class="paquetes-table">
             <thead>
@@ -276,7 +276,6 @@ export async function generarManifiestoHTML(
         <div class="doc-stats">
            <div class="doc-stat"><span class="stat-label">Sacas</span><span class="stat-value">${totalSacas}</span></div>
            <div class="doc-stat"><span class="stat-label">Paquetes</span><span class="stat-value">${totalPaquetes}</span></div>
-           <div class="doc-stat accent"><span class="stat-label">Presinto</span><span class="stat-value is-code">${codigoPresinto}</span></div>
         </div>
       </div>
 
@@ -370,7 +369,6 @@ export async function generarPDFDespacho(
   nombreAgenciaOrigen?: string
 ) {
   const tituloOrigen = nombreAgenciaOrigen?.trim() || 'MV Services - Quito Sur'
-  const codigoPresinto = despacho.codigoPresinto || 'N/A'
   // Configuración del PDF (A4 Landscape)
   const doc = new jsPDF({
     orientation: 'landscape',
@@ -436,7 +434,6 @@ export async function generarPDFDespacho(
 
   text(`Total Sacas: ${totalSacas}`, MARGIN_X + PAGE_WIDTH, currentY + 4.5, 7.4, 'bold', 'right')
   text(`Total Paquetes: ${totalPaquetes}`, MARGIN_X + PAGE_WIDTH, currentY + 8.8, 7.4, 'bold', 'right')
-  text(`Presinto: ${codigoPresinto}`, MARGIN_X + PAGE_WIDTH, currentY + 13.1, 7.1, 'normal', 'right', PDF_COLORS.text.secondary)
 
   // Line under header
   currentY += 15
@@ -585,7 +582,7 @@ export async function generarPDFDespacho(
 
       doc.setFont(PDF_FONTS.family, 'normal')
       doc.setTextColor(PDF_COLORS.text.secondary)
-      doc.text(`Tamaño: ${saca.tamano || '-'} | Paquetes: ${paquetes.length}`, MARGIN_X + PAGE_WIDTH - 2, sacaHeaderY + 4.5, { align: 'right' })
+      doc.text(`Tamaño: ${saca.tamano || '-'} | Paquetes: ${paquetes.length} | Presinto: ${saca.codigoPresinto?.trim() || 'SIN PRESINTO'}`, MARGIN_X + PAGE_WIDTH - 2, sacaHeaderY + 4.5, { align: 'right' })
       doc.setTextColor(PDF_COLORS.text.primary)
       currentY += 5.8
 

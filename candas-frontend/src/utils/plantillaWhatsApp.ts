@@ -43,9 +43,21 @@ export function construirVariablesDesdeDespacho(
   const detalleSacas = sacasOrdenadas
     .map((saca, i) => {
       const numPaq = saca.idPaquetes?.length ?? 0
-      return `${i + 1}. Saca #${saca.numeroOrden ?? 'N/A'} (${numPaq} paq)`
+      const presinto = saca.codigoPresinto?.trim()
+      const presintoTxt = presinto ? ` · Presinto: ${presinto}` : ''
+      return `${i + 1}. Saca #${saca.numeroOrden ?? 'N/A'} (${numPaq} paq)${presintoTxt}`
     })
     .join('\n')
+
+  // El presinto ya no es global del despacho: se lista por saca. La variable {{codigo_presinto}}
+  // se mantiene por compatibilidad con plantillas existentes, ahora con los presintos de cada saca.
+  const codigoPresintoPorSaca = sacasOrdenadas
+    .map((saca) => {
+      const presinto = saca.codigoPresinto?.trim()
+      return presinto ? `Saca ${saca.numeroOrden ?? '?'}: ${presinto}` : null
+    })
+    .filter(Boolean)
+    .join(', ')
 
   const fechaDespacho = despacho.fechaDespacho
     ? new Date(despacho.fechaDespacho).toLocaleDateString('es-ES')
@@ -67,6 +79,6 @@ export function construirVariablesDesdeDespacho(
     resumen_operativo: `Sacas: ${totalSacas} | Paquetes: ${totalPaquetes}`,
     agencia: agenciaNombre,
     observaciones: despacho.observaciones ?? '',
-    codigo_presinto: despacho.codigoPresinto ?? '',
+    codigo_presinto: codigoPresintoPorSaca,
   }
 }

@@ -28,5 +28,4 @@ public class DespachoDetalleDTO {
     private List<SacaDetalleDTO> sacas;
     private Integer totalSacas;
     private Integer totalPaquetes;
-    private String codigoPresinto;
 }

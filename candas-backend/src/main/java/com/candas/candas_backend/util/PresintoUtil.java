@@ -43,11 +43,42 @@ public class PresintoUtil {
         return encoded.length() > MAX_LENGTH ? encoded.substring(0, MAX_LENGTH) : encoded;
     }
 
+    /**
+     * Genera un código de presinto único y no falsificable por saca.
+     * El presinto se coloca físicamente al ensacar cada saca, por lo que pertenece a la saca.
+     * Dos sacas del mismo despacho producen códigos distintos porque el payload incluye
+     * {@code idSaca} y {@code numeroOrden} además de los datos del despacho.
+     * Mismos datos (despacho, saca, orden, fecha) siempre producen el mismo código (determinístico).
+     *
+     * @param idDespacho       id del despacho al que pertenece la saca
+     * @param numeroManifiesto número de manifiesto del despacho (puede ser null)
+     * @param idSaca           id de la saca (diferencia sacas del mismo despacho)
+     * @param numeroOrden      número de orden de la saca dentro del despacho (puede ser null)
+     * @param fechaCreacion    fecha de creación de la saca (puede ser null)
+     * @return código de presinto (Base64url de los primeros 8 bytes del HMAC), ~11 caracteres
+     */
+    public String generarCodigoPresintoSaca(Long idDespacho, String numeroManifiesto, Long idSaca,
+                                            Integer numeroOrden, LocalDateTime fechaCreacion) {
+        String payload = construirPayloadSaca(idDespacho, numeroManifiesto, idSaca, numeroOrden, fechaCreacion);
+        byte[] hmacCompleto = hmacSha256(secret.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8));
+        byte[] hmacCorto = java.util.Arrays.copyOf(hmacCompleto, HMAC_BYTES_USADOS);
+        String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(hmacCorto);
+        return encoded.length() > MAX_LENGTH ? encoded.substring(0, MAX_LENGTH) : encoded;
+    }
+
     private String construirPayload(Long idDespacho, String numeroManifiesto, LocalDateTime fechaDespacho) {
         long id = idDespacho != null ? idDespacho : 0L;
         String manifiesto = numeroManifiesto != null ? numeroManifiesto.replaceAll("\\s", "") : "";
         String fechaStr = fechaDespacho != null ? fechaDespacho.toLocalDate().format(FECHA_FORMAT) : "";
         return id + "|" + manifiesto + "|" + fechaStr;
+    }
+
+    private String construirPayloadSaca(Long idDespacho, String numeroManifiesto, Long idSaca,
+                                        Integer numeroOrden, LocalDateTime fechaCreacion) {
+        String base = construirPayload(idDespacho, numeroManifiesto, fechaCreacion);
+        long saca = idSaca != null ? idSaca : 0L;
+        int orden = numeroOrden != null ? numeroOrden : 0;
+        return base + "|S:" + saca + ":" + orden;
     }
 
     private static byte[] hmacSha256(byte[] key, byte[] data) {

@@ -519,8 +519,8 @@ export default function CrearDespachoMasivoDialog({
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="bulk-codigo-presinto" className="flex items-center gap-1.5 text-sm font-medium">
-                    Código de presinto de seguridad
-                    <HelpTip>Número del sello físico que cierra la valija. Permite verificar que no se abrió en tránsito. Escríbelo o genera uno.</HelpTip>
+                    Presinto de seguridad (todas las sacas)
+                    <HelpTip>Número del sello físico que cierra cada saca. En carga masiva se aplica a todas las sacas del despacho. Déjalo vacío para que el sistema genere uno distinto por saca.</HelpTip>
                   </Label>
                   <div className="flex flex-wrap gap-3">
                     <Input

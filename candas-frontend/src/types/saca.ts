@@ -21,6 +21,7 @@ export interface Saca {
   numeroOrden?: number // Se genera automáticamente
   tamano: TamanoSaca
   pesoTotal?: number
+  codigoPresinto?: string // Presinto de seguridad propio de la saca; opcional, el backend lo genera si falta
   idDespacho?: number
   numeroManifiesto?: string // Número de manifiesto del despacho para mostrar en listas
   fechaCreacion?: string

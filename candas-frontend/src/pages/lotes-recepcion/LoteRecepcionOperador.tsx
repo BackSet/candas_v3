@@ -987,11 +987,14 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
                 // Construir sacas desde la distribución: el backend exige al menos una saca con idPaquetes
                 let idx = 0
+                // El presinto se registra por saca. En carga masiva, si el operador escribió uno,
+                // se aplica a todas las sacas; si lo deja vacío, el backend genera uno propio por saca.
+                const presintoBulk = bulkCodigoPresinto.trim() || undefined
                 const sacasPayload = groups.map((qty, i) => {
                     const idPaquetes = ordenParaSacas.slice(idx, idx + qty)
                     idx += qty
                     const tamano = tamanosSacasBulk[i] ?? TamanoSaca.GRANDE
-                    return { tamano, idPaquetes }
+                    return { tamano, idPaquetes, codigoPresinto: presintoBulk }
                 })
 
                 const fechaDespachoValue = bulkFechaDespacho
@@ -1001,7 +1004,6 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     fechaDespacho: fechaDespachoValue,
                     usuarioRegistro: user?.nombreCompleto ?? 'OPERARIO',
                     observaciones: bulkObservaciones.trim() || undefined,
-                    codigoPresinto: bulkCodigoPresinto.trim() || undefined,
                     idAgencia: bulkTipoDestino === 'AGENCIA' ? Number(bulkIdDestino) : undefined,
                     idDestinatarioDirecto: idDestinatarioDirectoPayload,
                     idPaqueteOrigenDestinatario: undefined,

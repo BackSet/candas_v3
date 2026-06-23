@@ -216,6 +216,9 @@ public class DespachoService {
             despachoGuardado.setNumeroManifiesto(generarNumeroManifiesto(despachoGuardado.getIdDespacho()));
             despachoGuardado = despachoRepository.save(despachoGuardado);
         }
+        // LEGACY: el presinto operativo vive por saca (ver crearYAsignarSacas). Se sigue
+        // poblando despacho.codigo_presinto solo por continuidad de la columna histórica
+        // (deprecada, no es fuente de verdad). Su retiro requiere una migración dedicada.
         if (despachoGuardado.getCodigoPresinto() == null || despachoGuardado.getCodigoPresinto().isBlank()) {
             despachoGuardado.setCodigoPresinto(calcularCodigoPresinto(despachoGuardado));
             despachoGuardado = despachoRepository.save(despachoGuardado);
@@ -234,6 +237,29 @@ public class DespachoService {
             despacho.getIdDespacho(),
             despacho.getNumeroManifiesto(),
             despacho.getFechaDespacho()
+        );
+    }
+
+    /**
+     * Asigna el presinto a una saca ya persistida (con idSaca): usa el valor del DTO si viene
+     * informado o genera uno propio por saca. Persiste el cambio.
+     */
+    private void asignarPresintoSaca(Despacho despacho, Saca saca, String codigoPresintoDto) {
+        String presinto = (codigoPresintoDto != null && !codigoPresintoDto.isBlank())
+            ? codigoPresintoDto.trim()
+            : calcularCodigoPresintoSaca(despacho, saca);
+        saca.setCodigoPresinto(presinto);
+        sacaRepository.save(saca);
+    }
+
+    /** Genera el presinto propio de la saca (fuente de verdad por saca). Requiere idSaca asignado. */
+    private String calcularCodigoPresintoSaca(Despacho despacho, Saca saca) {
+        return presintoUtil.generarCodigoPresintoSaca(
+            despacho.getIdDespacho(),
+            despacho.getNumeroManifiesto(),
+            saca.getIdSaca(),
+            saca.getNumeroOrden(),
+            saca.getFechaCreacion()
         );
     }
 
@@ -315,6 +341,10 @@ public class DespachoService {
             String codigoQr = generarCodigoQrSaca(despacho.getNumeroManifiesto(), sacaGuardada.getNumeroOrden());
             sacaGuardada.setCodigoQr(codigoQr);
             sacaGuardada = sacaRepository.save(sacaGuardada);
+
+            // Presinto propio por saca: usar el del DTO si viene informado (p. ej. preservación
+            // en edición vía round-trip del DTO) o generarlo en backend si falta.
+            asignarPresintoSaca(despacho, sacaGuardada, sacaDTO.getCodigoPresinto());
 
             if (sacaDTO.getIdPaquetes() != null && !sacaDTO.getIdPaquetes().isEmpty()) {
                 int ordenEnSaca = 1;
@@ -569,6 +599,9 @@ public class DespachoService {
         sacaGuardada.setCodigoQr(codigoQr);
         sacaGuardada = sacaRepository.save(sacaGuardada);
 
+        // Presinto propio para la nueva saca de cadenitas.
+        asignarPresintoSaca(despacho, sacaGuardada, null);
+
         int ordenEnSaca = 1;
         for (Paquete paquete : hijosCadenita) {
             PaqueteSaca ps = new PaqueteSaca();
@@ -604,6 +637,7 @@ public class DespachoService {
                 dto.setNumeroOrden(s.getNumeroOrden());
                 dto.setTamano(s.getTamano());
                 dto.setPesoTotal(s.getPesoTotal());
+                dto.setCodigoPresinto(s.getCodigoPresinto());
                 dto.setIdDespacho(despacho.getIdDespacho());
                 dto.setNumeroManifiesto(despacho.getNumeroManifiesto());
                 dto.setFechaCreacion(s.getFechaCreacion());
@@ -730,6 +764,7 @@ public class DespachoService {
         sacaDTO.setNumeroOrden(s.getNumeroOrden());
         sacaDTO.setTamano(s.getTamano());
         sacaDTO.setPesoTotal(s.getPesoTotal());
+        sacaDTO.setCodigoPresinto(s.getCodigoPresinto());
         sacaDTO.setFechaCreacion(s.getFechaCreacion());
         sacaDTO.setFechaEnsacado(s.getFechaEnsacado());
         sacaDTO.setIdDespacho(despacho.getIdDespacho());

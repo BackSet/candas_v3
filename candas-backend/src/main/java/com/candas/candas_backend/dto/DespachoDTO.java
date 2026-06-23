@@ -44,8 +44,13 @@ public class DespachoDTO {
 
     private DespachoDirectoDTO despachoDirecto; // Para lectura
 
+    /**
+     * @deprecated Legacy. El presinto operativo vive en {@link SacaDTO#getCodigoPresinto()}.
+     * Se mantiene por compatibilidad con datos históricos; el frontend ya no lo envía ni lo lee.
+     */
+    @Deprecated
     @Size(max = 64)
-    private String codigoPresinto; // Código del presinto (etiqueta Zebra/normal); opcional, puede enviarse al crear/editar o generarse en backend
+    private String codigoPresinto;
     
     @Valid
     private List<SacaDTO> sacas; // Para crear/editar sacas junto con el despacho

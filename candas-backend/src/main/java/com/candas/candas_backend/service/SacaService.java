@@ -15,6 +15,7 @@ import com.candas.candas_backend.repository.SacaRepository;
 import com.candas.candas_backend.repository.AgenciaRepository;
 import com.candas.candas_backend.repository.spec.SacaSpecs;
 import com.candas.candas_backend.security.AgenciaScopeResolver;
+import com.candas.candas_backend.util.PresintoUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class SacaService {
     private final PaqueteService paqueteService;
     private final AgenciaScopeResolver agenciaScopeResolver;
     private final DespachoService despachoService;
+    private final PresintoUtil presintoUtil;
 
     public SacaService(
             SacaRepository sacaRepository,
@@ -44,7 +46,8 @@ public class SacaService {
             AgenciaRepository agenciaRepository,
             PaqueteService paqueteService,
             AgenciaScopeResolver agenciaScopeResolver,
-            DespachoService despachoService) {
+            DespachoService despachoService,
+            PresintoUtil presintoUtil) {
         this.sacaRepository = sacaRepository;
         this.despachoRepository = despachoRepository;
         this.paqueteRepository = paqueteRepository;
@@ -52,6 +55,7 @@ public class SacaService {
         this.paqueteService = paqueteService;
         this.agenciaScopeResolver = agenciaScopeResolver;
         this.despachoService = despachoService;
+        this.presintoUtil = presintoUtil;
     }
 
     public Page<SacaDTO> findAll(Pageable pageable) {
@@ -150,12 +154,36 @@ public class SacaService {
             }
         }
         
+        // Presinto propio por saca: usar el del DTO si viene o generarlo en backend si falta.
+        sacaGuardada = asignarPresintoSaca(sacaGuardada, dto.getCodigoPresinto());
+
         // Asignar paquetes si se proporcionan
         if (dto.getIdPaquetes() != null && !dto.getIdPaquetes().isEmpty()) {
             agregarPaquetes(sacaGuardada.getIdSaca(), dto.getIdPaquetes());
         }
-        
+
         return toDTO(sacaGuardada);
+    }
+
+    /**
+     * Asigna el presinto a una saca ya persistida: usa el valor del DTO si viene informado o
+     * genera uno propio por saca (requiere despacho asociado para los datos del payload).
+     */
+    private Saca asignarPresintoSaca(Saca saca, String codigoPresintoDto) {
+        if (codigoPresintoDto != null && !codigoPresintoDto.isBlank()) {
+            saca.setCodigoPresinto(codigoPresintoDto.trim());
+            return sacaRepository.save(saca);
+        }
+        if (saca.getDespacho() != null) {
+            saca.setCodigoPresinto(presintoUtil.generarCodigoPresintoSaca(
+                saca.getDespacho().getIdDespacho(),
+                saca.getDespacho().getNumeroManifiesto(),
+                saca.getIdSaca(),
+                saca.getNumeroOrden(),
+                saca.getFechaCreacion()));
+            return sacaRepository.save(saca);
+        }
+        return saca;
     }
 
     public SacaDTO update(Long id, SacaDTO dto) {
@@ -169,12 +197,16 @@ public class SacaService {
         saca.setCodigoQr(dto.getCodigoQr());
         saca.setNumeroOrden(dto.getNumeroOrden());
         saca.setTamano(dto.getTamano());
-        
+        // Presinto: actualizar solo si el DTO lo informa; preservar el existente en caso contrario.
+        if (dto.getCodigoPresinto() != null && !dto.getCodigoPresinto().isBlank()) {
+            saca.setCodigoPresinto(dto.getCodigoPresinto().trim());
+        }
+
         if (dto.getIdDespacho() != null) {
             saca.setDespacho(despachoRepository.findById(dto.getIdDespacho())
                 .orElseThrow(() -> new ResourceNotFoundException("Despacho", dto.getIdDespacho())));
         }
-        
+
         return toDTO(sacaRepository.save(saca));
     }
 
@@ -248,6 +280,7 @@ public class SacaService {
         dto.setNumeroOrden(saca.getNumeroOrden());
         dto.setTamano(saca.getTamano());
         dto.setPesoTotal(saca.getPesoTotal());
+        dto.setCodigoPresinto(saca.getCodigoPresinto());
         dto.setFechaCreacion(saca.getFechaCreacion());
         dto.setFechaEnsacado(saca.getFechaEnsacado());
         if (saca.getDespacho() != null) {
@@ -268,6 +301,9 @@ public class SacaService {
         saca.setCodigoQr(dto.getCodigoQr());
         saca.setNumeroOrden(dto.getNumeroOrden());
         saca.setTamano(dto.getTamano());
+        if (dto.getCodigoPresinto() != null && !dto.getCodigoPresinto().isBlank()) {
+            saca.setCodigoPresinto(dto.getCodigoPresinto().trim());
+        }
         if (dto.getIdDespacho() != null) {
             saca.setDespacho(despachoRepository.findById(dto.getIdDespacho())
                 .orElseThrow(() -> new ResourceNotFoundException("Despacho", dto.getIdDespacho())));
