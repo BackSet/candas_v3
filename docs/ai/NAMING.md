@@ -25,11 +25,15 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Lote de despachos | Conjunto de despachos creados en una misma sesion de despacho masivo (campo `despachosLote`). Usar "lote" para el conjunto, no para un despacho individual. | [verificado en Git] |
 | Cola global de guías | Lista unica de guias capturadas en despacho masivo, pendientes de asignar a un despacho (`colaGlobalGuias`/`paquetesCola`). Estados: `pendiente`, `resuelto`, `no_encontrado`, `no_disponible`, `asignado`. | [verificado en Git] |
 | Despacho en construcción | Despacho que el operario arma actualmente en el builder antes de confirmarlo (`despachoActualId`). | [verificado en Git] |
+| Patrón de sacas | Distribución manual de paquetes por saca en despacho masivo, expresada como enteros positivos separados por comas (p. ej. `2,3,5`). Modos de distribución: "todo en una saca", "repartir en N sacas" y "patrón". Helpers en `utils/sacaDistribution.ts`. | [verificado en Git] |
+| Resumen copiable | Texto del despacho masivo listo para copiar al portapapeles, a nivel de despacho (resumen completo, guías o destino) o de saca (`buildSacaCopyText`/`buildSacaGuiasCopyText`/`buildSacaDestinoCopyText`), construido en `utils/despachoMasivoCopy.ts` y copiado con `copyText`/`CopyActionButton`. El de despacho se persiste en `resumenCopiable`. | [verificado en Git] |
 | Ensacado | UI, API, backend, permiso `ensacado:operar` | [verificado en Git] |
 | Atencion de paquetes | UI/documentacion; endpoint `/api/v1/atenciones`; permisos `atencion_paquetes:*` | [verificado en Git] |
 | Manifiesto consolidado | UI/API/backend/DB; rutas `manifiestos-consolidados` | [verificado en Git] |
 | Listas etiquetadas | Flujo basado en Paquete bajo `/api/v1/paquetes/listas-etiquetadas` | [verificado en Git] |
 | Parametros del sistema | UI/API/backend; `parametro_sistema` DB | [verificado en Git] |
+| Agencia origen activa | Agencia bajo la que opera el usuario en la sesión actual (`authStore.activeAgencyId`), enviada en el header `X-Agencia-Origen-Activa-Id`. Usar "agencia activa" en UI. | [verificado en Git] |
+| Agencia por defecto / predeterminada | Preferencia de agencia activa que el usuario fija para restaurarla al iniciar sesión (`authStore.defaultAgencyId`, persistida en localStorage `candas-default-active-agency:<idUsuario>`). Usar "predeterminada" en UI. | [verificado en Git] |
 | Usuario, Rol, Permiso | RBAC | [verificado en Git] |
 
 ## Reglas por contexto

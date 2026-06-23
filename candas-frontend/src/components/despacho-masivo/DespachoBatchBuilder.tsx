@@ -1,39 +1,55 @@
+import { DespachoMasivoCopyActions } from '@/components/despacho-masivo/DespachoMasivoCopyActions'
+import {
+  SacaBatchDistributionPanel,
+  type DistribMode,
+} from '@/components/despacho-masivo/SacaBatchDistributionPanel'
+import { SacaBatchReviewCard } from '@/components/despacho-masivo/SacaBatchReviewCard'
 import { Button } from '@/components/ui/button'
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SemanticNotice } from '@/components/ui/semantic-notice'
 import { Textarea } from '@/components/ui/textarea'
 import type { SacaFormData } from '@/hooks/useSacasManager'
-import { TamanoSaca } from '@/types/saca'
-import { formatearTamanoSaca } from '@/utils/ensacado'
-import { calcularTamanoSugerido } from '@/utils/saca'
+import type { DespachoMasivoSacaDetalle } from '@/types/despacho-masivo-session'
+import type { Paquete } from '@/types/paquete'
+import {
+  construirResumenDespachoMasivo,
+  construirDestinoTexto,
+  construirListaGuias,
+  type ResumenDespachoMasivoInput,
+} from '@/utils/despachoMasivoCopy'
 import type {
   ConstruirDespachoPayloadInput,
   DespachoTipoEnvio,
 } from '@/utils/despachoPayload'
+import { guiaEfectiva } from '@/utils/paqueteGuia'
+import {
+  parsearPatron,
+  repartirEnNSacas,
+  repartirPorPatron,
+  repartirTodoEnUnaSaca,
+} from '@/utils/sacaDistribution'
 import { AlertTriangle, ArrowLeft, ArrowRight, Building2, Loader2, MapPin, PackageCheck, Truck } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
-/** Paquete seleccionado de la cola para el despacho en construcción. */
-export interface PaqueteSeleccionadoItem {
-  idPaquete: number
-  numeroGuia: string
-  nombreClienteDestinatario?: string
-  cantonDestinatario?: string
-  pesoKilos?: number
-}
-
 export interface CrearDespachoMeta {
   destinoResumen: string
+  tipoEnvio: DespachoTipoEnvio
+  idDistribuidor?: number
+  nombreDistribuidor?: string
+  numeroGuiaTransporte?: string
+  observaciones?: string
   numerosGuia: string[]
   totalSacas: number
   totalPaquetes: number
+  sacasDetalle: DespachoMasivoSacaDetalle[]
+  resumenCopiable: string
 }
 
 export interface DespachoBatchBuilderProps {
-  paquetesSeleccionados: PaqueteSeleccionadoItem[]
+  /** Paquetes seleccionados de la cola (ya mapeados a `Paquete` para reusar helpers). */
+  paquetesSeleccionados: Paquete[]
   fechaDespacho: string
   usuarioRegistro: string
   agencias: ComboboxOption<number>[]
@@ -46,27 +62,14 @@ export interface DespachoBatchBuilderProps {
 
 type BuilderStage = 'sacas' | 'destino' | 'revisar'
 
-const TAMANOS: TamanoSaca[] = [
-  TamanoSaca.INDIVIDUAL,
-  TamanoSaca.PEQUENO,
-  TamanoSaca.MEDIANO,
-  TamanoSaca.GRANDE,
-]
-
-/** Reparte una lista en `n` grupos lo más equilibrados posible, en orden. */
-function repartirEnGrupos<T>(items: T[], n: number): T[][] {
-  if (n <= 1) return [items]
-  const grupos: T[][] = Array.from({ length: n }, () => [])
-  items.forEach((item, i) => {
-    grupos[i % n].push(item)
-  })
-  return grupos.filter((g) => g.length > 0)
+function guiaDe(p: Paquete): string {
+  return guiaEfectiva(p) || p.numeroGuia || (p.idPaquete != null ? `#${p.idPaquete}` : '')
 }
 
 /**
  * Builder del despacho en construcción del lote masivo: distribuye los paquetes
- * seleccionados en sacas, define destino/distribuidor/observaciones y confirma
- * la creación inmediata reutilizando la lógica de `/despachos/new`.
+ * seleccionados en sacas (una saca / N sacas / patrón), define destino y
+ * confirma la creación inmediata reutilizando la lógica de `/despachos/new`.
  */
 export function DespachoBatchBuilder({
   paquetesSeleccionados,
@@ -80,8 +83,10 @@ export function DespachoBatchBuilder({
   onCrearDespacho,
 }: DespachoBatchBuilderProps) {
   const [stage, setStage] = useState<BuilderStage>('sacas')
+  const [modo, setModo] = useState<DistribMode>('una')
   const [numSacas, setNumSacas] = useState(1)
-  const [tamanos, setTamanos] = useState<Record<number, TamanoSaca>>({})
+  const [patronTexto, setPatronTexto] = useState('')
+  const [tamanos, setTamanos] = useState<Record<number, SacaFormData['tamano']>>({})
   const [presintos, setPresintos] = useState<Record<number, string>>({})
   const [tipoEnvio, setTipoEnvio] = useState<DespachoTipoEnvio>('agencia')
   const [idAgencia, setIdAgencia] = useState<number | null>(null)
@@ -92,26 +97,83 @@ export function DespachoBatchBuilder({
 
   const totalPaquetes = paquetesSeleccionados.length
 
-  // Si cambia la selección, vuelve al primer paso y ajusta el nº de sacas.
+  /** Limpia overrides de tamaño/presinto cuando cambia la estructura de sacas. */
+  const resetOverrides = () => {
+    setTamanos({})
+    setPresintos({})
+  }
+
+  // Si cambia la selección, vuelve al primer paso y limpia overrides.
   useEffect(() => {
     setStage('sacas')
-    setNumSacas((n) => Math.min(Math.max(1, n), Math.max(1, totalPaquetes)))
+    setTamanos({})
+    setPresintos({})
   }, [totalPaquetes])
 
-  const grupos = useMemo(
-    () => repartirEnGrupos(paquetesSeleccionados, Math.min(numSacas, Math.max(1, totalPaquetes))),
-    [paquetesSeleccionados, numSacas, totalPaquetes]
-  )
+  const patron = useMemo(() => parsearPatron(patronTexto), [patronTexto])
+
+  const { sacasBase, sobrantes, faltantes } = useMemo(() => {
+    if (totalPaquetes === 0) return { sacasBase: [] as SacaFormData[], sobrantes: 0, faltantes: 0 }
+    if (modo === 'una') {
+      return { sacasBase: repartirTodoEnUnaSaca(paquetesSeleccionados), sobrantes: 0, faltantes: 0 }
+    }
+    if (modo === 'n') {
+      const n = Math.min(Math.max(1, numSacas), totalPaquetes)
+      return { sacasBase: repartirEnNSacas(paquetesSeleccionados, n), sobrantes: 0, faltantes: 0 }
+    }
+    // patrón
+    if (patron.error || patron.grupos.length === 0) {
+      return { sacasBase: [] as SacaFormData[], sobrantes: 0, faltantes: 0 }
+    }
+    const d = repartirPorPatron(paquetesSeleccionados, patron.grupos)
+    return { sacasBase: d.sacas, sobrantes: d.sobrantes, faltantes: d.faltantes }
+  }, [modo, numSacas, patron, paquetesSeleccionados, totalPaquetes])
 
   const sacas: SacaFormData[] = useMemo(
     () =>
-      grupos.map((grupo, i) => ({
-        tamano: tamanos[i] ?? calcularTamanoSugerido(grupo, grupo.length),
-        idPaquetes: grupo.map((p) => p.idPaquete),
+      sacasBase.map((s, i) => ({
+        tamano: tamanos[i] ?? s.tamano,
+        idPaquetes: s.idPaquetes,
         codigoPresinto: presintos[i] ?? '',
       })),
-    [grupos, tamanos, presintos]
+    [sacasBase, tamanos, presintos]
   )
+
+  const paqueteById = useMemo(() => {
+    const m = new Map<number, Paquete>()
+    paquetesSeleccionados.forEach((p) => {
+      if (p.idPaquete != null) m.set(p.idPaquete, p)
+    })
+    return m
+  }, [paquetesSeleccionados])
+
+  const sacasPaquetes = useMemo(
+    () =>
+      sacas.map(
+        (s) => s.idPaquetes.map((id) => paqueteById.get(id)).filter((p): p is Paquete => p != null)
+      ),
+    [sacas, paqueteById]
+  )
+
+  const sacasDetalle: DespachoMasivoSacaDetalle[] = useMemo(
+    () =>
+      sacas.map((s, i) => {
+        const pks = sacasPaquetes[i] ?? []
+        const peso = pks.reduce((acc, p) => acc + (p.pesoKilos ?? 0), 0)
+        return {
+          numero: i + 1,
+          tamano: s.tamano,
+          codigoPresinto: s.codigoPresinto?.trim() || undefined,
+          totalPaquetes: s.idPaquetes.length,
+          pesoEstimado: peso > 0 ? peso : undefined,
+          numerosGuia: pks.map(guiaDe).filter(Boolean),
+        }
+      }),
+    [sacas, sacasPaquetes]
+  )
+
+  const conteoPorSaca = sacas.map((s) => s.idPaquetes.length)
+  const sacasValidas = sacas.length > 0
 
   const destinoCompleto =
     tipoEnvio === 'agencia' ? idAgencia != null : idDestinatarioDirecto != null
@@ -122,6 +184,35 @@ export function DespachoBatchBuilder({
     }
     return destinatarios.find((d) => d.value === idDestinatarioDirecto)?.label ?? 'Destinatario directo'
   }, [tipoEnvio, idAgencia, idDestinatarioDirecto, agencias, destinatarios])
+
+  const nombreDistribuidor = distribuidores.find((d) => d.value === idDistribuidor)?.label
+  const numerosGuia = useMemo(() => paquetesSeleccionados.map(guiaDe).filter(Boolean), [paquetesSeleccionados])
+
+  const resumenInput: ResumenDespachoMasivoInput = {
+    destinoResumen,
+    tipoEnvio,
+    nombreDistribuidor,
+    numeroGuiaTransporte: numeroGuiaTransporte.trim() || undefined,
+    observaciones: observaciones.trim() || undefined,
+    totalSacas: sacas.length,
+    totalPaquetes,
+    numerosGuia,
+    sacasDetalle,
+  }
+  const resumenCopiable = construirResumenDespachoMasivo(resumenInput)
+
+  const handleModoChange = (m: DistribMode) => {
+    setModo(m)
+    resetOverrides()
+  }
+  const handleNumSacasChange = (n: number) => {
+    setNumSacas(Number.isNaN(n) ? 1 : Math.min(Math.max(1, n), Math.max(1, totalPaquetes)))
+    resetOverrides()
+  }
+  const handlePatronChange = (t: string) => {
+    setPatronTexto(t)
+    resetOverrides()
+  }
 
   const handleCrear = () => {
     const input: ConstruirDespachoPayloadInput = {
@@ -140,9 +231,16 @@ export function DespachoBatchBuilder({
     }
     onCrearDespacho(input, {
       destinoResumen,
-      numerosGuia: paquetesSeleccionados.map((p) => p.numeroGuia),
+      tipoEnvio,
+      idDistribuidor: idDistribuidor ?? undefined,
+      nombreDistribuidor,
+      numeroGuiaTransporte: numeroGuiaTransporte.trim() || undefined,
+      observaciones: observaciones.trim() || undefined,
+      numerosGuia,
       totalSacas: sacas.length,
       totalPaquetes,
+      sacasDetalle,
+      resumenCopiable,
     })
   }
 
@@ -194,72 +292,45 @@ export function DespachoBatchBuilder({
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">{totalPaquetes}</span> paquete(s)
-            seleccionado(s). Distribúyelos en sacas.
+            seleccionado(s). Elige cómo distribuirlos en sacas.
           </p>
-          <div className="flex items-end gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="masivo-num-sacas">Número de sacas</Label>
-              <Input
-                id="masivo-num-sacas"
-                type="number"
-                min={1}
-                max={totalPaquetes}
-                value={numSacas}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10)
-                  setNumSacas(Number.isNaN(v) ? 1 : Math.min(Math.max(1, v), totalPaquetes))
-                  setTamanos({})
-                }}
-                className="w-28"
+
+          <SacaBatchDistributionPanel
+            totalPaquetes={totalPaquetes}
+            modo={modo}
+            onModoChange={handleModoChange}
+            numSacas={numSacas}
+            onNumSacasChange={handleNumSacasChange}
+            patronTexto={patronTexto}
+            onPatronChange={handlePatronChange}
+            patronError={modo === 'patron' ? patron.error : null}
+            conteoPorSaca={conteoPorSaca}
+            sobrantes={sobrantes}
+            faltantes={faltantes}
+          />
+
+          <div className="space-y-3">
+            {sacasPaquetes.map((paquetes, i) => (
+              <SacaBatchReviewCard
+                key={i}
+                numero={i + 1}
+                paquetes={paquetes}
+                tamano={sacas[i].tamano}
+                onTamanoChange={(t) => setTamanos((prev) => ({ ...prev, [i]: t }))}
+                presinto={presintos[i] ?? ''}
+                onPresintoChange={(v) => setPresintos((prev) => ({ ...prev, [i]: v }))}
+                pesoEstimado={(sacasDetalle[i]?.pesoEstimado) ?? 0}
               />
-            </div>
+            ))}
           </div>
 
-          <ul className="space-y-3">
-            {sacas.map((saca, i) => (
-              <li key={i} className="rounded-md border border-border p-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <div className="flex-1">
-                    <span className="text-sm font-medium">Saca {i + 1}</span>
-                    <p className="text-xs text-muted-foreground">
-                      {saca.idPaquetes.length} paquete(s)
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor={`masivo-tamano-${i}`}>Tamaño</Label>
-                    <Select
-                      value={saca.tamano}
-                      onValueChange={(v) => setTamanos((prev) => ({ ...prev, [i]: v as TamanoSaca }))}
-                    >
-                      <SelectTrigger id={`masivo-tamano-${i}`} className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TAMANOS.map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {formatearTamanoSaca(t)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor={`masivo-presinto-${i}`}>Presinto (opcional)</Label>
-                    <Input
-                      id={`masivo-presinto-${i}`}
-                      value={presintos[i] ?? ''}
-                      onChange={(e) => setPresintos((prev) => ({ ...prev, [i]: e.target.value }))}
-                      placeholder="Lo genera el sistema"
-                      className="w-44"
-                    />
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-
           <div className="flex justify-end">
-            <Button type="button" onClick={() => setStage('destino')}>
+            <Button
+              type="button"
+              onClick={() => setStage('destino')}
+              disabled={!sacasValidas}
+              title={!sacasValidas ? 'Define una distribución de sacas válida' : undefined}
+            >
               Continuar a destino <ArrowRight className="ml-1 size-4" />
             </Button>
           </div>
@@ -371,7 +442,32 @@ export function DespachoBatchBuilder({
               <dt className="text-xs text-muted-foreground">Destino</dt>
               <dd className="truncate font-medium">{destinoResumen}</dd>
             </div>
+            {nombreDistribuidor && (
+              <div className="col-span-2">
+                <dt className="text-xs text-muted-foreground">Distribuidor</dt>
+                <dd className="truncate font-medium">{nombreDistribuidor}</dd>
+              </div>
+            )}
+            {numeroGuiaTransporte.trim() && (
+              <div className="col-span-2">
+                <dt className="text-xs text-muted-foreground">Guía de transporte</dt>
+                <dd className="truncate font-medium">{numeroGuiaTransporte.trim()}</dd>
+              </div>
+            )}
           </dl>
+
+          {/* Resumen copiable */}
+          <div className="rounded-md border border-border bg-muted/20 p-3">
+            <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
+              {resumenCopiable}
+            </pre>
+          </div>
+
+          <DespachoMasivoCopyActions
+            resumenText={resumenCopiable}
+            guiasText={construirListaGuias(numerosGuia)}
+            destinoText={construirDestinoTexto(resumenInput)}
+          />
 
           {errorMsg && (
             <SemanticNotice variant="error" icon={AlertTriangle} title="No se pudo crear el despacho">

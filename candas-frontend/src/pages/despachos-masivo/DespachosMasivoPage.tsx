@@ -39,6 +39,7 @@ import type {
   DespachoMasivoSessionPayload,
 } from '@/types/despacho-masivo-session'
 import { EstadoPaquete, type Paquete } from '@/types/paquete'
+import { paqueteToSessionItem, sessionItemToPaquete } from '@/utils/despachoMasivoPaquete'
 import type { ConstruirDespachoPayloadInput } from '@/utils/despachoPayload'
 import { AlertTriangle, Loader2, PackageSearch, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -46,19 +47,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 /** Genera un id temporal de cliente para un despacho del lote. */
 function genId(): string {
   return 'd-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
-}
-
-/** Proyecta un Paquete del backend al ítem ligero que persistimos en sesión. */
-function toSessionPaquete(p: Paquete): DespachoMasivoColaItem['paquete'] {
-  return {
-    numeroGuia: p.numeroGuia,
-    nombreClienteDestinatario: p.nombreClienteDestinatario,
-    direccionDestinatarioCompleta: p.direccionDestinatarioCompleta,
-    provinciaDestinatario: p.provinciaDestinatario,
-    cantonDestinatario: p.cantonDestinatario,
-    paisDestinatario: p.paisDestinatario,
-    pesoKilos: p.pesoKilos,
-  }
 }
 
 const ESTADOS_COLA_VALIDOS: ReadonlySet<DespachoMasivoColaEstado> = new Set([
@@ -241,7 +229,7 @@ function DespachosMasivoPage() {
                   ...it,
                   idPaquete: p.idPaquete,
                   estado: bloqueado ? 'no_disponible' : 'resuelto',
-                  paquete: toSessionPaquete(p),
+                  paquete: paqueteToSessionItem(p),
                   mensaje: bloqueado ? 'Paquete ya despachado' : undefined,
                 }
               : it
@@ -297,17 +285,19 @@ function DespachosMasivoPage() {
   }, [])
 
   // --- Crear despacho individual inmediato ---
-  const paquetesSeleccionados = useMemo(
+  // Paquetes seleccionados mapeados a `Paquete` para reutilizar helpers de
+  // distribución y presentación en el builder.
+  const paquetesSeleccionados = useMemo<Paquete[]>(
     () =>
       colaItems
         .filter((it) => it.estado === 'resuelto' && it.idPaquete != null && seleccion.has(it.numeroGuia))
-        .map((it) => ({
-          idPaquete: it.idPaquete as number,
-          numeroGuia: it.numeroGuia,
-          nombreClienteDestinatario: it.paquete?.nombreClienteDestinatario,
-          cantonDestinatario: it.paquete?.cantonDestinatario,
-          pesoKilos: it.paquete?.pesoKilos,
-        })),
+        .map((it) =>
+          sessionItemToPaquete({
+            ...(it.paquete ?? {}),
+            idPaquete: it.paquete?.idPaquete ?? it.idPaquete,
+            numeroGuia: it.paquete?.numeroGuia ?? it.numeroGuia,
+          })
+        ),
     [colaItems, seleccion]
   )
 
@@ -332,9 +322,16 @@ function DespachosMasivoPage() {
             idDespacho: creado.idDespacho,
             numeroManifiesto: creado.numeroManifiesto,
             destinoResumen: meta.destinoResumen,
+            tipoEnvio: meta.tipoEnvio,
+            idDistribuidor: meta.idDistribuidor,
+            nombreDistribuidor: meta.nombreDistribuidor,
+            numeroGuiaTransporte: meta.numeroGuiaTransporte,
+            observaciones: meta.observaciones,
             totalSacas: meta.totalSacas,
             totalPaquetes: meta.totalPaquetes,
             numerosGuia: meta.numerosGuia,
+            sacasDetalle: meta.sacasDetalle,
+            resumenCopiable: meta.resumenCopiable,
             creadoEn: new Date().toISOString(),
           },
           ...prev,

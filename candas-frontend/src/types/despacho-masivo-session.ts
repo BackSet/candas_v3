@@ -1,3 +1,4 @@
+import type { EstadoPaquete, TipoDestino } from './paquete'
 import type { TamanoSaca } from './saca'
 
 /** Modos de clasificación cuyos paquetes tipiados se persisten en sesión (recarga). */
@@ -92,8 +93,21 @@ export interface DespachoMasivoDespachoLote {
   numeroManifiesto?: string
   /** Resumen de destino para mostrar en la lista del lote. */
   destinoResumen?: string
+  /** Tipo de envío del despacho (agencia o directo). */
+  tipoEnvio?: 'agencia' | 'directo'
+  /** Distribuidor asignado (opcional). */
+  idDistribuidor?: number
+  nombreDistribuidor?: string
+  /** Guía de transporte de la agencia de distribución (opcional). */
+  numeroGuiaTransporte?: string
+  /** Observaciones del despacho. */
+  observaciones?: string
   /** Guías incluidas en este despacho (para trazabilidad en el lote). */
   numerosGuia?: string[]
+  /** Detalle por saca del despacho creado. */
+  sacasDetalle?: DespachoMasivoSacaDetalle[]
+  /** Resumen en texto listo para copiar al portapapeles. */
+  resumenCopiable?: string
   /** Marca de tiempo (ISO) de creación, para ordenar la lista del lote. */
   creadoEn?: string
   totalPaquetes?: number
@@ -114,15 +128,46 @@ export interface DespachoMasivoResumen {
 }
 
 export interface DespachoMasivoSessionPaqueteItem {
+  /** Id real del paquete (para distribución de sacas y trazabilidad). */
+  idPaquete?: number
   numeroGuia?: string
   nombreClienteDestinatario?: string
   ref?: string
   direccionDestinatarioCompleta?: string
+  /** Dirección base del destinatario (cuando no hay dirección completa). */
+  direccionDestinatario?: string
   provinciaDestinatario?: string
   cantonDestinatario?: string
   paisDestinatario?: string
   observaciones?: string
   pesoKilos?: number
+  /** Estado del paquete en backend al momento de resolverlo. */
+  estado?: EstadoPaquete
+  // --- Datos del destinatario / destino (para vista compacta y copiado) ---
+  telefonoDestinatario?: string
+  documentoDestinatario?: string
+  /** Código de etiqueta del destinatario. */
+  etiquetaDestinatario?: string
+  /** Código del destinatario (derivado de etiqueta/documento cuando existe). */
+  codigoDestinatario?: string
+  /** Tipo de destino del paquete (AGENCIA / DOMICILIO). */
+  tipoDestino?: TipoDestino
+  idAgenciaDestino?: number
+  nombreAgenciaDestino?: string
+  cantonAgenciaDestino?: string
+  /** Código de la agencia destino, si está disponible. */
+  codigoAgencia?: string
+}
+
+/** Detalle de una saca de un despacho masivo creado (para resumen/copiado y revisión). */
+export interface DespachoMasivoSacaDetalle {
+  numero: number
+  tamano: TamanoSaca
+  codigoPresinto?: string
+  totalPaquetes: number
+  /** Peso estimado de la saca en kg (suma de pesos conocidos). */
+  pesoEstimado?: number
+  numerosGuia: string[]
 }
 
 export interface DespachoMasivoSessionResponse {

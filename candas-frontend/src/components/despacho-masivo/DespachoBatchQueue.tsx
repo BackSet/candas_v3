@@ -1,3 +1,4 @@
+import { DespachoMasivoPackageRow } from '@/components/despacho-masivo/DespachoMasivoPackageRow'
 import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -5,6 +6,7 @@ import type {
   DespachoMasivoColaEstado,
   DespachoMasivoColaItem,
 } from '@/types/despacho-masivo-session'
+import { sessionItemToPaquete } from '@/utils/despachoMasivoPaquete'
 import { AlertTriangle, Ban, CheckCircle2, Clock, Lock, Trash2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -68,44 +70,46 @@ export function DespachoBatchQueue({
           const Icon = meta.icon
           const seleccionable = item.estado === 'resuelto'
           const checked = seleccion.has(item.numeroGuia)
+          const paquete = item.paquete
+            ? sessionItemToPaquete({ ...item.paquete, numeroGuia: item.paquete.numeroGuia ?? item.numeroGuia })
+            : sessionItemToPaquete({ numeroGuia: item.numeroGuia })
+
+          const badge = (
+            <Badge variant={meta.variant} className="shrink-0 gap-1">
+              <Icon className="size-3" aria-hidden />
+              {meta.label}
+            </Badge>
+          )
+
           return (
-            <li
-              key={item.numeroGuia}
-              className="flex items-center gap-3 px-3 py-2 text-sm"
-            >
-              <Checkbox
-                checked={checked}
-                onCheckedChange={() => onToggleSeleccion(item.numeroGuia)}
-                disabled={!seleccionable}
-                aria-label={`Seleccionar guía ${item.numeroGuia}`}
+            <li key={item.numeroGuia} className="px-3 py-2 text-sm">
+              <DespachoMasivoPackageRow
+                paquete={paquete}
+                badge={badge}
+                mensaje={item.mensaje}
+                leading={
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={() => onToggleSeleccion(item.numeroGuia)}
+                    disabled={!seleccionable}
+                    aria-label={`Seleccionar guía ${item.numeroGuia}`}
+                    className="mt-0.5"
+                  />
+                }
+                trailing={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => onRemoverGuia(item.numeroGuia)}
+                    title="Quitar de la cola"
+                    aria-label={`Quitar guía ${item.numeroGuia} de la cola`}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                }
               />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-medium">{item.numeroGuia}</span>
-                  <Badge variant={meta.variant} className="shrink-0 gap-1">
-                    <Icon className="size-3" aria-hidden />
-                    {meta.label}
-                  </Badge>
-                </div>
-                {(item.paquete?.nombreClienteDestinatario || item.mensaje) && (
-                  <p className="truncate text-xs text-muted-foreground">
-                    {item.paquete?.nombreClienteDestinatario}
-                    {item.paquete?.cantonDestinatario ? ` · ${item.paquete.cantonDestinatario}` : ''}
-                    {item.mensaje ? ` — ${item.mensaje}` : ''}
-                  </p>
-                )}
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={() => onRemoverGuia(item.numeroGuia)}
-                title="Quitar de la cola"
-                aria-label={`Quitar guía ${item.numeroGuia} de la cola`}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
             </li>
           )
         })}
