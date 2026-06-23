@@ -1,9 +1,9 @@
 import { AssignedAgencyNotice } from '@/components/agency/AssignedAgencyNotice'
 import AgregarCadenitaFormDialog from '@/components/despacho/AgregarCadenitaFormDialog'
+import { DespachoSacasStep } from '@/components/despacho/DespachoSacasStep'
 import PaqueteRapidoFormDialog from '@/components/despacho/PaqueteRapidoFormDialog'
 import { ResumenDestinoDespacho } from '@/components/despacho/ResumenDestinoDespacho'
 import { FormPageLayout } from '@/components/form'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Combobox,type ComboboxOption } from '@/components/ui/combobox'
 import { DateTimePickerForm } from '@/components/ui/date-time-picker'
@@ -17,7 +17,6 @@ import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { PaqueteCompactListItem } from '@/components/lotes-recepcion/PaqueteCompactListItem'
 import { useAgencia,useAgencias,useCreateAgencia,useSearchAgencias } from '@/hooks/useAgencias'
 import { useDespachoForm,type DespachoFormData } from '@/hooks/useDespachoForm'
 import { useCreateDespacho,useDespacho,useSacasDespacho,useUpdateDespacho } from '@/hooks/useDespachos'
@@ -25,7 +24,7 @@ import { useDestinatarioDirectoManager } from '@/hooks/useDestinatarioDirectoMan
 import { useDestinatarioDirecto,useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
 import { useDistribuidores } from '@/hooks/useDistribuidores'
 import { useDistribuidorManager } from '@/hooks/useDistribuidorManager'
-import { usePaquete,usePaquetes } from '@/hooks/usePaquetes'
+import { usePaquetes } from '@/hooks/usePaquetes'
 import { useSacasManager,type SacaFormData } from '@/hooks/useSacasManager'
 import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
 import { paqueteService } from '@/lib/api/paquete.service'
@@ -41,7 +40,7 @@ import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
 import { calcularTamanoSugerido,capacidadMaximaKg } from '@/utils/saca'
 import { parsearPatron,repartirEnNSacas as repartirPaquetesEnNSacas,repartirPorPatron,repartirTodoEnUnaSaca } from '@/utils/sacaDistribution'
 import { useNavigate,useParams } from '@tanstack/react-router'
-import { ArrowLeft,ArrowRight,Check,Link2,List as ListIcon,Loader2,MapPin,Package,Plus,RotateCcw,Sparkles,SplitSquareVertical,Trash2,Truck,User,Zap } from 'lucide-react'
+import { ArrowLeft,ArrowRight,Check,Loader2,MapPin,Package,Plus,RotateCcw,Sparkles,SplitSquareVertical,Trash2,Truck,User } from 'lucide-react'
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react'
 import { Controller,type FieldValues,type UseFormReturn } from 'react-hook-form'
 
@@ -59,117 +58,6 @@ interface DespachoDraftData {
   desdePaqueteCodigo?: string
   sacas: SacaFormData[]
   formValues: Partial<DespachoFormData>
-}
-
-// Componente para mostrar un paquete que se está cargando
-function PaqueteListItem({
-  paqueteId,
-  index,
-  sacas,
-  onMover,
-  onEliminar
-}: {
-  paqueteId: number
-  index: number
-  sacas: SacaFormData[]
-  onMover: (paqueteId: number, sacaOrigenIndex: number, sacaDestinoIndex: number) => void
-  onEliminar: (sacaIndex: number, paqueteId: number) => void
-}) {
-  const { data: paquete, isLoading } = usePaquete(paqueteId)
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md text-sm animate-pulse">
-        <div className="flex-1">
-          <span className="text-muted-foreground">Cargando paquete #{paqueteId}...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (!paquete) {
-    return (
-      <div className="flex items-center justify-between p-2 bg-error/10 rounded-md text-sm border border-error/20">
-        <div className="flex-1">
-          <span className="text-error font-medium">Paquete #{paqueteId} no encontrado</span>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-error hover:text-error hover:bg-error/10"
-          onClick={() => onEliminar(index, paqueteId)}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </div>
-    )
-  }
-
-  const direccion = paquete.direccionDestinatarioCompleta || paquete.direccionDestinatario || ''
-  const observaciones = paquete.observaciones?.trim() || ''
-  const hayDireccionUObs = !!direccion || !!observaciones
-
-  return (
-    <div className="flex items-start justify-between gap-2 p-2 bg-muted/30 hover:bg-muted/50 transition-colors rounded-md text-sm group border border-transparent hover:border-border/50">
-      <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="font-mono font-medium text-foreground">{paquete.numeroGuia || `#${paqueteId}`}</span>
-          <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal">
-            {paquete.pesoKilos || '-'} kg
-          </Badge>
-        </div>
-        {hayDireccionUObs && (
-          <div className="space-y-0.5 text-xs text-muted-foreground">
-            {direccion && (
-              <p className="line-clamp-2 break-words" title={direccion}>{direccion}</p>
-            )}
-            {observaciones && (
-              <p className="truncate" title={observaciones}>Obs: {observaciones}</p>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="flex shrink-0 gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-        {/* Botón para mover a otra saca */}
-        {sacas.length > 1 && (
-          <Select
-            value=""
-            onValueChange={(sacaDestinoIndex) => {
-              const destinoIndex = parseInt(sacaDestinoIndex)
-              if (destinoIndex !== index) {
-                onMover(paqueteId, index, destinoIndex)
-              }
-            }}
-          >
-            <SelectTrigger className="h-7 w-24 text-[10px] px-2 h-7">
-              <SelectValue placeholder="Mover..." />
-            </SelectTrigger>
-            <SelectContent>
-              {sacas.map((s, idx) => {
-                if (idx === index) return null
-                return (
-                  <SelectItem key={idx} value={idx.toString()}>
-                    Saca {idx + 1}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-        )}
-        {/* Botón para eliminar */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-error"
-          onClick={() => onEliminar(index, paqueteId)}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </div>
-    </div>
-  )
 }
 
 /** Recomienda tamaño por peso (si hay en paquetesAgregados) o por cantidad. */
@@ -681,21 +569,21 @@ export default function DespachoForm() {
    */
   const agregarGuiaAColaGlobal = async (
     guia: string
-  ): Promise<{ status: 'success' | 'error' | 'warning'; message: string }> => {
+  ): Promise<{ status: 'success' | 'error' | 'warning'; code: 'agregada' | 'vacia' | 'no_encontrada' | 'despachada' | 'en_saca' | 'en_cola'; message: string }> => {
     const guiaTrim = guia.trim()
-    if (!guiaTrim) return { status: 'error', message: 'Guía vacía' }
+    if (!guiaTrim) return { status: 'error', code: 'vacia', message: 'Guía vacía' }
     const p = await buscarPaquetePorGuia(guiaTrim)
-    if (!p || p.idPaquete == null) return { status: 'error', message: 'No encontrado' }
-    if (p.estado === 'DESPACHADO') return { status: 'error', message: 'Ya despachado' }
-    if (estaEnAlgunaSaca(p.idPaquete)) return { status: 'warning', message: 'Ya está en una saca' }
-    if (estaEnColaGlobal(p.idPaquete)) return { status: 'warning', message: 'Ya agregado a la cola' }
+    if (!p || p.idPaquete == null) return { status: 'error', code: 'no_encontrada', message: 'No se encontró la guía' }
+    if (p.estado === 'DESPACHADO') return { status: 'error', code: 'despachada', message: 'Ya fue despachada' }
+    if (estaEnAlgunaSaca(p.idPaquete)) return { status: 'warning', code: 'en_saca', message: 'Ya está en una saca' }
+    if (estaEnColaGlobal(p.idPaquete)) return { status: 'warning', code: 'en_cola', message: 'Ya está en la cola' }
     setColaGlobal(prev => [p, ...prev])
     setPaquetesAgregados(prev => {
       const m = new Map(prev)
       m.set(p.idPaquete!, p)
       return m
     })
-    return { status: 'success', message: 'Agregado' }
+    return { status: 'success', code: 'agregada', message: 'Agregada a la cola' }
   }
 
   const handleColaSubmit = async (e?: React.FormEvent) => {
@@ -722,8 +610,9 @@ export default function DespachoForm() {
     setColaGlobal(prev => prev.filter(p => p.idPaquete !== idPaquete))
   }
 
-  const handleProcesarColaPaste = async () => {
-    const guias = colaPasteText
+  const handleProcesarColaPaste = async (textOverride?: string) => {
+    const fuente = textOverride ?? colaPasteText
+    const guias = fuente
       .split(/[\n,;\t]/)
       .map(g => g.trim())
       .filter(g => g.length > 0)
@@ -736,19 +625,20 @@ export default function DespachoForm() {
         const res = await agregarGuiaAColaGlobal(guia)
         if (res.status === 'success') resumen.agregados++
         else if (res.status === 'warning') resumen.yaAgregados.push(guia)
-        else if (res.message === 'No encontrado') resumen.noEncontrados.push(guia)
+        else if (res.code === 'no_encontrada') resumen.noEncontrados.push(guia)
         else resumen.invalidos.push(guia)
       }
       setColaPasteResult(resumen)
       setColaPasteText('')
-      notify.success(`${resumen.agregados} paquete(s) agregados a la cola`)
+      notify.success(`${resumen.agregados} guía(s) agregada(s) a la cola`)
     } finally {
       setProcesandoColaPaste(false)
     }
   }
 
   // --- MVP 2: Distribución de la cola global hacia sacas ---
-  const [vistaSacas, setVistaSacas] = useState<'todos' | 'porSaca'>('todos')
+  // Sub-flujo guiado del paso 2: Capturar → Distribuir → Revisar. En edición arranca en "revisar".
+  const [subPasoSacas, setSubPasoSacas] = useState<'capturar' | 'distribuir' | 'revisar'>(isEdit ? 'revisar' : 'capturar')
   const [nSacasInput, setNSacasInput] = useState('')
   const [patronInput, setPatronInput] = useState('')
 
@@ -777,7 +667,7 @@ export default function DespachoForm() {
     }
     setSacas(nuevasSacas)
     setColaGlobal([])
-    setVistaSacas('porSaca')
+    setSubPasoSacas('revisar')
     return true
   }
 
@@ -1237,6 +1127,18 @@ export default function DespachoForm() {
     setSacas(nuevasSacas)
   }
 
+  const handleCambiarTamanoSaca = (index: number, tamano: TamanoSaca) => {
+    const ms = [...sacas]; ms[index].tamano = tamano; setSacas(ms)
+  }
+
+  const handleCambiarPresintoSaca = (index: number, value: string) => {
+    const ms = [...sacas]; ms[index] = { ...ms[index], codigoPresinto: value }; setSacas(ms)
+  }
+
+  const handleGenerarPresintoSaca = (index: number) => {
+    const ms = [...sacas]; ms[index] = { ...ms[index], codigoPresinto: String(Math.floor(1000000000 + Math.random() * 9000000000)) }; setSacas(ms)
+  }
+
   const onSubmit = async (data: DespachoFormData) => {
     if (sacas.length === 0) {
       notify.error('Debe haber al menos una saca'); return
@@ -1451,7 +1353,7 @@ export default function DespachoForm() {
                     <Textarea {...register('observaciones')} rows={2} placeholder="Notas adicionales del despacho..." className="resize-none" />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    El presinto de seguridad se registra ahora en cada saca (paso 2), ya que el sello se coloca al ensacar.
+                    El presinto de seguridad se registra en cada saca (paso 2), donde se coloca el sello al ensacar.
                   </p>
                 </div>
               </div>
@@ -1465,386 +1367,56 @@ export default function DespachoForm() {
 
           {/* PASO 2: SACAS */}
           {pasoActual === 2 && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <SectionTitle
-                title="Gestionar Sacas"
-                variant="form"
-                icon={<Package className="h-4 w-4 text-muted-foreground" />}
-                description="Agrupa los paquetes en sacas. Cada saca tiene un tamaño y reúne las guías que viajarán juntas."
-                actions={
-                  sacas.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      <Button type="button" size="sm" onClick={handleAgregarSaca} title="Crear una saca vacía">
-                        <Plus className="h-4 w-4 mr-2" /> Agregar saca
-                      </Button>
-                      <Button type="button" size="sm" variant="outline" onClick={() => setShowListadoAgrupacionDialog(true)} title="Pega un listado completo de guías y distribúyelas automáticamente en sacas">
-                        <ListIcon className="h-4 w-4 mr-2" /> Carga masiva
-                      </Button>
-                      <Button type="button" size="sm" variant="outline" onClick={() => setShowAgregarCadenitaDialog(true)} title="Ingresa una guía padre y agrupa sus guías hijas tipo CADENITA en una nueva saca">
-                        <Link2 className="h-4 w-4 mr-2" /> Cadenita
-                      </Button>
-                    </div>
-                  ) : null
-                }
-              />
-
-              {/* MVP 1: Captura global de paquetes (tipiar/pegar antes de distribuir en sacas) */}
-              <div className="rounded-lg border border-border bg-card p-4 shadow-sm space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">Tipiar paquetes</h3>
-                  <p className="text-xs text-muted-foreground">Escanea o pega las guías para reunirlas en una cola; luego se distribuirán en sacas.</p>
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    ref={colaInputRef}
-                    value={colaInput}
-                    onChange={(e) => setColaInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        handleColaSubmit()
-                      }
-                    }}
-                    placeholder="Escanea o escribe guía..."
-                    className="font-mono"
-                    autoFocus
-                    disabled={procesandoCola}
-                    aria-label="Guía del paquete"
-                  />
-                  <Button type="button" size="icon" onClick={() => handleColaSubmit()} disabled={!colaInput.trim() || procesandoCola} title="Agregar a la cola">
-                    {procesandoCola ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowColaPaste(v => !v)} className="shrink-0">
-                    <ListIcon className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Pegar lista masiva</span>
-                  </Button>
-                </div>
-
-                {colaFeedback && (
-                  <div
-                    role="status"
-                    className={`text-xs rounded-md px-3 py-2 border ${
-                      colaFeedback.status === 'success'
-                        ? 'bg-success/10 text-success border-success/20'
-                        : colaFeedback.status === 'warning'
-                          ? 'bg-warning/10 text-warning border-warning/20'
-                          : 'bg-error/10 text-error border-error/20'
-                    }`}
-                  >
-                    <span className="font-mono font-medium">{colaFeedback.guia}</span>: {colaFeedback.message}
-                  </div>
-                )}
-
-                {showColaPaste && (
-                  <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">
-                    <Textarea
-                      value={colaPasteText}
-                      onChange={(e) => setColaPasteText(e.target.value)}
-                      placeholder={"Pega una guía por línea...\nECA7800083946\nECA7800083947"}
-                      rows={5}
-                      className="font-mono text-sm"
-                      disabled={procesandoColaPaste}
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => { setColaPasteText(''); setShowColaPaste(false); setColaPasteResult(null) }} disabled={procesandoColaPaste}>
-                        Cerrar
-                      </Button>
-                      <Button type="button" size="sm" onClick={handleProcesarColaPaste} disabled={!colaPasteText.trim() || procesandoColaPaste}>
-                        {procesandoColaPaste ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                        Procesar lista
-                      </Button>
-                    </div>
-                    {colaPasteResult && (
-                      <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-border/50">
-                        <p className="text-success">Agregados: {colaPasteResult.agregados}</p>
-                        {colaPasteResult.yaAgregados.length > 0 && <p className="text-warning">Ya agregados/en saca: {colaPasteResult.yaAgregados.join(', ')}</p>}
-                        {colaPasteResult.noEncontrados.length > 0 && <p className="text-error">No encontrados: {colaPasteResult.noEncontrados.join(', ')}</p>}
-                        {colaPasteResult.invalidos.length > 0 && <p className="text-error">Inválidos: {colaPasteResult.invalidos.join(', ')}</p>}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              </div>
-
-              {/* MVP 2: Panel de distribución de la cola hacia sacas */}
-              <div className="rounded-lg border border-border bg-card p-4 shadow-sm space-y-3">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">Distribuir en sacas</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {paquetesDistribuibles.length} paquete(s) por distribuir{paquetesEnSacas.length > 0 ? ' (redistribuir reemplaza las sacas actuales)' : ''}. Se respeta el orden de tipiado.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                  <Button type="button" variant="outline" size="sm" onClick={handleTodoEnUnaSaca} disabled={paquetesDistribuibles.length === 0}>
-                    <Package className="h-4 w-4 mr-2" /> Todo en una saca
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={nSacasInput}
-                      onChange={(e) => setNSacasInput(e.target.value)}
-                      placeholder="N sacas"
-                      className="h-9 w-24"
-                      disabled={paquetesDistribuibles.length === 0}
-                      aria-label="Número de sacas iguales"
-                    />
-                    <Button type="button" variant="outline" size="sm" onClick={handleCrearNSacas} disabled={paquetesDistribuibles.length === 0 || !nSacasInput.trim()}>
-                      Crear N sacas
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={patronInput}
-                      onChange={(e) => setPatronInput(e.target.value)}
-                      placeholder="Patrón: 2,3,5"
-                      className="h-9 w-32 font-mono"
-                      disabled={paquetesDistribuibles.length === 0}
-                      aria-label="Patrón manual de distribución"
-                    />
-                    <Button type="button" variant="outline" size="sm" onClick={handleAplicarPatron} disabled={paquetesDistribuibles.length === 0 || !patronInput.trim()}>
-                      <SplitSquareVertical className="h-4 w-4 mr-2" /> Aplicar patrón
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* MVP 2: Tabs de validación Todos / Por saca */}
-              <div className="inline-flex rounded-lg border border-border bg-muted/40 p-1">
-                <button
-                  type="button"
-                  onClick={() => setVistaSacas('todos')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${vistaSacas === 'todos' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Todos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVistaSacas('porSaca')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${vistaSacas === 'porSaca' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Por saca
-                </button>
-              </div>
-
-              {/* Vista TODOS: cola pendiente + paquetes ya en sacas */}
-              {vistaSacas === 'todos' && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Todos los paquetes ({colaGlobal.length + paquetesEnSacas.length})
-                    </h4>
-                    {colaGlobal.length > 0 && (
-                      <Button type="button" variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-error" onClick={() => setColaGlobal([])}>
-                        Limpiar cola
-                      </Button>
-                    )}
-                  </div>
-                  {colaGlobal.length + paquetesEnSacas.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic py-2">Aún no hay paquetes. Escanea o pega guías arriba.</p>
-                  ) : (
-                    <div className="rounded-md border border-border bg-background divide-y divide-border/50 max-h-[420px] overflow-y-auto">
-                      {colaGlobal.map((p) => (
-                        <PaqueteCompactListItem
-                          key={`cola-${p.idPaquete}`}
-                          paquete={p}
-                          direccionFallback="Sin destino"
-                          statusLabel="Pendiente de saca"
-                          action={
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                              onClick={() => p.idPaquete != null && handleEliminarDeColaGlobal(p.idPaquete)}
-                              title="Quitar de la cola"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          }
-                        />
-                      ))}
-                      {sacas.flatMap((s, sIdx) =>
-                        s.idPaquetes.map((idP) => {
-                          const p = paquetesAgregados.get(idP) ?? todosLosPaquetes.find(x => x.idPaquete === idP)
-                          if (!p) return null
-                          return (
-                            <PaqueteCompactListItem
-                              key={`saca-${sIdx}-${idP}`}
-                              paquete={p}
-                              direccionFallback="Sin destino"
-                              statusLabel={`Saca ${sIdx + 1}`}
-                              action={
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 opacity-70 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                                  onClick={() => handleEliminarPaqueteDeSaca(sIdx, idP)}
-                                  title="Quitar de la saca"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              }
-                            />
-                          )
-                        })
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {vistaSacas === 'porSaca' && (sacas.length === 0 ? (
-                <div className="rounded-lg border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6">
-                  <h3 className="text-lg font-semibold text-foreground text-center">¿Cómo quieres cargar los paquetes?</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowListadoAgrupacionDialog(true)}
-                      className="group rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 p-5 flex flex-col items-center text-center gap-3 transition-colors transition-shadow duration-150 hover:border-primary/50 hover:shadow-md"
-                    >
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                        <ListIcon className="h-6 w-6 text-primary" />
-                      </div>
-                      <span className="font-semibold text-sm text-foreground">Carga masiva</span>
-                      <span className="text-xs text-muted-foreground leading-relaxed">Pega un listado de guías y distribúyelas automáticamente en sacas</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleAgregarSaca}
-                      className="group rounded-xl border-2 border-border hover:border-primary/30 bg-card hover:bg-muted/30 p-5 flex flex-col items-center text-center gap-3 transition-colors transition-shadow duration-150 hover:shadow-md"
-                    >
-                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                        <Package className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                      <span className="font-semibold text-sm text-foreground">Saca manual</span>
-                      <span className="text-xs text-muted-foreground leading-relaxed">Crea una saca vacía y agrega paquetes uno a uno escaneando</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAgregarCadenitaDialog(true)}
-                      className="group rounded-xl border-2 border-border hover:border-primary/30 bg-card hover:bg-muted/30 p-5 flex flex-col items-center text-center gap-3 transition-colors transition-shadow duration-150 hover:shadow-md"
-                    >
-                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                        <Link2 className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                      <span className="font-semibold text-sm text-foreground">Cadenita</span>
-                      <span className="text-xs text-muted-foreground leading-relaxed">Ingresa la guía padre y se agrupan automáticamente las guías hijas</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {sacas.map((saca, index) => (
-                    <div key={index} className="rounded-lg border border-border bg-card overflow-hidden shadow-sm">
-                      <div className="p-3 sm:p-4 bg-muted/30 flex items-center justify-between border-b border-border/50 flex-wrap gap-2">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <Badge variant="outline" className="bg-background font-semibold">Saca {index + 1}</Badge>
-                          <Select value={saca.tamano} onValueChange={(v: TamanoSaca) => {
-                            const ms = [...sacas]; ms[index].tamano = v; setSacas(ms)
-                          }}>
-                            <SelectTrigger className="h-9 w-36 text-sm bg-background">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="INDIVIDUAL">Individual</SelectItem>
-                              <SelectItem value="PEQUENO">Pequeño</SelectItem>
-                              <SelectItem value="MEDIANO">Mediano</SelectItem>
-                              <SelectItem value="GRANDE">Grande</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <HelpTip>Capacidad de la saca por peso: Individual ≤5 kg · Pequeño ≤15 kg · Mediano ≤30 kg · Grande ≤50 kg.</HelpTip>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-error shrink-0" onClick={() => handleEliminarSaca(index)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="p-4 space-y-4">
-                        <div className="space-y-1.5">
-                          <Label htmlFor={`saca-presinto-${index}`} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                            Presinto de seguridad
-                            <HelpTip>Número del sello/precinto físico que cierra esta saca. Déjalo vacío para que el sistema lo genere. Se imprime en la etiqueta de la saca.</HelpTip>
-                          </Label>
-                          <div className="flex flex-wrap gap-2">
-                            <Input
-                              id={`saca-presinto-${index}`}
-                              value={saca.codigoPresinto ?? ''}
-                              onChange={(e) => {
-                                const ms = [...sacas]; ms[index] = { ...ms[index], codigoPresinto: e.target.value }; setSacas(ms)
-                              }}
-                              maxLength={64}
-                              placeholder="Escribir o generar (opcional)"
-                              className="font-mono flex-1 min-w-[160px] h-9"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="shrink-0"
-                              onClick={() => {
-                                const ms = [...sacas]; ms[index] = { ...ms[index], codigoPresinto: String(Math.floor(1000000000 + Math.random() * 9000000000)) }; setSacas(ms)
-                              }}
-                            >
-                              <Sparkles className="h-3.5 w-3.5 mr-1" />
-                              Generar
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <span className="text-sm font-medium text-muted-foreground">{saca.idPaquetes.length} paquetes</span>
-                          <div className="flex flex-wrap gap-2">
-                            <Button type="button" variant="outline" size="sm" onClick={() => handleSeleccionarPaquetes(index)}>
-                              <Plus className="h-4 w-4 mr-1.5" /> Agregar paquetes
-                            </Button>
-                            <Button type="button" variant="outline" size="sm" onClick={() => { setSacaSeleccionadaParaPaquetes(index); setShowPaqueteRapidoDialog(true) }} title="Crear paquete SEPARAR rápido">
-                              <Zap className="h-4 w-4 mr-1.5" /> Paquete Rápido
-                            </Button>
-                          </div>
-                        </div>
-
-                        {saca.idPaquetes.length > 0 && (
-                          <div className="space-y-2 overflow-x-hidden">
-                            {saca.idPaquetes.map(pid => (
-                              <PaqueteListItem
-                                key={pid}
-                                paqueteId={pid}
-                                index={index}
-                                sacas={sacas}
-                                onMover={handleMoverPaqueteASaca}
-                                onEliminar={handleEliminarPaqueteDeSaca}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-
-              {colaGlobal.length > 0 && (
-                <p role="alert" className="text-sm text-warning bg-warning/10 border border-warning/20 rounded-md px-3 py-2">
-                  Tienes {colaGlobal.length} paquete(s) sin distribuir en sacas. Distribúyelos antes de continuar.
-                </p>
-              )}
-
-              <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setPasoActual(1)}>
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setPasoActual(3)}
-                  className="sm:ml-auto"
-                  disabled={colaGlobal.length > 0}
-                  title={colaGlobal.length > 0 ? 'Distribuye los paquetes pendientes en sacas antes de continuar' : undefined}
-                >
-                  Siguiente <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <DespachoSacasStep
+              sacas={sacas}
+              subPaso={subPasoSacas}
+              setSubPaso={setSubPasoSacas}
+              capture={{
+                colaInput,
+                setColaInput,
+                procesandoCola,
+                handleColaSubmit,
+                showColaPaste,
+                setShowColaPaste,
+                colaPasteText,
+                setColaPasteText,
+                procesandoColaPaste,
+                handleProcesarColaPaste,
+                onPasteGuias: (text) => handleProcesarColaPaste(text),
+                colaFeedback,
+                colaPasteResult,
+                setColaPasteResult,
+                colaInputRef,
+              }}
+              distribution={{
+                paquetesDistribuiblesCount: paquetesDistribuibles.length,
+                paquetesEnSacasCount: paquetesEnSacas.length,
+                sacasCount: sacas.length,
+                handleTodoEnUnaSaca,
+                nSacasInput,
+                setNSacasInput,
+                handleCrearNSacas,
+                patronInput,
+                setPatronInput,
+                handleAplicarPatron,
+                onCadenita: () => setShowAgregarCadenitaDialog(true),
+                onAgregarSaca: handleAgregarSaca,
+                onCargaMasiva: () => setShowListadoAgrupacionDialog(true),
+              }}
+              colaGlobal={colaGlobal}
+              onLimpiarCola={() => setColaGlobal([])}
+              onEliminarDeColaGlobal={handleEliminarDeColaGlobal}
+              onEliminarPaqueteDeSaca={handleEliminarPaqueteDeSaca}
+              onMoverPaqueteASaca={handleMoverPaqueteASaca}
+              onTamanoChange={handleCambiarTamanoSaca}
+              onPresintoChange={handleCambiarPresintoSaca}
+              onGenerarPresinto={handleGenerarPresintoSaca}
+              onAgregarPaquetes={handleSeleccionarPaquetes}
+              onPaqueteRapido={(index) => { setSacaSeleccionadaParaPaquetes(index); setShowPaqueteRapidoDialog(true) }}
+              onEliminarSaca={handleEliminarSaca}
+              onSiguiente={() => setPasoActual(3)}
+              onAnterior={() => setPasoActual(1)}
+            />
           )}
 
           {/* PASO 3: DESTINO */}
@@ -2046,7 +1618,7 @@ export default function DespachoForm() {
             <div className="space-y-6 animate-in fade-in duration-200">
               <section className="space-y-6">
                 <SectionTitle
-                  title="Distribución y Finalización"
+                  title="Confirmar despacho"
                   variant="form"
                   icon={<Check className="h-4 w-4 text-muted-foreground" />}
                   description="Revisa el resumen y, si aplica, indica el transportista. Al confirmar se creará el despacho."

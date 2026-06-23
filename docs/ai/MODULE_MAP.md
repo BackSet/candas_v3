@@ -117,6 +117,7 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 - Recepcion por lote y tipeo: rutas `/lotes-recepcion*`, endpoints `/api/v1/lotes-recepcion*`, `TipoLote`. [verificado en Git]
 - Ensacado: buscar guia, marcar/desmarcar ensacado, consultar despachos/sacas y sesion. [verificado en Git]
 - Despacho: crear/editar despacho, agregar sacas, agregar cadenita, marcar despachado individual o batch. [verificado en Git]
+- Despacho (formulario `DespachoForm`): el paso 2 "Gestionar Sacas" es un subflujo guiado Capturar guías -> Distribuir -> Revisar sacas (`components/despacho/DespachoSacasStep` y paneles `PaqueteCapturePanel`/`SacaDistributionPanel`/`SacaReviewCard`); patrón, cadenita, saca manual y carga masiva viven en "Opciones avanzadas"; en edición inicia en "Revisar sacas". [verificado en Git]
 - RBAC: usuario -> roles -> permisos -> `@PreAuthorize` backend y navegacion/protecciones frontend. [verificado en Git]
 
 ## Zonas de busqueda
