@@ -35,6 +35,7 @@ import { useDraftStore } from '@/stores/draftStore'
 import type { Despacho } from '@/types/despacho'
 import type { Paquete } from '@/types/paquete'
 import { TamanoSaca } from '@/types/saca'
+import { construirDespachoPayload,resumenDespacho,validarDespachoParaCrear } from '@/utils/despachoPayload'
 import { formatearTamanoSaca } from '@/utils/ensacado'
 import { calcularProvinciaOCantonMasComun } from '@/utils/provinciaCanton'
 import { calcularTamanoSugerido,capacidadMaximaKg } from '@/utils/saca'
@@ -1140,23 +1141,19 @@ export default function DespachoForm() {
   }
 
   const onSubmit = async (data: DespachoFormData) => {
-    if (sacas.length === 0) {
-      notify.error('Debe haber al menos una saca'); return
-    }
-    for (let i = 0; i < sacas.length; i++) {
-      if (sacas[i].idPaquetes.length === 0) {
-        notify.error(`La saca ${i + 1} debe tener al menos un paquete`); return
-      }
-    }
-    if (tipoEnvio === 'agencia' && !data.idAgencia) {
-      notify.error('Selecciona una agencia'); return
-    }
-    if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'existente' && !data.idDestinatarioDirecto) {
-      notify.error('Selecciona un destinatario'); return
-    }
-    if (tipoEnvio === 'directo' && destinatarioOrigenDirecto === 'desde_paquete' && !idPaqueteOrigenDestinatario) {
-      notify.error('Selecciona un paquete de referencia para el destinatario')
-      return
+    const idPaqueteRef = idPaqueteOrigenDestinatario ? Number(idPaqueteOrigenDestinatario) : undefined
+    const validationError = validarDespachoParaCrear({
+      sacas,
+      destino: {
+        tipoEnvio,
+        idAgencia: data.idAgencia,
+        destinatarioOrigen: destinatarioOrigenDirecto,
+        idDestinatarioDirecto: data.idDestinatarioDirecto,
+        idPaqueteOrigenDestinatario: idPaqueteRef,
+      },
+    })
+    if (validationError) {
+      notify.error(validationError); return
     }
 
     try {
@@ -1181,21 +1178,20 @@ export default function DespachoForm() {
         setDestinatarioSeleccionado(nuevoDestinatario)
       }
 
-      const despachoData: Despacho = {
-        fechaDespacho: new Date(data.fechaDespacho).toISOString(),
+      const despachoData: Despacho = construirDespachoPayload({
+        fechaDespacho: data.fechaDespacho,
         usuarioRegistro: data.usuarioRegistro,
-        observaciones: data.observaciones || undefined,
-        idAgencia: tipoEnvio === 'agencia' ? data.idAgencia : undefined,
+        observaciones: data.observaciones,
+        destino: {
+          tipoEnvio,
+          idAgencia: data.idAgencia,
+          destinatarioOrigen: destinatarioOrigenDirecto,
+          idDestinatarioDirecto: idDestinatarioDirectoPayload,
+        },
         idDistribuidor: data.idDistribuidor,
-        numeroGuiaAgenciaDistribucion: data.numeroGuiaAgenciaDistribucion || undefined,
-        idDestinatarioDirecto: idDestinatarioDirectoPayload,
-        idPaqueteOrigenDestinatario: undefined,
-        sacas: sacas.map(s => ({
-          tamano: s.tamano,
-          idPaquetes: s.idPaquetes,
-          codigoPresinto: s.codigoPresinto?.trim() || undefined,
-        })),
-      }
+        numeroGuiaAgenciaDistribucion: data.numeroGuiaAgenciaDistribucion,
+        sacas,
+      })
 
       if (isEdit) await updateMutation.mutateAsync({ id: Number(id), dto: despachoData })
       else {
@@ -1238,9 +1234,9 @@ export default function DespachoForm() {
       {/* Resumen contextual */}
       {pasoActual >= 2 && (
         <div className="text-center py-2 px-3 rounded-md bg-muted/50 border border-border/50 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{sacas.length} sacas</span>
+          <span className="font-medium text-foreground">{resumenDespacho(sacas).totalSacas} sacas</span>
           <span> · </span>
-          <span className="font-medium text-foreground">{sacas.reduce((acc, s) => acc + s.idPaquetes.length, 0)} paquetes</span>
+          <span className="font-medium text-foreground">{resumenDespacho(sacas).totalPaquetes} paquetes</span>
           {pasoActual === 4 && (tipoEnvio === 'agencia' && agenciaSeleccionada) && (
             <>
               <span> · </span>

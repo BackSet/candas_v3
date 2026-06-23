@@ -21,7 +21,10 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Presinto | Sello de seguridad por saca. Canonico tecnico: `presinto` (UI "Presinto", DB `codigo_presinto`, `Saca.codigoPresinto`). El termino RAE es "precinto"; se mantiene `presinto` por compatibilidad con esquema y contratos. No renombrar masivamente. | [verificado en Git] |
 | Despacho | UI, API, backend, DB | [verificado en Git] |
 | Capturar guías / Distribuir / Revisar sacas | Etiquetas canónicas de los tres subpasos del paso 2 "Gestionar Sacas" en `DespachoForm`. Usar estos términos en UI nueva del flujo de sacas. | [verificado en Git] |
-| Despacho masivo | Sesion operativa bajo `/api/v1/despacho-masivo` | [verificado en Git] |
+| Despacho masivo | Modulo/flujo en `/despachos/masivo` y sesion operativa bajo `/api/v1/despacho-masivo`. Crea varios despachos en un mismo flujo, uno a la vez (creacion individual inmediata; sin endpoint batch). | [verificado en Git] |
+| Lote de despachos | Conjunto de despachos creados en una misma sesion de despacho masivo (campo `despachosLote`). Usar "lote" para el conjunto, no para un despacho individual. | [verificado en Git] |
+| Cola global de guías | Lista unica de guias capturadas en despacho masivo, pendientes de asignar a un despacho (`colaGlobalGuias`/`paquetesCola`). Estados: `pendiente`, `resuelto`, `no_encontrado`, `no_disponible`, `asignado`. | [verificado en Git] |
+| Despacho en construcción | Despacho que el operario arma actualmente en el builder antes de confirmarlo (`despachoActualId`). | [verificado en Git] |
 | Ensacado | UI, API, backend, permiso `ensacado:operar` | [verificado en Git] |
 | Atencion de paquetes | UI/documentacion; endpoint `/api/v1/atenciones`; permisos `atencion_paquetes:*` | [verificado en Git] |
 | Manifiesto consolidado | UI/API/backend/DB; rutas `manifiestos-consolidados` | [verificado en Git] |
@@ -35,7 +38,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 
 - Rutas en kebab-case plural: `/paquetes`, `/clientes`, `/agencias`, `/puntos-origen`, `/lotes-recepcion`, `/destinatarios-directos`, `/manifiestos-consolidados`, `/parametros-sistema`. [verificado en Git]
 - Formularios nuevos usan sufijo `/new`; edicion usa `/$id/edit`; detalle usa `/$id`. [verificado en Git]
-- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Ensacado, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
+- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Despacho masivo, Ensacado, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
 - Mantener `VITE_API_BASE_URL` como nombre de variable para API. No introducir `VITE_API_URL`. [verificado en Git] [verificado en documentacion]
 
 ### API

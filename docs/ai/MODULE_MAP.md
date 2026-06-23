@@ -20,7 +20,7 @@ Este mapa describe los modulos funcionales y tecnicos presentes en la rama `dev`
 | Lotes especiales | Rutas legacy `/lotes-especiales*` redirigen en `routeTree.gen.tsx`; paginas en `pages/lotes-especiales` y flujo operador en `pages/lotes-recepcion` | Se atiende desde `LoteRecepcionController` y endpoints `/api/v1/lotes-recepcion/especiales*` | `lote_recepcion` con `TipoLote` | `lotes_recepcion:*` |
 | Sacas | `/sacas`, `/sacas/new`, `/sacas/$id`, `/sacas/$id/edit` | `SacaController`, `SacaService`, specs | `saca`, `paquete_saca`, relacion con `paquete` | `sacas:*` |
 | Despachos | `/despachos`, `/despachos/new`, `/despachos/$id`, `/despachos/$id/edit` | `DespachoController`, `DespachoService`, specs | `despacho`, `saca`, `paquete_saca` | `despachos:*` |
-| Despacho masivo | Dialogs/hooks de despacho masivo; endpoint session | `DespachoMasivoController`, `DespachoMasivoSesionService` | `despacho_masivo_sesion` | `despachos:crear` |
+| Despacho masivo | `/despachos/masivo` (`pages/despachos-masivo/DespachosMasivoPage.tsx` + `components/despacho-masivo/*`): cola global de guías, builder de despacho en construcción, creación individual inmediata y lista del lote; sesión por usuario vía endpoint session | `DespachoMasivoController`, `DespachoMasivoSesionService` | `despacho_masivo_sesion` | `despachos:crear` |
 | Ensacado | `/ensacado`; `hooks/useEnsacado.ts`; `ensacado.service.ts` | `EnsacadoController`, `EnsacadoService` | `ensacado_sesion`, `saca`, `paquete` | `ensacado:operar` |
 | Atencion de paquetes | `/atencion-paquetes`, `/atencion-paquetes/new`, `/atencion-paquetes/$id`, `/atencion-paquetes/$id/edit` | `AtencionPaqueteController`, `AtencionPaqueteService` | `atencion_paquete`, `paquete` | `atencion_paquetes:*` |
 | Manifiestos consolidados | `/manifiestos-consolidados`; paginas y utilidades de exportacion/impresion | `ManifiestoConsolidadoController`, `ManifiestoConsolidadoService`, specs | `manifiesto_consolidado` | `manifiestos_consolidados:*` |
@@ -35,7 +35,7 @@ Este mapa describe los modulos funcionales y tecnicos presentes en la rama `dev`
 - Publicas: `/`, `/login`, `/register`. [verificado en Git: `routeTree.gen.tsx`]
 - Protegidas por layout autenticado: `/dashboard`, `/mi-perfil`, modulos CRUD y operativos bajo `layoutRoute`. [verificado en Git]
 - CRUD con patron `list/new/detail/edit`: paquetes, clientes, agencias, puntos origen, lotes recepcion, sacas, despachos, atencion paquetes, usuarios, roles, distribuidores, destinatarios directos. [verificado en Git]
-- Rutas especiales: `/lotes-recepcion/$id/tipeo`, `/ensacado`, `/parametros-sistema/whatsapp-despacho`. [verificado en Git]
+- Rutas especiales: `/lotes-recepcion/$id/tipeo`, `/despachos/masivo`, `/ensacado`, `/parametros-sistema/whatsapp-despacho`. [verificado en Git]
 - Rutas legacy/redireccion: `/lotes-especiales*`, `/listas-etiquetadas`, `/operario-etiquetas`. [verificado en Git]
 - Navegacion lateral canonica: `src/config/navigation.ts`. [verificado en Git]
 
@@ -118,6 +118,8 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 - Ensacado: buscar guia, marcar/desmarcar ensacado, consultar despachos/sacas y sesion. [verificado en Git]
 - Despacho: crear/editar despacho, agregar sacas, agregar cadenita, marcar despachado individual o batch. [verificado en Git]
 - Despacho (formulario `DespachoForm`): el paso 2 "Gestionar Sacas" es un subflujo guiado Capturar guías -> Distribuir -> Revisar sacas (`components/despacho/DespachoSacasStep` y paneles `PaqueteCapturePanel`/`SacaDistributionPanel`/`SacaReviewCard`); patrón, cadenita, saca manual y carga masiva viven en "Opciones avanzadas"; en edición inicia en "Revisar sacas". [verificado en Git]
+- Despacho (construcción de payload): la conversión de estado de formulario/sacas a DTO `Despacho` vive en `utils/despachoPayload.ts` (puro: `construirDespachoPayload`, `construirSacasPayload`, `mapearDestinoDespacho`, `normalizarCodigoPresinto`, `validarDespachoParaCrear`, `resumenDespacho`); `hooks/useDespachoBuilder.ts` lo envuelve sobre `useCreateDespacho`. Reutilizado por `DespachoForm` y disponible para el módulo de despacho masivo sin depender de DOM ni navegación. [verificado en Git]
+- Despacho masivo (`/despachos/masivo`): cola global de guías (captura individual o pegado, resolución contra `paqueteService.findByNumeroGuia`, estados `pendiente|resuelto|no_encontrado|no_disponible|asignado`), builder de un despacho a la vez (selección de paquetes -> sacas -> destino -> revisar) que crea de inmediato vía `useDespachoBuilder`, y lista del lote con enlace al detalle del despacho creado. La sesión (cola + lote) se persiste por usuario en `despacho_masivo_sesion` mediante `useDespachoMasivoSession`/`useUpdateDespachoMasivoSession` y sobrevive a la recarga; una guía ya usada en un despacho creado queda bloqueada (`asignado`) y no se puede reutilizar en el mismo lote. No usa endpoint batch: cada despacho es una creación individual. [verificado en Git]
 - RBAC: usuario -> roles -> permisos -> `@PreAuthorize` backend y navegacion/protecciones frontend. [verificado en Git]
 
 ## Zonas de busqueda
