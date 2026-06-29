@@ -282,6 +282,33 @@ export default function DespachoForm() {
   const [procesandoColaPaste, setProcesandoColaPaste] = useState(false)
   const [colaPasteResult, setColaPasteResult] = useState<{ agregados: number; yaAgregados: string[]; noEncontrados: string[]; invalidos: string[] } | null>(null)
   const colaInputRef = useRef<HTMLInputElement>(null)
+  const colaGlobalRef = useRef<Paquete[]>([])
+  const sacasRef = useRef<SacaFormData[]>([])
+  const colaPendienteRef = useRef<string[]>([])
+  const colaPendienteKeysRef = useRef<Set<string>>(new Set())
+  const procesandoColaRef = useRef(false)
+  const showColaPasteRef = useRef(false)
+  const subPasoSacasRef = useRef<'capturar' | 'distribuir' | 'revisar'>(isEdit ? 'revisar' : 'capturar')
+
+  useEffect(() => {
+    colaGlobalRef.current = colaGlobal
+  }, [colaGlobal])
+
+  useEffect(() => {
+    sacasRef.current = sacas
+  }, [sacas])
+
+  useEffect(() => {
+    showColaPasteRef.current = showColaPaste
+  }, [showColaPaste])
+
+  const handleSetShowColaPaste = (value: boolean | ((prev: boolean) => boolean)) => {
+    setShowColaPaste(prev => {
+      const next = typeof value === 'function' ? value(prev) : value
+      showColaPasteRef.current = next
+      return next
+    })
+  }
 
   const agrupacionGroups = useMemo(
     () => distribucionAgrupacion.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0),
@@ -556,13 +583,20 @@ export default function DespachoForm() {
 
   // --- MVP 1: Cola global de paquetes tipeados (paso "Gestionar Sacas") ---
   const estaEnColaGlobal = useCallback(
-    (idPaquete: number) => colaGlobal.some(p => p.idPaquete === idPaquete),
-    [colaGlobal]
+    (idPaquete: number) => colaGlobalRef.current.some(p => p.idPaquete === idPaquete),
+    []
   )
   const estaEnAlgunaSaca = useCallback(
-    (idPaquete: number) => sacas.some(s => s.idPaquetes.includes(idPaquete)),
-    [sacas]
+    (idPaquete: number) => sacasRef.current.some(s => s.idPaquetes.includes(idPaquete)),
+    []
   )
+
+  const focusColaInput = () => {
+    requestAnimationFrame(() => {
+      if (pasoActual !== 2 || subPasoSacasRef.current !== 'capturar' || showColaPasteRef.current) return
+      colaInputRef.current?.focus()
+    })
+  }
 
   /**
    * Busca una guía y la agrega a la cola global si es válida y no está duplicada
@@ -578,7 +612,12 @@ export default function DespachoForm() {
     if (p.estado === 'DESPACHADO') return { status: 'error', code: 'despachada', message: 'Ya fue despachada' }
     if (estaEnAlgunaSaca(p.idPaquete)) return { status: 'warning', code: 'en_saca', message: 'Ya está en una saca' }
     if (estaEnColaGlobal(p.idPaquete)) return { status: 'warning', code: 'en_cola', message: 'Ya está en la cola' }
-    setColaGlobal(prev => [p, ...prev])
+    setColaGlobal(prev => {
+      if (prev.some(item => item.idPaquete === p.idPaquete)) return prev
+      const next = [p, ...prev]
+      colaGlobalRef.current = next
+      return next
+    })
     setPaquetesAgregados(prev => {
       const m = new Map(prev)
       m.set(p.idPaquete!, p)
@@ -587,28 +626,67 @@ export default function DespachoForm() {
     return { status: 'success', code: 'agregada', message: 'Agregada a la cola' }
   }
 
-  const handleColaSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    const guia = colaInput.trim()
-    if (!guia || procesandoCola) return
+  const procesarColaPendiente = async () => {
+    if (procesandoColaRef.current) return
+    procesandoColaRef.current = true
     setProcesandoCola(true)
     try {
-      const res = await agregarGuiaAColaGlobal(guia)
-      setColaFeedback({ guia, status: res.status, message: res.message })
-      if (res.status === 'success') {
-        setColaInput('')
-      } else {
-        notify[res.status === 'error' ? 'error' : 'warning'](`${guia}: ${res.message}`)
+      while (colaPendienteRef.current.length > 0) {
+        const guia = colaPendienteRef.current.shift()
+        if (!guia) continue
+        const guiaKey = guia.trim().toUpperCase()
+        try {
+          const res = await agregarGuiaAColaGlobal(guia)
+          setColaFeedback({ guia, status: res.status, message: res.message })
+          if (res.status !== 'success') {
+            notify[res.status === 'error' ? 'error' : 'warning'](`${guia}: ${res.message}`)
+          }
+        } finally {
+          colaPendienteKeysRef.current.delete(guiaKey)
+          focusColaInput()
+        }
       }
     } finally {
+      procesandoColaRef.current = false
       setProcesandoCola(false)
-      // Mantener el foco en el input tras agregar
-      requestAnimationFrame(() => colaInputRef.current?.focus())
+      focusColaInput()
     }
   }
 
+  const encolarGuiaIndividual = (guia: string) => {
+    const guiaTrim = guia.trim()
+    if (!guiaTrim) return
+    const guiaKey = guiaTrim.toUpperCase()
+    if (colaPendienteKeysRef.current.has(guiaKey)) {
+      setColaFeedback({ guia: guiaTrim, status: 'warning', message: 'Ya esta pendiente de procesamiento' })
+      focusColaInput()
+      return
+    }
+    colaPendienteRef.current.push(guiaTrim)
+    colaPendienteKeysRef.current.add(guiaKey)
+    void procesarColaPendiente()
+  }
+
+  const handleColaSubmit = (e?: React.FormEvent, valueOverride?: string) => {
+    e?.preventDefault()
+    const guia = (valueOverride ?? colaInput).trim()
+    if (!guia) return
+    setColaInput('')
+    focusColaInput()
+    encolarGuiaIndividual(guia)
+  }
+
   const handleEliminarDeColaGlobal = (idPaquete: number) => {
-    setColaGlobal(prev => prev.filter(p => p.idPaquete !== idPaquete))
+    setColaGlobal(prev => {
+      const next = prev.filter(p => p.idPaquete !== idPaquete)
+      colaGlobalRef.current = next
+      return next
+    })
+  }
+
+  const handleLimpiarColaGlobal = () => {
+    colaGlobalRef.current = []
+    setColaGlobal([])
   }
 
   const handleProcesarColaPaste = async (textOverride?: string) => {
@@ -620,9 +698,16 @@ export default function DespachoForm() {
     if (guias.length === 0 || procesandoColaPaste) return
     setProcesandoColaPaste(true)
     const resumen = { agregados: 0, yaAgregados: [] as string[], noEncontrados: [] as string[], invalidos: [] as string[] }
+    const guiasVistas = new Set<string>()
     try {
       // Procesar secuencialmente para respetar dedupe contra lo recién agregado
       for (const guia of guias) {
+        const guiaKey = guia.trim().toUpperCase()
+        if (guiasVistas.has(guiaKey)) {
+          resumen.yaAgregados.push(guia)
+          continue
+        }
+        guiasVistas.add(guiaKey)
         const res = await agregarGuiaAColaGlobal(guia)
         if (res.status === 'success') resumen.agregados++
         else if (res.status === 'warning') resumen.yaAgregados.push(guia)
@@ -634,6 +719,7 @@ export default function DespachoForm() {
       notify.success(`${resumen.agregados} guía(s) agregada(s) a la cola`)
     } finally {
       setProcesandoColaPaste(false)
+      focusColaInput()
     }
   }
 
@@ -642,6 +728,15 @@ export default function DespachoForm() {
   const [subPasoSacas, setSubPasoSacas] = useState<'capturar' | 'distribuir' | 'revisar'>(isEdit ? 'revisar' : 'capturar')
   const [nSacasInput, setNSacasInput] = useState('')
   const [patronInput, setPatronInput] = useState('')
+
+  const handleSetSubPasoSacas = (value: 'capturar' | 'distribuir' | 'revisar') => {
+    subPasoSacasRef.current = value
+    setSubPasoSacas(value)
+  }
+
+  useEffect(() => {
+    subPasoSacasRef.current = subPasoSacas
+  }, [subPasoSacas])
 
   /** Paquetes a distribuir en orden de tipiado: primero los ya en sacas (orden de saca), luego la cola (más antiguo primero). */
   const paquetesDistribuibles = useMemo(() => {
@@ -666,9 +761,11 @@ export default function DespachoForm() {
     if (paquetesEnSacas.length > 0 && !window.confirm('Esto reemplazará la distribución actual de sacas y redistribuirá todos los paquetes. ¿Continuar?')) {
       return false
     }
+    sacasRef.current = nuevasSacas
     setSacas(nuevasSacas)
+    colaGlobalRef.current = []
     setColaGlobal([])
-    setSubPasoSacas('revisar')
+    handleSetSubPasoSacas('revisar')
     return true
   }
 
@@ -1366,14 +1463,14 @@ export default function DespachoForm() {
             <DespachoSacasStep
               sacas={sacas}
               subPaso={subPasoSacas}
-              setSubPaso={setSubPasoSacas}
+              setSubPaso={handleSetSubPasoSacas}
               capture={{
                 colaInput,
                 setColaInput,
                 procesandoCola,
                 handleColaSubmit,
                 showColaPaste,
-                setShowColaPaste,
+                setShowColaPaste: handleSetShowColaPaste,
                 colaPasteText,
                 setColaPasteText,
                 procesandoColaPaste,
@@ -1400,7 +1497,7 @@ export default function DespachoForm() {
                 onCargaMasiva: () => setShowListadoAgrupacionDialog(true),
               }}
               colaGlobal={colaGlobal}
-              onLimpiarCola={() => setColaGlobal([])}
+              onLimpiarCola={handleLimpiarColaGlobal}
               onEliminarDeColaGlobal={handleEliminarDeColaGlobal}
               onEliminarPaqueteDeSaca={handleEliminarPaqueteDeSaca}
               onMoverPaqueteASaca={handleMoverPaqueteASaca}
