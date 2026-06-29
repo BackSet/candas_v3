@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
 BaggageClaim,
+Boxes,
 FileStack,
 Headset,
 Inbox,
@@ -33,6 +34,7 @@ export type ModuleId =
   | 'lotesRecepcion'
   | 'lotesEspeciales'
   | 'despachos'
+  | 'despachosMasivo'
   | 'sacas'
   | 'ensacado'
   | 'atencionPaquetes'
@@ -60,6 +62,7 @@ export const MODULE_ICONS: Record<ModuleId, ModuleIconConfig> = {
   lotesRecepcion: { icon: Inbox, title: 'Lotes de recepción' },
   lotesEspeciales: { icon: Sparkles, title: 'Lotes especiales' },
   despachos: { icon: Truck, title: 'Despachos' },
+  despachosMasivo: { icon: Boxes, title: 'Despacho masivo' },
   sacas: { icon: BaggageClaim, title: 'Sacas' },
   ensacado: { icon: ScanBarcode, title: 'Ensacado' },
   atencionPaquetes: { icon: Headset, title: 'Atención de paquetes' },

@@ -21,7 +21,7 @@ export interface PaqueteCapturePanelProps {
   colaInput: string
   setColaInput: (value: string) => void
   procesandoCola: boolean
-  handleColaSubmit: (e?: React.FormEvent) => void
+  handleColaSubmit: (e?: React.FormEvent, valueOverride?: string) => void
   showColaPaste: boolean
   setShowColaPaste: (value: boolean | ((prev: boolean) => boolean)) => void
   colaPasteText: string
@@ -71,7 +71,7 @@ export function PaqueteCapturePanel({
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
-              handleColaSubmit()
+              handleColaSubmit(undefined, e.currentTarget.value)
             }
           }}
           onPaste={(e) => {
@@ -85,7 +85,7 @@ export function PaqueteCapturePanel({
           placeholder="Escanea, escribe o pega guías…"
           className="font-mono"
           autoFocus
-          disabled={procesandoCola}
+          aria-busy={procesandoCola}
           aria-label="Escanea, escribe o pega guías"
         />
         <Button type="button" size="icon" onClick={() => handleColaSubmit()} disabled={!colaInput.trim() || procesandoCola} title="Agregar a la cola">

@@ -37,6 +37,7 @@ const SacaDetail = lazyRouteComponent(() => import('@/pages/sacas/SacaDetail'))
 const DespachosList = lazyRouteComponent(() => import('@/pages/despachos/DespachosList'))
 const DespachoForm = lazyRouteComponent(() => import('@/pages/despachos/DespachoForm'))
 const DespachoDetail = lazyRouteComponent(() => import('@/pages/despachos/DespachoDetail'))
+const DespachosMasivoPage = lazyRouteComponent(() => import('@/pages/despachos-masivo/DespachosMasivoPage'))
 const AtencionPaquetesList = lazyRouteComponent(() => import('@/pages/atencion-paquetes/AtencionPaquetesList'))
 const AtencionPaqueteForm = lazyRouteComponent(() => import('@/pages/atencion-paquetes/AtencionPaqueteForm'))
 const AtencionPaqueteDetail = lazyRouteComponent(() => import('@/pages/atencion-paquetes/AtencionPaqueteDetail'))
@@ -374,6 +375,15 @@ const despachosNewRoute = createRoute({
     </ProtectedRouteByPermission>
   ),
 })
+const despachosMasivoRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: 'despachos/masivo',
+  component: () => (
+    <ProtectedRouteByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>
+      <DespachosMasivoPage />
+    </ProtectedRouteByPermission>
+  ),
+})
 const despachosIdRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: 'despachos/$id',
@@ -698,6 +708,7 @@ const routeTree = rootRoute.addChildren([
     sacasIdEditRoute,
     despachosIndexRoute,
     despachosNewRoute,
+    despachosMasivoRoute,
     despachosIdRoute,
     despachosIdEditRoute,
     atencionPaquetesIndexRoute,

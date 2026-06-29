@@ -21,12 +21,19 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Presinto | Sello de seguridad por saca. Canonico tecnico: `presinto` (UI "Presinto", DB `codigo_presinto`, `Saca.codigoPresinto`). El termino RAE es "precinto"; se mantiene `presinto` por compatibilidad con esquema y contratos. No renombrar masivamente. | [verificado en Git] |
 | Despacho | UI, API, backend, DB | [verificado en Git] |
 | Capturar guías / Distribuir / Revisar sacas | Etiquetas canónicas de los tres subpasos del paso 2 "Gestionar Sacas" en `DespachoForm`. Usar estos términos en UI nueva del flujo de sacas. | [verificado en Git] |
-| Despacho masivo | Sesion operativa bajo `/api/v1/despacho-masivo` | [verificado en Git] |
+| Despacho masivo | Modulo/flujo en `/despachos/masivo` y sesion operativa bajo `/api/v1/despacho-masivo`. Crea varios despachos en un mismo flujo, uno a la vez (creacion individual inmediata; sin endpoint batch). | [verificado en Git] |
+| Lote de despachos | Conjunto de despachos creados en una misma sesion de despacho masivo (campo `despachosLote`). Usar "lote" para el conjunto, no para un despacho individual. | [verificado en Git] |
+| Cola global de guías | Lista unica de guias capturadas en despacho masivo, pendientes de asignar a un despacho (`colaGlobalGuias`/`paquetesCola`). Estados: `pendiente`, `resuelto`, `no_encontrado`, `no_disponible`, `asignado`. | [verificado en Git] |
+| Despacho en construcción | Despacho que el operario arma actualmente en el builder antes de confirmarlo (`despachoActualId`). | [verificado en Git] |
+| Patrón de sacas | Distribución manual de paquetes por saca en despacho masivo, expresada como enteros positivos separados por comas (p. ej. `2,3,5`). Modos de distribución: "todo en una saca", "repartir en N sacas" y "patrón". Helpers en `utils/sacaDistribution.ts`. | [verificado en Git] |
+| Resumen copiable | Texto del despacho masivo listo para copiar al portapapeles, a nivel de despacho (resumen completo, guías o destino) o de saca (`buildSacaCopyText`/`buildSacaGuiasCopyText`/`buildSacaDestinoCopyText`), construido en `utils/despachoMasivoCopy.ts` y copiado con `copyText`/`CopyActionButton`. El de despacho se persiste en `resumenCopiable`. | [verificado en Git] |
 | Ensacado | UI, API, backend, permiso `ensacado:operar` | [verificado en Git] |
 | Atencion de paquetes | UI/documentacion; endpoint `/api/v1/atenciones`; permisos `atencion_paquetes:*` | [verificado en Git] |
 | Manifiesto consolidado | UI/API/backend/DB; rutas `manifiestos-consolidados` | [verificado en Git] |
 | Listas etiquetadas | Flujo basado en Paquete bajo `/api/v1/paquetes/listas-etiquetadas` | [verificado en Git] |
 | Parametros del sistema | UI/API/backend; `parametro_sistema` DB | [verificado en Git] |
+| Agencia origen activa | Agencia bajo la que opera el usuario en la sesión actual (`authStore.activeAgencyId`), enviada en el header `X-Agencia-Origen-Activa-Id`. Usar "agencia activa" en UI. | [verificado en Git] |
+| Agencia por defecto / predeterminada | Preferencia de agencia activa que el usuario fija para restaurarla al iniciar sesión (`authStore.defaultAgencyId`, persistida en localStorage `candas-default-active-agency:<idUsuario>`). Usar "predeterminada" en UI. | [verificado en Git] |
 | Usuario, Rol, Permiso | RBAC | [verificado en Git] |
 
 ## Reglas por contexto
@@ -35,7 +42,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 
 - Rutas en kebab-case plural: `/paquetes`, `/clientes`, `/agencias`, `/puntos-origen`, `/lotes-recepcion`, `/destinatarios-directos`, `/manifiestos-consolidados`, `/parametros-sistema`. [verificado en Git]
 - Formularios nuevos usan sufijo `/new`; edicion usa `/$id/edit`; detalle usa `/$id`. [verificado en Git]
-- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Ensacado, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
+- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Despacho masivo, Ensacado, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
 - Mantener `VITE_API_BASE_URL` como nombre de variable para API. No introducir `VITE_API_URL`. [verificado en Git] [verificado en documentacion]
 
 ### API

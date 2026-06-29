@@ -79,6 +79,12 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         permissions: [PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER],
       },
       {
+        name: 'Despacho masivo',
+        href: '/despachos/masivo',
+        moduleId: 'despachosMasivo',
+        permission: PERMISSIONS.DESPACHOS.CREAR,
+      },
+      {
         name: 'Ensacado',
         href: '/ensacado',
         moduleId: 'ensacado',
