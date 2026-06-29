@@ -17,14 +17,15 @@ SelectValue,
 } from '@/components/ui/select'
 import { useAgencias } from '@/hooks/useSelectOptions'
 import { authService } from '@/lib/api/auth.service'
+import { notify } from '@/lib/notify'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useNavigate } from '@tanstack/react-router'
-import { Bell,Loader2,LogOut,Menu,Monitor,Moon,Search,Shield,Sun,UserCog } from 'lucide-react'
+import { Bell,Loader2,LogOut,Menu,Monitor,Moon,Search,Shield,Star,StarOff,Sun,UserCog } from 'lucide-react'
 import { useEffect,useState } from 'react'
 
 export function Header() {
-  const { user, activeAgencyId, setActiveAgencyId } = useAuthStore()
+  const { user, activeAgencyId, defaultAgencyId, setActiveAgencyId, setDefaultAgencyId } = useAuthStore()
   const { theme, resolvedTheme, toggleTheme, toggleMobileSidebar } = useUIStore()
   const navigate = useNavigate()
   const [isSwitchingAgency, setIsSwitchingAgency] = useState(false)
@@ -34,10 +35,25 @@ export function Header() {
     .filter((a): a is { value: number; label: string } => !!a)
   const agenciaActivaLabel = agenciasUsuario.find((a) => a.value === activeAgencyId)?.label
     ?? (activeAgencyId ? `#${activeAgencyId}` : 'Sin agencia')
+  const tieneMultiplesAgencias = agenciasUsuario.length > 1
+  const isActiveDefault = activeAgencyId != null && activeAgencyId === defaultAgencyId
 
   const handleLogout = () => {
     authService.logout()
     navigate({ to: '/login' })
+  }
+
+  const handleMarcarPredeterminada = () => {
+    if (activeAgencyId == null) return
+    setDefaultAgencyId(activeAgencyId)
+    notify.success('Agencia predeterminada actualizada', {
+      description: `Se restaurará "${agenciaActivaLabel}" al iniciar sesión.`,
+    })
+  }
+
+  const handleQuitarPredeterminada = () => {
+    setDefaultAgencyId(null)
+    notify.info('Se quitó la agencia predeterminada')
   }
 
   useEffect(() => {
@@ -184,9 +200,41 @@ export function Header() {
                     <div className="overflow-hidden flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{user.username}</p>
                       <p className="text-[11px] text-muted-foreground truncate mt-0.5">{user.email}</p>
-                      <p className="text-[11px] text-muted-foreground truncate mt-1">
-                        Agencia origen activa: {agenciaActivaLabel}
-                      </p>
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          Agencia origen activa: {agenciaActivaLabel}
+                        </p>
+                        {isActiveDefault && (
+                          <Badge
+                            variant="secondary"
+                            className="text-[9px] px-1.5 py-0 rounded-md border-0 font-semibold bg-primary/10 text-primary"
+                          >
+                            <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
+                            Predeterminada
+                          </Badge>
+                        )}
+                      </div>
+                      {tieneMultiplesAgencias && activeAgencyId != null && (
+                        isActiveDefault ? (
+                          <button
+                            type="button"
+                            onClick={handleQuitarPredeterminada}
+                            className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <StarOff className="h-3 w-3" />
+                            Quitar predeterminada
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleMarcarPredeterminada}
+                            className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 transition-colors"
+                          >
+                            <Star className="h-3 w-3" />
+                            Usar como predeterminada
+                          </button>
+                        )
+                      )}
                       {user.roles && user.roles.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {user.roles.map((role) => (
