@@ -160,7 +160,7 @@ export function DespachoRapidoResumenCopiable({ despacho }: DespachoRapidoResume
         </CopyActionButton>
       </div>
 
-      <ResumenDestinoDespacho data={data} />
+      <ResumenDestinoDespacho data={data} columns="grid-cols-2" />
     </div>
   )
 }

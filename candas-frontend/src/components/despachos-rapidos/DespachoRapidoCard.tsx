@@ -1,10 +1,7 @@
-import { CopyActionButton } from '@/components/ui/copy-action-button'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DespachoRapidoResumenCopiable } from '@/components/despachos-rapidos/DespachoRapidoResumenCopiable'
 import type { DespachoRapido } from '@/types/despacho-rapido'
 import { ESTADO_DESPACHO_RAPIDO_LABEL } from '@/types/despacho-rapido'
-import { construirResumenDespachoRapido } from '@/utils/despachoRapidoCopy'
 import { formatearFechaRelativa } from '@/utils/fechas'
 import { Building2, MapPin, Package, ShieldCheck, Truck } from 'lucide-react'
 
@@ -71,23 +68,13 @@ export function DespachoRapidoCard({ despacho, onFinalizar }: DespachoRapidoCard
         </p>
       ) : null}
 
-      {despacho.estado === 'LISTO_PARA_GUIA' ? <DespachoRapidoResumenCopiable despacho={despacho} /> : null}
-
-      <div className="flex items-center gap-2 border-t border-border/30 pt-3">
-        <CopyActionButton
-          textToCopy={construirResumenDespachoRapido(despacho)}
-          successMessage="Resumen copiado"
-          title="Copiar resumen del despacho"
-          className="flex-1"
-        >
-          Copiar resumen
-        </CopyActionButton>
-        {onFinalizar && despacho.estado === 'LISTO_PARA_GUIA' ? (
-          <Button type="button" size="sm" className="flex-1" onClick={() => onFinalizar(despacho)}>
+      {onFinalizar && despacho.estado === 'LISTO_PARA_GUIA' ? (
+        <div className="flex items-center gap-2 border-t border-border/30 pt-3">
+          <Button type="button" size="sm" className="w-full" onClick={() => onFinalizar(despacho)}>
             Finalizar
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   )
 }
