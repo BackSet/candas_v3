@@ -26,7 +26,7 @@ export const destinatarioDirectoService = {
 
   async findAllNoPaginado(): Promise<DestinatarioDirecto[]> {
     return handleResponse(
-      (openapiClient as any).GET('/api/v1/destinatarios-directos/no-paginado')
+      openapiClient.GET('/api/v1/destinatarios-directos/all')
     ) as any
   },
 
