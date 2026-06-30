@@ -160,6 +160,9 @@ function LectorMovilPage() {
             isScanning={scanner.isScanning}
             paused={locked}
             error={scanner.error}
+            devices={scanner.devices}
+            selectedDeviceId={scanner.selectedDeviceId}
+            onSelectDevice={scanner.selectDevice}
             onStart={() => void scanner.start()}
             onManualSubmit={handleScan}
           />
