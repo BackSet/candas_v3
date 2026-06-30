@@ -58,9 +58,10 @@ export function generarEtiquetaHTML(
       
       <div class="column-center">
          <div class="header-row">
-            <img src="/logo.png" class="logo-img" alt="Logo" />
+            <img src="/logo-mv-services.svg" class="logo-img" alt="MV Services INC" />
             <div class="header-text">
                <strong>${tituloOrigen.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</strong>
+               <span class="header-sub">MV SERVICES INC</span>
             </div>
          </div>
          
@@ -169,9 +170,10 @@ export function generarEtiquetaZebraHTML(
         <!-- Top Section: Minimal Logo -->
         <div class="zebra-top-grid">
           <div class="zebra-logo-area">
-            <img src="/logo.png" class="zebra-logo" alt="Logo" />
+            <img src="/logo-mv-services.svg" class="zebra-logo" alt="MV Services INC" />
             <div class="zebra-brand">
               <span class="brand-main">${tituloOrigen.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+              <span class="brand-sub">MV SERVICES INC</span>
             </div>
           </div>
         </div>
@@ -275,7 +277,8 @@ function buildEtiquetasNormalesDocument(etiquetasHTML: string, titulo: string): 
       .column-center { flex: 1; padding: 0 5mm; display: flex; flex-direction: column; justify-content: center; }
       .header-row { display: flex; align-items: center; border-bottom: 1px solid #f5f5f5; margin-bottom: 3mm; padding-bottom: 1mm; gap: 3mm; }
       .logo-img { height: 8mm !important; width: auto !important; object-fit: contain !important; }
-      .header-text { font-size: 10pt; font-weight: 600; text-transform: uppercase; line-height: 1; color: #171717; }
+      .header-text { display: flex; flex-direction: column; gap: 0.5mm; font-size: 10pt; font-weight: 600; text-transform: uppercase; line-height: 1; color: #171717; }
+      .header-sub { font-size: 6.5pt; font-weight: 600; letter-spacing: 0.04em; color: #525252; }
       .info-group { display: flex; flex-direction: column; gap: 1.5mm; }
       .dest-block { display: flex; flex-direction: column; gap: 0.5mm; margin-bottom: 1mm; }
       .dest-tag { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #1d4ed8; }

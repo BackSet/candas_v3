@@ -368,7 +368,10 @@ export function imprimirAtencionPaquetes(
       <body>
         <div class="document-header">
            <div class="header-left">
-              <img src="/logo.png" class="doc-logo" alt="Logo" />
+              <div class="brand-lockup">
+                <img src="/logo-mv-services.svg" class="doc-logo" alt="MV Services INC" />
+                <span class="brand-name">MV SERVICES INC</span>
+              </div>
               <div class="doc-title">
                   <h1>Atención de Paquetes</h1>
                   <p>Documento operativo de incidencias y resoluciones</p>

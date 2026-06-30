@@ -9,28 +9,7 @@ import { buildDocumentoManifiestoHTML } from '@/utils/imprimirDespacho'
 import { observacionesParaDespacho } from '@/utils/observacionesDespacho'
 import { jsPDF } from 'jspdf'
 import { PDF_COLORS,PDF_FONTS,PDF_MARGINS } from './printTheme'
-
-function loadImage(url: string): Promise<{ data: string; width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = 'Anonymous'
-    img.src = url
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return reject(new Error('No context'))
-      ctx.drawImage(img, 0, 0)
-      resolve({
-        data: canvas.toDataURL('image/png'),
-        width: img.width,
-        height: img.height,
-      })
-    }
-    img.onerror = () => reject(new Error('Image load failed'))
-  })
-}
+import { drawBrandLockup } from './brandLogo'
 
 export function imprimirManifiestoConsolidado(
   manifiesto: ManifiestoConsolidadoDetalle,
@@ -85,7 +64,10 @@ function generarContenidoConsolidado(
     <div class="manifiesto-wrapper">
       <div class="doc-header">
         <div class="header-left-group">
-          <img src="/logo.png" class="doc-logo" alt="Logo" />
+          <div class="brand-lockup">
+            <img src="/logo-mv-services.svg" class="doc-logo" alt="MV Services INC" />
+            <span class="brand-name">MV SERVICES INC</span>
+          </div>
           <div class="doc-title">
             <h1>${tituloPrincipal}</h1>
             <h2>${tituloOrigen.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h2>
@@ -358,18 +340,12 @@ export async function generarPDFManifiestoConsolidado(
 
   let currentY = MARGIN_Y
 
-  try {
-    const logo = await loadImage('/logo.png')
-    const targetHeight = 12
-    const logoWidth = Math.min(53, targetHeight * (logo.width / logo.height))
-    doc.addImage(logo.data, 'PNG', MARGIN_X, currentY, logoWidth, targetHeight)
-  } catch (e) {
-    console.error('No se pudo cargar el logo', e)
-  }
+  // Lockup MV Services: símbolo vectorial + "MV SERVICES INC" debajo
+  const lockup = await drawBrandLockup(doc, MARGIN_X, currentY, { markHeightMm: 10 })
 
   const tituloPrincipal =
     manifiesto.idAgencia == null ? 'MANIFIESTO CONSOLIDADO' : 'MANIFIESTO DE AGENCIA'
-  const titleX = MARGIN_X + 18
+  const titleX = MARGIN_X + (lockup.width > 0 ? lockup.width + 4 : 18)
   text(tituloPrincipal, titleX, currentY + 4.5, 12, 'bold')
   text(tituloOrigen, titleX, currentY + 8.8, 8, 'normal', 'left', PDF_COLORS.text.secondary)
   text(`Total Sacas: ${manifiesto.totales.totalSacas}`, MARGIN_X + PAGE_WIDTH, currentY + 4.5, 7.4, 'bold', 'right')

@@ -86,7 +86,10 @@ export function generarContenidoLoteEspecialHTML(
   return `
     <div class="doc-header">
       <div class="header-left-group">
-        <img src="/logo.png" class="doc-logo" alt="Logo" />
+        <div class="brand-lockup">
+          <img src="/logo-mv-services.svg" class="doc-logo" alt="MV Services INC" />
+          <span class="brand-name">MV SERVICES INC</span>
+        </div>
         <div class="doc-title">
           <h1>Lote Especial</h1>
           <h2>Recepción: ${esc(numeroRecepcion || '-')}</h2>

@@ -52,6 +52,24 @@ body {
   gap: 16px;
 }
 
+/* Lockup de marca: símbolo MV + nombre de empresa debajo */
+.brand-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 6.5pt;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #171717;
+  white-space: nowrap;
+  line-height: 1;
+}
+
 .doc-logo {
   height: 32px !important;
   max-height: 32px !important;
