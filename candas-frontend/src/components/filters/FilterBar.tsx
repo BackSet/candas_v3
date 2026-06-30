@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { ListFilterChip } from '@/hooks/useListFilters'
 import { cn } from '@/lib/utils'
-import { Search,X } from 'lucide-react'
-import { useEffect,useRef,useState,type ReactNode } from 'react'
+import { Search, X, SlidersHorizontal } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { FilterChips } from './FilterChips'
 
 export interface FilterBarProps {
@@ -52,7 +52,10 @@ export function FilterBar({
   filtersClassName,
 }: FilterBarProps) {
   const [localSearch, setLocalSearch] = useState(searchValue)
+  const [isOpen, setIsOpen] = useState(false)
   const isInternalUpdate = useRef(false)
+
+  const activeFiltersCount = chips?.length ?? 0
 
   useEffect(() => {
     if (isInternalUpdate.current) {
@@ -88,45 +91,106 @@ export function FilterBar({
     >
       <div
         className={cn(
-          'flex min-w-0 flex-wrap items-center gap-2 rounded-lg border border-border/40 bg-card/70 p-2 shadow-sm',
+          'flex flex-col gap-2 rounded-lg border border-border/40 bg-card/70 p-2 shadow-sm md:flex-row md:items-center md:flex-wrap',
           filtersClassName
         )}
       >
-        {showSearch && onSearchChange && (
-          <div className="relative min-w-[220px] flex-1 sm:max-w-72">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="h-9 border-border/50 bg-background pl-8 pr-8 text-sm"
-              aria-label="Buscar"
-            />
-            {localSearch && (
-              <button
-                type="button"
-                onClick={() => setLocalSearch('')}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-                aria-label="Limpiar búsqueda"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        )}
+        {/* Fila Principal: Buscador + Botón Filtros móvil + Trailing móvil */}
+        <div className="flex w-full items-center gap-2 min-w-0 md:w-auto md:flex-1">
+          {showSearch && onSearchChange && (
+            <div className="relative min-w-[120px] flex-1 md:max-w-72 md:min-w-[220px]">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="h-9 border-border/50 bg-background pl-8 pr-8 text-sm"
+                aria-label="Buscar"
+              />
+              {localSearch && (
+                <button
+                  type="button"
+                  onClick={() => setLocalSearch('')}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
 
+          {/* Botón Filtros (sólo visible en móvil si hay children) */}
+          {children && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+              className={cn(
+                'h-9 gap-1.5 md:hidden shrink-0 text-xs font-normal',
+                (isOpen || activeFiltersCount > 0) && 'border-primary/40 bg-primary/5 text-foreground'
+              )}
+              aria-label="Filtros adicionales"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span>Filtros</span>
+              {activeFiltersCount > 0 && (
+                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-medium text-primary-foreground">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </Button>
+          )}
+
+          {/* Trailing en móvil (se alinea a la derecha en la fila principal) */}
+          {trailing && (
+            <div className="ml-auto flex md:hidden shrink-0 items-center gap-2">
+              {trailing}
+            </div>
+          )}
+        </div>
+
+        {/* Sección de Filtros Adicionales (Children) */}
         {children && (
-          <div className="flex min-w-0 flex-wrap items-center gap-2">{children}</div>
+          <>
+            {/* Escritorio: siempre en línea */}
+            <div className="hidden md:flex min-w-0 flex-wrap items-center gap-2">
+              {children}
+            </div>
+
+            {/* Móvil: panel colapsable */}
+            <div
+              className={cn(
+                'w-full transition-all duration-300 md:hidden overflow-hidden',
+                isOpen ? 'block border-t border-border/30 pt-3 mt-1' : 'hidden'
+              )}
+            >
+              <div className="flex flex-col gap-3">
+                {children}
+              </div>
+            </div>
+          </>
         )}
 
+        {/* Chips de Filtros Activos */}
         {chips && chips.length > 0 && (
-          <div className="flex min-w-0 max-w-full flex-1 items-center gap-2 border-border/40 md:border-l md:pl-2">
-            <FilterChips chips={chips} onClearAll={onClearAll} compact />
-          </div>
+          <>
+            {/* Escritorio: en línea con borde izquierdo */}
+            <div className="hidden md:flex min-w-0 max-w-full flex-1 items-center gap-2 border-border/40 md:border-l md:pl-2">
+              <FilterChips chips={chips} onClearAll={onClearAll} compact />
+            </div>
+
+            {/* Móvil: siempre visible debajo del buscador para borrar filtros rápidamente */}
+            <div className="flex md:hidden min-w-0 max-w-full items-center gap-2 border-t border-border/20 pt-2 mt-1 w-full">
+              <FilterChips chips={chips} onClearAll={onClearAll} compact />
+            </div>
+          </>
         )}
 
+        {/* Trailing en Escritorio */}
         {trailing && (
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <div className="hidden md:flex ml-auto shrink-0 items-center gap-2">
             {trailing}
           </div>
         )}

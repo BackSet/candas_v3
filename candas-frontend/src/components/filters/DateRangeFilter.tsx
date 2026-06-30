@@ -94,7 +94,7 @@ export function DateRangeFilter({
 
   const activePreset = detectActivePreset(desde, hasta)
   const visiblePresets = compact ? COMPACT_PRESETS : DATE_PRESETS
-  const pickerWidth = compact ? 'w-[108px]' : 'w-[118px]'
+  const pickerWidth = compact ? 'w-full sm:w-[108px]' : 'w-full sm:w-[118px]'
   const hasFilter = Boolean(desde || hasta)
   const periodLabel = getDateRangeSummary(desde, hasta)
 
@@ -163,7 +163,7 @@ export function DateRangeFilter({
   return (
     <div
       className={cn(
-        'inline-flex h-9 shrink-0 items-center gap-1',
+        'flex flex-col sm:inline-flex sm:flex-row sm:h-9 sm:items-center gap-2 sm:gap-1.5 w-full sm:w-auto',
         className
       )}
       role="group"
@@ -183,7 +183,7 @@ export function DateRangeFilter({
       )}
 
       {showDesde && showHasta && (
-        <span className="shrink-0 text-xs text-muted-foreground" aria-hidden>
+        <span className="hidden sm:inline shrink-0 text-xs text-muted-foreground" aria-hidden>
           →
         </span>
       )}
@@ -208,7 +208,7 @@ export function DateRangeFilter({
             variant="outline"
             size="sm"
             className={cn(
-              'h-9 shrink-0 gap-1 border-border px-2 text-xs font-normal',
+              'h-9 shrink-0 gap-1 border-border px-2 text-xs font-normal w-full sm:w-auto justify-between sm:justify-start',
               hasFilter && 'border-primary/40 bg-primary/5 text-foreground'
             )}
             aria-label="Periodos y opciones de fecha"
