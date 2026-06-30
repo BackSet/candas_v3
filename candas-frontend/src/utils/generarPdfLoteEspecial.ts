@@ -2,28 +2,7 @@ import type { Paquete } from '@/types/paquete'
 import { instruccionDeObservaciones,observacionesParaDespacho } from '@/utils/observacionesDespacho'
 import { jsPDF } from 'jspdf'
 import { PDF_COLORS,PDF_FONTS,PDF_MARGINS } from './printTheme'
-
-const loadImage = (url: string): Promise<{ data: string; width: number; height: number }> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = 'Anonymous'
-    img.src = url
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return reject('No context')
-      ctx.drawImage(img, 0, 0)
-      resolve({
-        data: canvas.toDataURL('image/png'),
-        width: img.width,
-        height: img.height,
-      })
-    }
-    img.onerror = reject
-  })
-}
+import { drawBrandLockupImage, loadSvgAsPng, MV_LOGO_URL, type LoadedImage } from './brandLogo'
 
 /**
  * Filtra paquetes por tipo: TODOS, SIN_ETIQUETA o nombre de etiqueta (ref).
@@ -67,9 +46,9 @@ async function buildPdfLoteEspecial(
 ): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
-  let logoData: { data: string; width: number; height: number } | null = null
+  let logoData: LoadedImage | null = null
   try {
-    logoData = await loadImage('/logo.png')
+    logoData = await loadSvgAsPng(MV_LOGO_URL, 512)
   } catch {
     // Logo no disponible
   }
@@ -84,13 +63,9 @@ async function buildPdfLoteEspecial(
 
   function dibujarEncabezado(): number {
     let y = MARGIN
-    let logoWidth = 0
-    const targetHeight = 12
-    if (logoData) {
-      const ratio = logoData.width / logoData.height
-      logoWidth = Math.min(53, targetHeight * ratio)
-      doc.addImage(logoData.data, 'PNG', MARGIN, y, logoWidth, targetHeight)
-    }
+    // Lockup MV Services: símbolo vectorial + "MV SERVICES INC" debajo
+    const lockup = drawBrandLockupImage(doc, MARGIN, y, logoData, { markHeightMm: 10 })
+    const logoWidth = lockup.width
     const titleX = MARGIN + (logoWidth > 0 ? logoWidth + 5 : 0)
     doc.setFontSize(PDF_FONTS.sizes.title)
     doc.setFont(PDF_FONTS.family, 'bold')
@@ -108,7 +83,7 @@ async function buildPdfLoteEspecial(
     doc.setTextColor(PDF_COLORS.text.secondary)
     doc.text(`Generado: ${fechaGeneracion}`, MARGIN + PAGE_WIDTH, y + 9, { align: 'right' })
     doc.text(`Total: ${paquetes.length} paquete${paquetes.length !== 1 ? 's' : ''}`, MARGIN + PAGE_WIDTH, y + 13, { align: 'right' })
-    y += Math.max(targetHeight, 14) + 2
+    y += Math.max(lockup.height, 14) + 2
     doc.setDrawColor(PDF_COLORS.border.normal)
     doc.setLineWidth(0.4)
     doc.line(MARGIN, y, MARGIN + PAGE_WIDTH, y)

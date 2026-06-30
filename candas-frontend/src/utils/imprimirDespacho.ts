@@ -9,29 +9,7 @@ import { jsPDF } from 'jspdf'
 import { observacionesParaDespacho } from './observacionesDespacho'
 
 import { PDF_COLORS,PDF_FONTS,PDF_MARGINS,PRINT_CSS_BASE } from './printTheme'
-
-// Helper to load image
-const loadImage = (url: string): Promise<{ data: string; width: number; height: number }> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.crossOrigin = 'Anonymous'
-    img.src = url
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return reject('No context')
-      ctx.drawImage(img, 0, 0)
-      resolve({
-        data: canvas.toDataURL('image/png'),
-        width: img.width,
-        height: img.height
-      })
-    }
-    img.onerror = reject
-  })
-}
+import { drawBrandLockup } from './brandLogo'
 
 // Función auxiliar para cargar paquetes de una saca
 async function cargarPaquetesDeSaca(idPaquetes: number[]): Promise<Paquete[]> {
@@ -267,7 +245,10 @@ export async function generarManifiestoHTML(
     <div class="manifiesto-wrapper">
       <div class="doc-header">
         <div class="header-left-group">
-           <img src="/logo.png" class="doc-logo" alt="Logo" />
+           <div class="brand-lockup">
+             <img src="/logo-mv-services.svg" class="doc-logo" alt="MV Services INC" />
+             <span class="brand-name">MV SERVICES INC</span>
+           </div>
            <div class="doc-title">
               <h1>Documento de Despacho</h1>
               <h2>${tituloOrigen.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h2>
@@ -404,24 +385,9 @@ export async function generarPDFDespacho(
   // --- HEADER ---
   let currentY = MARGIN_Y
 
-  // Logo
-  let logoWidth = 0
-  try {
-    const logo = await loadImage('/logo.png')
-    // CSS height: 45px approx 12mm.
-    const targetHeight = 12
-    const ratio = logo.width / logo.height
-    logoWidth = targetHeight * ratio
-
-    // Max width check (approx 53mm)
-    if (logoWidth > 53) {
-      logoWidth = 53
-    }
-
-    doc.addImage(logo.data, 'PNG', MARGIN_X, currentY, logoWidth, targetHeight)
-  } catch (e) {
-    console.error('No se pudo cargar el logo', e)
-  }
+  // Logo (lockup MV Services: símbolo vectorial + "MV SERVICES INC" debajo)
+  const lockup = await drawBrandLockup(doc, MARGIN_X, currentY, { markHeightMm: 10 })
+  const logoWidth = lockup.width
 
   // Title Group (Next to logo)
   const titleX = MARGIN_X + (logoWidth > 0 ? logoWidth + 5 : 0)

@@ -341,7 +341,10 @@ export function imprimirEscaneos(historial: EscaneoResultado[], gruposFiltro?: s
       <body>
         <div class="header">
           <div class="header-left">
-            <img src="/logo.png" class="doc-logo" alt="Logo" onerror="this.style.display='none'" />
+            <div class="brand-lockup">
+              <img src="/logo-mv-services.svg" class="doc-logo" alt="MV Services INC" onerror="this.style.display='none'" />
+              <span class="brand-name">MV SERVICES INC</span>
+            </div>
             <div class="title-group">
               <h1>Escaneos de Guías</h1>
               <h2>Documento operativo de escaneo y etiquetado</h2>
