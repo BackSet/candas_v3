@@ -69,9 +69,14 @@ export function PaqueteCapturePanel({
           value={colaInput}
           onChange={(e) => setColaInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            // Finalizadores que envía una tipiadora/escáner: Enter, NumpadEnter (e.key === 'Enter') y Tab.
+            if (e.key === 'Enter' || e.key === 'Tab') {
+              const value = e.currentTarget.value
+              // Tab solo se intercepta cuando hay guía pendiente (sufijo de escaneo);
+              // con el campo vacío se deja navegar normalmente.
+              if (e.key === 'Tab' && !value.trim()) return
               e.preventDefault()
-              handleColaSubmit(undefined, e.currentTarget.value)
+              handleColaSubmit(undefined, value)
             }
           }}
           onPaste={(e) => {
@@ -85,6 +90,9 @@ export function PaqueteCapturePanel({
           placeholder="Escanea, escribe o pega guías…"
           className="font-mono"
           autoFocus
+          autoComplete="off"
+          spellCheck={false}
+          inputMode="text"
           aria-busy={procesandoCola}
           aria-label="Escanea, escribe o pega guías"
         />
