@@ -33,16 +33,50 @@
 - Springdoc OpenAPI con integración de Scalar `3.0.3`. [verificado en Git: `candas-backend/pom.xml`]
 - MapStruct `1.6.3`, Lombok, Apache POI `5.5.1`, JasperReports `7.0.7`, Barbecue `1.5-beta1`. [verificado en Git: `candas-backend/pom.xml`]
 - Testcontainers (PostgreSQL) y Spring Modulith (starter-test, docs) en ámbito de pruebas de calidad. [verificado en Git: `candas-backend/pom.xml`]
+# Candas - Contexto tecnico del proyecto
+
+## Identificacion
+
+- Proyecto: Candas v3. [verificado en documentacion: `README.md`]
+- Repositorio remoto: `https://github.com/BackSet/candas_v3.git`. [verificado en Git]
+- Rama base de trabajo para agentes: `dev`. [verificado en Git]
+- Ruta de contexto IA: `docs/ai`. [verificado en Git]
+- Proposito de la aplicacion: sistema de gestion logistica y operativa. [verificado en documentacion: `README.md`]
+
+## Estado de inspeccion
+
+- La rama activa es `dev`. [verificado en Git]
+- `git status --short --branch` limpio antes de la iteración. [verificado en Git]
+- Los cuatro archivos canonicos de `docs/ai` existen y reflejan el stack tecnológico actual. [verificado en Git]
+
+## Estructura principal
+
+- `candas-backend/`: API REST Spring Boot, recursos, migraciones Flyway, Dockerfile y configuracion Railway. [verificado en Git]
+- `candas-frontend/`: SPA React/Vite/TypeScript, rutas, paginas, hooks, services API, stores, componentes UI, Dockerfile y configuracion Railway. [verificado en Git]
+- `docs/`: documentacion funcional, tecnica, despliegue, UX/UI y arquitectura. [verificado en documentacion]
+- `docs/ai/`: contexto tecnico canonico para IA y agentes. [verificado en Git]
+
+## Stack confirmado
+
+### Backend
+
+- Java 25. [verificado en Git: `candas-backend/pom.xml`, `candas-backend/Dockerfile`]
+- Spring Boot `4.1.0` como parent Maven. [verificado en Git: `candas-backend/pom.xml`]
+- Starters: Web MVC, Security, Data JPA, Validation, Flyway, Actuator, Test, Data JPA Test. [verificado en Git: `candas-backend/pom.xml`]
+- PostgreSQL JDBC runtime y Flyway PostgreSQL. [verificado en Git: `candas-backend/pom.xml`]
+- JJWT `0.13.0`. [verificado en Git: `candas-backend/pom.xml`]
+- Springdoc OpenAPI con integración de Scalar `3.0.3`. [verificado en Git: `candas-backend/pom.xml`]
+- MapStruct `1.6.3`, Lombok, Apache POI `5.5.1`, JasperReports `7.0.7`, Barbecue `1.5-beta1`. [verificado en Git: `candas-backend/pom.xml`]
+- Testcontainers (PostgreSQL) y Spring Modulith (starter-test, docs) en ámbito de pruebas de calidad. [verificado en Git: `candas-backend/pom.xml`]
 
 ### Frontend
 
 - React `19.2.7`, React DOM `19.2.7`, TypeScript `~6.0.3`, Vite `^8.1.0`. [verificado en Git: `candas-frontend/package.json`]
 - TanStack Router `^1.170.15`, TanStack Query `^5.101.0`, Zustand `^5.0.14`. [verificado en Git]
 - React Hook Form, Zod, Radix UI, openapi-fetch, openapi-typescript, Vitest, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
-- Build con Vite 8 y TypeScript 6; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
-
-## Arquitectura por capa
-
+- `@zxing/browser` `^0.2.0` con peer `@zxing/library` `^0.22.0` (instalado como dependencia directa por `legacy-peer-deps=true` en `.npmrc`) para lectura de códigos de barras (QR/EAN/Code128) desde la cámara en el flujo móvil de Despachos rápidos (`/despachos/rapidos/mobile`). [verificado en Git]
+- PWA: `vite-plugin-pwa` `^1.3.0` (devDependency) genera service worker (`generateSW`/Workbox) y `manifest.webmanifest`; la app es instalable en Windows (Edge/Chrome), Android e iOS (Añadir a pantalla de inicio) y abre en modo standalone. Precachea el app shell (JS/CSS/HTML/iconos) con `registerType: 'autoUpdate'`; offline solo de shell/fallback. NO cachea la API logística/transaccional (solo Google Fonts como runtime estático). Iconos en `public/` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`, `apple-touch-icon.png`, derivados de los SVG de marca). [verificado en Git]
+- Despachos rápidos sincroniza por polling explícito en frontend con `DESPACHOS_RAPIDOS_POLL` (`desktopMs=3000`, `mobileMs=2500`), `refetchOnWindowFocus` y `refetchOnReconnect`; el polling consulta siempre API autenticada y no depende del caché PWA. [verificado en Git]
 ### Backend
 
 - Paquete base: `com.candas.candas_backend`. [verificado en Git]
@@ -88,7 +122,8 @@
 - Base de datos: PostgreSQL. [verificado en Git]
 - Configuracion datasource via `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`. [verificado en Git]
 - Flyway habilitado con migraciones en `candas-backend/src/main/resources/db/migration`. [verificado en Git]
-- Migraciones observadas: `V1__Create_base_tables.sql` a `V134__Fix_despacho_sequence_desync.sql`, con huecos historicos propios del proyecto. [verificado en Git]
+- Migraciones observadas: `V1__Create_base_tables.sql` a `V136__Add_estado_to_despacho.sql`, con huecos historicos propios del proyecto. [verificado en Git]
+- `V136__Add_estado_to_despacho.sql` agrega `despacho.estado` (VARCHAR(20), NOT NULL, DEFAULT `FINALIZADO`) para el ciclo de vida del módulo "Despachos rápidos"; los despachos existentes quedan `FINALIZADO`. [verificado en Git]
 - `application.properties` activa Flyway, `baseline-on-migrate=true`, `validate-on-migrate=false`; `application-prod.properties` cambia a `validate-on-migrate=true` y `ddl-auto=validate`. [verificado en Git]
 - `application.properties` mantiene `spring.jpa.hibernate.ddl-auto=update`; en produccion se sobreescribe a `validate`. [verificado en Git]
 - No modificar migraciones historicas salvo instruccion explicita y plan de reparacion. [verificado en documentacion de la solicitud]
@@ -98,6 +133,7 @@
 - Despliegue documentado: Railway con dos servicios Docker separados, backend y frontend. [verificado en documentacion: `docs/DEPLOYMENT.md`]
 - Backend Docker: build Maven con `eclipse-temurin:25-jdk`, runtime `eclipse-temurin:25-jre`, JAR en `/opt/app/app.jar`, healthcheck `/actuator/health`. [verificado en Git]
 - Frontend Docker: build Node `20-alpine`, runtime `nginx:1.27-alpine`, `VITE_API_BASE_URL` y `VITE_APP_URL` como build args, healthcheck `/`. [verificado en Git]
+- Nginx (`nginx.conf`): `/assets/` con cache inmutable 30d; `sw.js`, `manifest.webmanifest` e `index.html` con `Cache-Control: no-cache` para propagar actualizaciones del service worker y nuevas releases. [verificado en Git]
 - Railway backend: Dockerfile, start command `java -Dspring.profiles.active=prod -jar /opt/app/app.jar`, healthcheck `/actuator/health`. [verificado en Git]
 - Railway frontend: Dockerfile, healthcheck `/`. [verificado en Git]
 - No se encontro configuracion CI en `.github`, `.gitlab` o `.circleci` en la inspeccion local. [verificado en Git]

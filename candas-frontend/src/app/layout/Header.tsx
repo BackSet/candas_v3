@@ -8,6 +8,7 @@ DropdownMenuSeparator,
 DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 import {
 Select,
 SelectContent,
@@ -150,6 +151,8 @@ export function Header() {
             Cambiando...
           </div>
         )}
+
+        <InstallPrompt />
 
         <Button
           variant="ghost"

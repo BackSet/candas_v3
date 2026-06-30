@@ -123,8 +123,14 @@ function Metric({
         <Icon className="h-3.5 w-3.5" />
         <span className="text-[11px] font-semibold uppercase tracking-wider">{label}</span>
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <span className={cn('text-2xl font-bold tabular-nums select-all', accent && 'text-primary font-mono')}>
+      <div className="flex items-center justify-between gap-2 min-w-0 w-full">
+        <span
+          className={cn(
+            'text-xl sm:text-2xl font-bold tabular-nums select-all break-all whitespace-normal min-w-0 flex-1',
+            accent && 'text-lg lg:text-xl text-primary font-mono'
+          )}
+          title={typeof value === 'string' || typeof value === 'number' ? String(value) : undefined}
+        >
           {value}
         </span>
         {copyText ? (
@@ -263,9 +269,11 @@ function PesosPorSaca({ sacas }: { sacas: ResumenSacaDetalle[] }) {
 export function ResumenDestinoDespacho({
   data,
   className,
+  columns = 'grid-cols-2 lg:grid-cols-4',
 }: {
   data: ResumenDestinoData
   className?: string
+  columns?: string
 }) {
   const hayDestinatario =
     !!val(data.nombre) ||
@@ -283,7 +291,7 @@ export function ResumenDestinoDespacho({
 
   return (
     <div className={cn('space-y-4', className)}>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className={cn('grid gap-3', columns)}>
         <Metric icon={Boxes} label="Sacas" value={data.totalSacas} copyText={String(data.totalSacas)} />
         <Metric icon={Package} label="Paquetes" value={data.totalPaquetes} copyText={String(data.totalPaquetes)} />
         <Metric icon={Scale} label="Peso total" value={formatKg(data.pesoTotalKg)} copyText={formatKg(data.pesoTotalKg)} />
