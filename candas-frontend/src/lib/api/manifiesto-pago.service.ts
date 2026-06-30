@@ -1,45 +1,49 @@
 import type {
-CrearManifiestoPagoDTO,
-ManifiestoPagoDetalle,
-ManifiestoPagoPage,
-ManifiestoPagoResumen,
+  CrearManifiestoPagoDTO,
+  ManifiestoPagoDetalle,
+  ManifiestoPagoPage,
+  ManifiestoPagoResumen,
 } from '@/types/manifiesto-pago'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export const manifiestoPagoService = {
   async crearManifiestoPago(dto: CrearManifiestoPagoDTO): Promise<ManifiestoPagoResumen> {
-    const response = await apiClient.post<ManifiestoPagoResumen>(
-      API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/manifiestos-consolidados', {
+        body: dto as any,
+      })
+    ) as Promise<any>
   },
 
   async findAll(page: number = 0, size: number = 20): Promise<ManifiestoPagoPage> {
-    const response = await apiClient.get<ManifiestoPagoPage>(
-      API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BASE,
-      {
-        params: { page, size },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/manifiestos-consolidados', {
+        params: {
+          query: {
+            pageable: { page, size },
+          },
+        },
+      })
+    ) as Promise<any>
   },
 
   async findById(id: number): Promise<ManifiestoPagoDetalle> {
-    const response = await apiClient.get<ManifiestoPagoDetalle>(
-      API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/manifiestos-consolidados/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as Promise<any>
   },
 
   async findByAgencia(idAgencia: number, page: number = 0, size: number = 20): Promise<ManifiestoPagoPage> {
-    const response = await apiClient.get<ManifiestoPagoPage>(
-      API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BY_AGENCIA(idAgencia),
-      {
-        params: { page, size },
-      }
+    return handleResponse(
+      (openapiClient as any).GET(`/api/v1/manifiestos-consolidados/agencia/${idAgencia}`, {
+        params: {
+          query: { page, size },
+        },
+      })
     )
-    return response.data
   },
 }

@@ -1,11 +1,10 @@
 import type {
-CrearManifiestoConsolidadoDTO,
-ManifiestoConsolidadoDetalle,
-ManifiestoConsolidadoPage,
-ManifiestoConsolidadoResumen,
+  CrearManifiestoConsolidadoDTO,
+  ManifiestoConsolidadoDetalle,
+  ManifiestoConsolidadoPage,
+  ManifiestoConsolidadoResumen,
 } from '@/types/manifiesto-consolidado'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface ManifiestoConsolidadoFindAllParams {
   page?: number
@@ -18,49 +17,57 @@ export interface ManifiestoConsolidadoFindAllParams {
 
 export const manifiestoConsolidadoService = {
   async crearManifiestoConsolidado(dto: CrearManifiestoConsolidadoDTO): Promise<ManifiestoConsolidadoResumen> {
-    const response = await apiClient.post<ManifiestoConsolidadoResumen>(
-      API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/manifiestos-consolidados', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   async findAll(params: ManifiestoConsolidadoFindAllParams = {}): Promise<ManifiestoConsolidadoPage> {
     const { page = 0, size = 20, search, idAgencia, mes, anio } = params
-    const query: Record<string, string | number> = { page, size }
-    if (search?.trim()) query.search = search.trim()
-    if (idAgencia != null) query.idAgencia = idAgencia
-    if (mes != null) query.mes = mes
-    if (anio != null) query.anio = anio
-    const response = await apiClient.get<ManifiestoConsolidadoPage>(
-      API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BASE,
-      {
-        params: query,
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/manifiestos-consolidados', {
+        params: {
+          query: {
+            pageable: { page, size },
+            search,
+            idAgencia,
+            mes,
+            anio,
+          },
+        },
+      })
+    ) as any
   },
 
   async findById(id: number): Promise<ManifiestoConsolidadoDetalle> {
-    const response = await apiClient.get<ManifiestoConsolidadoDetalle>(
-      API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/manifiestos-consolidados/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
-
-
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.BY_ID(id))
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/manifiestos-consolidados/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async search(query: string): Promise<ManifiestoConsolidadoResumen[]> {
-    const response = await apiClient.get<ManifiestoConsolidadoResumen[]>(
-      API_ENDPOINTS.MANIFESTOS_CONSOLIDADOS.SEARCH,
-      {
-        params: { query },
-      }
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/manifiestos-consolidados/search', {
+        params: {
+          query: { query },
+        },
+      })
+    ) as any
   },
 }

@@ -111,7 +111,7 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 
 ## Flujos criticos
 
-- Login: `POST /api/auth/login` -> token JWT -> store frontend -> Axios envia `Authorization`. [verificado en Git]
+- Login: `POST /api/auth/login` -> token JWT -> store frontend -> openapi-fetch envia `Authorization`. [verificado en Git]
 - CRUD maestro: pagina/lista -> hook -> service API -> controller -> service -> repository/spec -> entidad/DB. [verificado en Git] [inferido]
 - Importacion de paquetes: UI de paquetes/lotes -> endpoints de Paquete/LoteRecepcion -> `PaqueteImportService`/`ExcelHelper`. [verificado en Git] [inferido]
 - Recepcion por lote y tipeo: rutas `/lotes-recepcion*`, endpoints `/api/v1/lotes-recepcion*`, `TipoLote`. [verificado en Git]

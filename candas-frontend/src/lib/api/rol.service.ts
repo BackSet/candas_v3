@@ -1,6 +1,5 @@
-import type { Rol,RolPage } from '@/types/rol'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import type { Rol, RolPage } from '@/types/rol'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface RolListParams {
   page?: number
@@ -12,64 +11,86 @@ export interface RolListParams {
 export const rolService = {
   async findAll(params: RolListParams = {}): Promise<RolPage> {
     const { page = 0, size = 20, search, activo } = params
-    const query: Record<string, string | number | boolean> = { page, size }
-    if (search && search.trim()) query.search = search.trim()
-    if (typeof activo === 'boolean') query.activo = activo
-    const response = await apiClient.get<RolPage>(
-      API_ENDPOINTS.ROLES.BASE,
-      { params: query }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/roles', {
+        params: {
+          query: {
+            pageable: { page, size },
+            search,
+            activo,
+          },
+        },
+      })
+    ) as any
   },
 
   async findById(id: number): Promise<Rol> {
-    const response = await apiClient.get<Rol>(
-      API_ENDPOINTS.ROLES.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/roles/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async create(dto: Rol): Promise<Rol> {
-    const response = await apiClient.post<Rol>(
-      API_ENDPOINTS.ROLES.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/roles', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   async update(id: number, dto: Rol): Promise<Rol> {
-    const response = await apiClient.put<Rol>(
-      API_ENDPOINTS.ROLES.BY_ID(id),
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/roles/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.ROLES.BY_ID(id))
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/roles/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async obtenerPermisos(id: number): Promise<number[]> {
-    const response = await apiClient.get<number[]>(
-      `${API_ENDPOINTS.ROLES.BY_ID(id)}/permisos`
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/roles/{id}/permisos', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async asignarPermisos(id: number, permisos: number[]): Promise<void> {
-    await apiClient.put(
-      `${API_ENDPOINTS.ROLES.BY_ID(id)}/permisos`,
-      { permisos }
-    )
+    return handleResponse(
+      openapiClient.PUT('/api/v1/roles/{id}/permisos', {
+        params: {
+          path: { id },
+        },
+        body: { permisos } as any,
+      })
+    ) as any
   },
 
   async search(query: string): Promise<Rol[]> {
-    const response = await apiClient.get<Rol[]>(
-      API_ENDPOINTS.ROLES.SEARCH,
-      {
-        params: { query },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/roles/search', {
+        params: {
+          query: { query },
+        },
+      })
+    ) as any
   },
 }

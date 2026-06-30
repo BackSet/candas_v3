@@ -1,60 +1,87 @@
-import type { Distribuidor,DistribuidorPage } from '@/types/distribuidor'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import type { Distribuidor, DistribuidorPage } from '@/types/distribuidor'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface DistribuidorFindAllParams {
   page?: number
   size?: number
   search?: string
+  nombre?: string
+  codigo?: string
   activa?: boolean
 }
 
 export const distribuidorService = {
   async findAll(params: DistribuidorFindAllParams = {}): Promise<DistribuidorPage> {
-    const { page = 0, size = 20, search, activa } = params
-    const queryParams: Record<string, string | number | boolean> = { page, size }
-    if (search && search.trim()) queryParams.search = search.trim()
-    if (activa !== undefined) queryParams.activa = activa
-    const response = await apiClient.get(API_ENDPOINTS.DISTRIBUIDORES.BASE, {
-      params: queryParams,
-    })
-    return response.data
+    const { page = 0, size = 20, search, nombre, codigo, activa } = params
+    return handleResponse(
+      openapiClient.GET('/api/v1/distribuidores', {
+        params: {
+          query: {
+            pageable: { page, size },
+            search,
+            nombre,
+            codigo,
+            activa,
+          },
+        },
+      })
+    ) as any
   },
 
   async findById(id: number): Promise<Distribuidor> {
-    const response = await apiClient.get(API_ENDPOINTS.DISTRIBUIDORES.BY_ID(id))
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/distribuidores/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
-  async create(distribuidor: Distribuidor): Promise<Distribuidor> {
-    const response = await apiClient.post(API_ENDPOINTS.DISTRIBUIDORES.BASE, distribuidor)
-    return response.data
+  async create(dto: Distribuidor): Promise<Distribuidor> {
+    return handleResponse(
+      openapiClient.POST('/api/v1/distribuidores', {
+        body: dto as any,
+      })
+    ) as any
   },
 
-  async update(id: number, distribuidor: Distribuidor): Promise<Distribuidor> {
-    const response = await apiClient.put(API_ENDPOINTS.DISTRIBUIDORES.BY_ID(id), distribuidor)
-    return response.data
+  async update(id: number, dto: Distribuidor): Promise<Distribuidor> {
+    return handleResponse(
+      openapiClient.PUT('/api/v1/distribuidores/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.DISTRIBUIDORES.BY_ID(id))
-  },
-
-  async buscarOCrear(nombre?: string, codigo?: string): Promise<Distribuidor> {
-    const params = new URLSearchParams()
-    if (nombre) params.append('nombre', nombre)
-    if (codigo) params.append('codigo', codigo)
-    const response = await apiClient.post(`${API_ENDPOINTS.DISTRIBUIDORES.BASE}/buscar-o-crear?${params.toString()}`)
-    return response.data
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/distribuidores/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async search(query: string): Promise<Distribuidor[]> {
-    const response = await apiClient.get<Distribuidor[]>(
-      API_ENDPOINTS.DISTRIBUIDORES.SEARCH,
-      {
-        params: { query },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/distribuidores/search', {
+        params: {
+          query: { query },
+        },
+      })
+    ) as any
+  },
+
+  async buscarOCrear(nombre?: string, codigo?: string): Promise<Distribuidor> {
+    return handleResponse(
+      (openapiClient as any).POST('/api/v1/distribuidores/buscar-o-crear', {
+        body: { nombre, codigo } as any,
+      })
+    ) as any
   },
 }

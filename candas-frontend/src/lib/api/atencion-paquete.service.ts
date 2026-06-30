@@ -1,6 +1,5 @@
-import type { AtencionPaquete,AtencionPaquetePage } from '@/types/atencion-paquete'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import type { AtencionPaquete, AtencionPaquetePage } from '@/types/atencion-paquete'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface AtencionPaqueteFindAllParams {
   page?: number
@@ -25,60 +24,76 @@ export const atencionPaqueteService = {
       fechaHasta,
       idAgencia,
     } = params
-    const query: Record<string, string | number> = { page, size }
-    if (estado && estado !== 'all') query.estado = estado
-    if (search?.trim()) query.search = search.trim()
-    if (tipoProblema && tipoProblema !== 'all') query.tipoProblema = tipoProblema
-    if (fechaDesde) query.fechaDesde = fechaDesde
-    if (fechaHasta) query.fechaHasta = fechaHasta
-    if (idAgencia != null) query.idAgencia = idAgencia
-    const response = await apiClient.get<AtencionPaquetePage>(
-      API_ENDPOINTS.ATENCION_PAQUETES.BASE,
-      { params: query }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/atenciones', {
+        params: {
+          query: {
+            pageable: { page, size },
+            estado: estado === 'all' ? undefined : estado,
+            search,
+            tipoProblema: tipoProblema === 'all' ? undefined : tipoProblema,
+            fechaDesde,
+            fechaHasta,
+            idAgencia,
+          },
+        },
+      })
+    ) as any
   },
 
   async findById(id: number): Promise<AtencionPaquete> {
-    const response = await apiClient.get<AtencionPaquete>(
-      API_ENDPOINTS.ATENCION_PAQUETES.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/atenciones/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
-
   async findPendientes(): Promise<AtencionPaquete[]> {
-    const response = await apiClient.get<AtencionPaquete[]>(
-      `${API_ENDPOINTS.ATENCION_PAQUETES.BASE}/pendientes`
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/atenciones/pendientes')
+    ) as any
   },
 
   async create(dto: AtencionPaquete): Promise<AtencionPaquete> {
-    const response = await apiClient.post<AtencionPaquete>(
-      API_ENDPOINTS.ATENCION_PAQUETES.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/atenciones', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   async update(id: number, dto: AtencionPaquete): Promise<AtencionPaquete> {
-    const response = await apiClient.put<AtencionPaquete>(
-      API_ENDPOINTS.ATENCION_PAQUETES.BY_ID(id),
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/atenciones/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   async resolver(id: number, observacionesResolucion: string): Promise<AtencionPaquete> {
-    const response = await apiClient.put<AtencionPaquete>(
-      `${API_ENDPOINTS.ATENCION_PAQUETES.BY_ID(id)}/resolver`,
-      { observacionesResolucion }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/atenciones/{id}/resolver', {
+        params: {
+          path: { id },
+        },
+        body: { observacionesResolucion } as any,
+      })
+    ) as any
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.ATENCION_PAQUETES.BY_ID(id))
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/atenciones/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 }

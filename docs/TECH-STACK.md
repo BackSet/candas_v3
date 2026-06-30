@@ -115,7 +115,8 @@ Los PDF se generan en el frontend con **jspdf**. Para reportes PDF en backend ve
 ### HTTP y datos
 | Librería | Versión | Uso |
 |----------|---------|-----|
-| **Axios** | 1.13.x | Cliente HTTP (interceptores JWT) |
+| **openapi-fetch** | 0.13.x | Cliente HTTP (interceptores JWT) |
+| **openapi-typescript** | 7.x | Generación de tipos TypeScript desde OpenAPI |
 
 ### Exportación y códigos
 | Librería | Versión | Uso |
@@ -130,6 +131,8 @@ Los PDF se generan en el frontend con **jspdf**. Para reportes PDF en backend ve
 |----------|-----|
 | **ESLint** + plugins (react-hooks, react-refresh) | Linting |
 | **typescript-eslint** | Reglas TypeScript |
+| **Vitest** | Framework de pruebas unitarias y de integración |
+| **React Testing Library** | Pruebas de componentes React |
 | **@types/node**, **@types/react**, **@types/react-dom**, **@types/qrcode**, **@types/xlsx** | Definiciones de tipos |
 
 ---
@@ -137,6 +140,6 @@ Los PDF se generan en el frontend con **jspdf**. Para reportes PDF en backend ve
 ## Resumen rápido
 
 - **Backend:** Java 25 + Spring Boot 4 + JPA/Flyway/PostgreSQL + JWT (jjwt 0.12.5) + Springdoc OpenAPI + Apache POI + Lombok.
-- **Frontend:** React 19 + Vite 7 + TypeScript 5.9 + Tailwind 4 + TanStack Router & Query + Zustand + React Hook Form + Zod + Radix UI + Axios + Sonner + Lucide.
+- **Frontend:** React 19 + Vite 7 + TypeScript 5.9 + Tailwind 4 + TanStack Router & Query + Zustand + React Hook Form + Zod + Radix UI + openapi-fetch + Vitest + Sonner + Lucide.
 
 Las versiones exactas se mantienen en `candas-backend/pom.xml` y `candas-frontend/package.json`.

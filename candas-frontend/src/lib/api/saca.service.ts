@@ -1,7 +1,6 @@
 import type { Paquete } from '@/types/paquete'
-import type { Saca,SacaPage } from '@/types/saca'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import type { Saca, SacaPage } from '@/types/saca'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface SacaFindAllParams {
   page?: number
@@ -14,72 +13,97 @@ export interface SacaFindAllParams {
 export const sacaService = {
   async findAll(params: SacaFindAllParams = {}): Promise<SacaPage> {
     const { page = 0, size = 20, search, idDespacho, tamano } = params
-    const query: Record<string, string | number> = { page, size }
-    if (search?.trim()) query.search = search.trim()
-    if (idDespacho != null) query.idDespacho = idDespacho
-    if (tamano && tamano !== 'all') query.tamano = tamano
-    const response = await apiClient.get<SacaPage>(
-      API_ENDPOINTS.SACAS.BASE,
-      { params: query }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/sacas', {
+        params: {
+          query: {
+            pageable: { page, size },
+            search,
+            idDespacho,
+            tamano: tamano === 'all' ? undefined : tamano,
+          },
+        },
+      })
+    ) as any
   },
 
   async findById(id: number): Promise<Saca> {
-    const response = await apiClient.get<Saca>(
-      API_ENDPOINTS.SACAS.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/sacas/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async create(dto: Saca): Promise<Saca> {
-    const response = await apiClient.post<Saca>(
-      API_ENDPOINTS.SACAS.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/sacas', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   async update(id: number, dto: Saca): Promise<Saca> {
-    const response = await apiClient.put<Saca>(
-      API_ENDPOINTS.SACAS.BY_ID(id),
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/sacas/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.SACAS.BY_ID(id))
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/sacas/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async agregarPaquetes(id: number, idPaquetes: number[]): Promise<void> {
-    await apiClient.post(
-      `${API_ENDPOINTS.SACAS.BY_ID(id)}/paquetes`,
-      { idPaquetes }
-    )
+    return handleResponse(
+      openapiClient.POST('/api/v1/sacas/{id}/paquetes', {
+        params: {
+          path: { id },
+        },
+        body: { idPaquetes } as any,
+      })
+    ) as any
   },
 
   async obtenerPaquetes(id: number): Promise<Paquete[]> {
-    const response = await apiClient.get<Paquete[]>(
-      `${API_ENDPOINTS.SACAS.BY_ID(id)}/paquetes`
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/sacas/{id}/paquetes', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async calcularPeso(id: number): Promise<Saca> {
-    const response = await apiClient.put<Saca>(
-      `${API_ENDPOINTS.SACAS.BY_ID(id)}/calcular-peso`
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/sacas/{id}/calcular-peso', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async search(query: string): Promise<Saca[]> {
-    const response = await apiClient.get<Saca[]>(
-      API_ENDPOINTS.SACAS.SEARCH,
-      {
-        params: { query },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/sacas/search', {
+        params: {
+          query: { query },
+        },
+      })
+    ) as any
   },
 }

@@ -6,14 +6,13 @@
 - Repositorio remoto: `https://github.com/BackSet/candas_v3.git`. [verificado en Git]
 - Rama base de trabajo para agentes: `dev`. [verificado en Git]
 - Ruta de contexto IA: `docs/ai`. [verificado en Git]
-- Proposito declarado: sistema de gestion logistica y operativa. [verificado en documentacion: `README.md`]
+- Proposito de la aplicacion: sistema de gestion logistica y operativa. [verificado en documentacion: `README.md`]
 
 ## Estado de inspeccion
 
-- La rama activa al crear este contexto era `dev`. [verificado en Git]
-- `git status --short --branch` estaba limpio antes de editar. [verificado en Git]
-- Los cuatro archivos canonicos de `docs/ai` no existian antes de esta implementacion. [verificado en Git]
-- Este documento usa como fuente principal el codigo y la configuracion ejecutable de la rama `dev`. [verificado en Git]
+- La rama activa es `dev`. [verificado en Git]
+- `git status --short --branch` limpio antes de la iteración. [verificado en Git]
+- Los cuatro archivos canonicos de `docs/ai` existen y reflejan el stack tecnológico actual. [verificado en Git]
 
 ## Estructura principal
 
@@ -21,7 +20,6 @@
 - `candas-frontend/`: SPA React/Vite/TypeScript, rutas, paginas, hooks, services API, stores, componentes UI, Dockerfile y configuracion Railway. [verificado en Git]
 - `docs/`: documentacion funcional, tecnica, despliegue, UX/UI y arquitectura. [verificado en documentacion]
 - `docs/ai/`: contexto tecnico canonico para IA y agentes. [verificado en Git]
-- `archivos de prueba/`, `resmas/`, `scripts/`, `.cursor/`, `.agent/`, `.obsidian/`, `.vscode/`: artefactos auxiliares o locales; no son fuente primaria salvo que una tarea lo indique. [inferido]
 
 ## Stack confirmado
 
@@ -32,15 +30,14 @@
 - Starters: Web MVC, Security, Data JPA, Validation, Flyway, Actuator, Test. [verificado en Git: `candas-backend/pom.xml`]
 - PostgreSQL JDBC runtime y Flyway PostgreSQL. [verificado en Git: `candas-backend/pom.xml`]
 - JJWT `0.13.0`. [verificado en Git: `candas-backend/pom.xml`]
-- Springdoc OpenAPI `3.0.3`. [verificado en Git: `candas-backend/pom.xml`]
+- Springdoc OpenAPI con integración de Scalar `3.0.3`. [verificado en Git: `candas-backend/pom.xml`]
 - MapStruct `1.6.3`, Lombok, Apache POI `5.5.1`, JasperReports `7.0.7`, Barbecue `1.5-beta1`. [verificado en Git: `candas-backend/pom.xml`]
-- Nota: algunas docs historicas mencionan Spring Boot `4.0.1`, JJWT `0.12.5` y Springdoc `2.7.0`; las versiones ejecutables del `pom.xml` prevalecen. [verificado en documentacion] [verificado en Git]
 
 ### Frontend
 
 - React `19.2.7`, React DOM `19.2.7`, TypeScript `~5.9.3`, Vite `^7.3.5`. [verificado en Git: `candas-frontend/package.json`]
 - TanStack Router `^1.170.15`, TanStack Query `^5.101.0`, Zustand `^5.0.14`. [verificado en Git]
-- React Hook Form, Zod, Radix UI, Axios, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
+- React Hook Form, Zod, Radix UI, openapi-fetch, openapi-typescript, Vitest, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
 - Build con Vite y TypeScript; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
 
 ## Arquitectura por capa
@@ -59,15 +56,15 @@
 - Rutas TanStack centralizadas en `src/routeTree.gen.tsx` y layout protegido en `src/routes/_layout.tsx`. [verificado en Git]
 - Layout y navegacion en `src/app/layout` y `src/config/navigation.ts`. [verificado en Git]
 - Paginas por modulo en `src/pages/<modulo>`. [verificado en Git]
-- Services API en `src/lib/api/*.service.ts`, endpoints en `src/lib/api/endpoints.ts` y cliente Axios en `src/lib/api/client.ts`. [verificado en Git]
+- Services API en `src/lib/api/*.service.ts`, endpoints en `src/lib/api/endpoints.ts` y cliente openapi-fetch en `src/lib/api/openapi-client.ts`. [verificado en Git]
 - Hooks por dominio en `src/hooks`, schemas Zod en `src/schemas`, tipos en `src/types`, stores Zustand en `src/stores`. [verificado en Git]
 - Componentes reutilizables en `src/components`, incluyendo UI base, tablas, filtros, dialogs, estados y componentes por modulo. [verificado en Git]
 
 ## Contratos y convenciones
 
 - API publica backend: `/api/auth/*` para autenticacion y `/api/v1/*` para dominios. [verificado en Git]
-- Frontend consume `VITE_API_BASE_URL` en produccion; en desarrollo usa variable si existe, modo LAN o `http://localhost:8080`. [verificado en Git: `client.ts`]
-- Cliente Axios agrega `Authorization: Bearer <token>` y, si existe, `X-Agencia-Origen-Activa-Id`. [verificado en Git]
+- Frontend consume `VITE_API_BASE_URL` en produccion; en desarrollo usa la variable si existe, modo LAN o `http://localhost:8080`. [verificado en Git: `openapi-client.ts`]
+- Cliente openapi-fetch agrega `Authorization: Bearer <token>` y, si existe, `X-Agencia-Origen-Activa-Id`. [verificado en Git]
 - Endpoints canonicos frontend: `src/lib/api/endpoints.ts`. [verificado en Git]
 - Permisos canonicos backend: `PermissionConstants.java`; espejo frontend: `src/types/permissions.ts`. [verificado en Git]
 - Alias frontend: `@` apunta a `candas-frontend/src`. [verificado en Git: `vite.config.ts`]
@@ -76,7 +73,7 @@
 ## Seguridad y permisos
 
 - Spring Security deshabilita CSRF, usa sesiones stateless y JWT. [verificado en Git]
-- Endpoints publicos: `OPTIONS /**`, `/api/auth/login`, `/api/auth/register`, `/actuator/health`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html`. [verificado en Git: `SecurityConfig.java`]
+- Endpoints publicos: `OPTIONS /**`, `/api/auth/login`, `/api/auth/register`, `/actuator/health`, `/scalar`, `/scalar/**`, `/v3/api-docs/**`. [verificado en Git: `SecurityConfig.java`]
 - Todo lo demas requiere autenticacion por defecto. [verificado en Git]
 - `@EnableMethodSecurity(prePostEnabled = true)` habilita reglas `@PreAuthorize`. [verificado en Git]
 - CORS se configura por `app.cors.allowed-origins` / `CORS_ALLOWED_ORIGINS`; allowed methods: `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`, `PATCH`; headers: `Authorization`, `Content-Type`, `Accept`, `X-Agencia-Origen-Activa-Id`; credentials deshabilitado. [verificado en Git: `CorsConfig.java`]
@@ -115,7 +112,7 @@ cd candas-backend
 ./mvnw test
 ```
 
-- Confirmados por `README.md`, `docs/DEPLOYMENT.md`, `Dockerfile`, `pom.xml` y la presencia de tests en `candas-backend/src/test`. No se ejecutaron build/test completos durante esta auditoria para evitar cambios funcionales o ruido de artefactos. [verificado en documentacion] [verificado en Git]
+- Confirmados por `README.md`, `docs/DEPLOYMENT.md`, `Dockerfile`, `pom.xml` y la presencia de tests en `candas-backend/src/test`. [verificado en documentacion] [verificado en Git]
 
 Frontend:
 
@@ -127,9 +124,11 @@ npm run dev
 npm run build
 npm run lint
 npm run preview
+npm run test
+npm run test:run
 ```
 
-- `dev`, `build`, `lint`, `preview` estan en `package.json`; `npm ci` esta en Dockerfile y docs de despliegue; `npm install` esta en README. [verificado en Git] [verificado en documentacion]
+- `dev`, `build`, `lint`, `preview`, `test` y `test:run` estan en `package.json`; `npm ci` esta en Dockerfile y docs de despliegue; `npm install` esta en README. [verificado en Git] [verificado en documentacion]
 
 Validacion Git:
 
@@ -156,6 +155,6 @@ git status --short
 ## Pendientes de confirmar
 
 - Estrategia formal de CI/CD fuera de Railway; no se encontro workflow local. [pendiente de confirmar]
-- Cobertura completa de pruebas automatizadas y matriz de QA: existen tests backend en `candas-backend/src/test`, pero no se confirmo cobertura integral ni pruebas frontend. [pendiente de confirmar]
-- Politica final de perfiles locales y puertos entre `README.md`, `CONFIGURACION_RED_LOCAL.md` y `.env.example`, que muestran valores distintos por contexto. [pendiente de confirmar]
-- Estado actual de documentos historicos con versiones antiguas del stack. [pendiente de confirmar]
+- Cobertura completa de pruebas automatizadas y matriz de QA: existen tests backend en `candas-backend/src/test`, y pruebas unitarias de integración del cliente API en frontend (`src/lib/api/openapi-client.test.ts`, `usuario.service.test.ts`), pero no se confirmó cobertura integral de componentes. [pendiente de confirmar]
+- Politica de perfiles locales y puertos entre `README.md`, `CONFIGURACION_RED_LOCAL.md` y `.env.example`, que muestran valores distintos por contexto. [pendiente de confirmar]
+- Estado de vigencia de otros documentos históricos menores. [pendiente de confirmar]

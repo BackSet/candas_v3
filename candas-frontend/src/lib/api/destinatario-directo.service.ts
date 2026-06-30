@@ -1,6 +1,5 @@
-import type { DestinatarioDirecto,DestinatarioDirectoPage } from '@/types/destinatario-directo'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import type { DestinatarioDirecto, DestinatarioDirectoPage } from '@/types/destinatario-directo'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface DestinatarioDirectoFindAllParams {
   page?: number
@@ -10,70 +9,73 @@ export interface DestinatarioDirectoFindAllParams {
 }
 
 export const destinatarioDirectoService = {
-  /**
-   * Endpoint paginado con filtros server-side. Es el `findAll` por defecto, alineado con el
-   * resto de servicios de catálogos (objeto de parámetros).
-   */
-  async findAll(
-    params: DestinatarioDirectoFindAllParams = {}
-  ): Promise<DestinatarioDirectoPage> {
+  async findAll(params: DestinatarioDirectoFindAllParams = {}): Promise<DestinatarioDirectoPage> {
     const { page = 0, size = 20, search, activo } = params
-    const queryParams: Record<string, string | number | boolean> = { page, size }
-    if (search && search.trim()) queryParams.search = search.trim()
-    if (activo !== undefined) queryParams.activo = activo
-    const response = await apiClient.get<DestinatarioDirectoPage>(
-      API_ENDPOINTS.DESTINATARIOS_DIRECTOS.BASE,
-      { params: queryParams }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/destinatarios-directos', {
+        params: {
+          query: {
+            pageable: { page, size },
+            search,
+            activo,
+          },
+        },
+      })
+    ) as any
   },
 
-  /**
-   * Devuelve TODOS los destinatarios sin paginar. Solo para selects/listas reducidas.
-   * Usa el endpoint `/all` que se mantiene para conservar el comportamiento histórico
-   * que devolvía un array plano.
-   */
   async findAllNoPaginado(): Promise<DestinatarioDirecto[]> {
-    const response = await apiClient.get<DestinatarioDirecto[]>(
-      API_ENDPOINTS.DESTINATARIOS_DIRECTOS.ALL
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/destinatarios-directos/no-paginado')
+    ) as any
   },
 
   async findById(id: number): Promise<DestinatarioDirecto> {
-    const response = await apiClient.get<DestinatarioDirecto>(
-      API_ENDPOINTS.DESTINATARIOS_DIRECTOS.BY_ID(id)
-    )
-    return response.data
-  },
-
-  async search(query: string): Promise<DestinatarioDirecto[]> {
-    const response = await apiClient.get<DestinatarioDirecto[]>(
-      API_ENDPOINTS.DESTINATARIOS_DIRECTOS.SEARCH,
-      {
-        params: { query },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/destinatarios-directos/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async create(dto: DestinatarioDirecto): Promise<DestinatarioDirecto> {
-    const response = await apiClient.post<DestinatarioDirecto>(
-      API_ENDPOINTS.DESTINATARIOS_DIRECTOS.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/destinatarios-directos', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   async update(id: number, dto: DestinatarioDirecto): Promise<DestinatarioDirecto> {
-    const response = await apiClient.put<DestinatarioDirecto>(
-      API_ENDPOINTS.DESTINATARIOS_DIRECTOS.BY_ID(id),
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/destinatarios-directos/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.DESTINATARIOS_DIRECTOS.BY_ID(id))
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/destinatarios-directos/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
+  },
+
+  async search(query: string): Promise<DestinatarioDirecto[]> {
+    return handleResponse(
+      openapiClient.GET('/api/v1/destinatarios-directos/search', {
+        params: {
+          query: { query },
+        },
+      })
+    ) as any
   },
 }

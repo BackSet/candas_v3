@@ -124,10 +124,10 @@
 			<version>0.13.0</version>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- Swagger/OpenAPI -->
+		<!-- Scalar/OpenAPI -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
-			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<artifactId>springdoc-openapi-starter-webmvc-scalar</artifactId>
 			<version>3.0.3</version>
 		</dependency>
 		<!-- MapStruct for DTO mapping -->

@@ -1,7 +1,6 @@
-import type { Despacho,DespachoPage } from '@/types/despacho'
+import type { Despacho, DespachoPage } from '@/types/despacho'
 import type { Saca } from '@/types/saca'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export type TipoDestinoDespacho = 'all' | 'agencia' | 'directo'
 
@@ -17,101 +16,129 @@ export const despachoService = {
     } = {}
   ): Promise<DespachoPage> {
     const { page = 0, size = 20, tipoDestino = 'all', fechaDesde, fechaHasta, search } = params
-    const query: Record<string, string | number> = { page, size }
-    if (tipoDestino && tipoDestino !== 'all') {
-      query.tipoDestino = tipoDestino === 'agencia' ? 'AGENCIA' : 'DIRECTO'
-    }
-    if (fechaDesde) query.fechaDesde = fechaDesde
-    if (fechaHasta) query.fechaHasta = fechaHasta
-    if (search && search.trim()) query.search = search.trim()
-    const response = await apiClient.get<DespachoPage>(
-      API_ENDPOINTS.DESPACHOS.BASE,
-      { params: query }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/despachos', {
+        params: {
+          query: {
+            pageable: { page, size },
+            tipoDestino: tipoDestino === 'all' ? undefined : (tipoDestino === 'agencia' ? 'AGENCIA' : 'DIRECTO'),
+            fechaDesde,
+            fechaHasta,
+            search,
+          },
+        },
+      })
+    ) as any
   },
 
   async findById(id: number): Promise<Despacho> {
-    const response = await apiClient.get<Despacho>(
-      API_ENDPOINTS.DESPACHOS.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/despachos/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async create(dto: Despacho): Promise<Despacho> {
-    const response = await apiClient.post<Despacho>(
-      API_ENDPOINTS.DESPACHOS.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/despachos', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   async update(id: number, dto: Despacho): Promise<Despacho> {
-    const response = await apiClient.put<Despacho>(
-      API_ENDPOINTS.DESPACHOS.BY_ID(id),
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/despachos/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.DESPACHOS.BY_ID(id))
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/despachos/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async agregarSacas(id: number, idSacas: number[]): Promise<void> {
-    await apiClient.post(
-      `${API_ENDPOINTS.DESPACHOS.BY_ID(id)}/sacas`,
-      { idSacas }
-    )
+    return handleResponse(
+      (openapiClient as any).POST('/api/v1/despachos/{id}/sacas', {
+        params: {
+          path: { id },
+        },
+        body: { idSacas },
+      })
+    ) as any
   },
 
   async agregarCadenitaAlDespacho(idDespacho: number, numeroGuiaPadre: string): Promise<Saca> {
-    const response = await apiClient.post<Saca>(
-      `${API_ENDPOINTS.DESPACHOS.BY_ID(idDespacho)}/agregar-cadenita`,
-      { numeroGuiaPadre: numeroGuiaPadre.trim().toUpperCase() }
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).POST('/api/v1/despachos/{id}/agregar-cadenita', {
+        params: {
+          path: { id: idDespacho },
+        },
+        body: { numeroGuiaPadre: numeroGuiaPadre.trim().toUpperCase() },
+      })
+    ) as any
   },
 
   async obtenerSacas(id: number): Promise<Saca[]> {
-    const response = await apiClient.get<Saca[]>(
-      `${API_ENDPOINTS.DESPACHOS.BY_ID(id)}/sacas`
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/despachos/{id}/sacas', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async search(query: string): Promise<Despacho[]> {
-    const response = await apiClient.get<Despacho[]>(
-      API_ENDPOINTS.DESPACHOS.SEARCH,
-      {
-        params: { query },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/despachos/search', {
+        params: {
+          query: { query },
+        },
+      })
+    ) as any
   },
 
   async findByPeriodo(fechaDesde: string, fechaHasta: string): Promise<Despacho[]> {
-    const response = await apiClient.get<Despacho[]>(
-      API_ENDPOINTS.DESPACHOS.POR_PERIODO,
-      {
-        params: { fechaDesde, fechaHasta },
-      }
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/despachos/por-periodo', {
+        params: {
+          query: { fechaDesde, fechaHasta },
+        },
+      })
+    ) as any
   },
 
   async marcarComoDespachado(id: number): Promise<number> {
-    const response = await apiClient.post<{ paquetesMarcados: number }>(
-      `${API_ENDPOINTS.DESPACHOS.BY_ID(id)}/marcar-despachado`
-    )
-    return response.data.paquetesMarcados
+    const result = await handleResponse(
+      (openapiClient as any).POST('/api/v1/despachos/{id}/marcar-despachado', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
+    return result.paquetesMarcados
   },
 
   async marcarComoDespachadoBatch(ids: number[]): Promise<number> {
-    const response = await apiClient.post<{ paquetesMarcados: number }>(
-      API_ENDPOINTS.DESPACHOS.MARCAR_DESPACHADO_BATCH,
-      { ids }
-    )
-    return response.data.paquetesMarcados
+    const result = await handleResponse(
+      (openapiClient as any).POST('/api/v1/despachos/acciones/marcar-despachado', {
+        body: { ids },
+      })
+    ) as any
+    return result.paquetesMarcados
   },
 }

@@ -1,14 +1,18 @@
-import type { DespachoMasivoSessionPayload,DespachoMasivoSessionResponse } from '@/types/despacho-masivo-session'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import type { DespachoMasivoSessionPayload, DespachoMasivoSessionResponse } from '@/types/despacho-masivo-session'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export const despachoMasivoSessionService = {
   async getSession(): Promise<DespachoMasivoSessionResponse> {
-    const response = await apiClient.get<DespachoMasivoSessionResponse>(API_ENDPOINTS.DESPACHO_MASIVO.SESSION)
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/despacho-masivo/session')
+    ) as any
   },
 
   async updateSession(payload: DespachoMasivoSessionPayload | Record<string, unknown>): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.DESPACHO_MASIVO.SESSION, { payload })
+    return handleResponse(
+      openapiClient.POST('/api/v1/despacho-masivo/session', {
+        body: { payload } as any,
+      })
+    ) as any
   },
 }

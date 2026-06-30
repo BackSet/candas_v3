@@ -31,7 +31,8 @@ candas v3/
 - **React Hook Form 7** + **Zod 4** — Formularios y validación
 - **Tailwind CSS 4** — Estilos
 - **Radix UI** — Componentes headless
-- **Axios** — HTTP client con interceptores JWT
+- **openapi-fetch** & **openapi-typescript** — Cliente HTTP y generación de tipos OpenAPI nativos
+- **Vitest** & **React Testing Library** — Pruebas unitarias y de componentes
 
 ## Requisitos previos
 

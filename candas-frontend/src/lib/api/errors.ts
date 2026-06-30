@@ -85,3 +85,29 @@ export function getInteragencyRestrictionMessage(error: unknown): string | null 
     'No tienes permiso para ver o asignar recursos de otra agencia.'
   )
 }
+
+/**
+ * Error personalizado para peticiones de openapi-fetch.
+ * Mapea la respuesta a un formato compatible con ApiError de Axios.
+ */
+export class ApiFetchError extends Error {
+  response?: {
+    status?: number
+    data?: any
+  }
+  constructor(response: Response, errorData: any) {
+    super(
+      errorData?.message ||
+        errorData?.detail ||
+        errorData?.reason ||
+        response.statusText ||
+        'Error en la petición API'
+    )
+    this.name = 'ApiFetchError'
+    this.response = {
+      status: response.status,
+      data: errorData,
+    }
+  }
+}
+
