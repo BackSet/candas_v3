@@ -134,6 +134,7 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 - Frontend navegacion/permisos: `src/config/navigation.ts`, `src/types/permissions.ts`.
 - Frontend API: `src/lib/api/openapi-client.ts` (cliente openapi-fetch central: `publicClient`/`authClient`, alias `openapiClient`, `unwrap`/`handleResponse`), `src/lib/api/generated/schema.ts` (contrato generado), `src/lib/api/endpoints.ts`, `src/lib/api/*.service.ts`.
 - Frontend UI: `src/pages`, `src/components`, `src/hooks`, `src/schemas`, `src/types`, `src/stores`, `src/utils`.
+- Base UI/UX (contrato visual canónico): `docs/ai/UI_UX_BASE.md` (tokens `src/index.css`, primitivas `src/components/ui`, estados `src/components/states`, layouts `src/app/layout` y `src/components/detail`).
 - Documentacion: `README.md`, `docs/README.md`, `docs/ARQUITECTURA_BACKEND.md`, `docs/TECH-STACK.md`, `docs/DEPLOYMENT.md`, `candas-frontend/docs`, `candas-backend/docs`.
 
 ## Tests y documentacion relacionada

@@ -253,11 +253,8 @@ export default function RolDetail() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Estado</span>
                     <Badge
-                      variant="secondary"
-                      className={`text-[10px] px-2 py-0.5 rounded-md border-0 font-semibold ${rol.activo !== false
-                          ? 'bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                          : 'bg-red-100/80 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                        }`}
+                      variant={rol.activo !== false ? 'success' : 'error'}
+                      className="text-[10px] px-2 py-0.5 rounded-md font-semibold"
                     >
                       {rol.activo !== false ? 'Activo' : 'Inactivo'}
                     </Badge>

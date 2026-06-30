@@ -351,9 +351,9 @@ export default function PaquetesList() {
                 <ProtectedByPermission permission={PERMISSIONS.PAQUETES.EDITAR}>
                   <DropdownMenuItem
                     onClick={() => setImportActualizarDialogOpen(true)}
-                    className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300 data-[highlighted]:bg-red-500/10 data-[highlighted]:text-red-700 dark:data-[highlighted]:text-red-300"
+                    className="text-destructive focus:text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive"
                   >
-                    <AlertTriangle className="h-3.5 w-3.5 mr-2 text-red-600 dark:text-red-400" /> Importar y Actualizar Excel
+                    <AlertTriangle className="h-3.5 w-3.5 mr-2 text-destructive" /> Importar y Actualizar Excel
                   </DropdownMenuItem>
                 </ProtectedByPermission>
 

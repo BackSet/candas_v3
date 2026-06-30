@@ -275,7 +275,7 @@ export function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    className="rounded-lg text-[13px] gap-2 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
+                    className="rounded-lg text-[13px] gap-2 text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
                   >
                     <LogOut className="h-4 w-4" />
                     Cerrar Sesión

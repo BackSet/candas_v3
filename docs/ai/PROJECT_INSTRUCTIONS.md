@@ -48,6 +48,7 @@ No usar como fuente canonica:
 - No convertir los archivos canonicos en changelog. [verificado en documentacion de la solicitud]
 - No duplicar documentacion extensa si existe una fuente canonica; enlazar o resumir. [verificado en documentacion de la solicitud]
 - Mantener idioma, casing, arquitectura, convenciones y patrones existentes salvo que la tarea pida cambiarlos. [verificado en documentacion de la solicitud]
+- UI/UX: seguir el contrato de [`docs/ai/UI_UX_BASE.md`](UI_UX_BASE.md). Reutilizar tokens (`src/index.css`) y componentes existentes (`components/ui`, `components/states`, layouts) antes de crear nuevos; no usar paletas crudas de Tailwind (usar tokens semánticos). [verificado en Git]
 
 ## Mantenimiento obligatorio de contexto IA
 
@@ -57,6 +58,7 @@ Despues de cada implementacion que cambie comportamiento, arquitectura, rutas, e
 - Revisar `docs/ai/MODULE_MAP.md`. [verificado en documentacion de la solicitud]
 - Revisar `docs/ai/NAMING.md`. [verificado en documentacion de la solicitud]
 - Revisar `docs/ai/PROJECT_INSTRUCTIONS.md`. [verificado en documentacion de la solicitud]
+- Revisar `docs/ai/UI_UX_BASE.md` cuando el cambio afecte UI, tokens, componentes base, tema o patrones de pantalla. [verificado en Git]
 - Actualizar solo informacion canonica real y vigente. [verificado en documentacion de la solicitud]
 - Marcar incertidumbres como `[pendiente de confirmar]`. [verificado en documentacion de la solicitud]
 

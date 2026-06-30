@@ -271,7 +271,7 @@ export default function CrearDespachoMasivoDialog({
       <DialogContent ref={dialogContentRef} className="max-w-4xl w-[calc(100vw-1.5rem)] sm:w-full max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-5 shrink-0 border-b border-border bg-muted/30">
           <DialogTitle className="flex items-center gap-3 text-xl font-semibold">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/15 text-success">
               <Truck className="h-6 w-6" />
             </div>
             Crear Despacho Masivo
@@ -513,7 +513,7 @@ export default function CrearDespachoMasivoDialog({
                 <div className="grid gap-2">
                   <Label className="text-sm font-medium">Usuario registro</Label>
                   <div className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-base text-foreground flex items-center gap-2.5 min-h-11">
-                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-success animate-pulse" />
                     {userNombreCompleto ?? '—'}
                   </div>
                 </div>
@@ -611,7 +611,7 @@ export default function CrearDespachoMasivoDialog({
                       'font-mono text-xl h-14 tracking-wide px-4',
                       !isValidDist
                         ? 'border-destructive focus-visible:ring-destructive'
-                        : 'border-emerald-500 focus-visible:ring-emerald-500'
+                        : 'border-success focus-visible:ring-success'
                     )}
                   />
                 </div>
@@ -660,7 +660,7 @@ export default function CrearDespachoMasivoDialog({
                   </p>
                 )}
                 {isValidDist && (
-                  <p className="text-sm text-emerald-600 font-semibold">Total correcto.</p>
+                  <p className="text-sm text-success font-semibold">Total correcto.</p>
                 )}
               </div>
               <div className="shrink-0 flex flex-col items-center justify-center rounded-xl border-2 border-border bg-muted/30 px-8 py-6 min-w-[120px]">
@@ -668,7 +668,7 @@ export default function CrearDespachoMasivoDialog({
                 <span
                   className={cn(
                     'text-4xl font-bold font-mono mt-1',
-                    isValidDist ? 'text-emerald-600' : 'text-destructive'
+                    isValidDist ? 'text-success' : 'text-destructive'
                   )}
                 >
                   {totalDist}
@@ -759,7 +759,7 @@ export default function CrearDespachoMasivoDialog({
             type="button"
             onClick={onConfirm}
             disabled={confirmDisabled}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[180px] h-11 text-base font-medium"
+            className="bg-success hover:bg-success/90 text-success-foreground min-w-[180px] h-11 text-base font-medium"
           >
             <Truck className="w-5 h-5 mr-2" />
             Confirmar Despacho
