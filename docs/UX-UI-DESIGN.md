@@ -8,7 +8,7 @@ Documento de referencia del diseño de experiencia de usuario (UX) e interfaz (U
 
 **Propósito:** Este documento detalla las decisiones de diseño UX/UI del proyecto Candas para mantener consistencia y servir de guía a desarrolladores y diseñadores.
 
-**Alcance:** Aplica al frontend (`candas-frontend`), construido con React 19, TypeScript, Vite 7 y Tailwind CSS 4. No cubre el backend ni otros clientes.
+**Alcance:** Aplica al frontend (`candas-frontend`), construido con React 19, TypeScript 6, Vite 8 y Tailwind CSS 4. No cubre el backend ni otros clientes.
 
 ---
 
@@ -107,8 +107,13 @@ Archivo: `candas-frontend/src/app/layout/Sidebar.tsx`.
 ### 3.3 Header
 
 - **Barra:** `sticky top-0 z-40`, altura `h-12`, `border-b border-border/40`, `bg-background/80 backdrop-blur-xl`.
-- **Búsqueda global:** Input de solo lectura que abre la Command Palette al hacer clic o con ⌘K/Ctrl+K; placeholder "Buscar paquetes, navegar..."; icono lupa y tecla ⌘K a la derecha.
-- **Acciones:** Botón de notificaciones (icono campana), menú de usuario (avatar con iniciales del username, dropdown con nombre, email, roles en badges y opción "Cerrar Sesión").
+- **Búsqueda global responsiva:** 
+  - En pantallas medianas y grandes (`sm:block`), se muestra el input de búsqueda completo de solo lectura que abre la Command Palette al hacer clic o con ⌘K/Ctrl+K.
+  - En pantallas móviles pequeñas (`sm:hidden`), el input se reemplaza por un botón de lupa compacto (`Search`) para evitar saturación de espacio.
+- **Acciones y adaptabilidad móvil:**
+  - El selector de agencias activa se reduce a `w-[110px]` en móvil y aplica truncamiento (`truncate`) para no empujar la interfaz.
+  - Los botones redundantes (como el cambio de tema) se ocultan en móvil (`hidden md:inline-flex`) porque ya se encuentran integrados de forma nativa en la parte inferior del Sidebar, garantizando una cabecera limpia sin desbordamiento horizontal en viewports de hasta 320 px.
+  - Menú de usuario con dropdown detallado que expone roles y agencia activa.
 
 Archivo: `candas-frontend/src/app/layout/Header.tsx`.
 
@@ -179,7 +184,7 @@ Tamaños: `default` (h-9), `sm` (h-8, text-xs), `lg` (h-10), `icon` (h-9 w-9). F
 
 ### 5.4 Diálogos
 
-Patrón: `Dialog` > `DialogContent` (max-w-lg por defecto) > `DialogHeader` (DialogTitle, DialogDescription) > contenido > `DialogFooter` (botones). Overlay con transición; botón cerrar accesible y `sr-only` para lectores de pantalla.
+Patrón: `Dialog` > `DialogContent` (ancho responsivo `w-[calc(100%-2rem)]` y `max-w-lg` por defecto) > `DialogHeader` (DialogTitle, DialogDescription) > contenido > `DialogFooter` (botones). El ancho calculado asegura márgenes laterales estéticos de 1rem a cada lado del modal en dispositivos móviles inferiores a 512 px. Overlay con transición; botón cerrar accesible y `sr-only` para lectores de pantalla.
 
 ### 5.5 Estados de interfaz
 

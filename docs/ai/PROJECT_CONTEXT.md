@@ -27,18 +27,19 @@
 
 - Java 25. [verificado en Git: `candas-backend/pom.xml`, `candas-backend/Dockerfile`]
 - Spring Boot `4.1.0` como parent Maven. [verificado en Git: `candas-backend/pom.xml`]
-- Starters: Web MVC, Security, Data JPA, Validation, Flyway, Actuator, Test. [verificado en Git: `candas-backend/pom.xml`]
+- Starters: Web MVC, Security, Data JPA, Validation, Flyway, Actuator, Test, Data JPA Test. [verificado en Git: `candas-backend/pom.xml`]
 - PostgreSQL JDBC runtime y Flyway PostgreSQL. [verificado en Git: `candas-backend/pom.xml`]
 - JJWT `0.13.0`. [verificado en Git: `candas-backend/pom.xml`]
 - Springdoc OpenAPI con integración de Scalar `3.0.3`. [verificado en Git: `candas-backend/pom.xml`]
 - MapStruct `1.6.3`, Lombok, Apache POI `5.5.1`, JasperReports `7.0.7`, Barbecue `1.5-beta1`. [verificado en Git: `candas-backend/pom.xml`]
+- Testcontainers (PostgreSQL) y Spring Modulith (starter-test, docs) en ámbito de pruebas de calidad. [verificado en Git: `candas-backend/pom.xml`]
 
 ### Frontend
 
-- React `19.2.7`, React DOM `19.2.7`, TypeScript `~5.9.3`, Vite `^7.3.5`. [verificado en Git: `candas-frontend/package.json`]
+- React `19.2.7`, React DOM `19.2.7`, TypeScript `~6.0.3`, Vite `^8.1.0`. [verificado en Git: `candas-frontend/package.json`]
 - TanStack Router `^1.170.15`, TanStack Query `^5.101.0`, Zustand `^5.0.14`. [verificado en Git]
 - React Hook Form, Zod, Radix UI, openapi-fetch, openapi-typescript, Vitest, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
-- Build con Vite y TypeScript; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
+- Build con Vite 8 y TypeScript 6; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
 
 ## Arquitectura por capa
 
@@ -56,7 +57,7 @@
 - Rutas TanStack centralizadas en `src/routeTree.gen.tsx` y layout protegido en `src/routes/_layout.tsx`. [verificado en Git]
 - Layout y navegacion en `src/app/layout` y `src/config/navigation.ts`. [verificado en Git]
 - Paginas por modulo en `src/pages/<modulo>`. [verificado en Git]
-- Services API en `src/lib/api/*.service.ts`, endpoints en `src/lib/api/endpoints.ts` y cliente openapi-fetch en `src/lib/api/openapi-client.ts`. [verificado en Git]
+- Services API en `src/lib/api/*.service.ts`, endpoints en `src/lib/api/endpoints.ts` y cliente openapi-fetch en `src/lib/api/openapi-client.ts` (dividido en `publicClient` y `authClient` con helpers `unwrap`/`ensureOk` y gestión aislada en `http-feedback.ts`). [verificado en Git]
 - Hooks por dominio en `src/hooks`, schemas Zod en `src/schemas`, tipos en `src/types`, stores Zustand en `src/stores`. [verificado en Git]
 - Componentes reutilizables en `src/components`, incluyendo UI base, tablas, filtros, dialogs, estados y componentes por modulo. [verificado en Git]
 
@@ -112,7 +113,7 @@ cd candas-backend
 ./mvnw test
 ```
 
-- Confirmados por `README.md`, `docs/DEPLOYMENT.md`, `Dockerfile`, `pom.xml` y la presencia de tests en `candas-backend/src/test`. [verificado en documentacion] [verificado en Git]
+- Confirmados por `README.md`, `docs/DEPLOYMENT.md`, `Dockerfile`, `pom.xml` y la presencia de tests en `candas-backend/src/test`. `./mvnw test` ejecuta la suite de pruebas unitarias, la verificación y documentación modular de Spring Modulith, y las pruebas de repositorio con base de datos real en Testcontainers (PostgreSQL). [verificado en documentacion] [verificado en Git]
 
 Frontend:
 

@@ -1,6 +1,7 @@
 import createClient from 'openapi-fetch'
 import { useAuthStore } from '@/stores/authStore'
 import { ApiFetchError } from './errors'
+import { HttpFeedback } from './http-feedback'
 import type { paths } from './generated/schema'
 
 /**
@@ -60,15 +61,36 @@ export function defaultQuerySerializer(query: Record<string, any>): string {
   return params.toString()
 }
 
-// Crear el cliente tipado de openapi-fetch
-export const openapiClient = createClient<paths>({
+/**
+ * Cliente público (sin sesión): para login, registro, etc.
+ */
+export const publicClient = createClient<paths>({
   baseUrl: API_BASE_URL,
   querySerializer: defaultQuerySerializer,
   fetch: (request: any, init?: any) => globalThis.fetch(request, init),
 })
 
-// Registrar middleware para añadir cabeceras y gestionar la respuesta
-openapiClient.use({
+/**
+ * Cliente autenticado: inyecta token y agencia de forma dinámica.
+ */
+export const authClient = createClient<paths>({
+  baseUrl: API_BASE_URL,
+  querySerializer: defaultQuerySerializer,
+  fetch: (request: any, init?: any) => globalThis.fetch(request, init),
+})
+
+// Registrar middleware para cliente público (feedback de errores generales)
+publicClient.use({
+  onResponse({ response }: any) {
+    if (response.status === 401) {
+      HttpFeedback.handleUnauthorized()
+    }
+    return response
+  },
+})
+
+// Registrar middleware para cliente autenticado (inyección de cabeceras y feedback)
+authClient.use({
   onRequest({ request }: any) {
     const { token, activeAgencyId } = useAuthStore.getState()
     if (token) {
@@ -81,29 +103,47 @@ openapiClient.use({
   },
   onResponse({ response }: any) {
     if (response.status === 401) {
-      // Token expirado o inválido - limpiar auth y redirigir a login
-      useAuthStore.getState().logout()
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
-      }
+      HttpFeedback.handleUnauthorized()
     }
     return response
   },
 })
 
 /**
- * Procesa la promesa devuelta por openapi-fetch.
- * Si la respuesta contiene un error (o el status no es exitoso), lanza un ApiFetchError.
- * De lo contrario, retorna los datos tipados.
+ * Alias de compatibilidad hacia atrás para evitar romper los servicios existentes.
+ */
+export const openapiClient = authClient
+
+/**
+ * Valida que una respuesta de openapi-fetch sea exitosa.
+ * Si falla, lanza un ApiFetchError y dispara el feedback de red correspondiente.
+ */
+export function ensureOk(response: Response, errorData: any): void {
+  if (!response.ok) {
+    const error = new ApiFetchError(response, errorData)
+    HttpFeedback.handleError(error, API_BASE_URL)
+    throw error
+  }
+}
+
+/**
+ * Procesa la promesa de openapi-fetch, valida la respuesta y retorna los datos tipados.
+ */
+export async function unwrap<T>(
+  promise: Promise<{ data?: T; error?: any; response: Response }>
+): Promise<T> {
+  const { data, error, response } = await promise
+  ensureOk(response, error)
+  return data as T
+}
+
+/**
+ * Alias de compatibilidad hacia atrás para unwrap.
  */
 export async function handleResponse<T>(
   promise: Promise<{ data?: T; error?: any; response: Response }>
 ): Promise<T> {
-  const { data, error, response } = await promise
-  if (error || !response.ok) {
-    throw new ApiFetchError(response, error)
-  }
-  return data as T
+  return unwrap<T>(promise)
 }
 
 export default openapiClient

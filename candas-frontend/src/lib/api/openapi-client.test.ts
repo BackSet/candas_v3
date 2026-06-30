@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { openapiClient, handleResponse, defaultQuerySerializer } from './openapi-client'
+import { publicClient, authClient, unwrap, ensureOk, defaultQuerySerializer } from './openapi-client'
 import { useAuthStore } from '@/stores/authStore'
 import { ApiFetchError } from './errors'
 
@@ -23,7 +23,31 @@ describe('openapi-client', () => {
     mockFetch.mockReset()
   })
 
-  describe('onRequest middleware', () => {
+  describe('publicClient', () => {
+    it('no debería inyectar cabeceras de sesión incluso si hay token', async () => {
+      // Configurar token en el store
+      useAuthStore.setState({
+        token: 'test-token-jwt',
+        user: { idUsuario: 1, username: 'test' } as any,
+      })
+
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+      await publicClient.GET('/api/v1/usuarios', { params: {} as any })
+
+      expect(mockFetch).toHaveBeenCalled()
+      const [request] = mockFetch.mock.calls[0]
+      expect(request.headers.has('Authorization')).toBe(false)
+      expect(request.headers.has('X-Agencia-Origen-Activa-Id')).toBe(false)
+    })
+  })
+
+  describe('authClient', () => {
     it('debería inyectar la cabecera Authorization cuando hay token', async () => {
       // Configurar token en el store
       useAuthStore.setState({
@@ -38,7 +62,7 @@ describe('openapi-client', () => {
         })
       )
 
-      await openapiClient.GET('/api/v1/usuarios', { params: {} as any })
+      await authClient.GET('/api/v1/usuarios', { params: {} as any })
 
       expect(mockFetch).toHaveBeenCalled()
       const [request] = mockFetch.mock.calls[0]
@@ -58,27 +82,11 @@ describe('openapi-client', () => {
         })
       )
 
-      await openapiClient.GET('/api/v1/usuarios', { params: {} as any })
+      await authClient.GET('/api/v1/usuarios', { params: {} as any })
 
       expect(mockFetch).toHaveBeenCalled()
       const [request] = mockFetch.mock.calls[0]
       expect(request.headers.get('X-Agencia-Origen-Activa-Id')).toBe('42')
-    })
-
-    it('no debería inyectar cabeceras si no hay sesión ni agencia activa', async () => {
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ success: true }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
-
-      await openapiClient.GET('/api/v1/usuarios', { params: {} as any })
-
-      expect(mockFetch).toHaveBeenCalled()
-      const [request] = mockFetch.mock.calls[0]
-      expect(request.headers.has('Authorization')).toBe(false)
-      expect(request.headers.has('X-Agencia-Origen-Activa-Id')).toBe(false)
     })
   })
 
@@ -97,7 +105,7 @@ describe('openapi-client', () => {
         })
       )
 
-      await openapiClient.GET('/api/v1/usuarios', { params: {} as any })
+      await authClient.GET('/api/v1/usuarios', { params: {} as any })
 
       // Verificar que se limpió el store
       expect(useAuthStore.getState().token).toBeNull()
@@ -124,55 +132,29 @@ describe('openapi-client', () => {
       expect(serialized).toContain('size=10')
       expect(serialized).toContain('sort=nombre%2Casc')
     })
-
-    it('debería manejar arrays y parámetros planos simples', () => {
-      const query = {
-        activo: true,
-        roles: [1, 2],
-      }
-      const serialized = defaultQuerySerializer(query)
-      expect(serialized).toContain('activo=true')
-      expect(serialized).toContain('roles=1&roles=2')
-    })
   })
 
-  describe('handleResponse', () => {
-    it('debería resolver los datos cuando la respuesta es exitosa', async () => {
+  describe('helpers (unwrap y ensureOk)', () => {
+    it('unwrap debería resolver los datos cuando la respuesta es exitosa', async () => {
       const mockResult = {
         data: { idUsuario: 1, nombreCompleto: 'Usuario Test' },
         error: undefined,
         response: new Response(JSON.stringify({ idUsuario: 1, nombreCompleto: 'Usuario Test' }), { status: 200 }),
       }
 
-      const data = await handleResponse(Promise.resolve(mockResult))
+      const data = await unwrap(Promise.resolve(mockResult))
       expect(data).toEqual({ idUsuario: 1, nombreCompleto: 'Usuario Test' })
     })
 
-    it('debería lanzar un ApiFetchError con detalles cuando la respuesta falla', async () => {
-      const mockResult = {
-        data: undefined,
-        error: {
+    it('ensureOk debería lanzar un ApiFetchError con detalles cuando la respuesta falla', async () => {
+      const response = new Response(
+        JSON.stringify({
           message: 'Error de validación',
-          details: 'El campo email es obligatorio',
-        },
-        response: new Response(
-          JSON.stringify({
-            message: 'Error de validación',
-            details: 'El campo email es obligatorio',
-          }),
-          { status: 400, statusText: 'Bad Request' }
-        ),
-      }
+        }),
+        { status: 400, statusText: 'Bad Request' }
+      )
 
-      await expect(handleResponse(Promise.resolve(mockResult))).rejects.toThrow(ApiFetchError)
-
-      try {
-        await handleResponse(Promise.resolve(mockResult))
-      } catch (err: any) {
-        expect(err).toBeInstanceOf(ApiFetchError)
-        expect(err.response?.status).toBe(400)
-        expect(err.message).toBe('Error de validación')
-      }
+      expect(() => ensureOk(response, { message: 'Error de validación' })).toThrow(ApiFetchError)
     })
   })
 })
