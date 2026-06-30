@@ -9,13 +9,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { DespachoRapidoSaca } from '@/types/despacho-rapido'
-import { ClipboardCheck, Layers3, Package } from 'lucide-react'
+import { ClipboardCheck, Layers3, Package, Trash2 } from 'lucide-react'
 
 interface PaquetesTipeadosPanelProps {
   sacas: DespachoRapidoSaca[]
   activeSacaId: number | null
   onSeleccionarActiva: (idSaca: number) => void
   onMoverPaquete: (idPaquete: number, idSacaDestino: number) => void
+  onQuitarPaquete?: (idPaquete: number, idSaca: number) => void
   moviendo: boolean
   disabled?: boolean
 }
@@ -25,6 +26,7 @@ export function PaquetesTipeadosPanel({
   activeSacaId,
   onSeleccionarActiva,
   onMoverPaquete,
+  onQuitarPaquete,
   moviendo,
   disabled = false,
 }: PaquetesTipeadosPanelProps) {
@@ -122,25 +124,40 @@ export function PaquetesTipeadosPanel({
                     active={saca.idSaca === activeSacaId}
                     recent={paquete.idPaquete === ultimoPaquete?.idPaquete}
                     action={
-                      sacas.length > 1 && !disabled ? (
-                        <Select
-                          value=""
-                          onValueChange={(value) => onMoverPaquete(paquete.idPaquete, Number(value))}
-                          disabled={moviendo}
-                        >
-                          <SelectTrigger className="h-8 w-[104px] text-[11px]">
-                            <SelectValue placeholder="Mover" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {sacas
-                              .filter((destino) => destino.idSaca !== saca.idSaca)
-                              .map((destino) => (
-                                <SelectItem key={destino.idSaca} value={String(destino.idSaca)}>
-                                  Saca #{destino.numeroOrden}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
+                      !disabled ? (
+                        <div className="flex items-center gap-1.5">
+                          {sacas.length > 1 ? (
+                            <Select
+                              value=""
+                              onValueChange={(value) => onMoverPaquete(paquete.idPaquete, Number(value))}
+                              disabled={moviendo}
+                            >
+                              <SelectTrigger className="h-8 w-[80px] text-[11px]">
+                                <SelectValue placeholder="Mover" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {sacas
+                                  .filter((destino) => destino.idSaca !== saca.idSaca)
+                                  .map((destino) => (
+                                    <SelectItem key={destino.idSaca} value={String(destino.idSaca)}>
+                                      Saca #{destino.numeroOrden}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          ) : null}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive shrink-0"
+                            onClick={() => onQuitarPaquete?.(paquete.idPaquete, saca.idSaca)}
+                            disabled={moviendo}
+                            title="Quitar paquete"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
                       ) : null
                     }
                   />

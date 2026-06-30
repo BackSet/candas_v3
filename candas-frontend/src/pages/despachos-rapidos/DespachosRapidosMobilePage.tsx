@@ -213,6 +213,45 @@ function DespachosRapidosMobilePage() {
     },
   })
 
+  const quitarPaqueteMut = useMutation({
+    mutationFn: (vars: { idPaquete: number; idSaca: number }) =>
+      despachoRapidoService.quitarPaquete(despacho!.idDespacho, vars.idSaca, vars.idPaquete),
+    onSuccess: (dto) => {
+      aplicar(dto)
+      cachearDespacho(dto)
+      notify.success('Paquete quitado del despacho')
+    },
+    onError: (e) => {
+      notify.error(e, 'No se pudo quitar el paquete')
+      refrescarDespachoActual()
+    },
+  })
+
+  const eliminarDespachoMut = useMutation({
+    mutationFn: () => despachoRapidoService.eliminar(despacho!.idDespacho),
+    onSuccess: () => {
+      notify.success('Despacho rápido eliminado con éxito')
+      setActiveDespachoId(null)
+      setDespacho(null)
+      setActiveSacaId(null)
+      void queryClient.invalidateQueries({ queryKey: ['despachos-rapidos'] })
+    },
+    onError: (e) => {
+      notify.error(e, 'No se pudo eliminar el despacho')
+      refrescarDespachoActual()
+    },
+  })
+
+  const handleEliminarDespachoClick = () => {
+    if (!despacho) return
+    const confirmado = window.confirm(
+      '¿Está seguro de que desea eliminar este despacho rápido? Se desasociarán los paquetes, pero no se eliminarán del sistema.'
+    )
+    if (confirmado) {
+      eliminarDespachoMut.mutate()
+    }
+  }
+
   const nuevaSacaMut = useMutation({
     mutationFn: (tamanoSaca: TamanoSaca) =>
       despachoRapidoService.crearSaca(despacho!.idDespacho, { tamanoSaca }),
@@ -470,6 +509,21 @@ function DespachosRapidosMobilePage() {
           }}
         />
 
+        {despacho.estado !== 'FINALIZADO' && (
+          <div className="flex justify-end px-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-[11px] border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleEliminarDespachoClick}
+              disabled={eliminarDespachoMut.isPending}
+            >
+              {eliminarDespachoMut.isPending ? 'Eliminando...' : 'Eliminar despacho'}
+            </Button>
+          </div>
+        )}
+
         <SacaActivaPanel
           saca={sacaActiva}
           tamanoSugerido={tamanoSugeridoNuevaSaca}
@@ -511,7 +565,8 @@ function DespachosRapidosMobilePage() {
           activeSacaId={sacaActiva?.idSaca ?? null}
           onSeleccionarActiva={(idSaca) => setActiveSacaId(idSaca)}
           onMoverPaquete={(idPaquete, idSacaDestino) => moverMut.mutate({ idPaquete, idSacaDestino })}
-          moviendo={moverMut.isPending}
+          onQuitarPaquete={(idPaquete, idSaca) => quitarPaqueteMut.mutate({ idPaquete, idSaca })}
+          moviendo={moverMut.isPending || quitarPaqueteMut.isPending}
         />
 
         <DestinoSelector

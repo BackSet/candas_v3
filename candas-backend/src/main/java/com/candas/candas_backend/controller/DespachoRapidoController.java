@@ -112,6 +112,22 @@ public class DespachoRapidoController {
         return ResponseEntity.ok(despachoRapidoService.finalizar(id, dto));
     }
 
+    @DeleteMapping("/{idDespacho}/sacas/{idSaca}/paquetes/{idPaquete}")
+    @Operation(summary = "Quitar (desasociar) un paquete de una saca de un despacho rápido")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.DESPACHOS_EDITAR + "')")
+    public ResponseEntity<DespachoRapidoDTO> quitarPaquete(@PathVariable Long idDespacho,
+            @PathVariable Long idSaca, @PathVariable Long idPaquete) {
+        return ResponseEntity.ok(despachoRapidoService.quitarPaquete(idDespacho, idSaca, idPaquete));
+    }
+
+    @DeleteMapping("/{idDespacho}")
+    @Operation(summary = "Eliminar (cancelar) un despacho rápido")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.DESPACHOS_ELIMINAR + "')")
+    public ResponseEntity<Void> eliminar(@PathVariable Long idDespacho) {
+        despachoRapidoService.eliminar(idDespacho);
+        return ResponseEntity.noContent().build();
+    }
+
     private static EstadoDespacho parseEstado(String estado) {
         if (estado == null || estado.isBlank()) {
             return null;

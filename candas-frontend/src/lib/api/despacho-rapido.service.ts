@@ -66,4 +66,12 @@ export const despachoRapidoService = {
   finalizar(idDespacho: number, payload: FinalizarDespachoRapidoPayload): Promise<DespachoRapido> {
     return handleResponse(client.POST(`${BASE}/${idDespacho}/finalizar`, { body: payload }))
   },
+
+  quitarPaquete(idDespacho: number, idSaca: number, idPaquete: number): Promise<DespachoRapido> {
+    return handleResponse(client.DELETE(`${BASE}/${idDespacho}/sacas/${idSaca}/paquetes/${idPaquete}`))
+  },
+
+  eliminar(idDespacho: number): Promise<void> {
+    return handleResponse(client.DELETE(`${BASE}/${idDespacho}`))
+  },
 }
