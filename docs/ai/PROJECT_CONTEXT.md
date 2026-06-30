@@ -60,6 +60,7 @@
 - Services API en `src/lib/api/*.service.ts`, endpoints en `src/lib/api/endpoints.ts` y cliente openapi-fetch en `src/lib/api/openapi-client.ts` (dividido en `publicClient` y `authClient` con helpers `unwrap`/`ensureOk` y gestión aislada en `http-feedback.ts`). [verificado en Git]
 - Hooks por dominio en `src/hooks`, schemas Zod en `src/schemas`, tipos en `src/types`, stores Zustand en `src/stores`. [verificado en Git]
 - Componentes reutilizables en `src/components`, incluyendo UI base, tablas, filtros, dialogs, estados y componentes por modulo. [verificado en Git]
+- Base UI/UX (contrato visual canónico): [`docs/ai/UI_UX_BASE.md`](UI_UX_BASE.md). Tokens en `src/index.css` (light/dark vía clase `.dark`), primitivas en `src/components/ui`, estados en `src/components/states`, layouts en `src/app/layout`/`src/components/detail`. [verificado en Git]
 
 ## Contratos y convenciones
 

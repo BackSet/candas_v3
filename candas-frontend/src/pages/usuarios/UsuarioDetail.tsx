@@ -144,11 +144,8 @@ export default function UsuarioDetail() {
           {/* Status Banner */}
           <div className="flex items-center gap-4">
             <Badge
-              variant="secondary"
-              className={`text-xs px-3 py-1 rounded-lg border-0 font-semibold ${usuario.activo !== false
-                  ? 'bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                  : 'bg-red-100/80 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                }`}
+              variant={usuario.activo !== false ? 'success' : 'error'}
+              className="text-xs px-3 py-1 rounded-lg font-semibold"
             >
               {usuario.activo !== false ? '● Activo' : '● Inactivo'}
             </Badge>

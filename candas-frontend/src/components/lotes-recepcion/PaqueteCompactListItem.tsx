@@ -89,8 +89,8 @@ export const PaqueteCompactListItem = React.memo<PaqueteCompactListItemProps>(({
         )}
         {/* Estado textual (no depende solo de color) */}
         {statusLabel && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-warning-content">
+            <span className="h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
             {statusLabel}
           </span>
         )}
