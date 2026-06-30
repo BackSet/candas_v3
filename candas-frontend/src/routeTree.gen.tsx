@@ -38,6 +38,8 @@ const DespachosList = lazyRouteComponent(() => import('@/pages/despachos/Despach
 const DespachoForm = lazyRouteComponent(() => import('@/pages/despachos/DespachoForm'))
 const DespachoDetail = lazyRouteComponent(() => import('@/pages/despachos/DespachoDetail'))
 const DespachosMasivoPage = lazyRouteComponent(() => import('@/pages/despachos-masivo/DespachosMasivoPage'))
+const DespachosRapidosMobilePage = lazyRouteComponent(() => import('@/pages/despachos-rapidos/DespachosRapidosMobilePage'))
+const DespachosRapidosPage = lazyRouteComponent(() => import('@/pages/despachos-rapidos/DespachosRapidosPage'))
 const AtencionPaquetesList = lazyRouteComponent(() => import('@/pages/atencion-paquetes/AtencionPaquetesList'))
 const AtencionPaqueteForm = lazyRouteComponent(() => import('@/pages/atencion-paquetes/AtencionPaqueteForm'))
 const AtencionPaqueteDetail = lazyRouteComponent(() => import('@/pages/atencion-paquetes/AtencionPaqueteDetail'))
@@ -385,6 +387,24 @@ const despachosMasivoRoute = createRoute({
     </ProtectedRouteByPermission>
   ),
 })
+const despachosRapidosRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: 'despachos/rapidos',
+  component: () => (
+    <ProtectedRouteByPermission permissions={[PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER]}>
+      <DespachosRapidosPage />
+    </ProtectedRouteByPermission>
+  ),
+})
+const despachosRapidosMobileRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: 'despachos/rapidos/mobile',
+  component: () => (
+    <ProtectedRouteByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>
+      <DespachosRapidosMobilePage />
+    </ProtectedRouteByPermission>
+  ),
+})
 const despachosIdRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: 'despachos/$id',
@@ -720,6 +740,8 @@ const routeTree = rootRoute.addChildren([
     despachosIndexRoute,
     despachosNewRoute,
     despachosMasivoRoute,
+    despachosRapidosRoute,
+    despachosRapidosMobileRoute,
     despachosIdRoute,
     despachosIdEditRoute,
     atencionPaquetesIndexRoute,

@@ -1,6 +1,7 @@
 package com.candas.candas_backend.repository;
 
 import com.candas.candas_backend.entity.Despacho;
+import com.candas.candas_backend.entity.enums.EstadoDespacho;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +35,15 @@ public interface DespachoRepository extends JpaRepository<Despacho, Long>, JpaSp
     @Query("SELECT d FROM Despacho d WHERE d.idDespacho = :id")
     @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto", "usuarioRegistro"})
     Optional<Despacho> findByIdWithPaquetes(@Param("id") Long id);
+
+    // Despachos rápidos: listar por estado de ciclo de vida (con/sin alcance por agencia propietaria).
+    // Solo relaciones to-one en el grafo: las sacas se cargan aparte para evitar duplicar despachos.
+    @EntityGraph(attributePaths = {"agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto", "usuarioRegistro"})
+    List<Despacho> findByEstadoInOrderByFechaDespachoDesc(Collection<EstadoDespacho> estados);
+
+    @EntityGraph(attributePaths = {"agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto", "usuarioRegistro"})
+    List<Despacho> findByEstadoInAndAgenciaPropietaria_IdAgenciaOrderByFechaDespachoDesc(
+        Collection<EstadoDespacho> estados, Long idAgenciaPropietaria);
     
     @EntityGraph(attributePaths = {"sacas", "agencia", "agenciaPropietaria", "distribuidor", "destinatarioDirecto", "usuarioRegistro"})
     List<Despacho> findByAgencia_IdAgenciaAndFechaDespachoBetween(

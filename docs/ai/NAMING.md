@@ -22,6 +22,9 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Despacho | UI, API, backend, DB | [verificado en Git] |
 | Capturar guías / Distribuir / Revisar sacas | Etiquetas canónicas de los tres subpasos del paso 2 "Gestionar Sacas" en `DespachoForm`. Usar estos términos en UI nueva del flujo de sacas. | [verificado en Git] |
 | Despacho masivo | Modulo/flujo en `/despachos/masivo` y sesion operativa bajo `/api/v1/despacho-masivo`. Crea varios despachos en un mismo flujo, uno a la vez (creacion individual inmediata; sin endpoint batch). | [verificado en Git] |
+| Despacho rápido | Módulo/flujo de despacho con ciclo de vida y guía de distribuidor diferida, bajo `/api/v1/despachos-rapidos`; vista desktop (tablero/finalización) en `/despachos/rapidos`, vista móvil de captura en `/despachos/rapidos/mobile`. Usar "despacho rápido"/"despachos rápidos" en UI/API; no confundir con "despacho masivo". | [verificado en Git] |
+| Estado del despacho | Estados canónicos de `EstadoDespacho` (despacho rápido): `BORRADOR`, `EN_ENSACADO`, `LISTO_PARA_GUIA` (pendiente de guía del distribuidor), `FINALIZADO` (cerrado con guía; también los despachos clásicos/históricos). En DB `despacho.estado`. | [verificado en Git] |
+| Conflictos de despacho rápido | Mensajes operativos canónicos: "Paquete ya reservado", "El despacho ya está finalizado", "Despacho no listo", "Guía externa faltante", "Destino faltante", "Saca vacía". Usarlos para concurrencia entre dispositivos y validaciones de cierre. | [verificado en Git] |
 | Lote de despachos | Conjunto de despachos creados en una misma sesion de despacho masivo (campo `despachosLote`). Usar "lote" para el conjunto, no para un despacho individual. | [verificado en Git] |
 | Cola global de guías | Lista unica de guias capturadas en despacho masivo, pendientes de asignar a un despacho (`colaGlobalGuias`/`paquetesCola`). Estados: `pendiente`, `resuelto`, `no_encontrado`, `no_disponible`, `asignado`. | [verificado en Git] |
 | Despacho en construcción | Despacho que el operario arma actualmente en el builder antes de confirmarlo (`despachoActualId`). | [verificado en Git] |
@@ -44,7 +47,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 
 - Rutas en kebab-case plural: `/paquetes`, `/clientes`, `/agencias`, `/puntos-origen`, `/lotes-recepcion`, `/destinatarios-directos`, `/manifiestos-consolidados`, `/parametros-sistema`. [verificado en Git]
 - Formularios nuevos usan sufijo `/new`; edicion usa `/$id/edit`; detalle usa `/$id`. [verificado en Git]
-- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Despacho masivo, Ensacado, Lector móvil, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
+- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Despacho masivo, Despachos rápidos, Despacho rápido (móvil), Ensacado, Lector móvil, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
 - Mantener `VITE_API_BASE_URL` como nombre de variable para API. No introducir `VITE_API_URL`. [verificado en Git] [verificado en documentacion]
 
 ### API

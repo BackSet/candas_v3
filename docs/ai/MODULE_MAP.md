@@ -20,6 +20,7 @@ Este mapa describe los modulos funcionales y tecnicos presentes en la rama `dev`
 | Lotes especiales | Rutas legacy `/lotes-especiales*` redirigen en `routeTree.gen.tsx`; paginas en `pages/lotes-especiales` y flujo operador en `pages/lotes-recepcion` | Se atiende desde `LoteRecepcionController` y endpoints `/api/v1/lotes-recepcion/especiales*` | `lote_recepcion` con `TipoLote` | `lotes_recepcion:*` |
 | Sacas | `/sacas`, `/sacas/new`, `/sacas/$id`, `/sacas/$id/edit` | `SacaController`, `SacaService`, specs | `saca`, `paquete_saca`, relacion con `paquete` | `sacas:*` |
 | Despachos | `/despachos`, `/despachos/new`, `/despachos/$id`, `/despachos/$id/edit` | `DespachoController`, `DespachoService`, specs | `despacho`, `saca`, `paquete_saca` | `despachos:*` |
+| Despachos rápidos | `/despachos/rapidos` (tablero desktop, finalización), `/despachos/rapidos/mobile` (vista móvil de captura); `pages/despachos-rapidos`, `components/despachos-rapidos/*`, `lib/api/despacho-rapido.service.ts`; endpoints `/api/v1/despachos-rapidos` | `DespachoRapidoController`, `DespachoRapidoService` | `despacho` (+ `estado`), `saca`, `paquete_saca`, `paquete` | `despachos:crear`, `despachos:editar`, `despachos:ver`, `despachos:listar` |
 | Despacho masivo | `/despachos/masivo` (`pages/despachos-masivo/DespachosMasivoPage.tsx` + `components/despacho-masivo/*`): cola global de guías, builder de despacho en construcción, creación individual inmediata y lista del lote; sesión por usuario vía endpoint session | `DespachoMasivoController`, `DespachoMasivoSesionService` | `despacho_masivo_sesion` | `despachos:crear` |
 | Ensacado | `/ensacado`, `/ensacado/lector-movil`; `hooks/useEnsacado.ts`, `hooks/useBarcodeScanner.ts`; `ensacado.service.ts` | `EnsacadoController`, `EnsacadoService` | `ensacado_sesion`, `saca`, `paquete` | `ensacado:operar` |
 | Atencion de paquetes | `/atencion-paquetes`, `/atencion-paquetes/new`, `/atencion-paquetes/$id`, `/atencion-paquetes/$id/edit` | `AtencionPaqueteController`, `AtencionPaqueteService` | `atencion_paquete`, `paquete` | `atencion_paquetes:*` |
@@ -35,7 +36,7 @@ Este mapa describe los modulos funcionales y tecnicos presentes en la rama `dev`
 - Publicas: `/`, `/login`, `/register`. [verificado en Git: `routeTree.gen.tsx`]
 - Protegidas por layout autenticado: `/dashboard`, `/mi-perfil`, modulos CRUD y operativos bajo `layoutRoute`. [verificado en Git]
 - CRUD con patron `list/new/detail/edit`: paquetes, clientes, agencias, puntos origen, lotes recepcion, sacas, despachos, atencion paquetes, usuarios, roles, distribuidores, destinatarios directos. [verificado en Git]
-- Rutas especiales: `/lotes-recepcion/$id/tipeo`, `/despachos/masivo`, `/ensacado`, `/ensacado/lector-movil`, `/parametros-sistema/whatsapp-despacho`. [verificado en Git]
+- Rutas especiales: `/lotes-recepcion/$id/tipeo`, `/despachos/masivo`, `/despachos/rapidos`, `/despachos/rapidos/mobile`, `/ensacado`, `/ensacado/lector-movil`, `/parametros-sistema/whatsapp-despacho`. [verificado en Git]
 - Rutas legacy/redireccion: `/lotes-especiales*`, `/listas-etiquetadas`, `/operario-etiquetas`. [verificado en Git]
 - Navegacion lateral canonica: `src/config/navigation.ts`. [verificado en Git]
 
@@ -53,6 +54,7 @@ Este mapa describe los modulos funcionales y tecnicos presentes en la rama `dev`
 | `SacaController` | `/api/v1/sacas` |
 | `DespachoController` | `/api/v1/despachos` |
 | `DespachoMasivoController` | `/api/v1/despacho-masivo` |
+| `DespachoRapidoController` | `/api/v1/despachos-rapidos` |
 | `AtencionPaqueteController` | `/api/v1/atenciones` |
 | `RolController` | `/api/v1/roles` |
 | `PermisoController` | `/api/v1/permisos` |
@@ -96,7 +98,8 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 
 ## Enums de dominio
 
-- `EstadoPaquete`, `TipoPaquete`, `TipoDestino`, `EstadoAtencion`, `TipoProblemaAtencion`, `EstadoListaEtiqueta`, `EstadoGuiaEtiqueta`, `InstruccionGuiaEtiqueta`, `TipoLote`, `TamanoSaca`. [verificado en Git]
+- `EstadoPaquete`, `TipoPaquete`, `TipoDestino`, `EstadoAtencion`, `TipoProblemaAtencion`, `EstadoListaEtiqueta`, `EstadoGuiaEtiqueta`, `InstruccionGuiaEtiqueta`, `TipoLote`, `TamanoSaca`, `EstadoDespacho`. [verificado en Git]
+- `EstadoDespacho` (ciclo de vida de despacho, módulo Despachos rápidos): `BORRADOR`, `EN_ENSACADO`, `LISTO_PARA_GUIA`, `FINALIZADO`. [verificado en Git]
 
 ## Dependencias entre modulos
 
@@ -115,6 +118,8 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 - CRUD maestro: pagina/lista -> hook -> service API -> controller -> service -> repository/spec -> entidad/DB. [verificado en Git] [inferido]
 - Importacion de paquetes: UI de paquetes/lotes -> endpoints de Paquete/LoteRecepcion -> `PaqueteImportService`/`ExcelHelper`. [verificado en Git] [inferido]
 - Recepcion por lote y tipeo: rutas `/lotes-recepcion*`, endpoints `/api/v1/lotes-recepcion*`, `TipoLote`. [verificado en Git]
+- Despachos rápidos (MVP 1-2/4): un despacho real con ciclo de vida `EstadoDespacho` (BORRADOR → EN_ENSACADO → LISTO_PARA_GUIA → FINALIZADO). Puede crearse sin destino ni guía de distribuidor; agregar un paquete lo reserva en una saca (`ASIGNADO_SACA`) y un paquete ya reservado no puede reasignarse a otro despacho. El destino (agencia o destinatario directo, excluyentes) es obligatorio antes de LISTO_PARA_GUIA; la guía externa (`numeroGuiaAgenciaDistribucion`) y el distribuidor se asignan al finalizar, lo que permite que otro dispositivo de la misma cuenta lo cierre después. Reutiliza `Despacho`/`Saca`/`PaqueteSaca`/`Paquete` sin romper el flujo clásico ni `/despachos/masivo`; los despachos previos quedan `FINALIZADO`. Alcance por `agenciaPropietaria` vía `AgenciaScopeResolver`. Endpoints: `POST /` (crear), `GET /` y `GET /{id}`, `POST /{id}/paquetes` (agregar/reservar), `POST /{id}/paquetes/mover`, `POST /{id}/sacas` (crear/cambiar saca), `PUT /{id}/sacas/{idSaca}/presinto` (ingresar presinto), `PUT /{id}/destino`, `POST /{id}/listo-para-guia`, `POST /{id}/finalizar`. Vista móvil MVP 2/4 en `/despachos/rapidos/mobile`: captura con cámara/ZXing (`useBarcodeScanner` + `MobileScannerPanel` reutilizados) o input manual, saca activa con presinto, mover paquetes entre sacas, selector de destino y marcar listo para guía; reutiliza `useScanFeedback`. Vista desktop MVP 3/4 en `/despachos/rapidos`: tablero de solo lectura sobre paquetes/sacas (no los edita) que lista despachos LISTO_PARA_GUIA (o todos los activos), permite copiar un resumen del despacho (`utils/despachoRapidoCopy.ts`, vía `CopyActionButton`, aislado de `utils/despachoMasivoCopy.ts`) y finalizar (`FinalizarDespachoDialog.tsx`: ingresa/edita distribuidor y `numeroGuiaAgenciaDistribucion`). El botón de finalizar se oculta a usuarios sin `despachos:editar` (`useHasPermission`); el listado solo exige `despachos:ver`/`despachos:listar`. Como el backend bloquea cambios de captura una vez en LISTO_PARA_GUIA, finalizar desde escritorio no interfiere con el operario que sigue ensacando otros despachos desde el móvil. [verificado en Git]
+- Despachos rápidos (MVP 4/4): sincronización operativa por polling en `constants/despachosRapidos.ts`. Desktop refresca el tablero cada 3 s y al recuperar foco/red; móvil refresca el detalle del despacho abierto cada 2.5 s y reconcilia la saca activa si otro dispositivo cambia estado, destino, sacas o finaliza. Las mutaciones exitosas actualizan el caché del detalle y las listas; las mutaciones fallidas invalidan detalle/listas para traer el estado vigente tras conflictos. El backend devuelve mensajes específicos para paquete ya reservado, despacho ya finalizado, despacho no listo, guía externa faltante, destino faltante y saca vacía. [verificado en Git]
 - Ensacado: buscar guia, marcar/desmarcar ensacado, consultar despachos/sacas y sesion. [verificado en Git]
 - Lector móvil de Ensacado (`/ensacado/lector-movil`): usa la cámara del teléfono con ZXing (`hooks/useBarcodeScanner.ts` + `@zxing/browser`) como lector de códigos de barras; zona superior con info del paquete (`components/ensacado/MobilePackageInfoPanel.tsx`) y zona inferior de cámara con ingreso manual de respaldo (`components/ensacado/MobileScannerPanel.tsx`). Lectura continua con bloqueo temporal anti-doble-lectura y feedback sonoro/háptico/visual (`hooks/useScanFeedback.ts`). Reutiliza `useBuscarPaquete` (endpoint `GET /api/v1/ensacado/buscar-paquete/{numeroGuia}`); es vista de consulta/validación rápida y NO marca el paquete como ensacado. [verificado en Git]
 - Despacho: crear/editar despacho, agregar sacas, agregar cadenita, marcar despachado individual o batch. [verificado en Git]

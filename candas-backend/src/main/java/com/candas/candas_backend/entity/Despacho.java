@@ -1,5 +1,6 @@
 package com.candas.candas_backend.entity;
 
+import com.candas.candas_backend.entity.enums.EstadoDespacho;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import org.hibernate.annotations.BatchSize;
@@ -27,6 +28,15 @@ public class Despacho {
 
     @Column(name = "fecha_despacho", nullable = false)
     private LocalDateTime fechaDespacho;
+
+    /**
+     * Estado del ciclo de vida (módulo "Despachos rápidos"). Default seguro {@code FINALIZADO}
+     * para que el flujo clásico y los despachos históricos no rompan listados ni reportes.
+     * El flujo rápido fija explícitamente {@code BORRADOR} al crear.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false, length = 20)
+    private EstadoDespacho estado = EstadoDespacho.FINALIZADO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario_registro")

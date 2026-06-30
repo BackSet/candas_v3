@@ -41,6 +41,7 @@
 - React Hook Form, Zod, Radix UI, openapi-fetch, openapi-typescript, Vitest, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
 - `@zxing/browser` `^0.2.0` con peer `@zxing/library` `^0.22.0` (instalado como dependencia directa por `legacy-peer-deps=true` en `.npmrc`): lectura de códigos de barras con la cámara del dispositivo en el lector móvil de Ensacado (`/ensacado/lector-movil`). [verificado en Git]
 - PWA: `vite-plugin-pwa` `^1.3.0` (devDependency) genera service worker (`generateSW`/Workbox) y `manifest.webmanifest`; la app es instalable en Windows (Edge/Chrome), Android e iOS (Añadir a pantalla de inicio) y abre en modo standalone. Precachea el app shell (JS/CSS/HTML/iconos) con `registerType: 'autoUpdate'`; offline solo de shell/fallback. NO cachea la API logística/transaccional (solo Google Fonts como runtime estático). Iconos en `public/` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`, `apple-touch-icon.png`, derivados de los SVG de marca). [verificado en Git]
+- Despachos rápidos sincroniza por polling explícito en frontend con `DESPACHOS_RAPIDOS_POLL` (`desktopMs=3000`, `mobileMs=2500`), `refetchOnWindowFocus` y `refetchOnReconnect`; el polling consulta siempre API autenticada y no depende del caché PWA. [verificado en Git]
 - Build con Vite 8 y TypeScript 6; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
 
 ## Arquitectura por capa
@@ -90,7 +91,8 @@
 - Base de datos: PostgreSQL. [verificado en Git]
 - Configuracion datasource via `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`. [verificado en Git]
 - Flyway habilitado con migraciones en `candas-backend/src/main/resources/db/migration`. [verificado en Git]
-- Migraciones observadas: `V1__Create_base_tables.sql` a `V134__Fix_despacho_sequence_desync.sql`, con huecos historicos propios del proyecto. [verificado en Git]
+- Migraciones observadas: `V1__Create_base_tables.sql` a `V136__Add_estado_to_despacho.sql`, con huecos historicos propios del proyecto. [verificado en Git]
+- `V136__Add_estado_to_despacho.sql` agrega `despacho.estado` (VARCHAR(20), NOT NULL, DEFAULT `FINALIZADO`) para el ciclo de vida del módulo "Despachos rápidos"; los despachos existentes quedan `FINALIZADO`. [verificado en Git]
 - `application.properties` activa Flyway, `baseline-on-migrate=true`, `validate-on-migrate=false`; `application-prod.properties` cambia a `validate-on-migrate=true` y `ddl-auto=validate`. [verificado en Git]
 - `application.properties` mantiene `spring.jpa.hibernate.ddl-auto=update`; en produccion se sobreescribe a `validate`. [verificado en Git]
 - No modificar migraciones historicas salvo instruccion explicita y plan de reparacion. [verificado en documentacion de la solicitud]
