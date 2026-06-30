@@ -91,6 +91,7 @@ public class DespachoRapidoService {
     private final AgenciaScopeResolver agenciaScopeResolver;
     private final PresintoUtil presintoUtil;
     private final JdbcTemplate jdbcTemplate;
+    private final DespachoService despachoService;
 
     public DespachoRapidoService(
             DespachoRepository despachoRepository,
@@ -102,7 +103,8 @@ public class DespachoRapidoService {
             UsuarioRepository usuarioRepository,
             AgenciaScopeResolver agenciaScopeResolver,
             PresintoUtil presintoUtil,
-            JdbcTemplate jdbcTemplate) {
+            JdbcTemplate jdbcTemplate,
+            DespachoService despachoService) {
         this.despachoRepository = despachoRepository;
         this.sacaRepository = sacaRepository;
         this.paqueteRepository = paqueteRepository;
@@ -113,6 +115,7 @@ public class DespachoRapidoService {
         this.agenciaScopeResolver = agenciaScopeResolver;
         this.presintoUtil = presintoUtil;
         this.jdbcTemplate = jdbcTemplate;
+        this.despachoService = despachoService;
     }
 
     // ---------------------------------------------------------------------
@@ -700,5 +703,62 @@ public class DespachoRapidoService {
             return usuario.getNombreCompleto();
         }
         return usuario.getUsername();
+    }
+
+    public DespachoRapidoDTO quitarPaquete(Long idDespacho, Long idSaca, Long idPaquete) {
+        Despacho despacho = cargarAccesible(idDespacho);
+        assertEditable(despacho);
+
+        List<Saca> sacas = sacaRepository.findByDespachoIdDespacho(idDespacho);
+        Saca saca = sacas.stream()
+            .filter(s -> s.getIdSaca().equals(idSaca))
+            .findFirst()
+            .orElseThrow(() -> new BadRequestException("La saca no pertenece a este despacho"));
+
+        Paquete paquete = paqueteRepository.findById(idPaquete)
+            .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
+
+        if (saca.getPaqueteSacas() == null || saca.getPaqueteSacas().isEmpty()) {
+            throw new BadRequestException("La saca no tiene paquetes asignados");
+        }
+
+        PaqueteSaca asociacion = saca.getPaqueteSacas().stream()
+            .filter(ps -> ps.getPaquete().getIdPaquete().equals(idPaquete))
+            .findFirst()
+            .orElseThrow(() -> new BadRequestException("El paquete no está en esta saca"));
+
+        saca.getPaqueteSacas().remove(asociacion);
+        paquete.getPaqueteSacas().remove(asociacion);
+        paqueteRepository.saveAndFlush(paquete);
+        sacaRepository.saveAndFlush(saca);
+
+        despachoService.restaurarEstadoPaqueteSiProcede(paquete);
+        paqueteRepository.saveAndFlush(paquete);
+
+        marcarEnEnsacadoSiCapturaContinua(despacho);
+        return toDTO(recargar(idDespacho));
+    }
+
+    public void eliminar(Long idDespacho) {
+        Despacho despacho = cargarAccesible(idDespacho);
+        if (despacho.getEstado() == EstadoDespacho.FINALIZADO) {
+            throw new BadRequestException("No se puede eliminar un despacho finalizado");
+        }
+
+        List<Saca> sacas = sacaRepository.findByDespachoIdDespacho(idDespacho);
+        for (Saca s : sacas) {
+            if (s.getPaqueteSacas() != null) {
+                List<PaqueteSaca> asociaciones = new ArrayList<>(s.getPaqueteSacas());
+                for (PaqueteSaca ps : asociaciones) {
+                    Paquete paquete = ps.getPaquete();
+                    paquete.getPaqueteSacas().remove(ps);
+                    despachoService.restaurarEstadoPaqueteSiProcede(paquete);
+                    paqueteRepository.save(paquete);
+                }
+                s.getPaqueteSacas().clear();
+                sacaRepository.save(s);
+            }
+        }
+        despachoRepository.delete(despacho);
     }
 }

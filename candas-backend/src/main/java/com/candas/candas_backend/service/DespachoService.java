@@ -508,6 +508,15 @@ public class DespachoService {
         }
     }
 
+    public void restaurarEstadoPaqueteSiProcede(Paquete paquete) {
+        if (paquete.getPaqueteSacas() == null || paquete.getPaqueteSacas().isEmpty()) {
+            if (paquete.getEstado() == EstadoPaquete.ASIGNADO_SACA || paquete.getEstado() == EstadoPaquete.ENSACADO) {
+                paquete.setEstado(EstadoPaquete.RECIBIDO);
+                paquete.setFechaEnsacado(null);
+            }
+        }
+    }
+
     private void desasociarPaquetesDeSaca(Saca saca) {
         if (saca.getPaqueteSacas() == null || saca.getPaqueteSacas().isEmpty()) {
             return;
@@ -517,12 +526,7 @@ public class DespachoService {
         for (PaqueteSaca ps : asociaciones) {
             Paquete paquete = ps.getPaquete();
             paquete.getPaqueteSacas().remove(ps);
-            if (paquete.getPaqueteSacas().isEmpty()) {
-                if (paquete.getEstado() == EstadoPaquete.ASIGNADO_SACA || paquete.getEstado() == EstadoPaquete.ENSACADO) {
-                    paquete.setEstado(EstadoPaquete.RECIBIDO);
-                    paquete.setFechaEnsacado(null);
-                }
-            }
+            restaurarEstadoPaqueteSiProcede(paquete);
             paqueteRepository.save(paquete);
         }
     }
