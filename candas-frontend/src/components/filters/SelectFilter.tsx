@@ -100,7 +100,7 @@ export function SelectFilter({
         ariaLabel={ariaLabel}
         disabled={disabled}
         className={className}
-        triggerClassName={cn('w-[200px]', triggerClassName)}
+        triggerClassName={cn('w-full md:w-[200px]', triggerClassName)}
         usePortal
       />
     )
@@ -110,7 +110,7 @@ export function SelectFilter({
     <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger
         aria-label={ariaLabel}
-        className={cn('h-9 w-[180px] text-sm', triggerClassName, className)}
+        className={cn('h-9 w-full md:w-[180px] text-sm', triggerClassName, className)}
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
