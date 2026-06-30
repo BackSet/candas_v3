@@ -1,95 +1,98 @@
 import type {
-ConsultaListasEtiquetadasResponse,
-GuiaListaEtiquetadaConsultaDTO,
-ListasEtiquetadasBatchRequest,
-ListasEtiquetadasBatchResult,
+  ConsultaListasEtiquetadasResponse,
+  GuiaListaEtiquetadaConsultaDTO,
+  ListasEtiquetadasBatchRequest,
+  ListasEtiquetadasBatchResult,
 } from '@/types/listas-etiquetadas'
 import type { Paquete } from '@/types/paquete'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import { openapiClient, handleResponse } from './openapi-client'
+import { ApiFetchError } from './errors'
 
 export const listasEtiquetadasService = {
   async createBatch(request: ListasEtiquetadasBatchRequest): Promise<ListasEtiquetadasBatchResult> {
-    const response = await apiClient.post<ListasEtiquetadasBatchResult>(
-      API_ENDPOINTS.LISTAS_ETIQUETADAS.BATCH,
-      request
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/listas-etiquetadas/batch', {
+        body: request as any,
+      })
+    ) as any
   },
 
   async consultarGuia(numeroGuia: string): Promise<GuiaListaEtiquetadaConsultaDTO | null> {
     try {
-      const response = await apiClient.get<GuiaListaEtiquetadaConsultaDTO>(
-        API_ENDPOINTS.LISTAS_ETIQUETADAS.BY_NUMERO_GUIA(numeroGuia)
+      return await handleResponse(
+        (openapiClient as any).GET('/api/v1/paquetes/listas-etiquetadas/guia/{numeroGuia}', {
+          params: {
+            path: { numeroGuia },
+          },
+        })
       )
-      return response.data
     } catch (err: unknown) {
-      if (typeof err === 'object' && err !== null && 'response' in err) {
-        const ax = (err as { response?: { status?: number } }).response
-        if (ax?.status === 404) return null
+      if (err instanceof ApiFetchError && err.response?.status === 404) {
+        return null
       }
       throw err
     }
   },
 
   async consultarGuias(numerosGuia: string[]): Promise<ConsultaListasEtiquetadasResponse> {
-    const response = await apiClient.post<ConsultaListasEtiquetadasResponse>(
-      API_ENDPOINTS.LISTAS_ETIQUETADAS.CONSULTA,
-      numerosGuia
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/listas-etiquetadas/consulta', {
+        body: numerosGuia,
+      })
+    ) as any
   },
 
   async getGuiasEnVariasListas(): Promise<GuiaListaEtiquetadaConsultaDTO[]> {
-    const response = await apiClient.get<GuiaListaEtiquetadaConsultaDTO[]>(
-      API_ENDPOINTS.LISTAS_ETIQUETADAS.GUIA_EN_VARIAS_LISTAS
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/paquetes/listas-etiquetadas/guias-en-varias-listas')
+    ) as any
   },
 
   async elegirEtiqueta(numeroGuia: string, etiqueta: string): Promise<Paquete> {
-    const response = await apiClient.post<Paquete>(
-      API_ENDPOINTS.LISTAS_ETIQUETADAS.ELEGIR_ETIQUETA,
-      { numeroGuia, etiqueta }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/listas-etiquetadas/elegir-etiqueta', {
+        body: { numeroGuia, etiqueta } as any,
+      })
+    ) as any
   },
 
   async marcarReceptado(numeroGuia: string, idLoteRecepcion?: number): Promise<Paquete> {
-    const response = await apiClient.post<Paquete>(
-      API_ENDPOINTS.LISTAS_ETIQUETADAS.MARCAR_RECEPTADO,
-      { numeroGuia, idLoteRecepcion }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/listas-etiquetadas/marcar-receptado', {
+        body: { numeroGuia, idLoteRecepcion } as any,
+      })
+    ) as any
   },
 
   async getHistorialReceptados(): Promise<Paquete[]> {
-    const response = await apiClient.get<Paquete[]>(
-      API_ENDPOINTS.LISTAS_ETIQUETADAS.HISTORIAL_RECEPTADOS
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/paquetes/listas-etiquetadas/historial-receptados')
+    ) as any
   },
 
   async findByEtiqueta(etiqueta: string): Promise<Paquete[]> {
-    const response = await apiClient.get<Paquete[]>(
-      API_ENDPOINTS.LISTAS_ETIQUETADAS.BY_ETIQUETA(etiqueta)
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/paquetes/listas-etiquetadas/etiqueta/{etiqueta}', {
+        params: {
+          path: { etiqueta },
+        },
+      })
+    ) as any
   },
 
   async getAllEtiquetas(): Promise<string[]> {
-    const response = await apiClient.get<string[]>(
-      API_ENDPOINTS.LISTAS_ETIQUETADAS.ETIQUETAS
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/paquetes/listas-etiquetadas/etiquetas')
+    ) as any
   },
 
   async exportExcel(etiqueta?: string): Promise<Blob> {
-    const params = etiqueta != null && etiqueta.trim() !== '' ? { etiqueta: etiqueta.trim() } : {}
-    const response = await apiClient.get(API_ENDPOINTS.LISTAS_ETIQUETADAS.EXPORT, {
-      params,
-      responseType: 'blob',
-    })
-    return response.data as Blob
+    const query = etiqueta != null && etiqueta.trim() !== '' ? { etiqueta: etiqueta.trim() } : {}
+    return handleResponse(
+      openapiClient.GET('/api/v1/paquetes/listas-etiquetadas/export', {
+        params: { query },
+        parseAs: 'blob',
+      })
+    ) as any
   },
 }

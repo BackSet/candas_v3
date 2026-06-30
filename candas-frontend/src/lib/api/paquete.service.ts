@@ -1,14 +1,13 @@
 import type {
-AsociarCadenitaLoteResult,
-AsociarClementinaLoteResult,
-EstadoPaquete,
-Paquete,
-PaquetePage,
-PaqueteSimplificado,
-TipoPaquete
+  AsociarCadenitaLoteResult,
+  AsociarClementinaLoteResult,
+  EstadoPaquete,
+  Paquete,
+  PaquetePage,
+  PaqueteSimplificado,
+  TipoPaquete
 } from '@/types/paquete'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface PaqueteRapidoDTO {
   peso: number
@@ -33,11 +32,11 @@ export const paqueteService = {
    * Crea un paquete rápido (SEPARAR)
    */
   async createRapido(dto: PaqueteRapidoDTO): Promise<Paquete> {
-    const response = await apiClient.post<Paquete>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/rapido`,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/rapido', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   /**
@@ -55,144 +54,179 @@ export const paqueteService = {
       fechaDesde,
       fechaHasta,
     } = params
-    const query: Record<string, string | number> = { page, size }
-    if (search?.trim()) query.search = search.trim()
-    if (estado && estado !== 'all') query.estado = estado
-    if (tipo && tipo !== 'all') query.tipo = tipo
-    if (idAgencia != null) query.idAgencia = idAgencia
-    if (idLote != null) query.idLote = idLote
-    if (fechaDesde) query.fechaDesde = fechaDesde
-    if (fechaHasta) query.fechaHasta = fechaHasta
-    const response = await apiClient.get<PaquetePage>(API_ENDPOINTS.PAQUETES.BASE, { params: query })
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/paquetes', {
+        params: {
+          query: {
+            pageable: { page, size },
+            search,
+            estado: estado === 'all' ? undefined : estado,
+            tipo: tipo === 'all' ? undefined : tipo,
+            idAgencia,
+            idLote,
+            fechaDesde,
+            fechaHasta,
+          },
+        },
+      })
+    ) as any
   },
 
   /**
    * Obtiene un paquete por ID
    */
   async findById(id: number): Promise<Paquete> {
-    const response = await apiClient.get<Paquete>(
-      API_ENDPOINTS.PAQUETES.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/paquetes/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   /**
    * Busca un paquete por número de guía
    */
   async findByNumeroGuia(numeroGuia: string): Promise<Paquete> {
-    const response = await apiClient.get<Paquete>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/por-guia/${numeroGuia}`
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/paquetes/por-guia/{numeroGuia}', {
+        params: {
+          path: { numeroGuia },
+        },
+      })
+    ) as any
   },
 
   /**
    * Obtiene los paquetes hijos de un paquete padre
    */
   async findHijos(id: number): Promise<Paquete[]> {
-    const response = await apiClient.get<Paquete[]>(
-      `${API_ENDPOINTS.PAQUETES.BY_ID(id)}/hijos`
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/paquetes/{id}/hijos', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   /**
    * Obtiene los paquetes hijos tipo CADENITA dado el número de guía del padre
    */
   async findHijosCadenita(numeroGuiaPadre: string): Promise<Paquete[]> {
-    const response = await apiClient.get<Paquete[]>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/hijos-cadenita`,
-      { params: { numeroGuiaPadre } }
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/paquetes/hijos-cadenita', {
+        params: {
+          query: { numeroGuiaPadre },
+        },
+      })
+    ) as any
   },
 
   /**
    * Crea un nuevo paquete
    */
   async create(dto: Paquete): Promise<Paquete> {
-    const response = await apiClient.post<Paquete>(
-      API_ENDPOINTS.PAQUETES.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   /**
    * Actualiza un paquete existente
    */
   async update(id: number, dto: Paquete): Promise<Paquete> {
-    const response = await apiClient.put<Paquete>(
-      API_ENDPOINTS.PAQUETES.BY_ID(id),
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/paquetes/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   /**
    * Separa un paquete en múltiples paquetes hijos
    */
   async separar(id: number, paquetesHijos: Paquete[]): Promise<Paquete[]> {
-    const response = await apiClient.post<Paquete[]>(
-      `${API_ENDPOINTS.PAQUETES.BY_ID(id)}/separar`,
-      paquetesHijos
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/{id}/separar', {
+        params: {
+          path: { id },
+        },
+        body: paquetesHijos as any,
+      })
+    ) as any
   },
 
   /**
    * Cambia el estado de un paquete
    */
   async cambiarEstado(id: number, nuevoEstado: EstadoPaquete): Promise<Paquete> {
-    const response = await apiClient.put<Paquete>(
-      `${API_ENDPOINTS.PAQUETES.BY_ID(id)}/estado`,
-      nuevoEstado
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/paquetes/{id}/estado', {
+        params: {
+          path: { id },
+        },
+        body: nuevoEstado as any,
+      })
+    ) as any
   },
 
   /**
    * Cambia el tipo de múltiples paquetes a la vez
    */
   async cambiarTipoMasivo(ids: number[], nuevoTipo: TipoPaquete): Promise<Paquete[]> {
-    const response = await apiClient.put<Paquete[]>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/cambiar-tipo-masivo`,
-      {
-        ids,
-        nuevoTipo,
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/paquetes/cambiar-tipo-masivo', {
+        body: { ids, nuevoTipo } as any,
+      })
+    ) as any
   },
 
   /**
    * Elimina un paquete
    */
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.PAQUETES.BY_ID(id))
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/paquetes/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   /**
    * Asigna paquetes hijos a un paquete padre tipo CLEMENTINA
    */
   async asignarHijosClementina(id: number, idPaquetesHijos: number[]): Promise<Paquete[]> {
-    const response = await apiClient.post<Paquete[]>(
-      `${API_ENDPOINTS.PAQUETES.BY_ID(id)}/asignar-hijos-clementina`,
-      { idPaquetesHijos }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/{id}/asignar-hijos-clementina', {
+        params: {
+          path: { id },
+        },
+        body: { idPaquetesHijos } as any,
+      })
+    ) as any
   },
 
   /**
    * Asigna un paquete hijo por número de guía a un paquete padre tipo CLEMENTINA
    */
   async asignarHijoPorNumeroGuia(id: number, numeroGuia: string): Promise<Paquete> {
-    const response = await apiClient.post<Paquete>(
-      `${API_ENDPOINTS.PAQUETES.BY_ID(id)}/asignar-hijo-por-guia`,
-      { numeroGuia }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/{id}/asignar-hijo-por-guia', {
+        params: {
+          path: { id },
+        },
+        body: { numeroGuia } as any,
+      })
+    ) as any
   },
 
   /**
@@ -201,11 +235,11 @@ export const paqueteService = {
   async asociarClementinaPorLote(
     asociaciones: Array<{ numeroGuiaPadre: string; numeroGuiaHijo: string }>
   ): Promise<AsociarClementinaLoteResult> {
-    const response = await apiClient.post<AsociarClementinaLoteResult>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/asociar-clementina-lote`,
-      { asociaciones }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/asociar-clementina-lote', {
+        body: { asociaciones } as any,
+      })
+    ) as any
   },
 
   /**
@@ -215,41 +249,50 @@ export const paqueteService = {
     numeroGuiaPadre: string,
     numeroGuiasHijos: string[]
   ): Promise<AsociarCadenitaLoteResult> {
-    const response = await apiClient.post<AsociarCadenitaLoteResult>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/asociar-cadenita-lote`,
-      { numeroGuiaPadre, numeroGuiasHijos }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/asociar-cadenita-lote', {
+        body: { numeroGuiaPadre, numeroGuiasHijos } as any,
+      })
+    ) as any
   },
 
   /**
    * Marca que un paquete CLEMENTINA ya ha sido cambiado de etiqueta
    */
   async marcarEtiquetaCambiada(id: number): Promise<Paquete> {
-    const response = await apiClient.post<Paquete>(
-      `${API_ENDPOINTS.PAQUETES.BY_ID(id)}/marcar-etiqueta-cambiada`
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/{id}/marcar-etiqueta-cambiada', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   /**
    * Marca que un paquete SEPARAR ya ha sido separado
    */
   async marcarSeparado(id: number): Promise<Paquete> {
-    const response = await apiClient.post<Paquete>(
-      `${API_ENDPOINTS.PAQUETES.BY_ID(id)}/marcar-separado`
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/{id}/marcar-separado', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   /**
    * Marca que un paquete CADENITA ya ha sido unido en una caja
    */
   async marcarUnidoEnCaja(id: number): Promise<Paquete> {
-    const response = await apiClient.post<Paquete>(
-      `${API_ENDPOINTS.PAQUETES.BY_ID(id)}/marcar-unido-en-caja`
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/{id}/marcar-unido-en-caja', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   /**
@@ -260,27 +303,23 @@ export const paqueteService = {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await apiClient.post<ImportResult>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/importar`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/importar', {
+        body: formData as any,
+        bodySerializer: (body: any) => body,
+      })
+    ) as any
   },
 
   /**
    * Crea múltiples paquetes simplificados
    */
   async createSimplificadoBatch(dtos: PaqueteSimplificado[]): Promise<Paquete[]> {
-    const response = await apiClient.post<Paquete[]>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/simplificado/batch`,
-      dtos
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/simplificado/batch', {
+        body: dtos as any,
+      })
+    ) as any
   },
 
   /**
@@ -290,11 +329,11 @@ export const paqueteService = {
   async importarRefDesdeLista(
     pares: Array<{ numeroGuia: string; ref: string | null }>
   ): Promise<ImportResult> {
-    const response = await apiClient.post<ImportResult>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/importar-ref-lista`,
-      pares
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/importar-ref-lista', {
+        body: pares as any,
+      })
+    ) as any
   },
 
   /**
@@ -308,23 +347,18 @@ export const paqueteService = {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await apiClient.post<ImportResult>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/importar-actualizar`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/paquetes/importar-actualizar', {
+        body: formData as any,
+        bodySerializer: (body: any) => body,
+      })
+    ) as any
   },
 
   async getEstadisticas(): Promise<PaqueteEstadisticas> {
-    const response = await apiClient.get<PaqueteEstadisticas>(
-      `${API_ENDPOINTS.PAQUETES.BASE}/stats`
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/paquetes/stats')
+    ) as any
   },
 }
 

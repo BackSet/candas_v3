@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/lib/api/auth.service'
-import { API_BASE_URL } from '@/lib/api/client'
+import { API_BASE_URL } from '@/lib/api/openapi-client'
 import { getApiErrorMessage,getNetworkErrorHint,isNetworkOrCorsError } from '@/lib/api/errors'
 import { applyPageMeta } from '@/lib/document-meta'
 import type { LoginRequest } from '@/types/user'

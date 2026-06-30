@@ -1,20 +1,20 @@
 import { useAuthStore } from '@/stores/authStore'
-import type { LoginRequest,LoginResponse,RegisterRequest,UpdateProfileRequest,User } from '@/types/user'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import type { LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest, User } from '@/types/user'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export const authService = {
   /**
    * Inicia sesión con username y password
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>(
-      API_ENDPOINTS.AUTH.LOGIN,
-      credentials
-    )
-    
+    const data = await handleResponse(
+      openapiClient.POST('/api/auth/login', {
+        body: credentials as any,
+      })
+    ) as LoginResponse
+
     // Guardar en el store
-    const { token, idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias } = response.data
+    const { token, idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias } = data
     useAuthStore.getState().setAuth(
       {
         idUsuario,
@@ -28,27 +28,29 @@ export const authService = {
       },
       token
     )
-    
-    return response.data
+
+    return data
   },
 
   /**
    * Registra un nuevo usuario
    */
   async register(data: RegisterRequest) {
-    const response = await apiClient.post(
-      API_ENDPOINTS.AUTH.REGISTER,
-      data
+    return handleResponse(
+      openapiClient.POST('/api/auth/register', {
+        body: data as any,
+      })
     )
-    return response.data
   },
 
   /**
    * Obtiene el usuario actual (roles/permisos) sin relogin
    */
   async me(): Promise<User> {
-    const response = await apiClient.get<LoginResponse>(API_ENDPOINTS.AUTH.ME)
-    const { idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias } = response.data
+    const data = await handleResponse(
+      openapiClient.GET('/api/auth/me')
+    ) as LoginResponse
+    const { idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias } = data
     return { idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias }
   },
 
@@ -56,8 +58,12 @@ export const authService = {
    * Actualiza perfil del usuario autenticado y rota token.
    */
   async updateMe(data: UpdateProfileRequest): Promise<LoginResponse> {
-    const response = await apiClient.put<LoginResponse>(API_ENDPOINTS.AUTH.ME, data)
-    const { token, idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias } = response.data
+    const responseData = await handleResponse(
+      openapiClient.PUT('/api/auth/me', {
+        body: data as any,
+      })
+    ) as LoginResponse
+    const { token, idUsuario, username, email, nombreCompleto, roles, permisos, idAgencia, idAgencias } = responseData
     useAuthStore.getState().setAuth(
       {
         idUsuario,
@@ -71,7 +77,7 @@ export const authService = {
       },
       token
     )
-    return response.data
+    return responseData
   },
 
   /**

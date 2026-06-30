@@ -110,7 +110,7 @@ sequenceDiagram
   - Sesión **stateless** (sin sesión HTTP).
   - CSRF deshabilitado (API REST con JWT).
   - CORS mediante `CorsConfigurationSource` (CorsConfig).
-  - **Endpoints públicos:** `/api/auth/login`, `/api/auth/register`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html`.
+  - **Endpoints públicos:** `/api/auth/login`, `/api/auth/register`, `/scalar/**`, `/v3/api-docs/**`.
   - Resto de peticiones: `anyRequest().authenticated()`.
   - Control fino con `@PreAuthorize` en controllers (roles y permisos), por ejemplo `hasRole('ADMIN')` o `hasAuthority(PermissionConstants.CLIENTES_READ)`.
 
@@ -132,7 +132,7 @@ sequenceDiagram
   - JPA: `ddl-auto`, dialecto PostgreSQL, `show-sql`, `format_sql`
   - Flyway: habilitado, `baseline-on-migrate`, placeholders si aplica
   - JWT: `jwt.secret`, `jwt.expiration`
-  - Springdoc: rutas de API docs y Swagger UI
+  - Springdoc: rutas de API docs y Scalar UI
 
 - **CORS:** [CorsConfig](candas-backend/src/main/java/com/candas/candas_backend/config/CorsConfig.java): orígenes desde `app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:}` (`.env` / Railway, sin URLs por defecto en properties). Métodos, cabeceras y credenciales fijados en código.
 

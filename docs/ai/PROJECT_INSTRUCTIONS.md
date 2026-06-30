@@ -77,6 +77,7 @@ git status --short --branch
 
 ```bash
 cd candas-frontend && npm run lint
+cd candas-frontend && npm run test:run
 cd candas-frontend && npm run build
 cd candas-backend && ./mvnw -DskipTests compile
 cd candas-backend && ./mvnw test

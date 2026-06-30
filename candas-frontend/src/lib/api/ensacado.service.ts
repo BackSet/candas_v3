@@ -1,40 +1,54 @@
 import type {
-DespachoEnsacadoInfo,
-EnsacadoSessionResponse,
-PaqueteEnsacadoInfo,
+  DespachoEnsacadoInfo,
+  EnsacadoSessionResponse,
+  PaqueteEnsacadoInfo,
 } from '@/types/ensacado'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export const ensacadoService = {
   async buscarPaquete(numeroGuia: string): Promise<PaqueteEnsacadoInfo> {
-    const response = await apiClient.get<PaqueteEnsacadoInfo>(
-      API_ENDPOINTS.ENSACADO.BUSCAR_PAQUETE(numeroGuia)
+    return handleResponse(
+      (openapiClient as any).GET(`/api/v1/ensacado/buscar-paquete/${encodeURIComponent(numeroGuia)}`)
     )
-    return response.data
   },
 
   async marcarEnsacado(idPaquete: number): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.ENSACADO.MARCAR_ENSACADO(idPaquete))
+    return handleResponse(
+      openapiClient.POST('/api/v1/ensacado/marcar-ensacado/{idPaquete}', {
+        params: {
+          path: { idPaquete },
+        },
+      })
+    )
   },
 
   async desmarcarEnsacado(idPaquete: number): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.ENSACADO.DESMARCAR_ENSACADO(idPaquete))
+    return handleResponse(
+      openapiClient.POST('/api/v1/ensacado/desmarcar-ensacado/{idPaquete}', {
+        params: {
+          path: { idPaquete },
+        },
+      })
+    )
   },
 
   async obtenerInfoDespacho(idDespacho: number): Promise<DespachoEnsacadoInfo> {
-    const response = await apiClient.get<DespachoEnsacadoInfo>(
-      API_ENDPOINTS.ENSACADO.DESPACHO_INFO(idDespacho)
+    return handleResponse(
+      (openapiClient as any).GET(`/api/v1/ensacado/despacho/${idDespacho}/info`)
     )
-    return response.data
   },
 
   async getSession(): Promise<EnsacadoSessionResponse> {
-    const response = await apiClient.get<EnsacadoSessionResponse>(API_ENDPOINTS.ENSACADO.SESSION)
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/ensacado/session')
+    )
   },
 
   async actualizarUltimaBusqueda(numeroGuia: string): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.ENSACADO.SESSION_ULTIMA_BUSQUEDA, { numeroGuia })
+    return handleResponse(
+      openapiClient.POST('/api/v1/ensacado/session/ultima-busqueda', {
+        body: { numeroGuia } as any,
+      })
+    )
   },
 }

@@ -111,7 +111,7 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 
 ## Flujos criticos
 
-- Login: `POST /api/auth/login` -> token JWT -> store frontend -> Axios envia `Authorization`. [verificado en Git]
+- Login: `POST /api/auth/login` (vía `publicClient`) -> token JWT -> store frontend -> `authClient` envía `Authorization` en las siguientes peticiones. [verificado en Git]
 - CRUD maestro: pagina/lista -> hook -> service API -> controller -> service -> repository/spec -> entidad/DB. [verificado en Git] [inferido]
 - Importacion de paquetes: UI de paquetes/lotes -> endpoints de Paquete/LoteRecepcion -> `PaqueteImportService`/`ExcelHelper`. [verificado en Git] [inferido]
 - Recepcion por lote y tipeo: rutas `/lotes-recepcion*`, endpoints `/api/v1/lotes-recepcion*`, `TipoLote`. [verificado en Git]
@@ -132,16 +132,16 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 - DB: `candas-backend/src/main/resources/db/migration`.
 - Frontend rutas: `candas-frontend/src/routeTree.gen.tsx`, `src/routes`.
 - Frontend navegacion/permisos: `src/config/navigation.ts`, `src/types/permissions.ts`.
-- Frontend API: `src/lib/api/client.ts`, `src/lib/api/endpoints.ts`, `src/lib/api/*.service.ts`.
+- Frontend API: `src/lib/api/openapi-client.ts` (cliente openapi-fetch central: `publicClient`/`authClient`, alias `openapiClient`, `unwrap`/`handleResponse`), `src/lib/api/generated/schema.ts` (contrato generado), `src/lib/api/endpoints.ts`, `src/lib/api/*.service.ts`.
 - Frontend UI: `src/pages`, `src/components`, `src/hooks`, `src/schemas`, `src/types`, `src/stores`, `src/utils`.
 - Documentacion: `README.md`, `docs/README.md`, `docs/ARQUITECTURA_BACKEND.md`, `docs/TECH-STACK.md`, `docs/DEPLOYMENT.md`, `candas-frontend/docs`, `candas-backend/docs`.
 
 ## Tests y documentacion relacionada
 
-- Backend declara `spring-boot-starter-test` en `pom.xml`. [verificado en Git]
-- Tests backend detectados: `CandasBackendApplicationTests`, `JwtAuthenticationEntryPointTest`, `EnsacadoControllerTest`. [verificado en Git]
-- Frontend no declara script `test` en `package.json`. [verificado en Git]
-- No se detectaron archivos frontend `*.test.*` o `*.spec.*` relevantes durante la auditoria. [verificado en Git]
+- Backend declara `spring-boot-starter-test`, `spring-boot-starter-data-jpa-test`, `spring-modulith-starter-test` y `testcontainers-postgresql` en `pom.xml`. [verificado en Git]
+- Tests backend detectados: `CandasBackendApplicationTests`, `JwtAuthenticationEntryPointTest`, `EnsacadoControllerTest`, `PresintoUtilTest`, `ModulithTest` (verificación de modularidad) y `UsuarioRepositoryTest` (integración con Testcontainers). [verificado en Git]
+- Frontend declara scripts `test` y `test:run` con `Vitest` en `package.json`. [verificado en Git]
+- Tests frontend detectados: `openapi-client.test.ts` y `usuario.service.test.ts` bajo `src/lib/api/` usando `jsdom`. [verificado en Git]
 - Documentacion relacionada: `docs/README.md`, `docs/TECH-STACK.md`, `docs/ARQUITECTURA_BACKEND.md`, `docs/DEPLOYMENT.md`, `candas-frontend/docs/DESIGN_SYSTEM.md`, `candas-frontend/docs/XLSX_SECURITY_MITIGATION.md`, `candas-backend/docs/JasperReportsUsage.md`. [verificado en documentacion]
 
 ## Pendientes de confirmar

@@ -1,14 +1,12 @@
-import type { Cliente,ClientePage } from '@/types/cliente'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
-
-export type { Cliente,ClientePage } from '@/types/cliente'
+import type { Cliente, ClientePage } from '@/types/cliente'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface ClienteFindAllParams {
   page?: number
   size?: number
   search?: string
   nombre?: string
+  codigo?: string
   documento?: string
   email?: string
   activo?: boolean
@@ -16,54 +14,70 @@ export interface ClienteFindAllParams {
 
 export const clienteService = {
   async findAll(params: ClienteFindAllParams = {}): Promise<ClientePage> {
-    const { page = 0, size = 20, search, nombre, documento, email, activo } = params
-    const queryParams: Record<string, string | number | boolean> = { page, size }
-    if (search && search.trim()) queryParams.search = search.trim()
-    if (nombre && nombre.trim()) queryParams.nombre = nombre.trim()
-    if (documento && documento.trim()) queryParams.documento = documento.trim()
-    if (email && email.trim()) queryParams.email = email.trim()
-    if (activo !== undefined) queryParams.activo = activo
-    const response = await apiClient.get<ClientePage>(
-      API_ENDPOINTS.CLIENTES.BASE,
-      { params: queryParams }
-    )
-    return response.data
+    const { page = 0, size = 20, search, nombre, codigo, documento, email, activo } = params
+    return handleResponse(
+      openapiClient.GET('/api/v1/clientes', {
+        params: {
+          query: {
+            pageable: { page, size },
+            search,
+            nombre,
+            codigo,
+            documento,
+            email,
+            activo,
+          },
+        },
+      })
+    ) as any
   },
 
   async findById(id: number): Promise<Cliente> {
-    const response = await apiClient.get<Cliente>(
-      API_ENDPOINTS.CLIENTES.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/clientes/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async create(dto: Cliente): Promise<Cliente> {
-    const response = await apiClient.post<Cliente>(
-      API_ENDPOINTS.CLIENTES.BASE,
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.POST('/api/v1/clientes', {
+        body: dto as any,
+      })
+    ) as any
   },
 
   async update(id: number, dto: Cliente): Promise<Cliente> {
-    const response = await apiClient.put<Cliente>(
-      API_ENDPOINTS.CLIENTES.BY_ID(id),
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/clientes/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.CLIENTES.BY_ID(id))
+    return handleResponse(
+      openapiClient.DELETE('/api/v1/clientes/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   async search(query: string): Promise<Cliente[]> {
-    const response = await apiClient.get<Cliente[]>(
-      API_ENDPOINTS.CLIENTES.SEARCH,
-      {
-        params: { query },
-      }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/clientes/search', {
+        params: {
+          query: { query },
+        },
+      })
+    ) as any
   },
 }

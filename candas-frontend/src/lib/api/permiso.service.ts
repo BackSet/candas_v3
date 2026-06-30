@@ -1,6 +1,5 @@
-import type { Permiso,PermisoPage } from '@/types/permiso'
-import { apiClient } from './client'
-import { API_ENDPOINTS } from './endpoints'
+import type { Permiso, PermisoPage } from '@/types/permiso'
+import { openapiClient, handleResponse } from './openapi-client'
 
 export interface PermisoListParams {
   page?: number
@@ -13,40 +12,49 @@ export interface PermisoListParams {
 export const permisoService = {
   async findAll(params: PermisoListParams = {}): Promise<PermisoPage> {
     const { page = 0, size = 20, search, recurso, accion } = params
-    const query: Record<string, string | number> = { page, size }
-    if (search && search.trim()) query.search = search.trim()
-    if (recurso && recurso.trim()) query.recurso = recurso.trim()
-    if (accion && accion.trim()) query.accion = accion.trim()
-    const response = await apiClient.get<PermisoPage>(
-      API_ENDPOINTS.PERMISOS.BASE,
-      { params: query }
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/permisos', {
+        params: {
+          query: {
+            pageable: { page, size },
+            search,
+            recurso,
+            accion,
+          },
+        },
+      })
+    ) as any
   },
 
   async findById(id: number): Promise<Permiso> {
-    const response = await apiClient.get<Permiso>(
-      API_ENDPOINTS.PERMISOS.BY_ID(id)
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.GET('/api/v1/permisos/{id}', {
+        params: {
+          path: { id },
+        },
+      })
+    ) as any
   },
 
   /** Solo renombra el permiso; recurso/acción se gestionan en código backend. */
   async updateNombre(id: number, dto: Pick<Permiso, 'nombre'>): Promise<Permiso> {
-    const response = await apiClient.put<Permiso>(
-      API_ENDPOINTS.PERMISOS.BY_ID(id),
-      dto
-    )
-    return response.data
+    return handleResponse(
+      openapiClient.PUT('/api/v1/permisos/{id}', {
+        params: {
+          path: { id },
+        },
+        body: dto as any,
+      })
+    ) as any
   },
 
   async search(query: string): Promise<Permiso[]> {
-    const response = await apiClient.get<Permiso[]>(
-      API_ENDPOINTS.PERMISOS.SEARCH,
-      {
-        params: { query },
-      }
-    )
-    return response.data
+    return handleResponse(
+      (openapiClient as any).GET('/api/v1/permisos/search', {
+        params: {
+          query: { query },
+        },
+      })
+    ) as any
   },
 }

@@ -7,7 +7,7 @@ Sistema de gestión logística y operativa.
 ```
 candas v3/
 ├── candas-backend/     # API REST — Java 25 + Spring Boot 4
-├── candas-frontend/    # SPA — React 19 + Vite 7 + TypeScript
+├── candas-frontend/    # SPA — React 19 + Vite 8 + TypeScript 6
 └── README.md
 ```
 
@@ -23,15 +23,16 @@ candas v3/
 - **Apache POI 5.5.1** — Exportación a Excel
 
 ### Frontend
-- **React 19** + **TypeScript 5.9** (strict)
-- **Vite 7** — Build tool
+- **React 19** + **TypeScript 6.0** (strict)
+- **Vite 8** — Build tool
 - **TanStack Router 1.95** — Routing type-safe
 - **TanStack Query v5** — Server state y caché
 - **Zustand v5** — Client state
 - **React Hook Form 7** + **Zod 4** — Formularios y validación
 - **Tailwind CSS 4** — Estilos
 - **Radix UI** — Componentes headless
-- **Axios** — HTTP client con interceptores JWT
+- **openapi-fetch** & **openapi-typescript** — Cliente HTTP y generación de tipos OpenAPI nativos
+- **Vitest** & **React Testing Library** — Pruebas unitarias y de componentes
 
 ## Requisitos previos
 

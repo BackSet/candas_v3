@@ -81,8 +81,8 @@ export function Header() {
         <Menu className="h-5 w-5" />
       </Button>
 
-      {/* Search - Command Palette trigger */}
-      <div className="flex-1 min-w-0 max-w-lg">
+      {/* Search - Command Palette trigger (Desktop) */}
+      <div className="flex-1 min-w-0 max-w-lg hidden sm:block">
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 group-focus-within:text-muted-foreground transition-colors" />
           <Input
@@ -106,7 +106,19 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 ml-auto">
+      {/* Botón de buscar para móvil */}
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        onClick={() => useUIStore.getState().setCommandPaletteOpen(true)}
+        className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground sm:hidden"
+        title="Buscar (Ctrl+K)"
+      >
+        <Search className="h-4 w-4" />
+      </Button>
+
+      <div className="flex items-center gap-1.5 ml-auto min-w-0">
         {agenciasUsuario.length > 0 && (
           <Select
             value={activeAgencyId != null ? String(activeAgencyId) : undefined}
@@ -118,7 +130,7 @@ export function Header() {
             }}
           >
             <SelectTrigger
-              className="h-8 w-[130px] min-w-0 sm:w-auto sm:min-w-[210px] rounded-lg border-border/40 bg-muted/30 text-[12px]"
+              className="h-8 w-[110px] min-w-0 sm:w-auto sm:min-w-[210px] rounded-lg border-border/40 bg-muted/30 text-[12px] truncate"
               disabled={isSwitchingAgency}
             >
               <SelectValue placeholder="Seleccionar agencia" />
@@ -133,9 +145,9 @@ export function Header() {
           </Select>
         )}
         {isSwitchingAgency && (
-          <div className="inline-flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground">
+          <div className="inline-flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground hidden xs:inline-flex">
             <Loader2 className="h-3 w-3 animate-spin" />
-            Cambiando entorno...
+            Cambiando...
           </div>
         )}
 
@@ -152,7 +164,7 @@ export function Header() {
                 ? 'Tema: Oscuro'
                 : 'Tema: Claro'
           }
-          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hidden md:inline-flex"
         >
           {theme === 'system' ? (
             <Monitor className="h-4 w-4" />
@@ -168,7 +180,7 @@ export function Header() {
           size="icon"
           aria-label="Notifications"
           title="Notificaciones"
-          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground relative"
+          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground relative hidden xs:inline-flex"
         >
           <Bell className="h-4 w-4" />
         </Button>

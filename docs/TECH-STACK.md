@@ -57,9 +57,14 @@ El mapeo Entity ↔ DTO se hace en los services (métodos privados) y con **Paqu
 Los PDF se generan en el frontend con **jspdf**. Para reportes PDF en backend ver [candas-backend/docs/JasperReportsUsage.md](../candas-backend/docs/JasperReportsUsage.md).
 
 ### Testing
-| Librería | Uso |
-|----------|-----|
-| **spring-boot-starter-test** | Tests unitarios e integración (scope: test) |
+| Librería | Versión | Uso |
+|----------|---------|-----|
+| **spring-boot-starter-test** | 4.1.0 | Tests unitarios e integración (scope: test) |
+| **spring-boot-starter-data-jpa-test** | 4.1.0 | Pruebas slice para la capa de persistencia Data JPA |
+| **spring-modulith-starter-test** | 2.1.0 | Verificación y aserciones de modularidad |
+| **spring-modulith-docs** | 2.1.0 | Generación automatizada de diagramas PlantUML de módulos |
+| **spring-boot-testcontainers** | 4.1.0 | Integración de Testcontainers con Spring Boot |
+| **testcontainers-postgresql** | 1.20.1 | Contenedores PostgreSQL para pruebas de persistencia |
 
 ---
 
@@ -70,9 +75,9 @@ Los PDF se generan en el frontend con **jspdf**. Para reportes PDF en backend ve
 |------------|---------|-----|
 | **React** | 19.2.0 | Biblioteca UI |
 | **react-dom** | 19.2.0 | Renderizado en el DOM |
-| **TypeScript** | 5.9.x | Tipado estático (modo strict) |
-| **Vite** | 7.2.x | Bundler y servidor de desarrollo |
-| **@vitejs/plugin-react** | 5.1.x | Soporte React en Vite |
+| **TypeScript** | 6.0.x | Tipado estático (modo strict) |
+| **Vite** | 8.1.x | Bundler y servidor de desarrollo |
+| **@vitejs/plugin-react** | 6.0.x | Soporte React en Vite |
 
 ### Estilos
 | Librería | Versión | Uso |
@@ -115,7 +120,8 @@ Los PDF se generan en el frontend con **jspdf**. Para reportes PDF en backend ve
 ### HTTP y datos
 | Librería | Versión | Uso |
 |----------|---------|-----|
-| **Axios** | 1.13.x | Cliente HTTP (interceptores JWT) |
+| **openapi-fetch** | 0.13.x | Cliente HTTP (interceptores JWT) |
+| **openapi-typescript** | 7.x | Generación de tipos TypeScript desde OpenAPI |
 
 ### Exportación y códigos
 | Librería | Versión | Uso |
@@ -130,13 +136,15 @@ Los PDF se generan en el frontend con **jspdf**. Para reportes PDF en backend ve
 |----------|-----|
 | **ESLint** + plugins (react-hooks, react-refresh) | Linting |
 | **typescript-eslint** | Reglas TypeScript |
+| **Vitest** | Framework de pruebas unitarias y de integración |
+| **React Testing Library** | Pruebas de componentes React |
 | **@types/node**, **@types/react**, **@types/react-dom**, **@types/qrcode**, **@types/xlsx** | Definiciones de tipos |
 
 ---
 
 ## Resumen rápido
 
-- **Backend:** Java 25 + Spring Boot 4 + JPA/Flyway/PostgreSQL + JWT (jjwt 0.12.5) + Springdoc OpenAPI + Apache POI + Lombok.
-- **Frontend:** React 19 + Vite 7 + TypeScript 5.9 + Tailwind 4 + TanStack Router & Query + Zustand + React Hook Form + Zod + Radix UI + Axios + Sonner + Lucide.
+- **Backend:** Java 25 + Spring Boot 4 + JPA/Flyway/PostgreSQL + JWT (jjwt 0.12.5) + Springdoc OpenAPI + Apache POI + Lombok + Testcontainers (PostgreSQL) y Spring Modulith para calidad.
+- **Frontend:** React 19 + Vite 8 + TypeScript 6.0 + Tailwind 4 + TanStack Router & Query + Zustand + React Hook Form + Zod + Radix UI + openapi-fetch + Vitest + Sonner + Lucide.
 
 Las versiones exactas se mantienen en `candas-backend/pom.xml` y `candas-frontend/package.json`.
