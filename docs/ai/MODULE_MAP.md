@@ -132,7 +132,7 @@ Fuente: anotaciones `@Entity` y `@Table` en `candas-backend/src/main/java/com/ca
 - DB: `candas-backend/src/main/resources/db/migration`.
 - Frontend rutas: `candas-frontend/src/routeTree.gen.tsx`, `src/routes`.
 - Frontend navegacion/permisos: `src/config/navigation.ts`, `src/types/permissions.ts`.
-- Frontend API: `src/lib/api/client.ts`, `src/lib/api/endpoints.ts`, `src/lib/api/*.service.ts`.
+- Frontend API: `src/lib/api/openapi-client.ts` (cliente openapi-fetch central: `publicClient`/`authClient`, alias `openapiClient`, `unwrap`/`handleResponse`), `src/lib/api/generated/schema.ts` (contrato generado), `src/lib/api/endpoints.ts`, `src/lib/api/*.service.ts`.
 - Frontend UI: `src/pages`, `src/components`, `src/hooks`, `src/schemas`, `src/types`, `src/stores`, `src/utils`.
 - Documentacion: `README.md`, `docs/README.md`, `docs/ARQUITECTURA_BACKEND.md`, `docs/TECH-STACK.md`, `docs/DEPLOYMENT.md`, `candas-frontend/docs`, `candas-backend/docs`.
 
