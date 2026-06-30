@@ -90,6 +90,12 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         moduleId: 'ensacado',
         permission: PERMISSIONS.ENSACADO.OPERAR,
       },
+      {
+        name: 'Lector móvil',
+        href: '/ensacado/lector-movil',
+        moduleId: 'ensacado',
+        permission: PERMISSIONS.ENSACADO.OPERAR,
+      },
     ],
   },
   {

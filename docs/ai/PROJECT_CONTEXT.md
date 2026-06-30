@@ -39,6 +39,7 @@
 - React `19.2.7`, React DOM `19.2.7`, TypeScript `~6.0.3`, Vite `^8.1.0`. [verificado en Git: `candas-frontend/package.json`]
 - TanStack Router `^1.170.15`, TanStack Query `^5.101.0`, Zustand `^5.0.14`. [verificado en Git]
 - React Hook Form, Zod, Radix UI, openapi-fetch, openapi-typescript, Vitest, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
+- `@zxing/browser` `^0.2.0` con peer `@zxing/library` `^0.22.0` (instalado como dependencia directa por `legacy-peer-deps=true` en `.npmrc`): lectura de códigos de barras con la cámara del dispositivo en el lector móvil de Ensacado (`/ensacado/lector-movil`). [verificado en Git]
 - Build con Vite 8 y TypeScript 6; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
 
 ## Arquitectura por capa

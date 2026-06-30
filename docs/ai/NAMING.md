@@ -28,6 +28,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Patrón de sacas | Distribución manual de paquetes por saca en despacho masivo, expresada como enteros positivos separados por comas (p. ej. `2,3,5`). Modos de distribución: "todo en una saca", "repartir en N sacas" y "patrón". Helpers en `utils/sacaDistribution.ts`. | [verificado en Git] |
 | Resumen copiable | Texto del despacho masivo listo para copiar al portapapeles, a nivel de despacho (resumen completo, guías o destino) o de saca (`buildSacaCopyText`/`buildSacaGuiasCopyText`/`buildSacaDestinoCopyText`), construido en `utils/despachoMasivoCopy.ts` y copiado con `copyText`/`CopyActionButton`. El de despacho se persiste en `resumenCopiable`. | [verificado en Git] |
 | Ensacado | UI, API, backend, permiso `ensacado:operar` | [verificado en Git] |
+| Lector móvil | Pantalla móvil de Ensacado (`/ensacado/lector-movil`) que usa la cámara del teléfono como lector de códigos de barras para consultar paquetes. Usar "Lector móvil" en navegación y UI; comparte el permiso `ensacado:operar`. | [verificado en Git] |
 | Atencion de paquetes | UI/documentacion; endpoint `/api/v1/atenciones`; permisos `atencion_paquetes:*` | [verificado en Git] |
 | Manifiesto consolidado | UI/API/backend/DB; rutas `manifiestos-consolidados` | [verificado en Git] |
 | Listas etiquetadas | Flujo basado en Paquete bajo `/api/v1/paquetes/listas-etiquetadas` | [verificado en Git] |
@@ -42,7 +43,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 
 - Rutas en kebab-case plural: `/paquetes`, `/clientes`, `/agencias`, `/puntos-origen`, `/lotes-recepcion`, `/destinatarios-directos`, `/manifiestos-consolidados`, `/parametros-sistema`. [verificado en Git]
 - Formularios nuevos usan sufijo `/new`; edicion usa `/$id/edit`; detalle usa `/$id`. [verificado en Git]
-- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Despacho masivo, Ensacado, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
+- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Despacho masivo, Ensacado, Lector móvil, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
 - Mantener `VITE_API_BASE_URL` como nombre de variable para API. No introducir `VITE_API_URL`. [verificado en Git] [verificado en documentacion]
 
 ### API

@@ -55,6 +55,7 @@ const DestinatariosDirectosList = lazyRouteComponent(() => import('@/pages/desti
 const DestinatarioDirectoForm = lazyRouteComponent(() => import('@/pages/destinatarios-directos/DestinatarioDirectoForm'))
 const DestinatarioDirectoDetail = lazyRouteComponent(() => import('@/pages/destinatarios-directos/DestinatarioDirectoDetail'))
 const EnsacadoPage = lazyRouteComponent(() => import('@/pages/ensacado/EnsacadoPage'))
+const LectorMovilPage = lazyRouteComponent(() => import('@/pages/ensacado/LectorMovilPage'))
 const ParametrosSistemaLayout = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosSistemaLayout'))
 const ParametrosSistemaIndexPage = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosSistemaIndexPage'))
 const ParametrosWhatsAppDespachoPage = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosWhatsAppDespachoPage'))
@@ -571,6 +572,16 @@ const ensacadoRoute = createRoute({
   ),
 })
 
+const ensacadoLectorMovilRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: 'ensacado/lector-movil',
+  component: () => (
+    <ProtectedRouteByPermission permission={PERMISSIONS.ENSACADO.OPERAR}>
+      <LectorMovilPage />
+    </ProtectedRouteByPermission>
+  ),
+})
+
 const parametrosSistemaLayoutRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: 'parametros-sistema',
@@ -729,6 +740,7 @@ const routeTree = rootRoute.addChildren([
     distribuidoresIdEditRoute,
     manifiestosConsolidadosRoute,
     ensacadoRoute,
+    ensacadoLectorMovilRoute,
     parametrosSistemaLayoutRoute,
     destinatariosDirectosIndexRoute,
     destinatariosDirectosNewRoute,
