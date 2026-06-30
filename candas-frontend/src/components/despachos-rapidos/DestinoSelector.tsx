@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -7,12 +8,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useAgencias } from '@/hooks/useSelectOptions'
-import { useDestinatariosDirectosOptions, useDistribuidoresOptions } from '@/hooks/useDespachoRapido'
+import { useAgencias } from '@/hooks/useAgencias'
+import { useDestinatariosDirectosAll } from '@/hooks/useDestinatariosDirectos'
+import { useDistribuidoresOptions } from '@/hooks/useDespachoRapido'
 import { cn } from '@/lib/utils'
+import type { Agencia } from '@/types/agencia'
+import type { DestinatarioDirecto } from '@/types/destinatario-directo'
 import type { ActualizarDestinoDespachoRapidoPayload, DespachoRapido } from '@/types/despacho-rapido'
 import { Building2, MapPin } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type TipoDestino = 'AGENCIA' | 'DIRECTO'
 
@@ -33,9 +37,44 @@ export function DestinoSelector({ despacho, onGuardar, guardando, disabled = fal
   const [idDestinatario, setIdDestinatario] = useState<number | undefined>(despacho.idDestinatarioDirecto)
   const [idDistribuidor, setIdDistribuidor] = useState<number | undefined>(despacho.idDistribuidor)
 
-  const { data: agencias = [] } = useAgencias()
-  const { data: destinatarios = [] } = useDestinatariosDirectosOptions()
+  const { data: agenciasData } = useAgencias({ page: 0, size: 200, activa: true })
+  const { data: destinatariosData = [] } = useDestinatariosDirectosAll()
   const { data: distribuidores = [] } = useDistribuidoresOptions()
+
+  useEffect(() => {
+    setTipo(despacho.idDestinatarioDirecto ? 'DIRECTO' : 'AGENCIA')
+    setIdAgencia(despacho.idAgencia)
+    setIdDestinatario(despacho.idDestinatarioDirecto)
+    setIdDistribuidor(despacho.idDistribuidor)
+  }, [despacho.idAgencia, despacho.idDestinatarioDirecto, despacho.idDistribuidor])
+
+  const agencias = useMemo<ComboboxOption<Agencia>[]>(() => {
+    return (agenciasData?.content ?? [])
+      .filter((agencia) => agencia.activa !== false && agencia.idAgencia != null)
+      .map((agencia) => ({
+        value: agencia.idAgencia!,
+        label: agencia.nombre,
+        description: buildDescription(agencia.codigo, agencia.canton, agencia.provincia, agencia.direccion),
+        data: agencia,
+      }))
+  }, [agenciasData])
+
+  const destinatarios = useMemo<ComboboxOption<DestinatarioDirecto>[]>(() => {
+    return destinatariosData
+      .filter((destinatario) => destinatario.activo !== false && destinatario.idDestinatarioDirecto != null)
+      .map((destinatario) => ({
+        value: destinatario.idDestinatarioDirecto!,
+        label: destinatario.nombreDestinatario,
+        description: buildDescription(
+          destinatario.codigo,
+          destinatario.canton,
+          destinatario.provincia,
+          destinatario.direccionDestinatario,
+          destinatario.telefonoDestinatario
+        ),
+        data: destinatario,
+      }))
+  }, [destinatariosData])
 
   const destinoListo = tipo === 'AGENCIA' ? idAgencia != null : idDestinatario != null
 
@@ -79,42 +118,32 @@ export function DestinoSelector({ despacho, onGuardar, guardando, disabled = fal
       {tipo === 'AGENCIA' ? (
         <div className="space-y-1.5">
           <Label className="text-xs">Agencia destino</Label>
-          <Select
-            value={idAgencia != null ? String(idAgencia) : undefined}
-            onValueChange={(v) => setIdAgencia(Number(v))}
+          <Combobox
+            options={agencias}
+            value={idAgencia ?? null}
+            onValueChange={(v) => setIdAgencia(v != null ? Number(v) : undefined)}
+            placeholder="Buscar agencia"
+            searchPlaceholder="Nombre, codigo o canton"
+            emptyMessage="No se encontraron agencias"
+            triggerClassName="h-11"
             disabled={disabled}
-          >
-            <SelectTrigger className="h-11">
-              <SelectValue placeholder="Seleccionar agencia" />
-            </SelectTrigger>
-            <SelectContent>
-              {agencias.map((a) => (
-                <SelectItem key={a.value} value={String(a.value)}>
-                  {a.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            clearable
+          />
         </div>
       ) : (
         <div className="space-y-1.5">
           <Label className="text-xs">Destinatario directo</Label>
-          <Select
-            value={idDestinatario != null ? String(idDestinatario) : undefined}
-            onValueChange={(v) => setIdDestinatario(Number(v))}
+          <Combobox
+            options={destinatarios}
+            value={idDestinatario ?? null}
+            onValueChange={(v) => setIdDestinatario(v != null ? Number(v) : undefined)}
+            placeholder="Buscar destinatario"
+            searchPlaceholder="Nombre, canton, direccion o telefono"
+            emptyMessage="No se encontraron destinatarios"
+            triggerClassName="h-11"
             disabled={disabled}
-          >
-            <SelectTrigger className="h-11">
-              <SelectValue placeholder="Seleccionar destinatario" />
-            </SelectTrigger>
-            <SelectContent>
-              {destinatarios.map((d) => (
-                <SelectItem key={d.value} value={String(d.value)}>
-                  {d.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            clearable
+          />
         </div>
       )}
 
@@ -148,6 +177,13 @@ export function DestinoSelector({ despacho, onGuardar, guardando, disabled = fal
       </Button>
     </div>
   )
+}
+
+function buildDescription(...values: Array<string | undefined | null>): string | undefined {
+  const parts = values
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value))
+  return parts.length > 0 ? parts.join(' • ') : undefined
 }
 
 function TipoButton({

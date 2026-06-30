@@ -8,6 +8,21 @@ export interface DespachoRapidoPaquete {
   numeroGuia: string
   estado: string
   ordenEnSaca?: number
+  tipoPaquete?: string
+  tipoDestino?: string
+  pesoKilos?: number
+  ref?: string
+  observaciones?: string
+  nombreClienteDestinatario?: string
+  telefonoDestinatario?: string
+  direccionDestinatario?: string
+  cantonDestinatario?: string
+  provinciaDestinatario?: string
+  nombreAgenciaDestino?: string
+  cantonAgenciaDestino?: string
+  nombreDestinatarioDirecto?: string
+  direccionDestinatarioDirecto?: string
+  cantonDestinatarioDirecto?: string
 }
 
 export interface DespachoRapidoSaca {
@@ -56,6 +71,7 @@ export interface CrearDespachoRapidoPayload {
 
 export interface AgregarPaqueteRapidoPayload {
   numeroGuia: string
+  idPaquete?: number
   idSaca?: number
   tamanoSaca?: TamanoSaca
 }

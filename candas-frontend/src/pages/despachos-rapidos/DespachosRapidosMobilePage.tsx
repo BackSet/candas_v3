@@ -1,8 +1,10 @@
 import { EnsacadoLayoutHeader } from '@/components/ensacado/EnsacadoLayoutHeader'
 import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
 import { DestinoSelector } from '@/components/despachos-rapidos/DestinoSelector'
-import { SacaActivaCard } from '@/components/despachos-rapidos/SacaActivaCard'
-import { SacasPaquetesList } from '@/components/despachos-rapidos/SacasPaquetesList'
+import { DespachoRapidoActivoCard } from '@/components/despachos-rapidos/DespachoRapidoActivoCard'
+import { DespachosRapidosMobileList } from '@/components/despachos-rapidos/DespachosRapidosMobileList'
+import { PaquetesTipeadosPanel } from '@/components/despachos-rapidos/PaquetesTipeadosPanel'
+import { SacaActivaPanel } from '@/components/despachos-rapidos/SacaActivaPanel'
 import { DESPACHOS_RAPIDOS_POLL } from '@/constants/despachosRapidos'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,13 +15,33 @@ import { notify } from '@/lib/notify'
 import type { DespachoRapido } from '@/types/despacho-rapido'
 import { ESTADO_DESPACHO_RAPIDO_LABEL } from '@/types/despacho-rapido'
 import type { TamanoSaca } from '@/types/saca'
+import { calcularTamanoSugerido } from '@/utils/saca'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, PackagePlus, Truck, Volume2, VolumeX } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { CheckCircle2, PackagePlus, Volume2, VolumeX } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const LOCK_MS = 1200
+const ACTIVE_DESPACHO_STORAGE_KEY = 'candas-despacho-rapido-mobile-active-id'
+
+function normalizarNumeroGuia(numeroGuia: string): string {
+  return numeroGuia.trim().toUpperCase()
+}
+
+function readStoredDespachoId(): number | null {
+  if (typeof window === 'undefined') return null
+  const value = window.localStorage.getItem(ACTIVE_DESPACHO_STORAGE_KEY)
+  const parsed = value ? Number(value) : NaN
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function debugDespachoRapidoMobile(evento: string, data?: unknown) {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return
+  if (window.localStorage.getItem('candas-debug-despacho-rapido') !== '1') return
+  console.debug(`[despacho-rapido-mobile] ${evento}`, data)
+}
 
 function DespachosRapidosMobilePage() {
+  const [activeDespachoId, setActiveDespachoId] = useState<number | null>(() => readStoredDespachoId())
   const [despacho, setDespacho] = useState<DespachoRapido | null>(null)
   const [activeSacaId, setActiveSacaId] = useState<number | null>(null)
   const [locked, setLocked] = useState(false)
@@ -28,8 +50,8 @@ function DespachosRapidosMobilePage() {
   const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const queryClient = useQueryClient()
 
-  const cerrado = despacho?.estado === 'LISTO_PARA_GUIA' || despacho?.estado === 'FINALIZADO'
-  const despachoId = despacho?.idDespacho
+  const cerrado = despacho?.estado === 'FINALIZADO'
+  const despachoId = activeDespachoId
 
   const lockBriefly = useCallback(() => {
     setLocked(true)
@@ -41,6 +63,7 @@ function DespachosRapidosMobilePage() {
   const aplicar = useCallback(
     (dto: DespachoRapido) => {
       setDespacho(dto)
+      setActiveDespachoId(dto.idDespacho)
       setActiveSacaId((prev) => {
         if (prev != null && dto.sacas.some((s) => s.idSaca === prev)) return prev
         return dto.sacas.length > 0 ? dto.sacas[dto.sacas.length - 1].idSaca : null
@@ -48,6 +71,15 @@ function DespachosRapidosMobilePage() {
     },
     []
   )
+
+  const despachosQuery = useQuery({
+    queryKey: ['despachos-rapidos', 'mobile-list'],
+    queryFn: () => despachoRapidoService.listar(),
+    refetchInterval: DESPACHOS_RAPIDOS_POLL.mobileMs,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 0,
+  })
 
   const despachoQuery = useQuery({
     queryKey: ['despachos-rapidos', 'detalle', despachoId],
@@ -64,10 +96,22 @@ function DespachosRapidosMobilePage() {
     aplicar(despachoQuery.data)
   }, [aplicar, despachoQuery.data])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (activeDespachoId == null) {
+      window.localStorage.removeItem(ACTIVE_DESPACHO_STORAGE_KEY)
+      return
+    }
+    window.localStorage.setItem(ACTIVE_DESPACHO_STORAGE_KEY, String(activeDespachoId))
+  }, [activeDespachoId])
+
   const cachearDespacho = useCallback(
     (dto: DespachoRapido) => {
       queryClient.setQueryData(['despachos-rapidos', 'detalle', dto.idDespacho], dto)
-      void queryClient.invalidateQueries({ queryKey: ['despachos-rapidos'] })
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'despachos-rapidos' && query.queryKey[1] !== 'detalle',
+      })
     },
     [queryClient]
   )
@@ -82,26 +126,43 @@ function DespachosRapidosMobilePage() {
   const crearMut = useMutation({
     mutationFn: () => despachoRapidoService.crear({}),
     onSuccess: (dto) => {
-      setDespacho(dto)
-      setActiveSacaId(null)
+      aplicar(dto)
       cachearDespacho(dto)
     },
     onError: (e) => notify.error(e, 'No se pudo crear el despacho rápido'),
   })
 
   const agregarMut = useMutation({
-    mutationFn: (guia: string) =>
-      despachoRapidoService.agregarPaquete(despacho!.idDespacho, {
-        numeroGuia: guia,
-        idSaca: activeSacaId ?? undefined,
-      }),
+    mutationFn: (guia: string) => {
+      if (!despacho) throw new Error('No hay despacho activo')
+      const idSacaValida = despacho.sacas.some((saca) => saca.idSaca === activeSacaId)
+        ? activeSacaId
+        : undefined
+      debugDespachoRapidoMobile('agregar:request', {
+        idDespacho: despacho.idDespacho,
+        numeroGuia: normalizarNumeroGuia(guia),
+        idSaca: idSacaValida ?? null,
+      })
+      return despachoRapidoService.agregarPaquete(despacho.idDespacho, {
+        numeroGuia: normalizarNumeroGuia(guia),
+        idSaca: idSacaValida ?? undefined,
+      })
+    },
     onSuccess: (dto, guia) => {
-      setDespacho(dto)
+      aplicar(dto)
       cachearDespacho(dto)
+      const guiaNormalizada = normalizarNumeroGuia(guia)
       const sacaConGuia = dto.sacas.find((s) =>
-        s.paquetes.some((p) => p.numeroGuia.toLowerCase() === guia.trim().toLowerCase())
+        s.paquetes.some((p) => normalizarNumeroGuia(p.numeroGuia) === guiaNormalizada)
       )
-      setActiveSacaId(sacaConGuia ? sacaConGuia.idSaca : activeSacaId)
+      debugDespachoRapidoMobile('agregar:success', {
+        idDespacho: dto.idDespacho,
+        estado: dto.estado,
+        numeroGuia: guiaNormalizada,
+        contienePaquete: Boolean(sacaConGuia),
+        idSaca: sacaConGuia?.idSaca ?? null,
+      })
+      if (sacaConGuia) setActiveSacaId(sacaConGuia.idSaca)
       feedback.success()
       lockBriefly()
     },
@@ -187,11 +248,26 @@ function DespachosRapidosMobilePage() {
   // --- Captura ---
   const handleScan = useCallback(
     (texto: string) => {
-      const guia = texto.trim()
+      const guia = normalizarNumeroGuia(texto)
       if (!guia || !despacho || cerrado || agregarMut.isPending) return
+      debugDespachoRapidoMobile('captura:guia', {
+        idDespacho: despacho.idDespacho,
+        estado: despacho.estado,
+        numeroGuia: guia,
+        activeSacaId,
+      })
+      const yaExiste = despacho.sacas.some((saca) =>
+        saca.paquetes.some((paquete) => normalizarNumeroGuia(paquete.numeroGuia) === guia)
+      )
+      if (yaExiste) {
+        feedback.error()
+        lockBriefly()
+        notify.error(`La guia ${guia} ya esta agregada a este despacho`)
+        return
+      }
       agregarMut.mutate(guia)
     },
-    [despacho, cerrado, agregarMut]
+    [despacho, cerrado, agregarMut, feedback, lockBriefly, activeSacaId]
   )
 
   const scanner = useBarcodeScanner({
@@ -219,6 +295,10 @@ function DespachosRapidosMobilePage() {
   const sacaActiva =
     despacho?.sacas.find((s) => s.idSaca === activeSacaId) ??
     (despacho && despacho.sacas.length > 0 ? despacho.sacas[despacho.sacas.length - 1] : null)
+  const tamanoSugeridoNuevaSaca = useMemo(() => {
+    const paquetesBase = sacaActiva?.paquetes ?? []
+    return calcularTamanoSugerido(paquetesBase, Math.max(paquetesBase.length, 1))
+  }, [sacaActiva?.paquetes])
 
   const destinoDefinido = !!(despacho?.idAgencia || despacho?.idDestinatarioDirecto)
   const puedeMarcarListo = !!despacho && destinoDefinido && despacho.totalPaquetes > 0
@@ -227,22 +307,44 @@ function DespachosRapidosMobilePage() {
   if (!despacho) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-muted/20">
-        <EnsacadoLayoutHeader title="Despacho rápido" subtitle="Captura móvil" showScanIcon />
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Truck className="size-8" />
-          </div>
-          <div className="max-w-sm space-y-1">
-            <h2 className="text-xl font-bold">Iniciar despacho rápido</h2>
-            <p className="text-sm text-muted-foreground">
-              Crea un borrador y empieza a escanear paquetes en sacas. El destino y la guía del
-              distribuidor pueden definirse después.
-            </p>
-          </div>
-          <Button onClick={() => crearMut.mutate()} disabled={crearMut.isPending} size="lg" className="gap-2">
-            <PackagePlus className="size-5" />
-            {crearMut.isPending ? 'Creando…' : 'Crear despacho'}
-          </Button>
+        <EnsacadoLayoutHeader title="Despacho rapido" subtitle="Captura movil" showScanIcon />
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 p-4">
+          {activeDespachoId != null && despachoQuery.isLoading ? (
+            <div className="surface-panel p-4 text-center text-sm text-muted-foreground">
+              Cargando despacho activo...
+            </div>
+          ) : despachoQuery.error ? (
+            <div className="surface-panel space-y-3 p-4 text-center">
+              <p className="text-sm text-warning">No se pudo abrir el despacho activo guardado.</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setActiveDespachoId(null)
+                  setDespacho(null)
+                  setActiveSacaId(null)
+                }}
+              >
+                Elegir otro despacho
+              </Button>
+            </div>
+          ) : null}
+
+          <DespachosRapidosMobileList
+            despachos={despachosQuery.data ?? []}
+            activeDespachoId={activeDespachoId}
+            loading={despachosQuery.isLoading}
+            refreshing={despachosQuery.isFetching}
+            creating={crearMut.isPending}
+            onCrear={() => crearMut.mutate()}
+            onSeleccionar={(idDespacho) => {
+              setActiveDespachoId(idDespacho)
+              setDespacho(null)
+              setActiveSacaId(null)
+            }}
+            onRefresh={() => void despachosQuery.refetch()}
+          />
         </div>
       </div>
     )
@@ -279,7 +381,7 @@ function DespachosRapidosMobilePage() {
             </div>
           </div>
 
-          <SacasPaquetesList
+          <PaquetesTipeadosPanel
             sacas={despacho.sacas}
             activeSacaId={null}
             onSeleccionarActiva={() => {}}
@@ -292,6 +394,7 @@ function DespachosRapidosMobilePage() {
             variant="outline"
             className="w-full gap-2"
             onClick={() => {
+              setActiveDespachoId(null)
               setDespacho(null)
               setActiveSacaId(null)
             }}
@@ -332,8 +435,18 @@ function DespachosRapidosMobilePage() {
       />
 
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 p-4">
-        <SacaActivaCard
+        <DespachoRapidoActivoCard
+          despacho={despacho}
+          onCambiarDespacho={() => {
+            setActiveDespachoId(null)
+            setDespacho(null)
+            setActiveSacaId(null)
+          }}
+        />
+
+        <SacaActivaPanel
           saca={sacaActiva}
+          tamanoSugerido={tamanoSugeridoNuevaSaca}
           onNuevaSaca={(tamano) => nuevaSacaMut.mutate(tamano)}
           onGuardarPresinto={(idSaca, codigo) => presintoMut.mutate({ idSaca, codigoPresinto: codigo })}
           creandoSaca={nuevaSacaMut.isPending}
@@ -353,7 +466,7 @@ function DespachosRapidosMobilePage() {
           onManualSubmit={handleScan}
         />
 
-        <SacasPaquetesList
+        <PaquetesTipeadosPanel
           sacas={despacho.sacas}
           activeSacaId={sacaActiva?.idSaca ?? null}
           onSeleccionarActiva={(idSaca) => setActiveSacaId(idSaca)}

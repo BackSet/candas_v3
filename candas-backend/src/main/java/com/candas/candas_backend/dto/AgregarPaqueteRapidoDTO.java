@@ -17,6 +17,9 @@ public class AgregarPaqueteRapidoDTO {
     @NotBlank(message = "El número de guía es obligatorio")
     private String numeroGuia;
 
+    /** Paquete ya resuelto por el cliente; si es nulo, se resuelve por numeroGuia. */
+    private Long idPaquete;
+
     /** Saca destino; si es nula, se reutiliza la última saca o se crea una nueva. */
     private Long idSaca;
 

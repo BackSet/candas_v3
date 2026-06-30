@@ -182,17 +182,24 @@ public class DespachoRapidoService {
         Despacho despacho = cargarAccesible(id);
         assertEditable(despacho);
 
-        String guia = dto.getNumeroGuia() != null ? dto.getNumeroGuia().trim() : "";
+        String guia = normalizarNumeroGuia(dto.getNumeroGuia());
         if (guia.isEmpty()) {
             throw new BadRequestException("El número de guía es obligatorio");
         }
-        Paquete paquete = paqueteRepository.findByNumeroGuiaIgnoreCase(guia)
-            .orElseThrow(() -> new BadRequestException("Guía no encontrada: " + guia));
+        Paquete paquete = resolverOCrearPaquete(dto.getIdPaquete(), guia);
 
         // Reserva: un paquete ya asignado a una saca no puede agregarse a otro despacho/saca.
         if (paquete.getPaqueteSacas() != null && !paquete.getPaqueteSacas().isEmpty()) {
-            throw new BadRequestException("Paquete ya reservado: la guía " + paquete.getNumeroGuia()
-                + " ya está en una saca de otro despacho");
+            boolean reservadoEnEsteDespacho = paquete.getPaqueteSacas().stream()
+                .anyMatch(ps -> ps.getSaca() != null
+                    && ps.getSaca().getDespacho() != null
+                    && id.equals(ps.getSaca().getDespacho().getIdDespacho()));
+            if (reservadoEnEsteDespacho) {
+                throw new BadRequestException("La guia " + paquete.getNumeroGuia()
+                    + " ya esta agregada a este despacho");
+            }
+            throw new BadRequestException("Paquete ya reservado: la guia " + paquete.getNumeroGuia()
+                + " ya esta en una saca de otro despacho");
         }
         if (paquete.getEstado() == EstadoPaquete.DESPACHADO) {
             throw new BadRequestException("La guía " + paquete.getNumeroGuia() + " ya fue despachada");
@@ -201,10 +208,7 @@ public class DespachoRapidoService {
         Saca saca = resolverSacaDestino(despacho, dto.getIdSaca(), dto.getTamanoSaca());
         reservarPaqueteEnSaca(paquete, saca);
 
-        if (despacho.getEstado() == EstadoDespacho.BORRADOR) {
-            despacho.setEstado(EstadoDespacho.EN_ENSACADO);
-            despachoRepository.save(despacho);
-        }
+        marcarEnEnsacadoSiCapturaContinua(despacho);
         return toDTO(recargar(id));
     }
 
@@ -239,6 +243,7 @@ public class DespachoRapidoService {
         paqueteRepository.saveAndFlush(paquete);
 
         reservarPaqueteEnSaca(paquete, destino);
+        marcarEnEnsacadoSiCapturaContinua(despacho);
         return toDTO(recargar(id));
     }
 
@@ -297,6 +302,7 @@ public class DespachoRapidoService {
             saca.setCodigoPresinto(dto.getCodigoPresinto().trim());
             sacaRepository.save(saca);
         }
+        marcarEnEnsacadoSiCapturaContinua(despacho);
         return toDTO(recargar(id));
     }
 
@@ -314,6 +320,7 @@ public class DespachoRapidoService {
             .orElseThrow(() -> new BadRequestException("La saca " + idSaca + " no pertenece a este despacho"));
         saca.setCodigoPresinto(presinto);
         sacaRepository.save(saca);
+        marcarEnEnsacadoSiCapturaContinua(despacho);
         return toDTO(recargar(id));
     }
 
@@ -334,6 +341,43 @@ public class DespachoRapidoService {
         paquete.getPaqueteSacas().add(ps);
         paquete.setEstado(EstadoPaquete.ASIGNADO_SACA);
         paqueteRepository.save(paquete);
+    }
+
+    private Paquete resolverOCrearPaquete(Long idPaquete, String guiaNormalizada) {
+        if (idPaquete != null) {
+            Paquete paquete = paqueteRepository.findById(idPaquete)
+                .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
+            String guiaPaquete = normalizarNumeroGuia(paquete.getNumeroGuia());
+            if (!guiaPaquete.equals(guiaNormalizada)) {
+                throw new BadRequestException("El paquete resuelto no coincide con la guia " + guiaNormalizada);
+            }
+            return paquete;
+        }
+
+        return paqueteRepository.findByNumeroGuiaIgnoreCase(guiaNormalizada)
+            .orElseGet(() -> crearPaqueteSimplificadoParaDespachoRapido(guiaNormalizada));
+    }
+
+    private Paquete crearPaqueteSimplificadoParaDespachoRapido(String guiaNormalizada) {
+        jdbcTemplate.update("""
+            INSERT INTO paquete (numero_guia, estado, fecha_registro, observaciones)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT (numero_guia) DO NOTHING
+            """,
+            guiaNormalizada,
+            EstadoPaquete.REGISTRADO.name(),
+            LocalDateTime.now(),
+            "Creado desde Despachos rapidos");
+        return paqueteRepository.findByNumeroGuiaIgnoreCase(guiaNormalizada)
+            .orElseThrow(() -> new BadRequestException("No se pudo resolver la guia " + guiaNormalizada));
+    }
+
+    private void marcarEnEnsacadoSiCapturaContinua(Despacho despacho) {
+        if (despacho.getEstado() == EstadoDespacho.BORRADOR
+                || despacho.getEstado() == EstadoDespacho.LISTO_PARA_GUIA) {
+            despacho.setEstado(EstadoDespacho.EN_ENSACADO);
+            despachoRepository.save(despacho);
+        }
     }
 
     private int siguienteOrdenEnSaca(Saca saca) {
@@ -446,7 +490,9 @@ public class DespachoRapidoService {
     }
 
     private void assertEditable(Despacho despacho) {
-        if (despacho.getEstado() != EstadoDespacho.BORRADOR && despacho.getEstado() != EstadoDespacho.EN_ENSACADO) {
+        if (despacho.getEstado() != EstadoDespacho.BORRADOR
+                && despacho.getEstado() != EstadoDespacho.EN_ENSACADO
+                && despacho.getEstado() != EstadoDespacho.LISTO_PARA_GUIA) {
             throw new BadRequestException("El despacho ya no admite cambios de paquetes (estado actual: "
                 + despacho.getEstado() + "); actualiza la pantalla antes de continuar");
         }
@@ -458,10 +504,16 @@ public class DespachoRapidoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
         }
         if (numeroGuia != null && !numeroGuia.isBlank()) {
-            return paqueteRepository.findByNumeroGuiaIgnoreCase(numeroGuia.trim())
-                .orElseThrow(() -> new BadRequestException("Guía no encontrada: " + numeroGuia.trim()));
+            String guia = normalizarNumeroGuia(numeroGuia);
+            return paqueteRepository.findByNumeroGuiaIgnoreCase(guia)
+                .orElseThrow(() -> new BadRequestException("Guia no encontrada: " + guia));
         }
         throw new BadRequestException("Debe indicar idPaquete o numeroGuia");
+    }
+
+
+    private static String normalizarNumeroGuia(String numeroGuia) {
+        return numeroGuia == null ? "" : numeroGuia.trim().toUpperCase();
     }
 
     // ---------------------------------------------------------------------
@@ -554,11 +606,7 @@ public class DespachoRapidoService {
             List<DespachoRapidoPaqueteDTO> paquetes = saca.getPaqueteSacas() == null ? new ArrayList<>()
                 : saca.getPaqueteSacas().stream()
                     .sorted(Comparator.comparing(PaqueteSaca::getOrdenEnSaca, Comparator.nullsLast(Integer::compareTo)))
-                    .map(ps -> new DespachoRapidoPaqueteDTO(
-                        ps.getPaquete().getIdPaquete(),
-                        ps.getPaquete().getNumeroGuia(),
-                        ps.getPaquete().getEstado(),
-                        ps.getOrdenEnSaca()))
+                    .map(ps -> toPaqueteDTO(ps.getPaquete(), ps.getOrdenEnSaca()))
                     .collect(Collectors.toList());
             totalPaquetes += paquetes.size();
 
@@ -575,6 +623,38 @@ public class DespachoRapidoService {
         dto.setSacas(sacaDTOs);
         dto.setTotalSacas(sacaDTOs.size());
         dto.setTotalPaquetes(totalPaquetes);
+        return dto;
+    }
+
+    private DespachoRapidoPaqueteDTO toPaqueteDTO(Paquete paquete, Integer ordenEnSaca) {
+        DespachoRapidoPaqueteDTO dto = new DespachoRapidoPaqueteDTO();
+        dto.setIdPaquete(paquete.getIdPaquete());
+        dto.setNumeroGuia(paquete.getNumeroGuia());
+        dto.setEstado(paquete.getEstado());
+        dto.setOrdenEnSaca(ordenEnSaca);
+        dto.setTipoPaquete(paquete.getTipoPaquete());
+        dto.setTipoDestino(paquete.getTipoDestino());
+        dto.setPesoKilos(paquete.getPesoKilos());
+        dto.setRef(paquete.getRef());
+        dto.setObservaciones(paquete.getObservaciones());
+
+        if (paquete.getClienteDestinatario() != null) {
+            Cliente cliente = paquete.getClienteDestinatario();
+            dto.setNombreClienteDestinatario(cliente.getNombreCompleto());
+            dto.setTelefonoDestinatario(cliente.getTelefono());
+            dto.setDireccionDestinatario(cliente.getDireccion());
+            dto.setCantonDestinatario(cliente.getCanton());
+            dto.setProvinciaDestinatario(cliente.getProvincia());
+        }
+        if (paquete.getAgenciaDestino() != null) {
+            dto.setNombreAgenciaDestino(paquete.getAgenciaDestino().getNombre());
+            dto.setCantonAgenciaDestino(paquete.getAgenciaDestino().getCanton());
+        }
+        if (paquete.getDestinatarioDirecto() != null) {
+            dto.setNombreDestinatarioDirecto(paquete.getDestinatarioDirecto().getNombreDestinatario());
+            dto.setDireccionDestinatarioDirecto(paquete.getDestinatarioDirecto().getDireccionDestinatario());
+            dto.setCantonDestinatarioDirecto(paquete.getDestinatarioDirecto().getCanton());
+        }
         return dto;
     }
 
