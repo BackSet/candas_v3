@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import fs from 'fs'
 
@@ -56,7 +57,71 @@ export default defineConfig(({ mode }) => {
   const appUrl = resolveAppUrl(env, mode === 'production')
 
   return {
-    plugins: [react(), injectAppUrlPlugin(appUrl)],
+    plugins: [
+      react(),
+      injectAppUrlPlugin(appUrl),
+      VitePWA({
+        registerType: 'autoUpdate',
+        injectRegister: 'auto',
+        // Assets estáticos que se precachean además del bundle generado.
+        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-icon.svg', 'pwa-maskable.svg'],
+        manifest: {
+          name: 'Candas — Gestión logística',
+          short_name: 'Candas',
+          description:
+            'Sistema de gestión logística y operativa: recepción, despachos, ensacado, manifiestos y seguimiento de paquetes.',
+          lang: 'es',
+          dir: 'ltr',
+          id: '/',
+          start_url: '/',
+          scope: '/',
+          display: 'standalone',
+          orientation: 'any',
+          theme_color: '#2563eb',
+          background_color: '#0b1623',
+          categories: ['business', 'productivity', 'logistics'],
+          icons: [
+            { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            {
+              src: 'pwa-maskable-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+          ],
+        },
+        workbox: {
+          // App shell: precache de JS/CSS/HTML e iconos para arranque y fallback offline.
+          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
+          // SPA: las navegaciones offline caen al app shell cacheado.
+          navigateFallback: '/index.html',
+          // Nunca interceptar la API logística/transaccional como navegación.
+          navigateFallbackDenylist: [/^\/api\//],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          // MVP: NO se cachea la API. Solo fuentes estáticas (Google Fonts) para el shell.
+          runtimeCaching: [
+            {
+              urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com',
+              handler: 'StaleWhileRevalidate',
+              options: { cacheName: 'google-fonts-stylesheets' },
+            },
+            {
+              urlPattern: ({ url }) => url.origin === 'https://fonts.gstatic.com',
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-webfonts',
+                expiration: { maxEntries: 16, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
+        },
+        // En desarrollo no se habilita el SW para evitar caché agresiva durante el dev.
+        devOptions: { enabled: false },
+      }),
+    ],
     server: {
       // Solo `VITE_NETWORK_MODE=lan` expone el dev server en la LAN (0.0.0.0).
       host: isLanMode ? true : undefined,

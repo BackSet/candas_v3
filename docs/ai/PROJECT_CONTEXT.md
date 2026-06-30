@@ -40,6 +40,7 @@
 - TanStack Router `^1.170.15`, TanStack Query `^5.101.0`, Zustand `^5.0.14`. [verificado en Git]
 - React Hook Form, Zod, Radix UI, openapi-fetch, openapi-typescript, Vitest, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
 - `@zxing/browser` `^0.2.0` con peer `@zxing/library` `^0.22.0` (instalado como dependencia directa por `legacy-peer-deps=true` en `.npmrc`): lectura de códigos de barras con la cámara del dispositivo en el lector móvil de Ensacado (`/ensacado/lector-movil`). [verificado en Git]
+- PWA: `vite-plugin-pwa` `^1.3.0` (devDependency) genera service worker (`generateSW`/Workbox) y `manifest.webmanifest`; la app es instalable en Windows (Edge/Chrome), Android e iOS (Añadir a pantalla de inicio) y abre en modo standalone. Precachea el app shell (JS/CSS/HTML/iconos) con `registerType: 'autoUpdate'`; offline solo de shell/fallback. NO cachea la API logística/transaccional (solo Google Fonts como runtime estático). Iconos en `public/` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`, `apple-touch-icon.png`, derivados de los SVG de marca). [verificado en Git]
 - Build con Vite 8 y TypeScript 6; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
 
 ## Arquitectura por capa
@@ -99,6 +100,7 @@
 - Despliegue documentado: Railway con dos servicios Docker separados, backend y frontend. [verificado en documentacion: `docs/DEPLOYMENT.md`]
 - Backend Docker: build Maven con `eclipse-temurin:25-jdk`, runtime `eclipse-temurin:25-jre`, JAR en `/opt/app/app.jar`, healthcheck `/actuator/health`. [verificado en Git]
 - Frontend Docker: build Node `20-alpine`, runtime `nginx:1.27-alpine`, `VITE_API_BASE_URL` y `VITE_APP_URL` como build args, healthcheck `/`. [verificado en Git]
+- Nginx (`nginx.conf`): `/assets/` con cache inmutable 30d; `sw.js`, `manifest.webmanifest` e `index.html` con `Cache-Control: no-cache` para propagar actualizaciones del service worker y nuevas releases. [verificado en Git]
 - Railway backend: Dockerfile, start command `java -Dspring.profiles.active=prod -jar /opt/app/app.jar`, healthcheck `/actuator/health`. [verificado en Git]
 - Railway frontend: Dockerfile, healthcheck `/`. [verificado en Git]
 - No se encontro configuracion CI en `.github`, `.gitlab` o `.circleci` en la inspeccion local. [verificado en Git]

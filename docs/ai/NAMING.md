@@ -29,6 +29,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Resumen copiable | Texto del despacho masivo listo para copiar al portapapeles, a nivel de despacho (resumen completo, guías o destino) o de saca (`buildSacaCopyText`/`buildSacaGuiasCopyText`/`buildSacaDestinoCopyText`), construido en `utils/despachoMasivoCopy.ts` y copiado con `copyText`/`CopyActionButton`. El de despacho se persiste en `resumenCopiable`. | [verificado en Git] |
 | Ensacado | UI, API, backend, permiso `ensacado:operar` | [verificado en Git] |
 | Lector móvil | Pantalla móvil de Ensacado (`/ensacado/lector-movil`) que usa la cámara del teléfono como lector de códigos de barras para consultar paquetes. Usar "Lector móvil" en navegación y UI; comparte el permiso `ensacado:operar`. | [verificado en Git] |
+| Instalar Candas | Copy canónico de la acción PWA (botón/diálogo). En iOS usar "Añadir a pantalla de inicio". Evitar "descargar" o "bajar la app"; Candas se "instala" como aplicación. Componente `components/pwa/InstallPrompt.tsx`. | [verificado en Git] |
 | Atencion de paquetes | UI/documentacion; endpoint `/api/v1/atenciones`; permisos `atencion_paquetes:*` | [verificado en Git] |
 | Manifiesto consolidado | UI/API/backend/DB; rutas `manifiestos-consolidados` | [verificado en Git] |
 | Listas etiquetadas | Flujo basado en Paquete bajo `/api/v1/paquetes/listas-etiquetadas` | [verificado en Git] |

@@ -28,6 +28,8 @@ Layout `src/app/layout/`: `MainLayout`, `Sidebar`, `Header`, `PageContainer`, `P
 
 Feedback: `import { notify } from '@/lib/notify'`; impresión `import { printNotify } from '@/lib/print-notify'` (nunca `alert()`). [verificado en Git]
 
+PWA: acción de instalación discreta `src/components/pwa/InstallPrompt.tsx` (botón ghost en la fila de iconos del `Header` + diálogo de instrucciones en iOS), construida sobre `Button` y `Dialog` y el hook `usePwaInstallPrompt`. Solo se muestra cuando la app es instalable y no está ya en modo standalone; no introduce tokens nuevos. [verificado en Git]
+
 ## Reglas de uso (contrato)
 
 1. **Colores solo por token**: usar clases del tema (`bg-primary`, `text-muted-foreground`, `bg-info/10`, `border-success/50`). No usar paletas crudas de Tailwind (`bg-amber-50`, `text-red-600`, `bg-emerald-500`, etc.). Si falta un color, añadir token en `index.css` y documentarlo en `DESIGN_TOKENS.md`. [verificado en Git]
