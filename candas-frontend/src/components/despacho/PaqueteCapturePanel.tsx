@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import { List as ListIcon, Loader2, Plus } from 'lucide-react'
 import type { RefObject } from 'react'
 
@@ -34,6 +35,8 @@ export interface PaqueteCapturePanelProps {
   colaPasteResult: ColaPasteResult | null
   setColaPasteResult: (value: ColaPasteResult | null) => void
   colaInputRef: RefObject<HTMLInputElement | null>
+  permitirNoRegistrados: boolean
+  setPermitirNoRegistrados: (value: boolean) => void
 }
 
 const SEPARADOR_MULTIPLE = /[\n,;\t]/
@@ -55,6 +58,8 @@ export function PaqueteCapturePanel({
   colaPasteResult,
   setColaPasteResult,
   colaInputRef,
+  permitirNoRegistrados,
+  setPermitirNoRegistrados,
 }: PaqueteCapturePanelProps) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm space-y-4">
@@ -99,6 +104,20 @@ export function PaqueteCapturePanel({
         <Button type="button" size="icon" onClick={() => handleColaSubmit()} disabled={!colaInput.trim() || procesandoCola} title="Agregar a la cola">
           {procesandoCola ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         </Button>
+      </div>
+
+      <div className="flex items-center space-x-2 rounded-lg border border-border/40 bg-muted/10 p-2.5 shadow-sm">
+        <Checkbox
+          id="permitirNoRegistrados"
+          checked={permitirNoRegistrados}
+          onCheckedChange={(checked) => setPermitirNoRegistrados(Boolean(checked))}
+        />
+        <label
+          htmlFor="permitirNoRegistrados"
+          className="text-xs font-medium text-foreground cursor-pointer select-none flex-1"
+        >
+          Permitir paquetes no registrados
+        </label>
       </div>
 
       {colaFeedback && (

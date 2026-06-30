@@ -1,5 +1,8 @@
 import { EnsacadoLayoutHeader } from '@/components/ensacado/EnsacadoLayoutHeader'
+import { Header } from '@/app/layout/Header'
+import { Checkbox } from '@/components/ui/checkbox'
 import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
+import { paqueteService } from '@/lib/api/paquete.service'
 import { DestinoSelector } from '@/components/despachos-rapidos/DestinoSelector'
 import { DespachoRapidoActivoCard } from '@/components/despachos-rapidos/DespachoRapidoActivoCard'
 import { DespachosRapidosMobileList } from '@/components/despachos-rapidos/DespachosRapidosMobileList'
@@ -45,6 +48,7 @@ function DespachosRapidosMobilePage() {
   const [despacho, setDespacho] = useState<DespachoRapido | null>(null)
   const [activeSacaId, setActiveSacaId] = useState<number | null>(null)
   const [locked, setLocked] = useState(false)
+  const [permitirNoRegistrados, setPermitirNoRegistrados] = useState(false)
 
   const feedback = useScanFeedback()
   const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -133,18 +137,40 @@ function DespachosRapidosMobilePage() {
   })
 
   const agregarMut = useMutation({
-    mutationFn: (guia: string) => {
+    mutationFn: async (guia: string) => {
       if (!despacho) throw new Error('No hay despacho activo')
+      const guiaNorm = normalizarNumeroGuia(guia)
+
+      // Validar si el paquete existe en el backend
+      let existe = false
+      let idPaquete: number | undefined = undefined
+      try {
+        const p = await paqueteService.findByNumeroGuia(guiaNorm)
+        if (p && p.idPaquete != null) {
+          existe = true
+          idPaquete = p.idPaquete
+        }
+      } catch (err) {
+        existe = false
+      }
+
+      if (!existe) {
+        if (!permitirNoRegistrados) {
+          throw new Error('La guía no está registrada. Active la opción para permitir guías no registradas.')
+        }
+      }
+
       const idSacaValida = despacho.sacas.some((saca) => saca.idSaca === activeSacaId)
         ? activeSacaId
         : undefined
       debugDespachoRapidoMobile('agregar:request', {
         idDespacho: despacho.idDespacho,
-        numeroGuia: normalizarNumeroGuia(guia),
+        numeroGuia: guiaNorm,
         idSaca: idSacaValida ?? null,
       })
       return despachoRapidoService.agregarPaquete(despacho.idDespacho, {
-        numeroGuia: normalizarNumeroGuia(guia),
+        numeroGuia: guiaNorm,
+        idPaquete,
         idSaca: idSacaValida ?? undefined,
       })
     },
@@ -452,6 +478,20 @@ function DespachosRapidosMobilePage() {
           creandoSaca={nuevaSacaMut.isPending}
           guardandoPresinto={presintoMut.isPending}
         />
+
+        <div className="flex items-center space-x-2 rounded-lg border border-border bg-card p-3 shadow-sm select-none cursor-pointer">
+          <Checkbox
+            id="permitirNoRegistradosMobile"
+            checked={permitirNoRegistrados}
+            onCheckedChange={(checked) => setPermitirNoRegistrados(Boolean(checked))}
+          />
+          <label
+            htmlFor="permitirNoRegistradosMobile"
+            className="text-xs font-semibold text-foreground cursor-pointer select-none flex-1"
+          >
+            Permitir paquetes no registrados
+          </label>
+        </div>
 
         <MobileScannerPanel
           videoRef={scanner.videoRef}

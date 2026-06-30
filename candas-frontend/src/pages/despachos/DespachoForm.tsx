@@ -289,6 +289,7 @@ export default function DespachoForm() {
   const colaPendienteKeysRef = useRef<Set<string>>(new Set())
   const procesandoColaRef = useRef(false)
   const showColaPasteRef = useRef(false)
+  const [permitirNoRegistrados, setPermitirNoRegistrados] = useState(false)
   const subPasoSacasRef = useRef<'capturar' | 'distribuir' | 'revisar'>(isEdit ? 'revisar' : 'capturar')
   const pasoActualRef = useRef(pasoActual)
 
@@ -631,8 +632,23 @@ export default function DespachoForm() {
   ): Promise<{ status: 'success' | 'error' | 'warning'; code: 'agregada' | 'vacia' | 'no_encontrada' | 'despachada' | 'en_saca' | 'en_cola'; message: string }> => {
     const guiaTrim = guia.trim()
     if (!guiaTrim) return { status: 'error', code: 'vacia', message: 'Guía vacía' }
-    const p = await buscarPaquetePorGuia(guiaTrim)
-    if (!p || p.idPaquete == null) return { status: 'error', code: 'no_encontrada', message: 'No se encontró la guía' }
+    let p = await buscarPaquetePorGuia(guiaTrim)
+    if (!p || p.idPaquete == null) {
+      if (!permitirNoRegistrados) {
+        return { status: 'error', code: 'no_encontrada', message: 'No se encontró la guía' }
+      }
+      try {
+        const creados = await paqueteService.createSimplificadoBatch([{ numeroGuia: guiaTrim }])
+        if (creados && creados.length > 0) {
+          p = creados[0]
+        }
+      } catch (err) {
+        return { status: 'error', code: 'no_encontrada', message: 'No se pudo crear el paquete' }
+      }
+      if (!p || p.idPaquete == null) {
+        return { status: 'error', code: 'no_encontrada', message: 'Guía no válida tras creación' }
+      }
+    }
     if (p.estado === 'DESPACHADO') return { status: 'error', code: 'despachada', message: 'Ya fue despachada' }
     if (estaEnAlgunaSaca(p.idPaquete)) return { status: 'warning', code: 'en_saca', message: 'Ya está en una saca' }
     if (estaEnColaGlobal(p.idPaquete)) return { status: 'warning', code: 'en_cola', message: 'Ya está en la cola' }
@@ -1519,6 +1535,8 @@ export default function DespachoForm() {
                 colaPasteResult,
                 setColaPasteResult,
                 colaInputRef,
+                permitirNoRegistrados,
+                setPermitirNoRegistrados,
               }}
               distribution={{
                 paquetesDistribuiblesCount: paquetesDistribuibles.length,
