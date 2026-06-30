@@ -44,8 +44,17 @@ export interface DespachoRapido {
 
   idAgencia?: number
   nombreAgencia?: string
+  codigoAgencia?: string
+  telefonoAgencia?: string
+  direccionAgencia?: string
+  cantonAgencia?: string
   idDestinatarioDirecto?: number
   nombreDestinatarioDirecto?: string
+  codigoDestinatarioDirecto?: string
+  telefonoDestinatarioDirecto?: string
+  direccionDestinatarioDirecto?: string
+  cantonDestinatarioDirecto?: string
+  nombreEmpresaDestinatarioDirecto?: string
 
   idAgenciaPropietaria?: number
   nombreAgenciaPropietaria?: string

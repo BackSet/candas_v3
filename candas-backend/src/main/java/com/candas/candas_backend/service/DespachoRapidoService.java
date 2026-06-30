@@ -19,6 +19,7 @@ import com.candas.candas_backend.entity.Paquete;
 import com.candas.candas_backend.entity.PaqueteSaca;
 import com.candas.candas_backend.entity.PaqueteSacaId;
 import com.candas.candas_backend.entity.Saca;
+import com.candas.candas_backend.entity.TelefonoAgencia;
 import com.candas.candas_backend.entity.Usuario;
 import com.candas.candas_backend.entity.enums.EstadoDespacho;
 import com.candas.candas_backend.entity.enums.EstadoPaquete;
@@ -582,10 +583,19 @@ public class DespachoRapidoService {
         if (despacho.getAgencia() != null) {
             dto.setIdAgencia(despacho.getAgencia().getIdAgencia());
             dto.setNombreAgencia(despacho.getAgencia().getNombre());
+            dto.setCodigoAgencia(despacho.getAgencia().getCodigo());
+            dto.setTelefonoAgencia(telefonoPrincipalAgencia(despacho.getAgencia()));
+            dto.setDireccionAgencia(despacho.getAgencia().getDireccion());
+            dto.setCantonAgencia(despacho.getAgencia().getCanton());
         }
         if (despacho.getDestinatarioDirecto() != null) {
             dto.setIdDestinatarioDirecto(despacho.getDestinatarioDirecto().getIdDestinatarioDirecto());
             dto.setNombreDestinatarioDirecto(despacho.getDestinatarioDirecto().getNombreDestinatario());
+            dto.setCodigoDestinatarioDirecto(despacho.getDestinatarioDirecto().getCodigo());
+            dto.setTelefonoDestinatarioDirecto(despacho.getDestinatarioDirecto().getTelefonoDestinatario());
+            dto.setDireccionDestinatarioDirecto(despacho.getDestinatarioDirecto().getDireccionDestinatario());
+            dto.setCantonDestinatarioDirecto(despacho.getDestinatarioDirecto().getCanton());
+            dto.setNombreEmpresaDestinatarioDirecto(despacho.getDestinatarioDirecto().getNombreEmpresa());
         }
         if (despacho.getAgenciaPropietaria() != null) {
             dto.setIdAgenciaPropietaria(despacho.getAgenciaPropietaria().getIdAgencia());
@@ -656,6 +666,22 @@ public class DespachoRapidoService {
             dto.setCantonDestinatarioDirecto(paquete.getDestinatarioDirecto().getCanton());
         }
         return dto;
+    }
+
+    private String telefonoPrincipalAgencia(Agencia agencia) {
+        if (agencia == null || agencia.getTelefonos() == null || agencia.getTelefonos().isEmpty()) {
+            return null;
+        }
+        return agencia.getTelefonos().stream()
+            .filter(telefono -> Boolean.TRUE.equals(telefono.getPrincipal()))
+            .map(TelefonoAgencia::getNumero)
+            .filter(numero -> numero != null && !numero.isBlank())
+            .findFirst()
+            .orElseGet(() -> agencia.getTelefonos().stream()
+                .map(TelefonoAgencia::getNumero)
+                .filter(numero -> numero != null && !numero.isBlank())
+                .findFirst()
+                .orElse(null));
     }
 
     private Usuario usuarioAutenticado() {

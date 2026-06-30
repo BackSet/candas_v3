@@ -23,8 +23,17 @@ public class DespachoRapidoDTO {
     // Destino: agencia o destinatario directo (excluyentes).
     private Long idAgencia;
     private String nombreAgencia;
+    private String codigoAgencia;
+    private String telefonoAgencia;
+    private String direccionAgencia;
+    private String cantonAgencia;
     private Long idDestinatarioDirecto;
     private String nombreDestinatarioDirecto;
+    private String codigoDestinatarioDirecto;
+    private String telefonoDestinatarioDirecto;
+    private String direccionDestinatarioDirecto;
+    private String cantonDestinatarioDirecto;
+    private String nombreEmpresaDestinatarioDirecto;
 
     private Long idAgenciaPropietaria;
     private String nombreAgenciaPropietaria;

@@ -1,6 +1,7 @@
 import { CopyActionButton } from '@/components/ui/copy-action-button'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { DespachoRapidoResumenCopiable } from '@/components/despachos-rapidos/DespachoRapidoResumenCopiable'
 import type { DespachoRapido } from '@/types/despacho-rapido'
 import { ESTADO_DESPACHO_RAPIDO_LABEL } from '@/types/despacho-rapido'
 import { construirResumenDespachoRapido } from '@/utils/despachoRapidoCopy'
@@ -69,6 +70,8 @@ export function DespachoRapidoCard({ despacho, onFinalizar }: DespachoRapidoCard
           Hay sacas sin presinto registrado
         </p>
       ) : null}
+
+      {despacho.estado === 'LISTO_PARA_GUIA' ? <DespachoRapidoResumenCopiable despacho={despacho} /> : null}
 
       <div className="flex items-center gap-2 border-t border-border/30 pt-3">
         <CopyActionButton

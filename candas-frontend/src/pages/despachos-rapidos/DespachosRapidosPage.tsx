@@ -113,7 +113,7 @@ function DespachosRapidosPage() {
           description="Los despachos aparecen aquí cuando el operario los marca listos desde el lector móvil."
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {despachos.map((d) => (
             <DespachoRapidoCard
               key={d.idDespacho}
