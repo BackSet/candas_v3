@@ -26,6 +26,7 @@ import { useDistribuidores } from '@/hooks/useDistribuidores'
 import { useDistribuidorManager } from '@/hooks/useDistribuidorManager'
 import { usePaquetes } from '@/hooks/usePaquetes'
 import { useSacasManager,type SacaFormData } from '@/hooks/useSacasManager'
+import { useScannerKeyboardCapture } from '@/hooks/useScannerKeyboardCapture'
 import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
 import { paqueteService } from '@/lib/api/paquete.service'
 import { notify } from '@/lib/notify'
@@ -289,6 +290,11 @@ export default function DespachoForm() {
   const procesandoColaRef = useRef(false)
   const showColaPasteRef = useRef(false)
   const subPasoSacasRef = useRef<'capturar' | 'distribuir' | 'revisar'>(isEdit ? 'revisar' : 'capturar')
+  const pasoActualRef = useRef(pasoActual)
+
+  useEffect(() => {
+    pasoActualRef.current = pasoActual
+  }, [pasoActual])
 
   useEffect(() => {
     colaGlobalRef.current = colaGlobal
@@ -591,11 +597,29 @@ export default function DespachoForm() {
     []
   )
 
+  /**
+   * Enfoca el input de captura de forma resiliente: reintenta unas pocas veces (el panel puede
+   * no estar montado aún al cambiar de subpaso) y aborta si ya no procede o si el usuario está
+   * en otro campo editable, para no robarle el foco mientras escribe.
+   */
   const focusColaInput = () => {
-    requestAnimationFrame(() => {
-      if (pasoActual !== 2 || subPasoSacasRef.current !== 'capturar' || showColaPasteRef.current) return
-      colaInputRef.current?.focus()
-    })
+    let intentos = 0
+    const intentar = () => {
+      if (pasoActualRef.current !== 2 || subPasoSacasRef.current !== 'capturar' || showColaPasteRef.current) return
+      const input = colaInputRef.current
+      if (input) {
+        const activo = document.activeElement as HTMLElement | null
+        const enOtroEditable =
+          !!activo &&
+          activo !== input &&
+          (activo.tagName === 'INPUT' || activo.tagName === 'TEXTAREA' || activo.tagName === 'SELECT' || activo.isContentEditable)
+        if (enOtroEditable) return
+        input.focus()
+        if (document.activeElement === input) return
+      }
+      if (intentos++ < 2) setTimeout(intentar, 50)
+    }
+    requestAnimationFrame(intentar)
   }
 
   /**
@@ -737,6 +761,21 @@ export default function DespachoForm() {
   useEffect(() => {
     subPasoSacasRef.current = subPasoSacas
   }, [subPasoSacas])
+
+  // Modo "captura continua" con tipiadora: solo activo en el subpaso de captura del paso 2 y sin pegado en bloque.
+  const capturaScannerActiva = pasoActual === 2 && subPasoSacas === 'capturar' && !showColaPaste
+  useScannerKeyboardCapture({
+    active: capturaScannerActiva,
+    inputRef: colaInputRef,
+    onGuia: encolarGuiaIndividual,
+    focusInput: focusColaInput,
+  })
+
+  // Recuperar el foco al entrar al subpaso de captura, volver a él o cerrar el pegado en bloque.
+  useEffect(() => {
+    if (capturaScannerActiva) focusColaInput()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capturaScannerActiva])
 
   /** Paquetes a distribuir en orden de tipiado: primero los ya en sacas (orden de saca), luego la cola (más antiguo primero). */
   const paquetesDistribuibles = useMemo(() => {
