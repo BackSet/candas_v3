@@ -78,12 +78,7 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         moduleId: 'despachos',
         permissions: [PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER],
       },
-      {
-        name: 'Despacho masivo',
-        href: '/despachos/masivo',
-        moduleId: 'despachosMasivo',
-        permission: PERMISSIONS.DESPACHOS.CREAR,
-      },
+
       {
         name: 'Despachos rápidos',
         href: '/despachos/rapidos',
@@ -102,12 +97,7 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         moduleId: 'ensacado',
         permission: PERMISSIONS.ENSACADO.OPERAR,
       },
-      {
-        name: 'Lector móvil',
-        href: '/ensacado/lector-movil',
-        moduleId: 'ensacado',
-        permission: PERMISSIONS.ENSACADO.OPERAR,
-      },
+
     ],
   },
   {

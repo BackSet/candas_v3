@@ -37,7 +37,6 @@ const SacaDetail = lazyRouteComponent(() => import('@/pages/sacas/SacaDetail'))
 const DespachosList = lazyRouteComponent(() => import('@/pages/despachos/DespachosList'))
 const DespachoForm = lazyRouteComponent(() => import('@/pages/despachos/DespachoForm'))
 const DespachoDetail = lazyRouteComponent(() => import('@/pages/despachos/DespachoDetail'))
-const DespachosMasivoPage = lazyRouteComponent(() => import('@/pages/despachos-masivo/DespachosMasivoPage'))
 const DespachosRapidosMobilePage = lazyRouteComponent(() => import('@/pages/despachos-rapidos/DespachosRapidosMobilePage'))
 const DespachosRapidosPage = lazyRouteComponent(() => import('@/pages/despachos-rapidos/DespachosRapidosPage'))
 const AtencionPaquetesList = lazyRouteComponent(() => import('@/pages/atencion-paquetes/AtencionPaquetesList'))
@@ -57,7 +56,6 @@ const DestinatariosDirectosList = lazyRouteComponent(() => import('@/pages/desti
 const DestinatarioDirectoForm = lazyRouteComponent(() => import('@/pages/destinatarios-directos/DestinatarioDirectoForm'))
 const DestinatarioDirectoDetail = lazyRouteComponent(() => import('@/pages/destinatarios-directos/DestinatarioDirectoDetail'))
 const EnsacadoPage = lazyRouteComponent(() => import('@/pages/ensacado/EnsacadoPage'))
-const LectorMovilPage = lazyRouteComponent(() => import('@/pages/ensacado/LectorMovilPage'))
 const ParametrosSistemaLayout = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosSistemaLayout'))
 const ParametrosSistemaIndexPage = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosSistemaIndexPage'))
 const ParametrosWhatsAppDespachoPage = lazyRouteComponent(() => import('@/pages/parametros-sistema/ParametrosWhatsAppDespachoPage'))
@@ -378,15 +376,7 @@ const despachosNewRoute = createRoute({
     </ProtectedRouteByPermission>
   ),
 })
-const despachosMasivoRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: 'despachos/masivo',
-  component: () => (
-    <ProtectedRouteByPermission permission={PERMISSIONS.DESPACHOS.CREAR}>
-      <DespachosMasivoPage />
-    </ProtectedRouteByPermission>
-  ),
-})
+
 const despachosRapidosRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: 'despachos/rapidos',
@@ -592,15 +582,7 @@ const ensacadoRoute = createRoute({
   ),
 })
 
-const ensacadoLectorMovilRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: 'ensacado/lector-movil',
-  component: () => (
-    <ProtectedRouteByPermission permission={PERMISSIONS.ENSACADO.OPERAR}>
-      <LectorMovilPage />
-    </ProtectedRouteByPermission>
-  ),
-})
+
 
 const parametrosSistemaLayoutRoute = createRoute({
   getParentRoute: () => layoutRoute,
@@ -739,7 +721,6 @@ const routeTree = rootRoute.addChildren([
     sacasIdEditRoute,
     despachosIndexRoute,
     despachosNewRoute,
-    despachosMasivoRoute,
     despachosRapidosRoute,
     despachosRapidosMobileRoute,
     despachosIdRoute,
@@ -762,7 +743,6 @@ const routeTree = rootRoute.addChildren([
     distribuidoresIdEditRoute,
     manifiestosConsolidadosRoute,
     ensacadoRoute,
-    ensacadoLectorMovilRoute,
     parametrosSistemaLayoutRoute,
     destinatariosDirectosIndexRoute,
     destinatariosDirectosNewRoute,

@@ -33,19 +33,50 @@
 - Springdoc OpenAPI con integración de Scalar `3.0.3`. [verificado en Git: `candas-backend/pom.xml`]
 - MapStruct `1.6.3`, Lombok, Apache POI `5.5.1`, JasperReports `7.0.7`, Barbecue `1.5-beta1`. [verificado en Git: `candas-backend/pom.xml`]
 - Testcontainers (PostgreSQL) y Spring Modulith (starter-test, docs) en ámbito de pruebas de calidad. [verificado en Git: `candas-backend/pom.xml`]
+# Candas - Contexto tecnico del proyecto
+
+## Identificacion
+
+- Proyecto: Candas v3. [verificado en documentacion: `README.md`]
+- Repositorio remoto: `https://github.com/BackSet/candas_v3.git`. [verificado en Git]
+- Rama base de trabajo para agentes: `dev`. [verificado en Git]
+- Ruta de contexto IA: `docs/ai`. [verificado en Git]
+- Proposito de la aplicacion: sistema de gestion logistica y operativa. [verificado en documentacion: `README.md`]
+
+## Estado de inspeccion
+
+- La rama activa es `dev`. [verificado en Git]
+- `git status --short --branch` limpio antes de la iteración. [verificado en Git]
+- Los cuatro archivos canonicos de `docs/ai` existen y reflejan el stack tecnológico actual. [verificado en Git]
+
+## Estructura principal
+
+- `candas-backend/`: API REST Spring Boot, recursos, migraciones Flyway, Dockerfile y configuracion Railway. [verificado en Git]
+- `candas-frontend/`: SPA React/Vite/TypeScript, rutas, paginas, hooks, services API, stores, componentes UI, Dockerfile y configuracion Railway. [verificado en Git]
+- `docs/`: documentacion funcional, tecnica, despliegue, UX/UI y arquitectura. [verificado en documentacion]
+- `docs/ai/`: contexto tecnico canonico para IA y agentes. [verificado en Git]
+
+## Stack confirmado
+
+### Backend
+
+- Java 25. [verificado en Git: `candas-backend/pom.xml`, `candas-backend/Dockerfile`]
+- Spring Boot `4.1.0` como parent Maven. [verificado en Git: `candas-backend/pom.xml`]
+- Starters: Web MVC, Security, Data JPA, Validation, Flyway, Actuator, Test, Data JPA Test. [verificado en Git: `candas-backend/pom.xml`]
+- PostgreSQL JDBC runtime y Flyway PostgreSQL. [verificado en Git: `candas-backend/pom.xml`]
+- JJWT `0.13.0`. [verificado en Git: `candas-backend/pom.xml`]
+- Springdoc OpenAPI con integración de Scalar `3.0.3`. [verificado en Git: `candas-backend/pom.xml`]
+- MapStruct `1.6.3`, Lombok, Apache POI `5.5.1`, JasperReports `7.0.7`, Barbecue `1.5-beta1`. [verificado en Git: `candas-backend/pom.xml`]
+- Testcontainers (PostgreSQL) y Spring Modulith (starter-test, docs) en ámbito de pruebas de calidad. [verificado en Git: `candas-backend/pom.xml`]
 
 ### Frontend
 
 - React `19.2.7`, React DOM `19.2.7`, TypeScript `~6.0.3`, Vite `^8.1.0`. [verificado en Git: `candas-frontend/package.json`]
 - TanStack Router `^1.170.15`, TanStack Query `^5.101.0`, Zustand `^5.0.14`. [verificado en Git]
 - React Hook Form, Zod, Radix UI, openapi-fetch, openapi-typescript, Vitest, Sonner, Lucide React, Tailwind CSS 4, jspdf, html2canvas, qrcode, react-barcode, xlsx desde CDN de SheetJS. [verificado en Git]
-- `@zxing/browser` `^0.2.0` con peer `@zxing/library` `^0.22.0` (instalado como dependencia directa por `legacy-peer-deps=true` en `.npmrc`): lectura de códigos de barras con la cámara del dispositivo en el lector móvil de Ensacado (`/ensacado/lector-movil`). [verificado en Git]
+- `@zxing/browser` `^0.2.0` con peer `@zxing/library` `^0.22.0` (instalado como dependencia directa por `legacy-peer-deps=true` en `.npmrc`) para lectura de códigos de barras (QR/EAN/Code128) desde la cámara en el flujo móvil de Despachos rápidos (`/despachos/rapidos/mobile`). [verificado en Git]
 - PWA: `vite-plugin-pwa` `^1.3.0` (devDependency) genera service worker (`generateSW`/Workbox) y `manifest.webmanifest`; la app es instalable en Windows (Edge/Chrome), Android e iOS (Añadir a pantalla de inicio) y abre en modo standalone. Precachea el app shell (JS/CSS/HTML/iconos) con `registerType: 'autoUpdate'`; offline solo de shell/fallback. NO cachea la API logística/transaccional (solo Google Fonts como runtime estático). Iconos en `public/` (`pwa-192x192.png`, `pwa-512x512.png`, `pwa-maskable-512x512.png`, `apple-touch-icon.png`, derivados de los SVG de marca). [verificado en Git]
 - Despachos rápidos sincroniza por polling explícito en frontend con `DESPACHOS_RAPIDOS_POLL` (`desktopMs=3000`, `mobileMs=2500`), `refetchOnWindowFocus` y `refetchOnReconnect`; el polling consulta siempre API autenticada y no depende del caché PWA. [verificado en Git]
-- Build con Vite 8 y TypeScript 6; runtime Docker servido por Nginx. [verificado en Git: `package.json`, `Dockerfile`, `nginx.conf`]
-
-## Arquitectura por capa
-
 ### Backend
 
 - Paquete base: `com.candas.candas_backend`. [verificado en Git]

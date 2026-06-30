@@ -19,23 +19,30 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Lote especial | Flujo operativo asociado a `TipoLote`; rutas legacy aun existen | [verificado en Git] |
 | Saca | UI, API, backend, DB | [verificado en Git] |
 | Presinto | Sello de seguridad por saca. Canonico tecnico: `presinto` (UI "Presinto", DB `codigo_presinto`, `Saca.codigoPresinto`). El termino RAE es "precinto"; se mantiene `presinto` por compatibilidad con esquema y contratos. No renombrar masivamente. | [verificado en Git] |
+# Candas - Convenciones de nombres
+
+## Proposito
+
+Este archivo fija terminos canonicos para nuevas implementaciones y documentacion IA. No renombra codigo existente por si solo; registra nombres vigentes, compatibilidades historicas y dudas. [verificado en documentacion de la solicitud]
+
+## Terminos canonicos de producto
+
+| Canonico | Usar en | Evidencia |
+| --- | --- | --- |
+| Candas v3 | Identidad del proyecto | [verificado en documentacion: `README.md`] |
+| Paquete | UI, API, backend, DB | [verificado en Git] |
+| Cliente | UI, API, backend, DB | [verificado en Git] |
+| Agencia | UI, API, backend, DB | [verificado en Git] |
+| Destinatario directo | UI/documentacion; `destinatario_directo` en DB; `destinatarios-directos` en rutas | [verificado en Git] |
+| Distribuidor | UI, API, backend, DB | [verificado en Git] |
+| Punto de origen | UI/documentacion; `punto_origen` en DB; `puntos-origen` en rutas | [verificado en Git] |
+| Lote Recepcion | UI/rutas; `LoteRecepcion` backend; `lote_recepcion` DB | [verificado en Git] |
+| Lote especial | Flujo operativo asociado a `TipoLote`; rutas legacy aun existen | [verificado en Git] |
+| Saca | UI, API, backend, DB | [verificado en Git] |
+| Presinto | Sello de seguridad por saca. Canonico tecnico: `presinto` (UI "Presinto", DB `codigo_presinto`, `Saca.codigoPresinto`). El termino RAE es "precinto"; se mantiene `presinto` por compatibilidad con esquema y contratos. No renombrar masivamente. | [verificado en Git] |
 | Despacho | UI, API, backend, DB | [verificado en Git] |
-| Capturar guías / Distribuir / Revisar sacas | Etiquetas canónicas de los tres subpasos del paso 2 "Gestionar Sacas" en `DespachoForm`. Usar estos términos en UI nueva del flujo de sacas. | [verificado en Git] |
-| Despacho masivo | Modulo/flujo en `/despachos/masivo` y sesion operativa bajo `/api/v1/despacho-masivo`. Crea varios despachos en un mismo flujo, uno a la vez (creacion individual inmediata; sin endpoint batch). | [verificado en Git] |
-| Despacho rápido | Módulo/flujo de despacho con ciclo de vida y guía de distribuidor diferida, bajo `/api/v1/despachos-rapidos`; vista desktop (tablero/finalización) en `/despachos/rapidos`, vista móvil de captura en `/despachos/rapidos/mobile`. Usar "despacho rápido"/"despachos rápidos" en UI/API; no confundir con "despacho masivo". | [verificado en Git] |
+| Despacho rápido | Módulo/flujo de despacho con ciclo de vida y guía de distribuidor diferida, bajo `/api/v1/despachos-rapidos`; vista desktop (tablero/finalización) en `/despachos/rapidos`, vista móvil de captura en `/despachos/rapidos/mobile`. Usar "despacho rápido"/"despachos rápidos" en UI/API. | [verificado en Git] |
 | Estado del despacho | Estados canónicos de `EstadoDespacho` (despacho rápido): `BORRADOR`, `EN_ENSACADO`, `LISTO_PARA_GUIA` (pendiente de guía del distribuidor), `FINALIZADO` (cerrado con guía; también los despachos clásicos/históricos). En DB `despacho.estado`. | [verificado en Git] |
-| Conflictos de despacho rápido | Mensajes operativos canónicos: "Paquete ya reservado", "El despacho ya está finalizado", "Despacho no listo", "Guía externa faltante", "Destino faltante", "Saca vacía". Usarlos para concurrencia entre dispositivos y validaciones de cierre. | [verificado en Git] |
-| Lote de despachos | Conjunto de despachos creados en una misma sesion de despacho masivo (campo `despachosLote`). Usar "lote" para el conjunto, no para un despacho individual. | [verificado en Git] |
-| Cola global de guías | Lista unica de guias capturadas en despacho masivo, pendientes de asignar a un despacho (`colaGlobalGuias`/`paquetesCola`). Estados: `pendiente`, `resuelto`, `no_encontrado`, `no_disponible`, `asignado`. | [verificado en Git] |
-| Despacho en construcción | Despacho que el operario arma actualmente en el builder antes de confirmarlo (`despachoActualId`). | [verificado en Git] |
-| Patrón de sacas | Distribución manual de paquetes por saca en despacho masivo, expresada como enteros positivos separados por comas (p. ej. `2,3,5`). Modos de distribución: "todo en una saca", "repartir en N sacas" y "patrón". Helpers en `utils/sacaDistribution.ts`. | [verificado en Git] |
-| Resumen copiable | Texto del despacho masivo listo para copiar al portapapeles, a nivel de despacho (resumen completo, guías o destino) o de saca (`buildSacaCopyText`/`buildSacaGuiasCopyText`/`buildSacaDestinoCopyText`), construido en `utils/despachoMasivoCopy.ts` y copiado con `copyText`/`CopyActionButton`. El de despacho se persiste en `resumenCopiable`. | [verificado en Git] |
-| Ensacado | UI, API, backend, permiso `ensacado:operar` | [verificado en Git] |
-| Lector móvil | Pantalla móvil de Ensacado (`/ensacado/lector-movil`) que usa la cámara del teléfono como lector de códigos de barras para consultar paquetes. Usar "Lector móvil" en navegación y UI; comparte el permiso `ensacado:operar`. | [verificado en Git] |
-| Instalar Candas | Copy canónico de la acción PWA (botón/diálogo). En iOS usar "Añadir a pantalla de inicio". Evitar "descargar" o "bajar la app"; Candas se "instala" como aplicación. Componente `components/pwa/InstallPrompt.tsx`. | [verificado en Git] |
-| Atencion de paquetes | UI/documentacion; endpoint `/api/v1/atenciones`; permisos `atencion_paquetes:*` | [verificado en Git] |
-| Manifiesto consolidado | UI/API/backend/DB; rutas `manifiestos-consolidados` | [verificado en Git] |
-| Listas etiquetadas | Flujo basado en Paquete bajo `/api/v1/paquetes/listas-etiquetadas` | [verificado en Git] |
 | Parametros del sistema | UI/API/backend; `parametro_sistema` DB | [verificado en Git] |
 | Agencia origen activa | Agencia bajo la que opera el usuario en la sesión actual (`authStore.activeAgencyId`), enviada en el header `X-Agencia-Origen-Activa-Id`. Usar "agencia activa" en UI. | [verificado en Git] |
 | Agencia por defecto / predeterminada | Preferencia de agencia activa que el usuario fija para restaurarla al iniciar sesión (`authStore.defaultAgencyId`, persistida en localStorage `candas-default-active-agency:<idUsuario>`). Usar "predeterminada" en UI. | [verificado en Git] |
