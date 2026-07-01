@@ -37,25 +37,6 @@ export interface PaqueteEnsacadoInfo {
   idAgencia?: number
   nombreAgencia?: string
   direccionAgencia?: string
-  cantonAgencia?: string
-  telefonoAgencia?: string
-  
-  // Información de destinatario directo (si el despacho es directo)
-  idDestinatarioDirecto?: number
-  nombreDestinatarioDirecto?: string
-  telefonoDestinatarioDirecto?: string
-  direccionDestinatarioDirecto?: string
-  
-  // Información del paquete (dirección y observaciones)
-  direccionDestinatarioCompleta?: string // Dirección completa del destinatario del paquete
-  observaciones?: string // Observaciones del paquete
-  enSaca?: boolean // Si el paquete está asignado a una saca
-}
-
-export interface SacaEnsacadoInfo {
-  idSaca: number
-  codigoQr: string
-  numeroOrden: number
   tamano: TamanoSaca
   pesoActual: number
   capacidadMaxima: number

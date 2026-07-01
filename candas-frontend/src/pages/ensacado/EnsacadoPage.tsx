@@ -216,6 +216,15 @@ function EnsacadoPage() {
     if (marcandoRef.current) return
     if (ultimoIdMarcadoRef.current === paqueteInfo.idPaquete) return
 
+    if (paqueteInfo.enSaca === false) {
+      feedback.error()
+      registrarEnHistorial(paqueteInfo.numeroGuia, 'error', undefined, 'Paquete sin despacho/saca')
+      setUltimoPaqueteMostrado(paqueteInfo)
+      limpiarInput()
+      ultimoIdMarcadoRef.current = paqueteInfo.idPaquete
+      return
+    }
+
     if (paqueteInfo.yaEnsacado) {
       notify.warning('Este paquete ya está ensacado')
       feedback.warning()
@@ -231,7 +240,29 @@ function EnsacadoPage() {
     marcarEnsacadoMutate(idPaquete, {
       onSuccess: () => {
         ultimoIdMarcadoRef.current = idPaquete
-        setUltimoPaqueteMostrado(paqueteInfo)
+        
+        // Construir objeto actualizado localmente para refrescar la UI al instante
+        const infoActualizada: PaqueteEnsacadoInfo = {
+          ...paqueteInfo,
+          yaEnsacado: true,
+          paquetesEnSaca: (paqueteInfo.paquetesEnSaca ?? 0) + 1,
+          paquetesFaltantesSaca: Math.max(0, (paqueteInfo.paquetesFaltantesSaca ?? 1) - 1),
+          paquetesEnDespacho: (paqueteInfo.paquetesEnDespacho ?? 0) + 1,
+          paquetesFaltantesDespacho: Math.max(0, (paqueteInfo.paquetesFaltantesDespacho ?? 1) - 1),
+          sacaLlena: Math.max(0, (paqueteInfo.paquetesFaltantesSaca ?? 1) - 1) === 0,
+          despachoLleno: Math.max(0, (paqueteInfo.paquetesFaltantesDespacho ?? 1) - 1) === 0,
+          pesoActualSaca: (paqueteInfo.pesoActualSaca ?? 0) + (paqueteInfo.pesoPaquete ?? 0),
+        }
+        
+        const capMax = paqueteInfo.capacidadMaximaSaca ?? 5.0
+        if (capMax > 0) {
+          infoActualizada.porcentajeLlenadoSaca = Math.min(
+            100,
+            Number((((infoActualizada.pesoActualSaca ?? 0) / capMax) * 100).toFixed(2))
+          )
+        }
+
+        setUltimoPaqueteMostrado(infoActualizada)
         setEnsacadosSesion((n) => n + 1)
         setHighlightSuccess(true)
         feedback.success()

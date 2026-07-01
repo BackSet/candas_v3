@@ -61,4 +61,5 @@ public class PaqueteEnsacadoInfoDTO {
     private String direccionDestinatarioCompleta; // Dirección completa del destinatario del paquete
     private String observaciones; // Observaciones del paquete
     private Boolean enSaca; // Si el paquete está asignado a una saca
+    private BigDecimal pesoPaquete; // Peso del paquete en kilos
 }

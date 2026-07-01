@@ -36,10 +36,9 @@ export function useMarcarEnsacado() {
   return useMutation({
     mutationFn: (idPaquete: number) => ensacadoService.marcarEnsacado(idPaquete),
     onSuccess: (_data, idPaquete) => {
-      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.all })
-      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.session })
+      void queryClient.invalidateQueries({ queryKey: ['ensacado-session'] })
       void queryClient.invalidateQueries({ queryKey: ['ensacado-despacho'] })
-      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.paquete() })
+      void queryClient.invalidateQueries({ queryKey: ['ensacado-paquete'] })
       notify.success(`Guía ensacada correctamente`)
       return idPaquete
     },
@@ -59,10 +58,9 @@ export function useDesmarcarEnsacado() {
   return useMutation({
     mutationFn: (idPaquete: number) => ensacadoService.desmarcarEnsacado(idPaquete),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.all })
-      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.session })
+      void queryClient.invalidateQueries({ queryKey: ['ensacado-session'] })
       void queryClient.invalidateQueries({ queryKey: ['ensacado-despacho'] })
-      void queryClient.invalidateQueries({ queryKey: ensacadoKeys.paquete() })
+      void queryClient.invalidateQueries({ queryKey: ['ensacado-paquete'] })
     },
     onError: (error: unknown) => {
       notify.error(error, 'No se pudo deshacer el ensacado')
