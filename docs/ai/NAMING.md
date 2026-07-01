@@ -49,6 +49,8 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Agencia origen activa | Agencia bajo la que opera el usuario en la sesión actual (`authStore.activeAgencyId`), enviada en el header `X-Agencia-Origen-Activa-Id`. Usar "agencia activa" en UI. | [verificado en Git] |
 | Agencia por defecto / predeterminada | Preferencia de agencia activa que el usuario fija para restaurarla al iniciar sesión (`authStore.defaultAgencyId`, persistida en localStorage `candas-default-active-agency:<idUsuario>`). Usar "predeterminada" en UI. | [verificado en Git] |
 | Usuario, Rol, Permiso | RBAC | [verificado en Git] |
+| Captura móvil / Lector móvil | UI, Documentación | Uso de cámara y linterna para capturar códigos de barras en smartphones. |
+
 
 ## Reglas por contexto
 

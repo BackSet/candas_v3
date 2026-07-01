@@ -78,3 +78,24 @@ Colores de paleta cruda que **permanecen de forma intencional** por carecer de t
 - **Dark mode**: cubierto globalmente por tokens `.dark` en `index.css`; el residuo de paleta cruda usa pares `dark:` explícitos, por lo que también responde al tema. [verificado en Git]
 - **Responsive**: layouts compartidos (`PageContainer`, `ListPageLayout`, `DetailPageLayout`) y `DataTable` (columnas `hideOn`) manejan breakpoints; sidebar colapsable. [verificado en Git]
 - **Accesibilidad básica**: foco visible vía `focus-visible:ring-ring` en primitivas; `aria-label` en botones de icono compartidos; `Label`+`FormError` en formularios. Pendiente de validación manual exhaustiva por teclado en flujos densos (operadores de lote/ensacado). [pendiente de confirmar]
+
+---
+
+## Patrón Canónico de Captura Móvil y Escáner Dual
+
+Este patrón unifica la lectura continua de códigos de barras (lector tipiadora en ordenador) con la captura por cámara en smartphones dentro de la misma pantalla operativa, garantizando consistencia en bodegas con baja iluminación.
+
+### 1. Captura Dual
+* **Selección de Modo:** Uso de `SegmentedToggle` con diseño de vidrio esmerilado (`backdrop-blur-md bg-muted/30 border border-border/30`) para alternar entre **Lector** (entrada física USB/Bluetooth) y **Cámara** (escáner móvil).
+* **Autofocus Persistente (Lector):** Enfoque continuo monitoreado mediante un listener de `focus` que re-enfoca el input del lector en caso de clicks accidentales fuera del área, bloqueando cualquier pérdida de captura física.
+
+### 2. Escáner Móvil (Cámara)
+* **Componente y Hook Reutilizables:** Encapsulado a través de `useBarcodeScanner.ts` y `MobileScannerPanel.tsx` consumiendo la API `@zxing/browser`.
+* **Soporte para Baja Luz (Torch):** Interroga las capacidades del track (`track.getCapabilities()`). Si cuenta con soporte físico, se dibuja un botón interactivo de linterna (`Flashlight` de Lucide) que se ilumina en color ámbar (`bg-amber-500`) y escala levemente cuando está activo.
+* **Cámara Trasera por Defecto:** Selección inteligente priorizando cámaras con etiquetas `back`, `rear`, `posterior`, `trasera` o `environment`.
+* **Selector de Dispositivo:** Cuando el dispositivo móvil posee múltiples cámaras traseras/delanteras, se muestra el botón `SwitchCamera` para iterar entre los deviceIds.
+
+### 3. Fallback Manual e Historial
+* **Ingreso Manual Secundario:** En el modo de cámara se expone permanentemente un input de texto secundario y un botón de submit alternativo como respaldo si la cámara no enfoca o la etiqueta del paquete está rota.
+* **Feedback de Captura:** Al detectar una lectura exitosa o error, se ejecuta el hook `useScanFeedback` para emitir sonidos/vibraciones, complementado por un enfriamiento (`cooldownMs` de 2000-2200ms) para evitar re-lecturas consecutivas.
+
