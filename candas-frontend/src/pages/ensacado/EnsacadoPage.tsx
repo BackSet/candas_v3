@@ -499,7 +499,7 @@ function EnsacadoPage() {
                 videoRef={scanner.videoRef}
                 permission={scanner.permission}
                 isScanning={scanner.isScanning}
-                paused={scanner.paused}
+                paused={marcarEnsacadoPending || isLoadingPaquete || desmarcarEnsacadoPending}
                 error={scanner.error}
                 devices={scanner.devices}
                 selectedDeviceId={scanner.selectedDeviceId}

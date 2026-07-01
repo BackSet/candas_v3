@@ -9,7 +9,7 @@ export const destinatarioDirectoSchema = z.object({
   codigo: z.string().optional(),
   nombreEmpresa: z.string().optional(),
   activo: z.boolean().optional(),
-  tipoUso: z.enum(['FRECUENTE', 'OCASIONAL']).default('FRECUENTE'),
+  tipoUso: z.enum(['FRECUENTE', 'OCASIONAL']),
 })
 
 export type DestinatarioDirectoFormData = z.infer<typeof destinatarioDirectoSchema>

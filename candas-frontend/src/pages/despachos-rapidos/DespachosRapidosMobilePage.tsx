@@ -524,6 +524,9 @@ function DespachosRapidosMobilePage() {
           onSelectDevice={scanner.selectDevice}
           onStart={() => void scanner.start()}
           onManualSubmit={handleScan}
+          hasTorch={scanner.hasTorch}
+          torchActive={scanner.torchActive}
+          onToggleTorch={scanner.toggleTorch}
         />
 
         <label

@@ -626,7 +626,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                         videoRef={scanner.videoRef}
                                         permission={scanner.permission}
                                         isScanning={scanner.isScanning}
-                                        paused={scanner.paused}
+                                        paused={showPasteListDialog || showAgregarAtencionDialog || !!pendingTypeConfirm}
                                         error={scanner.error}
                                         devices={scanner.devices}
                                         selectedDeviceId={scanner.selectedDeviceId}
@@ -662,7 +662,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                             {lastScanned ? (
                                 <Card className={cn(
                                     "h-full border-l-[8px] shadow-sm flex flex-col justify-center bg-card transition-all duration-300 border-border",
-                                    lastScanned.tipoPaquete === 'DOMICILIO' && "border-l-blue-500 bg-blue-500/5 dark:bg-blue-500/10",
+                                    (lastScanned.tipoPaquete as any) === 'DOMICILIO' && "border-l-blue-500 bg-blue-500/5 dark:bg-blue-500/10",
                                     lastScanned.tipoPaquete === 'CLEMENTINA' && "border-l-orange-500 bg-orange-500/5 dark:bg-orange-500/10",
                                     lastScanned.tipoPaquete === 'SEPARAR' && "border-l-red-500 bg-red-500/5 dark:bg-red-500/10",
                                     lastScanned.tipoPaquete === 'CADENITA' && "border-l-violet-500 bg-violet-500/5 dark:bg-violet-500/10"
@@ -670,7 +670,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                     <CardContent className="p-6 space-y-4">
                                         <div className="flex items-center gap-4 border-b border-border/50 pb-4">
                                             <div className="p-3 bg-background rounded-full shadow-sm border border-border shrink-0">
-                                                {lastScanned.tipoPaquete === 'DOMICILIO' && <MapPin className="h-8 w-8 text-blue-500" />}
+                                                {(lastScanned.tipoPaquete as any) === 'DOMICILIO' && <MapPin className="h-8 w-8 text-blue-500" />}
                                                 {lastScanned.tipoPaquete === 'CLEMENTINA' && <Box className="h-8 w-8 text-orange-500" />}
                                                 {lastScanned.tipoPaquete === 'SEPARAR' && <Scissors className="h-8 w-8 text-red-500" />}
                                                 {lastScanned.tipoPaquete === 'CADENITA' && <LinkIcon className="h-8 w-8 text-violet-500" />}
@@ -682,7 +682,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                 <div className="mt-2 flex items-center gap-2">
                                                     <Badge className={cn(
                                                         "text-xs px-2 py-0.5 font-bold uppercase border shadow-none",
-                                                        lastScanned.tipoPaquete === 'DOMICILIO' && "bg-blue-500/10 text-blue-600 border-blue-500/20",
+                                                        (lastScanned.tipoPaquete as any) === 'DOMICILIO' && "bg-blue-500/10 text-blue-600 border-blue-500/20",
                                                         lastScanned.tipoPaquete === 'CLEMENTINA' && "bg-orange-500/10 text-orange-600 border-orange-500/20",
                                                         lastScanned.tipoPaquete === 'SEPARAR' && "bg-red-500/10 text-red-600 border-red-500/20",
                                                         lastScanned.tipoPaquete === 'CADENITA' && "bg-violet-500/10 text-violet-600 border-violet-500/20"
