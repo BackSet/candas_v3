@@ -1,26 +1,43 @@
 import { EnsacadoLayoutHeader } from '@/components/ensacado/EnsacadoLayoutHeader'
 import { SacaGuiasPanel } from '@/components/ensacado/SacaGuiasPanel'
 import { SyncStatusIndicator } from '@/components/ensacado/SyncStatusIndicator'
-import { AppIcon,ModulePageIcon } from '@/components/icons'
+import { AppIcon, ModulePageIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ENSACADO_POLL,ENSACADO_SCAN } from '@/constants/ensacado'
+import { SegmentedToggle } from '@/components/ui/segmented-toggle'
+import { ENSACADO_POLL, ENSACADO_SCAN } from '@/constants/ensacado'
 import {
-esGuiaValidaParaBuscar,
-useActualizarUltimaBusqueda,
-useBuscarPaquete,
-useDesmarcarEnsacado,
-useInfoDespacho,
-useMarcarEnsacado,
+  esGuiaValidaParaBuscar,
+  useActualizarUltimaBusqueda,
+  useBuscarPaquete,
+  useDesmarcarEnsacado,
+  useInfoDespacho,
+  useMarcarEnsacado,
 } from '@/hooks/useEnsacado'
-import { getApiErrorMessage,getApiStatus,isPaqueteYaEnsacadoError } from '@/lib/api/errors'
+import { getApiErrorMessage, getApiStatus, isPaqueteYaEnsacadoError } from '@/lib/api/errors'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
 import { useScanFeedback } from '@/hooks/useScanFeedback'
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
+import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
 import type { PaqueteEnsacadoInfo } from '@/types/ensacado'
-import { AlertCircle,CheckCircle2,Copy,Loader2,ScanBarcode,Smartphone,Undo2,Volume2,VolumeX,X,XCircle } from 'lucide-react'
-import { useCallback,useEffect,useRef,useState } from 'react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  Copy,
+  Loader2,
+  ScanBarcode,
+  Smartphone,
+  Undo2,
+  Volume2,
+  VolumeX,
+  X,
+  XCircle,
+  Keyboard,
+  Camera
+} from 'lucide-react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { PaqueteInfoCard } from './PaqueteInfoCard'
 import { VistaEnsacadoSoloLectura } from './VistaEnsacadoSoloLectura'
 
@@ -38,6 +55,7 @@ interface ScanHistorial {
 
 function EnsacadoPage() {
   const [modo, setModo] = useState<Modo>('selector')
+  const [modoCaptura, setModoCaptura] = useState<'LECTOR' | 'CAMARA'>('LECTOR')
   const [numeroGuia, setNumeroGuia] = useState('')
   const [numeroGuiaDebounced, setNumeroGuiaDebounced] = useState('')
   const [ultimoPaqueteMostrado, setUltimoPaqueteMostrado] = useState<PaqueteEnsacadoInfo | null>(null)
@@ -79,7 +97,7 @@ function EnsacadoPage() {
   }, [])
 
   const aplicarGuia = useCallback((valor: string) => {
-    const limpio = valor.trim()
+    const limpio = valor.trim().toUpperCase()
     if (!limpio) return
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
     setNumeroGuiaDebounced(limpio)
@@ -89,7 +107,7 @@ function EnsacadoPage() {
   useEffect(() => {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
     debounceTimerRef.current = setTimeout(() => {
-      const limpio = numeroGuia.trim()
+      const limpio = numeroGuia.trim().toUpperCase()
       if (limpio && limpio !== ultimoValorProcesadoRef.current) {
         setNumeroGuiaDebounced(limpio)
         ultimoValorProcesadoRef.current = limpio
@@ -130,13 +148,14 @@ function EnsacadoPage() {
           setHistorial((prev) =>
             prev.map((h) => (h.id === entrada.id ? { ...h, status: 'deshecho' } : h))
           )
-          // Permite volver a escanear la misma guía inmediatamente
           ultimoIdMarcadoRef.current = null
-          inputRef.current?.focus()
+          if (modoCaptura === 'LECTOR') {
+            inputRef.current?.focus()
+          }
         },
       })
     },
-    [desmarcarEnsacadoMutate, desmarcarEnsacadoPending, feedback]
+    [desmarcarEnsacadoMutate, desmarcarEnsacadoPending, feedback, modoCaptura]
   )
 
   const paqueteActivo =
@@ -151,6 +170,29 @@ function EnsacadoPage() {
     despachoInfo?.sacas?.find((s) => s.idSaca === paqueteActivo?.idSacaAsignada) ?? null
   const paquetesEnsacados = sacaActual?.paquetesEnsacados ?? []
   const paquetesPendientes = sacaActual?.paquetesPendientes ?? []
+
+  // Cámara de escaneo móvil
+  const scanner = useBarcodeScanner({
+    onResult: (guia) => {
+      if (guia) {
+        aplicarGuia(guia)
+      }
+    },
+    cooldownMs: 2500,
+    paused: modo !== 'escanear' || modoCaptura !== 'CAMARA' || marcandoRef.current || isLoadingPaquete || desmarcarEnsacadoPending
+  })
+
+  // Encender/apagar cámara según selección
+  useEffect(() => {
+    if (modo === 'escanear' && modoCaptura === 'CAMARA') {
+      void scanner.start()
+    } else {
+      scanner.stop()
+    }
+    return () => {
+      scanner.stop()
+    }
+  }, [modo, modoCaptura])
 
   // Sincronizar sesión para vista móvil (al encontrar paquete válido)
   useEffect(() => {
@@ -194,19 +236,22 @@ function EnsacadoPage() {
         setHighlightSuccess(true)
         feedback.success()
         registrarEnHistorial(paqueteInfo.numeroGuia, 'ensacado', idPaquete)
-        setTimeout(() => setHighlightSuccess(false), 1_200)
+        setTimeout(() => setHighlightSuccess(false), 1200)
         limpiarInput()
-        inputRef.current?.focus()
+        if (modoCaptura === 'LECTOR') {
+          inputRef.current?.focus()
+        }
       },
       onError: (error) => {
-        // Bloquear reintentos automáticos para el mismo paquete hasta escanear otra guía
         ultimoIdMarcadoRef.current = idPaquete
         setUltimoPaqueteMostrado(paqueteInfo)
         if (isPaqueteYaEnsacadoError(error)) {
           feedback.warning()
           registrarEnHistorial(paqueteInfo.numeroGuia, 'duplicado')
           limpiarInput()
-          inputRef.current?.focus()
+          if (modoCaptura === 'LECTOR') {
+            inputRef.current?.focus()
+          }
           return
         }
         feedback.error()
@@ -221,7 +266,7 @@ function EnsacadoPage() {
         marcandoRef.current = false
       },
     })
-  }, [modo, paqueteInfo, errorPaquete, numeroGuiaDebounced, marcarEnsacadoMutate, limpiarInput, feedback, registrarEnHistorial])
+  }, [modo, paqueteInfo, errorPaquete, numeroGuiaDebounced, marcarEnsacadoMutate, limpiarInput, feedback, registrarEnHistorial, modoCaptura])
 
   // Feedback de error de búsqueda (guía inexistente / fallo de red), una vez por guía
   useEffect(() => {
@@ -238,17 +283,27 @@ function EnsacadoPage() {
     registrarEnHistorial(guia, 'error', undefined, mensaje)
   }, [modo, errorPaquete, numeroGuiaDebounced, feedback, registrarEnHistorial])
 
+  // Focus inicial al entrar
   useEffect(() => {
-    if (modo === 'escanear') inputRef.current?.focus()
-  }, [modo])
+    if (modo === 'escanear' && modoCaptura === 'LECTOR') inputRef.current?.focus()
+  }, [modo, modoCaptura])
 
+  // Autofocus continuo en LECTOR
   useEffect(() => {
-    if (modo !== 'escanear') return
+    if (modo !== 'escanear' || modoCaptura !== 'LECTOR') return
     if (!marcarEnsacadoPending && !numeroGuia) {
-      const timer = setTimeout(() => inputRef.current?.focus(), 80)
-      return () => clearTimeout(timer)
+      const handleFocus = () => {
+        setTimeout(() => {
+          if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+            inputRef.current?.focus()
+          }
+        }, 100)
+      }
+      inputRef.current?.focus()
+      window.addEventListener('focus', handleFocus)
+      return () => window.removeEventListener('focus', handleFocus)
     }
-  }, [modo, marcarEnsacadoPending, numeroGuia])
+  }, [modo, modoCaptura, marcarEnsacadoPending, numeroGuia])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && numeroGuia.trim()) {
@@ -288,7 +343,7 @@ function EnsacadoPage() {
           <div className="grid w-full max-w-2xl grid-cols-1 gap-5 sm:grid-cols-2">
             <ModoCard
               title="Escanear paquetes"
-              description="Lector o teclado: busca la guía y la marca como ensacada automáticamente."
+              description="Lector físico o cámara móvil: busca la guía y la marca como ensacada automáticamente."
               icon={ScanBarcode}
               onClick={() => {
                 setEnsacadosSesion(0)
@@ -317,7 +372,7 @@ function EnsacadoPage() {
         onBack={() => setModo('selector')}
         showScanIcon
         trailing={
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 font-sans">
             <Button
               type="button"
               variant="ghost"
@@ -334,65 +389,95 @@ function EnsacadoPage() {
         }
       />
 
-      <div className="flex-1 space-y-6 p-4 sm:p-6">
+      <div className="flex-1 space-y-5 p-4 sm:p-6 font-sans">
         <div className="mx-auto max-w-3xl space-y-5">
-          <div className="relative">
-            <Label htmlFor="scanGuiaEnsacado" className="sr-only">
-              Número de guía
-            </Label>
-            <div
-              className={cn(
-                'relative overflow-hidden rounded-2xl border-2 shadow-sm transition-all duration-200',
-                errorMessage
-                  ? 'border-error/50 shadow-error/10'
-                  : procesando
-                    ? 'border-primary/50 shadow-primary/10'
-                    : 'border-border/50 focus-within:border-primary/60'
-              )}
-            >
-              <Input
-                id="scanGuiaEnsacado"
-                ref={inputRef}
-                placeholder="Escanear o escribir guía…"
-                value={numeroGuia}
-                onChange={(e) => setNumeroGuia(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={marcarEnsacadoPending}
-                className="h-16 border-0 bg-transparent px-14 text-center font-mono text-2xl focus-visible:ring-0 sm:h-20 sm:text-3xl"
-                autoComplete="off"
-                inputMode="text"
-              />
-              <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2">
-                {procesando ? (
-                  <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
-                    <Loader2 className="size-5 animate-spin text-primary" />
-                  </div>
-                ) : numeroGuia ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-9 rounded-full"
-                    onClick={() => {
-                      limpiarInput()
-                      inputRef.current?.focus()
-                    }}
-                  >
-                    <X className="size-4" />
-                  </Button>
-                ) : (
-                  <AppIcon icon={ScanBarcode} size="md" className="text-muted-foreground/25" />
-                )}
-              </div>
-            </div>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              {marcarEnsacadoPending
-                ? 'Marcando como ensacado…'
-                : isLoadingPaquete
-                  ? 'Buscando paquete…'
-                  : 'Enter confirma · El lector suele enviar Enter automáticamente'}
-            </p>
+          {/* Selector de Captura Dual */}
+          <div className="flex justify-center">
+            <SegmentedToggle
+              value={modoCaptura}
+              onChange={(v) => setModoCaptura(v as 'LECTOR' | 'CAMARA')}
+              options={[
+                { value: 'LECTOR', label: <span className="flex items-center gap-1.5"><Keyboard className="size-4" /> Lector</span> },
+                { value: 'CAMARA', label: <span className="flex items-center gap-1.5"><Camera className="size-4" /> Cámara</span> },
+              ]}
+              className="h-9 w-full sm:w-[280px]"
+            />
           </div>
+
+          {modoCaptura === 'LECTOR' ? (
+            <div className="relative">
+              <Label htmlFor="scanGuiaEnsacado" className="sr-only">
+                Número de guía
+              </Label>
+              <div
+                className={cn(
+                  'relative overflow-hidden rounded-2xl border-2 shadow-sm transition-all duration-200 bg-card',
+                  errorMessage
+                    ? 'border-error/50 shadow-error/10'
+                    : procesando
+                      ? 'border-primary/50 shadow-primary/10'
+                      : 'border-border/50 focus-within:border-primary/60'
+                )}
+              >
+                <Input
+                  id="scanGuiaEnsacado"
+                  ref={inputRef}
+                  placeholder="Escanear o escribir guía…"
+                  value={numeroGuia}
+                  onChange={(e) => setNumeroGuia(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={marcarEnsacadoPending}
+                  className="h-16 border-0 bg-transparent px-14 text-center font-mono text-2xl focus-visible:ring-0 sm:h-20 sm:text-3xl"
+                  autoComplete="off"
+                  inputMode="text"
+                />
+                <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2">
+                  {procesando ? (
+                    <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
+                      <Loader2 className="size-5 animate-spin text-primary" />
+                    </div>
+                  ) : numeroGuia ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-9 rounded-full"
+                      onClick={() => {
+                        limpiarInput()
+                        inputRef.current?.focus()
+                      }}
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  ) : (
+                    <AppIcon icon={ScanBarcode} size="md" className="text-muted-foreground/25" />
+                  )}
+                </div>
+              </div>
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                {marcarEnsacadoPending
+                  ? 'Marcando como ensacado…'
+                  : isLoadingPaquete
+                    ? 'Buscando paquete…'
+                    : 'Enter confirma · Lector físico y tipiadora enfocados permanentemente'}
+              </p>
+            </div>
+          ) : (
+            <div className="animate-in fade-in duration-200">
+              <MobileScannerPanel
+                videoRef={scanner.videoRef}
+                permission={scanner.permission}
+                isScanning={scanner.isScanning}
+                paused={scanner.paused}
+                error={scanner.error}
+                devices={scanner.devices}
+                selectedDeviceId={scanner.selectedDeviceId}
+                onSelectDevice={scanner.selectDevice}
+                onStart={() => void scanner.start()}
+                onManualSubmit={(guia) => aplicarGuia(guia)}
+              />
+            </div>
+          )}
 
           {errorMessage ? (
             <div className="animate-in fade-in flex items-center gap-4 rounded-xl border border-error/30 bg-error/10 p-4 duration-200">
@@ -435,10 +520,10 @@ function EnsacadoPage() {
 }
 
 const HISTORIAL_STATUS: Record<ScanStatus, { label: string; icon: typeof CheckCircle2; className: string }> = {
-  ensacado: { label: 'Ensacado', icon: CheckCircle2, className: 'text-success' },
-  duplicado: { label: 'Ya ensacado', icon: Copy, className: 'text-warning' },
-  error: { label: 'Error', icon: XCircle, className: 'text-error' },
-  deshecho: { label: 'Deshecho', icon: Undo2, className: 'text-muted-foreground' },
+  ensacado: { label: 'Ensacado', icon: CheckCircle2, className: 'text-success font-semibold' },
+  duplicado: { label: 'Ya ensacado', icon: Copy, className: 'text-warning font-semibold' },
+  error: { label: 'Error', icon: XCircle, className: 'text-error font-semibold' },
+  deshecho: { label: 'Deshecho', icon: Undo2, className: 'text-muted-foreground font-semibold' },
 }
 
 function HistorialSesion({
@@ -454,7 +539,7 @@ function HistorialSesion({
 }) {
   const totalEnsacados = historial.filter((h) => h.status === 'ensacado').length
   return (
-    <div className="surface-panel overflow-hidden">
+    <div className="surface-panel overflow-hidden bg-card border border-border shadow-sm rounded-xl">
       <div className="flex items-center justify-between border-b border-border/30 bg-muted/10 px-4 py-2.5">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">Historial de la sesión</h3>
@@ -486,7 +571,7 @@ function HistorialSesion({
               <div className="min-w-0 flex-1">
                 <p
                   className={cn(
-                    'truncate font-mono',
+                    'truncate font-mono text-foreground font-semibold',
                     item.status === 'deshecho' && 'text-muted-foreground line-through'
                   )}
                 >
@@ -512,7 +597,7 @@ function HistorialSesion({
               ) : (
                 <span className="hidden w-[68px] shrink-0 sm:block" aria-hidden />
               )}
-              <span className="w-16 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+              <span className="w-16 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground font-mono">
                 {item.hora}
               </span>
             </li>
