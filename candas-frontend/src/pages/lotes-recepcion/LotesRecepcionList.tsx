@@ -67,6 +67,7 @@ const TIPO_LOTE_LABELS: Record<string, string> = {
   all: 'Todos',
   NORMAL: 'Normal',
   ESPECIAL: 'Especial',
+  AUTOMATICO_DESPACHO: 'Automático (despacho)',
 }
 
 function LoteRecepcionRowActions({
@@ -215,10 +216,12 @@ export default function LotesRecepcionList() {
             'text-[11px] font-medium',
             l.tipoLote === 'ESPECIAL'
               ? 'bg-primary/10 text-primary border-primary/20'
-              : 'bg-muted text-muted-foreground'
+              : l.tipoLote === 'AUTOMATICO_DESPACHO'
+                ? 'bg-info/10 text-info border-info/20'
+                : 'bg-muted text-muted-foreground'
           )}
         >
-          {l.tipoLote === 'ESPECIAL' ? 'Especial' : 'Normal'}
+          {TIPO_LOTE_LABELS[l.tipoLote ?? 'NORMAL'] ?? 'Normal'}
         </Badge>
       ),
       sortValue: (l) => l.tipoLote ?? '',
@@ -334,6 +337,7 @@ export default function LotesRecepcionList() {
               { value: 'all', label: 'Todos los tipos' },
               { value: 'NORMAL', label: 'Normal' },
               { value: 'ESPECIAL', label: 'Especial' },
+              { value: 'AUTOMATICO_DESPACHO', label: 'Automático (despacho)' },
             ]}
             ariaLabel="Tipo de lote"
           />

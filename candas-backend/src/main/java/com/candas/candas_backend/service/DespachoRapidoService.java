@@ -92,6 +92,7 @@ public class DespachoRapidoService {
     private final PresintoUtil presintoUtil;
     private final JdbcTemplate jdbcTemplate;
     private final DespachoService despachoService;
+    private final LoteRecepcionAutomaticoService loteRecepcionAutomaticoService;
 
     public DespachoRapidoService(
             DespachoRepository despachoRepository,
@@ -104,7 +105,8 @@ public class DespachoRapidoService {
             AgenciaScopeResolver agenciaScopeResolver,
             PresintoUtil presintoUtil,
             JdbcTemplate jdbcTemplate,
-            DespachoService despachoService) {
+            DespachoService despachoService,
+            LoteRecepcionAutomaticoService loteRecepcionAutomaticoService) {
         this.despachoRepository = despachoRepository;
         this.sacaRepository = sacaRepository;
         this.paqueteRepository = paqueteRepository;
@@ -116,6 +118,7 @@ public class DespachoRapidoService {
         this.presintoUtil = presintoUtil;
         this.jdbcTemplate = jdbcTemplate;
         this.despachoService = despachoService;
+        this.loteRecepcionAutomaticoService = loteRecepcionAutomaticoService;
     }
 
     // ---------------------------------------------------------------------
@@ -211,6 +214,7 @@ public class DespachoRapidoService {
 
         Saca saca = resolverSacaDestino(despacho, dto.getIdSaca(), dto.getTamanoSaca());
         reservarPaqueteEnSaca(paquete, saca);
+        loteRecepcionAutomaticoService.asegurarLoteParaPaqueteEnDespacho(paquete, despacho);
 
         marcarEnEnsacadoSiCapturaContinua(despacho);
         return toDTO(recargar(id));
@@ -290,7 +294,25 @@ public class DespachoRapidoService {
         despacho.setNumeroGuiaAgenciaDistribucion(guia);
         despacho.setEstado(EstadoDespacho.FINALIZADO);
         despachoRepository.save(despacho);
+        asegurarLoteAutomaticoDeTodosLosPaquetes(despacho);
         return toDTO(recargar(id));
+    }
+
+    /**
+     * Respaldo al finalizar: por si algún paquete llegó a una saca de este despacho sin pasar
+     * por {@link #agregarPaquete} (p. ej. movido/reasignado por otra vía), asegura que todos los
+     * paquetes de sus sacas tengan lote de recepción antes de dar el despacho por finalizado.
+     */
+    private void asegurarLoteAutomaticoDeTodosLosPaquetes(Despacho despacho) {
+        List<Saca> sacas = sacaRepository.findByDespachoIdDespacho(despacho.getIdDespacho());
+        for (Saca saca : sacas) {
+            if (saca.getPaqueteSacas() == null) {
+                continue;
+            }
+            for (PaqueteSaca ps : saca.getPaqueteSacas()) {
+                loteRecepcionAutomaticoService.asegurarLoteParaPaqueteEnDespacho(ps.getPaquete(), despacho);
+            }
+        }
     }
 
     // ---------------------------------------------------------------------

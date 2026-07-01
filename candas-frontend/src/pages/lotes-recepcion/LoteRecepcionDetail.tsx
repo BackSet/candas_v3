@@ -34,6 +34,7 @@ import { useDeleteLoteRecepcion,useLoteRecepcion,usePaquetesLoteRecepcion } from
 import { getApiErrorMessage,getApiStatus } from '@/lib/api/errors'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
+import { getTipoLoteLabel } from '@/types/lote-recepcion'
 import { TipoPaquete } from '@/types/paquete'
 import { PERMISSIONS } from '@/types/permissions'
 import { generarExcelPorTipo,generarExcelTrackingSistemaExterno,MSG_SIN_PAQUETES_TRACKING,type SubTipoClementinaTracking,type TipoExportacionTracking } from '@/utils/generarExcelLoteRecepcion'
@@ -304,7 +305,7 @@ export default function LoteRecepcionDetail() {
       backUrl="/lotes-recepcion"
       maxWidth="2xl"
       status={{
-        label: loteRecepcion.tipoLote === 'ESPECIAL' ? 'Especial' : 'Normal',
+        label: getTipoLoteLabel(loteRecepcion.tipoLote),
         variant: 'active',
       }}
       actions={<QuickActions secondary={secondaryActions} />}
@@ -319,7 +320,7 @@ export default function LoteRecepcionDetail() {
               label="Tipo"
               value={
                 <StatusBadge
-                  label={loteRecepcion.tipoLote === 'ESPECIAL' ? 'Especial' : 'Normal'}
+                  label={getTipoLoteLabel(loteRecepcion.tipoLote)}
                   variant="active"
                 />
               }

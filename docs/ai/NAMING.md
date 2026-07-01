@@ -17,6 +17,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Punto de origen | UI/documentacion; `punto_origen` en DB; `puntos-origen` en rutas | [verificado en Git] |
 | Lote Recepcion | UI/rutas; `LoteRecepcion` backend; `lote_recepcion` DB | [verificado en Git] |
 | Lote especial | Flujo operativo asociado a `TipoLote`; rutas legacy aun existen | [verificado en Git] |
+| Lote automático (despacho) | Backend: `TipoLote.AUTOMATICO_DESPACHO`, servicio `LoteRecepcionAutomaticoService` (MVP 1/3, base sin UI/integración aún). Lote de recepción creado automáticamente para paquetes de despachos/sacas sin lote previo, agrupado por fecha del despacho + agencia propietaria. No usar en UI todavía (sin frontend asociado). | [verificado en Git] |
 | Saca | UI, API, backend, DB | [verificado en Git] |
 | Presinto | Sello de seguridad por saca. Canonico tecnico: `presinto` (UI "Presinto", DB `codigo_presinto`, `Saca.codigoPresinto`). El termino RAE es "precinto"; se mantiene `presinto` por compatibilidad con esquema y contratos. No renombrar masivamente. | [verificado en Git] |
 # Candas - Convenciones de nombres
@@ -38,6 +39,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Punto de origen | UI/documentacion; `punto_origen` en DB; `puntos-origen` en rutas | [verificado en Git] |
 | Lote Recepcion | UI/rutas; `LoteRecepcion` backend; `lote_recepcion` DB | [verificado en Git] |
 | Lote especial | Flujo operativo asociado a `TipoLote`; rutas legacy aun existen | [verificado en Git] |
+| Lote automático (despacho) | Backend: `TipoLote.AUTOMATICO_DESPACHO`, servicio `LoteRecepcionAutomaticoService` (MVP 1/3, base sin UI/integración aún). Lote de recepción creado automáticamente para paquetes de despachos/sacas sin lote previo, agrupado por fecha del despacho + agencia propietaria. No usar en UI todavía (sin frontend asociado). | [verificado en Git] |
 | Saca | UI, API, backend, DB | [verificado en Git] |
 | Presinto | Sello de seguridad por saca. Canonico tecnico: `presinto` (UI "Presinto", DB `codigo_presinto`, `Saca.codigoPresinto`). El termino RAE es "precinto"; se mantiene `presinto` por compatibilidad con esquema y contratos. No renombrar masivamente. | [verificado en Git] |
 | Despacho | UI, API, backend, DB | [verificado en Git] |

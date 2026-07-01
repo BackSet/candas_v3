@@ -50,6 +50,7 @@ public class DespachoService {
     private final PresintoUtil presintoUtil;
     private final AgenciaScopeResolver agenciaScopeResolver;
     private final JdbcTemplate jdbcTemplate;
+    private final LoteRecepcionAutomaticoService loteRecepcionAutomaticoService;
 
     public DespachoService(
             DespachoRepository despachoRepository,
@@ -61,7 +62,8 @@ public class DespachoService {
             UsuarioRepository usuarioRepository,
             PresintoUtil presintoUtil,
             AgenciaScopeResolver agenciaScopeResolver,
-            JdbcTemplate jdbcTemplate) {
+            JdbcTemplate jdbcTemplate,
+            LoteRecepcionAutomaticoService loteRecepcionAutomaticoService) {
         this.despachoRepository = despachoRepository;
         this.sacaRepository = sacaRepository;
         this.agenciaRepository = agenciaRepository;
@@ -72,6 +74,7 @@ public class DespachoService {
         this.presintoUtil = presintoUtil;
         this.agenciaScopeResolver = agenciaScopeResolver;
         this.jdbcTemplate = jdbcTemplate;
+        this.loteRecepcionAutomaticoService = loteRecepcionAutomaticoService;
     }
 
     public Page<DespachoDTO> findAll(Pageable pageable, String tipoDestino, LocalDate fechaDesde, LocalDate fechaHasta, String search) {
@@ -363,6 +366,7 @@ public class DespachoService {
                     
                     paquete.setEstado(EstadoPaquete.ASIGNADO_SACA);
                     paqueteRepository.save(paquete);
+                    loteRecepcionAutomaticoService.asegurarLoteParaPaqueteEnDespacho(paquete, despacho);
                     ordenEnSaca++;
                 }
             }
@@ -619,6 +623,7 @@ public class DespachoService {
             
             paquete.setEstado(EstadoPaquete.ASIGNADO_SACA);
             paqueteRepository.save(paquete);
+            loteRecepcionAutomaticoService.asegurarLoteParaPaqueteEnDespacho(paquete, despacho);
             ordenEnSaca++;
         }
 
@@ -672,7 +677,10 @@ public class DespachoService {
             if (saca.getPaqueteSacas() != null) {
                 for (PaqueteSaca ps : saca.getPaqueteSacas()) {
                     Paquete paquete = ps.getPaquete();
-                    if (paquete.getEstado() == EstadoPaquete.ENSACADO || 
+                    // Respaldo: asegura lote de recepción antes de dar el despacho por despachado,
+                    // por si el paquete llegó a la saca sin pasar por crearYAsignarSacas/agregarCadenitaAlDespacho.
+                    loteRecepcionAutomaticoService.asegurarLoteParaPaqueteEnDespacho(paquete, despachoEntidad);
+                    if (paquete.getEstado() == EstadoPaquete.ENSACADO ||
                         paquete.getEstado() == EstadoPaquete.ASIGNADO_SACA) {
                         paquete.setEstado(EstadoPaquete.DESPACHADO);
                         paqueteRepository.save(paquete);
