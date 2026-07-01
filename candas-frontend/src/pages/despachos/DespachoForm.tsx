@@ -27,6 +27,7 @@ import { useDistribuidorManager } from '@/hooks/useDistribuidorManager'
 import { usePaquetes } from '@/hooks/usePaquetes'
 import { useSacasManager,type SacaFormData } from '@/hooks/useSacasManager'
 import { useScannerKeyboardCapture } from '@/hooks/useScannerKeyboardCapture'
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { destinatarioDirectoService } from '@/lib/api/destinatario-directo.service'
 import { paqueteService } from '@/lib/api/paquete.service'
 import { notify } from '@/lib/notify'
@@ -778,8 +779,33 @@ export default function DespachoForm() {
     subPasoSacasRef.current = subPasoSacas
   }, [subPasoSacas])
 
+  // Estados para la linterna y cámara móvil en Paso 2 (Sacas)
+  const [modoCaptura, setModoCaptura] = useState<'LECTOR' | 'CAMARA'>('LECTOR')
+
+  const scanner = useBarcodeScanner({
+    onResult: (guia) => {
+      if (guia) {
+        handleColaSubmit(undefined, guia)
+      }
+    },
+    cooldownMs: 2000,
+    paused: pasoActual !== 2 || subPasoSacas !== 'capturar' || procesandoCola
+  })
+
+  // Controlar ciclo de vida de la cámara en Step 2
+  useEffect(() => {
+    if (modoCaptura === 'CAMARA' && pasoActual === 2 && subPasoSacas === 'capturar' && !showColaPaste) {
+      void scanner.start()
+    } else {
+      scanner.stop()
+    }
+    return () => {
+      scanner.stop()
+    }
+  }, [modoCaptura, pasoActual, subPasoSacas, showColaPaste])
+
   // Modo "captura continua" con tipiadora: solo activo en el subpaso de captura del paso 2 y sin pegado en bloque.
-  const capturaScannerActiva = pasoActual === 2 && subPasoSacas === 'capturar' && !showColaPaste
+  const capturaScannerActiva = pasoActual === 2 && subPasoSacas === 'capturar' && !showColaPaste && modoCaptura === 'LECTOR'
   useScannerKeyboardCapture({
     active: capturaScannerActiva,
     inputRef: colaInputRef,
@@ -1537,6 +1563,9 @@ export default function DespachoForm() {
                 colaInputRef,
                 permitirNoRegistrados,
                 setPermitirNoRegistrados,
+                modoCaptura,
+                setModoCaptura,
+                scanner,
               }}
               distribution={{
                 paquetesDistribuiblesCount: paquetesDistribuibles.length,

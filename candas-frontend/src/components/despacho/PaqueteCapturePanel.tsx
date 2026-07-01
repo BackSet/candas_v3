@@ -2,7 +2,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { List as ListIcon, Loader2, Plus } from 'lucide-react'
+import { SegmentedToggle } from '@/components/ui/segmented-toggle'
+import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
+import { List as ListIcon, Loader2, Plus, Keyboard, Camera } from 'lucide-react'
 import type { RefObject } from 'react'
 
 export interface ColaFeedback {
@@ -37,6 +39,11 @@ export interface PaqueteCapturePanelProps {
   colaInputRef: RefObject<HTMLInputElement | null>
   permitirNoRegistrados: boolean
   setPermitirNoRegistrados: (value: boolean) => void
+
+  // Props opcionales para soporte de cámara móvil (captura dual)
+  modoCaptura?: 'LECTOR' | 'CAMARA'
+  setModoCaptura?: (v: 'LECTOR' | 'CAMARA') => void
+  scanner?: any
 }
 
 const SEPARADOR_MULTIPLE = /[\n,;\t]/
@@ -60,51 +67,91 @@ export function PaqueteCapturePanel({
   colaInputRef,
   permitirNoRegistrados,
   setPermitirNoRegistrados,
+  modoCaptura = 'LECTOR',
+  setModoCaptura,
+  scanner,
 }: PaqueteCapturePanelProps) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm space-y-4">
-      <div className="space-y-1">
-        <h3 className="text-sm font-semibold text-foreground">Capturar guías</h3>
-        <p className="text-xs text-muted-foreground">Escanea, escribe (Enter) o pega varias guías a la vez. Se reúnen en una cola para luego distribuirlas en sacas.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/40 pb-3">
+        <div className="space-y-0.5">
+          <h3 className="text-sm font-semibold text-foreground">Capturar guías</h3>
+          <p className="text-xs text-muted-foreground">
+            Escanea, escribe (Enter) o pega varias guías a la vez para tu despacho.
+          </p>
+        </div>
+
+        {/* Toggle para alternar entre Lector Tipiadora y Cámara de Celular */}
+        {setModoCaptura && (
+          <SegmentedToggle
+            value={modoCaptura}
+            onChange={(v) => setModoCaptura(v as 'LECTOR' | 'CAMARA')}
+            options={[
+              { value: 'LECTOR', label: <span className="flex items-center gap-1.5"><Keyboard className="size-3.5" /> Lector</span> },
+              { value: 'CAMARA', label: <span className="flex items-center gap-1.5"><Camera className="size-3.5" /> Cámara</span> },
+            ]}
+            className="h-8 w-full sm:w-[200px]"
+          />
+        )}
       </div>
 
-      <div className="flex gap-2">
-        <Input
-          ref={colaInputRef}
-          value={colaInput}
-          onChange={(e) => setColaInput(e.target.value)}
-          onKeyDown={(e) => {
-            // Finalizadores que envía una tipiadora/escáner: Enter, NumpadEnter (e.key === 'Enter') y Tab.
-            if (e.key === 'Enter' || e.key === 'Tab') {
-              const value = e.currentTarget.value
-              // Tab solo se intercepta cuando hay guía pendiente (sufijo de escaneo);
-              // con el campo vacío se deja navegar normalmente.
-              if (e.key === 'Tab' && !value.trim()) return
-              e.preventDefault()
-              handleColaSubmit(undefined, value)
-            }
-          }}
-          onPaste={(e) => {
-            const texto = e.clipboardData.getData('text')
-            if (SEPARADOR_MULTIPLE.test(texto)) {
-              // Pegado de varias guías: procesar en bloque sin ensuciar el campo individual.
-              e.preventDefault()
-              onPasteGuias(texto)
-            }
-          }}
-          placeholder="Escanea, escribe o pega guías…"
-          className="font-mono"
-          autoFocus
-          autoComplete="off"
-          spellCheck={false}
-          inputMode="text"
-          aria-busy={procesandoCola}
-          aria-label="Escanea, escribe o pega guías"
-        />
-        <Button type="button" size="icon" onClick={() => handleColaSubmit()} disabled={!colaInput.trim() || procesandoCola} title="Agregar a la cola">
-          {procesandoCola ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-        </Button>
-      </div>
+      {modoCaptura === 'CAMARA' && scanner ? (
+        <div className="animate-in fade-in duration-200">
+          <MobileScannerPanel
+            videoRef={scanner.videoRef}
+            permission={scanner.permission}
+            isScanning={scanner.isScanning}
+            paused={procesandoCola || showColaPaste}
+            error={scanner.error}
+            devices={scanner.devices}
+            selectedDeviceId={scanner.selectedDeviceId}
+            onSelectDevice={scanner.selectDevice}
+            onStart={() => void scanner.start()}
+            onManualSubmit={(guia) => handleColaSubmit(undefined, guia)}
+            hasTorch={scanner.hasTorch}
+            torchActive={scanner.torchActive}
+            onToggleTorch={scanner.toggleTorch}
+          />
+        </div>
+      ) : (
+        <div className="flex gap-2 animate-in fade-in duration-200">
+          <Input
+            ref={colaInputRef}
+            value={colaInput}
+            onChange={(e) => setColaInput(e.target.value)}
+            onKeyDown={(e) => {
+              // Finalizadores que envía una tipiadora/escáner: Enter, NumpadEnter (e.key === 'Enter') y Tab.
+              if (e.key === 'Enter' || e.key === 'Tab') {
+                const value = e.currentTarget.value
+                // Tab solo se intercepta cuando hay guía pendiente (sufijo de escaneo);
+                // con el campo vacío se deja navegar normalmente.
+                if (e.key === 'Tab' && !value.trim()) return
+                e.preventDefault()
+                handleColaSubmit(undefined, value)
+              }
+            }}
+            onPaste={(e) => {
+              const texto = e.clipboardData.getData('text')
+              if (SEPARADOR_MULTIPLE.test(texto)) {
+                // Pegado de varias guías: procesar en bloque sin ensuciar el campo individual.
+                e.preventDefault()
+                onPasteGuias(texto)
+              }
+            }}
+            placeholder="Escanea, escribe o pega guías…"
+            className="font-mono"
+            autoFocus
+            autoComplete="off"
+            spellCheck={false}
+            inputMode="text"
+            aria-busy={procesandoCola}
+            aria-label="Escanea, escribe o pega guías"
+          />
+          <Button type="button" size="icon" onClick={() => handleColaSubmit()} disabled={!colaInput.trim() || procesandoCola} title="Agregar a la cola">
+            {procesandoCola ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          </Button>
+        </div>
+      )}
 
       <div className="flex items-center space-x-2 rounded-lg border border-border/40 bg-muted/10 p-2.5 shadow-sm">
         <Checkbox

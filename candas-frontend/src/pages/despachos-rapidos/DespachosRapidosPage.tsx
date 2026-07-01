@@ -83,15 +83,7 @@ function DespachosRapidosPage() {
             : 'Finaliza los despachos que el operario dejó listos para guía'
         }
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {puedeCapturar ? (
-              <Button asChild variant="outline" size="sm" className="gap-1.5">
-                <Link to="/despachos/rapidos/mobile">
-                  <Smartphone className="size-4" />
-                  Captura móvil
-                </Link>
-              </Button>
-            ) : null}
+          <div className="flex items-center gap-2">
             <SegmentedToggle value={filtro} options={FILTRO_OPTIONS} onChange={setFiltro} />
             <Button
               type="button"
@@ -108,6 +100,25 @@ function DespachosRapidosPage() {
           </div>
         }
       />
+
+      {puedeCapturar && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
+              <Smartphone className="size-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">¿Estás en un teléfono móvil?</p>
+              <p className="text-xs text-muted-foreground">Usa la cámara trasera y linterna para capturar y ensacar guías rápidamente.</p>
+            </div>
+          </div>
+          <Button asChild size="sm" variant="outline" className="w-full sm:w-auto gap-1.5 shrink-0">
+            <Link to="/despachos/rapidos/mobile">
+              Captura móvil
+            </Link>
+          </Button>
+        </div>
+      )}
 
       {isLoading ? (
         <LoadingState label="Cargando despachos rápidos…" />
