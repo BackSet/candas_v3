@@ -1,4 +1,5 @@
 import { DetailPageLayout } from '@/components/detail/DetailPageLayout'
+import { cn } from '@/lib/utils'
 import { Property } from '@/components/detail/InfoCard'
 import { QuickActions } from '@/components/detail/QuickActions'
 import { StatusBadge } from '@/components/detail/StatusBadge'
@@ -137,10 +138,25 @@ export default function DestinatarioDirectoDetail() {
 
         <div className="space-y-8">
           <section>
-            <SectionTitle title="Estado" variant="detail" as="h3" />
-            <div className="rounded-xl border border-border/50 bg-card p-5 shadow-sm flex items-center justify-between">
-              <span className="text-sm font-medium">Estado</span>
-              <StatusBadge label={isActivo ? 'Activo' : 'Inactivo'} variant={isActivo ? 'active' : 'inactive'} />
+            <SectionTitle title="Estado y Clasificación" variant="detail" as="h3" />
+            <div className="rounded-xl border border-border/50 bg-card p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Estado</span>
+                <StatusBadge label={isActivo ? 'Activo' : 'Inactivo'} variant={isActivo ? 'active' : 'inactive'} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Clasificación</span>
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border shadow-sm select-none',
+                    destinatario.tipoUso === 'OCASIONAL'
+                      ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 dark:bg-amber-500/5'
+                      : 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 dark:bg-indigo-500/5'
+                  )}
+                >
+                  {destinatario.tipoUso === 'OCASIONAL' ? 'Ocasional' : 'Frecuente'}
+                </span>
+              </div>
             </div>
           </section>
         </div>

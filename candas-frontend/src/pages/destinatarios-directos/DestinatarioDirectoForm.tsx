@@ -2,24 +2,24 @@ import { FieldRow,FormPageLayout,FormSection } from '@/components/form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-Select,
-SelectContent,
-SelectItem,
-SelectTrigger,
-SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import {
-useCreateDestinatarioDirecto,
-useDestinatarioDirecto,
-useUpdateDestinatarioDirecto,
+  useCreateDestinatarioDirecto,
+  useDestinatarioDirecto,
+  useUpdateDestinatarioDirecto,
 } from '@/hooks/useDestinatariosDirectos'
 import {
-destinatarioDirectoFormDataToDto,
-destinatarioDirectoSchema,
-destinatarioToFormData,
-generarCodigo10Digitos,
-type DestinatarioDirectoFormData,
+  destinatarioDirectoFormDataToDto,
+  destinatarioDirectoSchema,
+  destinatarioToFormData,
+  generarCodigo10Digitos,
+  type DestinatarioDirectoFormData,
 } from '@/schemas/destinatario-directo'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate,useParams } from '@tanstack/react-router'
@@ -43,7 +43,7 @@ export default function DestinatarioDirectoForm() {
 
   const form = useForm<DestinatarioDirectoFormData>({
     resolver: zodResolver(destinatarioDirectoSchema),
-    defaultValues: { activo: true },
+    defaultValues: { activo: true, tipoUso: 'FRECUENTE' },
   })
   const {
     register,
@@ -191,6 +191,23 @@ export default function DestinatarioDirectoForm() {
               <SelectContent>
                 <SelectItem value="true">Activo</SelectItem>
                 <SelectItem value="false">Inactivo</SelectItem>
+              </SelectContent>
+            </Select>
+          </FieldRow>
+
+          <FieldRow label="Clasificación" htmlFor="tipoUso" error={errors.tipoUso}>
+            <Select
+              value={watch('tipoUso') ?? 'FRECUENTE'}
+              onValueChange={(value) =>
+                setValue('tipoUso', value as 'FRECUENTE' | 'OCASIONAL', { shouldDirty: true })
+              }
+            >
+              <SelectTrigger id="tipoUso" className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FRECUENTE">Frecuente</SelectItem>
+                <SelectItem value="OCASIONAL">Ocasional</SelectItem>
               </SelectContent>
             </Select>
           </FieldRow>

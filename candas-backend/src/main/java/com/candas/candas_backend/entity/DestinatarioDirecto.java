@@ -1,5 +1,6 @@
 package com.candas.candas_backend.entity;
 
+import com.candas.candas_backend.entity.enums.TipoUsoDestinatario;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -43,6 +44,10 @@ public class DestinatarioDirecto {
 
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_uso", nullable = false)
+    private TipoUsoDestinatario tipoUso = TipoUsoDestinatario.FRECUENTE;
 
     @OneToMany(mappedBy = "destinatarioDirecto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Despacho> despachos;

@@ -1,5 +1,7 @@
 import type { PageResponse } from './paquete'
 
+export type TipoUsoDestinatario = 'FRECUENTE' | 'OCASIONAL'
+
 export interface DestinatarioDirecto {
   idDestinatarioDirecto?: number
   nombreDestinatario: string
@@ -11,6 +13,7 @@ export interface DestinatarioDirecto {
   nombreEmpresa?: string
   fechaRegistro?: string
   activo?: boolean
+  tipoUso?: TipoUsoDestinatario
 }
 
 export type DestinatarioDirectoPage = PageResponse<DestinatarioDirecto>

@@ -30,6 +30,7 @@ useDestinatariosDirectos,
 } from '@/hooks/useDestinatariosDirectos'
 import { useListFilters } from '@/hooks/useListFilters'
 import { getApiErrorMessage } from '@/lib/api/errors'
+import { cn } from '@/lib/utils'
 import type { DestinatarioDirecto } from '@/types/destinatario-directo'
 import { PERMISSIONS } from '@/types/permissions'
 import { useNavigate } from '@tanstack/react-router'
@@ -195,7 +196,7 @@ export default function DestinatariosDirectosList() {
         ),
         sortValue: (d) => d.nombreDestinatario ?? '',
       },
-      {
+            {
         id: 'telefono',
         header: 'Teléfono',
         width: '160px',
@@ -205,6 +206,24 @@ export default function DestinatariosDirectosList() {
           </span>
         ),
         sortValue: (d) => d.telefonoDestinatario ?? '',
+      },
+      {
+        id: 'tipoUso',
+        header: 'Clasificación',
+        width: '120px',
+        accessor: (d) => (
+          <span
+            className={cn(
+              'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border shadow-sm select-none',
+              d.tipoUso === 'OCASIONAL'
+                ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 dark:bg-amber-500/5'
+                : 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400 dark:bg-indigo-500/5'
+            )}
+          >
+            {d.tipoUso === 'OCASIONAL' ? 'Ocasional' : 'Frecuente'}
+          </span>
+        ),
+        sortValue: (d) => d.tipoUso ?? 'FRECUENTE',
       },
       {
         id: 'codigo',

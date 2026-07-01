@@ -13,6 +13,7 @@ import com.candas.candas_backend.dto.MoverPaqueteRapidoDTO;
 import com.candas.candas_backend.entity.Agencia;
 import com.candas.candas_backend.entity.Cliente;
 import com.candas.candas_backend.entity.DestinatarioDirecto;
+import com.candas.candas_backend.entity.enums.TipoUsoDestinatario;
 import com.candas.candas_backend.entity.Despacho;
 import com.candas.candas_backend.entity.Distribuidor;
 import com.candas.candas_backend.entity.Paquete;
@@ -512,6 +513,7 @@ public class DespachoRapidoService {
         nuevo.setNombreEmpresa(null);
         nuevo.setFechaRegistro(LocalDateTime.now());
         nuevo.setActivo(true);
+        nuevo.setTipoUso(TipoUsoDestinatario.OCASIONAL);
         return destinatarioDirectoRepository.save(nuevo);
     }
 

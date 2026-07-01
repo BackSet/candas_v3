@@ -9,6 +9,7 @@ export const destinatarioDirectoSchema = z.object({
   codigo: z.string().optional(),
   nombreEmpresa: z.string().optional(),
   activo: z.boolean().optional(),
+  tipoUso: z.enum(['FRECUENTE', 'OCASIONAL']).default('FRECUENTE'),
 })
 
 export type DestinatarioDirectoFormData = z.infer<typeof destinatarioDirectoSchema>
@@ -27,6 +28,7 @@ export function destinatarioDirectoFormDataToDto(data: DestinatarioDirectoFormDa
     codigo: optionalTrim(data.codigo),
     nombreEmpresa: optionalTrim(data.nombreEmpresa),
     activo: data.activo ?? true,
+    tipoUso: data.tipoUso,
   }
 }
 
@@ -39,6 +41,7 @@ export function destinatarioToFormData(destinatario: DestinatarioDirecto): Desti
     codigo: destinatario.codigo ?? '',
     nombreEmpresa: destinatario.nombreEmpresa ?? '',
     activo: destinatario.activo ?? true,
+    tipoUso: destinatario.tipoUso ?? 'FRECUENTE',
   }
 }
 
