@@ -54,7 +54,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 
 - Rutas en kebab-case plural: `/paquetes`, `/clientes`, `/agencias`, `/puntos-origen`, `/lotes-recepcion`, `/destinatarios-directos`, `/manifiestos-consolidados`, `/parametros-sistema`. [verificado en Git]
 - Formularios nuevos usan sufijo `/new`; edicion usa `/$id/edit`; detalle usa `/$id`. [verificado en Git]
-- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Despacho masivo, Despachos rápidos, Despacho rápido (móvil), Ensacado, Lector móvil, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
+- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos (grupo con subitems: General, Rápidos, Ensacado rápido), Ensacado, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
 - Mantener `VITE_API_BASE_URL` como nombre de variable para API. No introducir `VITE_API_URL`. [verificado en Git] [verificado en documentacion]
 
 ### API

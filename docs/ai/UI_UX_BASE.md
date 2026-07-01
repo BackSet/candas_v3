@@ -26,6 +26,8 @@ Estados compartidos `src/components/states/` (con barrel `index.ts`): `EmptyStat
 
 Layout `src/app/layout/`: `MainLayout`, `Sidebar`, `Header`, `PageContainer`, `PageHeader`, `ListPageLayout`, `FormPageLayout`. Detalle: `src/components/detail/` (`DetailPageLayout`, `InfoCard`, `InfoField`). Listas: `src/components/list/` (`ListPagination`). Diálogos: `src/components/dialogs/` (`ConfirmDeleteDialog`). Iconos: `src/components/icons/` (`AppIcon`, `module-icons`, `ModulePageIcon`) + `src/config/navigation.ts`. [verificado en Git]
 
+Patrón de navegación con grupos: `NavigationItem.children` en `src/config/navigation.ts` convierte un ítem en grupo expandible del `Sidebar` (encabezado con chevron + subitems indentados con línea guía `border-l`). El ítem activo se resuelve por prefijo más largo de la ruta actual (una sola selección visible, sin `activeProps` difuso); en modo colapsado los subitems se muestran como iconos individuales (cada subitem debe tener `moduleId`/icono propio), y `flattenNavigation()` los expone al Command Palette con el nombre del grupo como prefijo (`Grupo · Subitem`). Ejemplo canónico: grupo `Despachos` (General / Rápidos / Ensacado rápido). [verificado en Git]
+
 Feedback: `import { notify } from '@/lib/notify'`; impresión `import { printNotify } from '@/lib/print-notify'` (nunca `alert()`). [verificado en Git]
 
 PWA: acción de instalación discreta `src/components/pwa/InstallPrompt.tsx` (botón ghost en la fila de iconos del `Header` + diálogo de instrucciones en iOS), construida sobre `Button` y `Dialog` y el hook `usePwaInstallPrompt`. Solo se muestra cuando la app es instalable y no está ya en modo standalone; no introduce tokens nuevos. [verificado en Git]

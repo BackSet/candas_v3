@@ -1,12 +1,50 @@
 import ProtectedByPermission from '@/components/auth/ProtectedByPermission'
 import { AppIcon,getModuleIcon } from '@/components/icons'
-import { NAVIGATION_SECTIONS } from '@/config/navigation'
+import { NAVIGATION_SECTIONS,type NavigationItem } from '@/config/navigation'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/uiStore'
-import { Link } from '@tanstack/react-router'
-import { ChevronLeft,ChevronsLeft,Monitor,Moon,Search,Sun,X } from 'lucide-react'
-import { useState } from 'react'
+import { Link,useRouterState } from '@tanstack/react-router'
+import { ChevronDown,ChevronLeft,ChevronsLeft,Monitor,Moon,Search,Sun,X } from 'lucide-react'
+import { type ReactNode,useEffect,useState } from 'react'
+
+/** Hojas navegables (los grupos aportan sus subitems, no a sí mismos). */
+const NAV_LEAVES = NAVIGATION_SECTIONS.flatMap((section) =>
+  section.items.flatMap((item) => item.children ?? [item])
+)
+
+/**
+ * Resuelve el único ítem activo: la hoja cuyo href sea el prefijo más largo
+ * de la ruta actual. Evita que rutas anidadas (p. ej. `/despachos/rapidos/mobile`)
+ * marquen activos a la vez `/despachos` y `/despachos/rapidos`.
+ */
+function resolveActiveHref(pathname: string): string | null {
+  let best: string | null = null
+  for (const leaf of NAV_LEAVES) {
+    const matches = pathname === leaf.href || pathname.startsWith(`${leaf.href}/`)
+    if (matches && (best == null || leaf.href.length > best.length)) best = leaf.href
+  }
+  return best
+}
+
+/** Envuelve un nodo con el gating de permisos declarado en el ítem. */
+function withItemPermission(item: NavigationItem, node: ReactNode): ReactNode {
+  if (item.permissions) {
+    return (
+      <ProtectedByPermission permissions={item.permissions} fallback={null}>
+        {node}
+      </ProtectedByPermission>
+    )
+  }
+  if (item.permission) {
+    return (
+      <ProtectedByPermission permission={item.permission} fallback={null}>
+        {node}
+      </ProtectedByPermission>
+    )
+  }
+  return node
+}
 
 export function Sidebar() {
   const {
@@ -20,12 +58,46 @@ export function Sidebar() {
   } = useUIStore()
   const [isHovering, setIsHovering] = useState(false)
   const isDesktop = useIsDesktop()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const activeHref = resolveActiveHref(pathname)
+  // Overrides manuales de expandir/colapsar grupos; se limpian al navegar
+  // para que el sidebar siempre refleje la ruta actual.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    setOpenGroups({})
+  }, [activeHref])
 
   // En móvil el drawer siempre se muestra expandido (el colapsado es solo de escritorio).
   const collapsed = isDesktop ? sidebarCollapsed : false
 
   const closeOnMobileNav = () => {
     if (!isDesktop) setMobileSidebarOpen(false)
+  }
+
+  const renderLeafLink = (item: NavigationItem, options: { indented?: boolean } = {}) => {
+    const Icon = getModuleIcon(item.moduleId)
+    const isActive = item.href === activeHref
+    return (
+      <Link
+        to={item.href}
+        preload="intent"
+        onClick={closeOnMobileNav}
+        className={cn(
+          'mx-1 flex items-center rounded-lg text-[13px] transition-colors duration-150',
+          isActive
+            ? 'bg-sidebar-active font-semibold text-sidebar-active-foreground'
+            : 'font-medium text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground',
+          collapsed
+            ? 'mx-auto size-8 justify-center p-0'
+            : cn('gap-2.5 px-3 py-1.5', isActive && 'border-l-2 border-l-primary', options.indented && 'px-2.5')
+        )}
+        title={collapsed ? item.name : undefined}
+      >
+        <AppIcon icon={Icon} size="sm" className="opacity-90" />
+        {!collapsed && <span className="truncate">{item.name}</span>}
+      </Link>
+    )
   }
 
   return (
@@ -132,41 +204,57 @@ export function Sidebar() {
 
                 <ul className="mt-0.5 space-y-0.5">
                   {section.items.map((item) => {
+                    if (!item.children) {
+                      return <li key={item.href}>{withItemPermission(item, renderLeafLink(item))}</li>
+                    }
+
+                    // Colapsado: los subitems se muestran como iconos individuales.
+                    if (collapsed) {
+                      return item.children.map((child) => (
+                        <li key={child.href}>{withItemPermission(child, renderLeafLink(child))}</li>
+                      ))
+                    }
+
                     const Icon = getModuleIcon(item.moduleId)
-                    const linkContent = (
-                      <Link
-                        to={item.href}
-                        preload="intent"
-                        onClick={closeOnMobileNav}
-                        className={cn(
-                          'mx-1 flex items-center rounded-lg text-[13px] font-medium text-sidebar-foreground transition-colors duration-150 hover:bg-sidebar-hover hover:text-foreground',
-                          collapsed ? 'mx-auto size-8 justify-center p-0' : 'gap-2.5 px-3 py-1.5'
-                        )}
-                        activeProps={{
-                          className: cn(
-                            'mx-1 flex items-center rounded-lg border-l-2 border-l-primary bg-sidebar-active text-[13px] font-semibold text-sidebar-active-foreground transition-colors duration-150',
-                            collapsed ? 'mx-auto size-8 justify-center border-l-0 p-0' : 'gap-2.5 px-3 py-1.5'
-                          ),
-                        }}
-                        title={collapsed ? item.name : undefined}
-                      >
-                        <AppIcon icon={Icon} size="sm" className="opacity-90" />
-                        {!collapsed && <span className="truncate">{item.name}</span>}
-                      </Link>
-                    )
+                    const hasActiveChild = item.children.some((child) => child.href === activeHref)
+                    const groupOpen = openGroups[item.href] ?? hasActiveChild
 
                     return (
                       <li key={item.href}>
-                        {item.permissions ? (
-                          <ProtectedByPermission permissions={item.permissions} fallback={null}>
-                            {linkContent}
-                          </ProtectedByPermission>
-                        ) : item.permission ? (
-                          <ProtectedByPermission permission={item.permission} fallback={null}>
-                            {linkContent}
-                          </ProtectedByPermission>
-                        ) : (
-                          linkContent
+                        {withItemPermission(
+                          item,
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOpenGroups((prev) => ({ ...prev, [item.href]: !groupOpen }))
+                              }
+                              aria-expanded={groupOpen}
+                              className={cn(
+                                'mx-1 flex w-[calc(100%-0.5rem)] items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 hover:bg-sidebar-hover hover:text-foreground',
+                                hasActiveChild ? 'text-foreground' : 'text-sidebar-foreground'
+                              )}
+                            >
+                              <AppIcon icon={Icon} size="sm" className="opacity-90" />
+                              <span className="truncate">{item.name}</span>
+                              <ChevronDown
+                                className={cn(
+                                  'ml-auto size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-150',
+                                  !groupOpen && '-rotate-90'
+                                )}
+                                aria-hidden
+                              />
+                            </button>
+                            {groupOpen ? (
+                              <ul className="ml-5 mt-0.5 space-y-0.5 border-l border-border/40 pl-1.5">
+                                {item.children.map((child) => (
+                                  <li key={child.href}>
+                                    {withItemPermission(child, renderLeafLink(child, { indented: true }))}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </>
                         )}
                       </li>
                     )

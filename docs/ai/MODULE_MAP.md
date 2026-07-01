@@ -54,7 +54,7 @@ Este mapa describe los modulos funcionales y tecnicos presentes en la rama `dev`
 - CRUD con patron `list/new/detail/edit`: paquetes, clientes, agencias, puntos origen, lotes recepcion, sacas, despachos, atencion paquetes, usuarios, roles, distribuidores, destinatarios directos. [verificado en Git]
 - Rutas especiales: `/lotes-recepcion/$id/tipeo`, `/despachos/rapidos`, `/despachos/rapidos/mobile`, `/ensacado`, `/parametros-sistema/whatsapp-despacho`. [verificado en Git]
 - Rutas legacy/redireccion: `/lotes-especiales*`, `/listas-etiquetadas`, `/operario-etiquetas`. [verificado en Git]
-- Navegacion lateral canonica: `src/config/navigation.ts`. [verificado en Git]
+- Navegacion lateral canonica: `src/config/navigation.ts`. Soporta grupos con `children` (subitems): el grupo `Despachos` agrupa General (`/despachos`), Rápidos (`/despachos/rapidos`) y Ensacado rápido (`/despachos/rapidos/mobile`); el sidebar resuelve el ítem activo por prefijo más largo, de modo que rutas anidadas activan un único ítem. [verificado en Git]
 
 ## Endpoints y controladores backend
 

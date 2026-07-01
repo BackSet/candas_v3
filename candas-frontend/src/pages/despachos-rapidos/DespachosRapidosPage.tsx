@@ -14,7 +14,8 @@ import { notify } from '@/lib/notify'
 import { PERMISSIONS } from '@/types/permissions'
 import type { DespachoRapido, FinalizarDespachoRapidoPayload } from '@/types/despacho-rapido'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { PackageCheck, RefreshCw } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { PackageCheck, RefreshCw, Smartphone } from 'lucide-react'
 import { useState } from 'react'
 
 type Filtro = 'LISTO_PARA_GUIA' | 'TODOS'
@@ -37,6 +38,7 @@ function DespachosRapidosPage() {
   const [despachoAFinalizar, setDespachoAFinalizar] = useState<DespachoRapido | null>(null)
   const queryClient = useQueryClient()
   const puedeFinalizar = useHasPermission(PERMISSIONS.DESPACHOS.EDITAR)
+  const puedeCapturar = useHasPermission(PERMISSIONS.DESPACHOS.CREAR)
 
   const queryKey = ['despachos-rapidos', filtro] as const
   const {
@@ -81,7 +83,15 @@ function DespachosRapidosPage() {
             : 'Finaliza los despachos que el operario dejó listos para guía'
         }
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {puedeCapturar ? (
+              <Button asChild variant="outline" size="sm" className="gap-1.5">
+                <Link to="/despachos/rapidos/mobile">
+                  <Smartphone className="size-4" />
+                  Captura móvil
+                </Link>
+              </Button>
+            ) : null}
             <SegmentedToggle value={filtro} options={FILTRO_OPTIONS} onChange={setFiltro} />
             <Button
               type="button"
@@ -110,7 +120,7 @@ function DespachosRapidosPage() {
         <EmptyState
           icon={<PackageCheck />}
           title={filtro === 'LISTO_PARA_GUIA' ? 'No hay despachos listos para guía' : 'No hay despachos activos'}
-          description="Los despachos aparecen aquí cuando el operario los marca listos desde el lector móvil."
+          description="Los despachos aparecen aquí cuando el operario los marca listos desde el ensacado rápido (móvil)."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">

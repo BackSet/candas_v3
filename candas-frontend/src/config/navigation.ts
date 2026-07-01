@@ -7,6 +7,11 @@ export interface NavigationItem {
   moduleId: ModuleId
   permission?: string | null
   permissions?: string[]
+  /**
+   * Subitems del grupo. Cuando existen, el ítem actúa como encabezado
+   * expandible en el sidebar y la navegación real vive en los hijos.
+   */
+  children?: NavigationItem[]
 }
 
 export interface NavigationSection {
@@ -76,20 +81,31 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         name: 'Despachos',
         href: '/despachos',
         moduleId: 'despachos',
-        permissions: [PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER],
-      },
-
-      {
-        name: 'Despachos rápidos',
-        href: '/despachos/rapidos',
-        moduleId: 'despachos',
-        permissions: [PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER],
-      },
-      {
-        name: 'Despacho rápido (móvil)',
-        href: '/despachos/rapidos/mobile',
-        moduleId: 'despachos',
-        permission: PERMISSIONS.DESPACHOS.CREAR,
+        permissions: [
+          PERMISSIONS.DESPACHOS.LISTAR,
+          PERMISSIONS.DESPACHOS.VER,
+          PERMISSIONS.DESPACHOS.CREAR,
+        ],
+        children: [
+          {
+            name: 'General',
+            href: '/despachos',
+            moduleId: 'despachos',
+            permissions: [PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER],
+          },
+          {
+            name: 'Rápidos',
+            href: '/despachos/rapidos',
+            moduleId: 'despachosRapidos',
+            permissions: [PERMISSIONS.DESPACHOS.LISTAR, PERMISSIONS.DESPACHOS.VER],
+          },
+          {
+            name: 'Ensacado rápido',
+            href: '/despachos/rapidos/mobile',
+            moduleId: 'despachosRapidosMovil',
+            permission: PERMISSIONS.DESPACHOS.CREAR,
+          },
+        ],
       },
       {
         name: 'Ensacado',
@@ -154,7 +170,17 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
   },
 ]
 
-/** Ítems planos para Command Palette y referencias cruzadas. */
+/**
+ * Ítems planos para Command Palette y referencias cruzadas.
+ * Los subitems de un grupo se aplanan con el nombre del grupo como prefijo
+ * para que sigan siendo buscables fuera del contexto del sidebar.
+ */
 export function flattenNavigation(): NavigationItem[] {
-  return NAVIGATION_SECTIONS.flatMap((section) => section.items)
+  return NAVIGATION_SECTIONS.flatMap((section) =>
+    section.items.flatMap((item) =>
+      item.children
+        ? item.children.map((child) => ({ ...child, name: `${item.name} · ${child.name}` }))
+        : [item]
+    )
+  )
 }
