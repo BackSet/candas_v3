@@ -633,6 +633,9 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                         onSelectDevice={scanner.selectDevice}
                                         onStart={() => void scanner.start()}
                                         onManualSubmit={(guia) => void processPackage(guia)}
+                                        hasTorch={scanner.hasTorch}
+                                        torchActive={scanner.torchActive}
+                                        onToggleTorch={scanner.toggleTorch}
                                     />
                                 )}
 

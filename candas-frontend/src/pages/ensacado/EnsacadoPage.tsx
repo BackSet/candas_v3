@@ -506,6 +506,9 @@ function EnsacadoPage() {
                 onSelectDevice={scanner.selectDevice}
                 onStart={() => void scanner.start()}
                 onManualSubmit={(guia) => aplicarGuia(guia)}
+                hasTorch={scanner.hasTorch}
+                torchActive={scanner.torchActive}
+                onToggleTorch={scanner.toggleTorch}
               />
             </div>
           )}

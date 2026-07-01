@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import type { CameraDevice, ScannerPermission } from '@/hooks/useBarcodeScanner'
-import { CameraOff, Loader2, ScanLine, SwitchCamera } from 'lucide-react'
+import { CameraOff, Loader2, ScanLine, SwitchCamera, Flashlight } from 'lucide-react'
 import { useState } from 'react'
 
 interface MobileScannerPanelProps {
@@ -21,13 +21,18 @@ interface MobileScannerPanelProps {
   onStart: () => void
   /** Envío manual de guía (fallback sin cámara). */
   onManualSubmit: (guia: string) => void
+  /** Soporte opcional para linterna (torch) */
+  hasTorch?: boolean
+  torchActive?: boolean
+  onToggleTorch?: () => void
 }
 
 /**
  * Zona inferior de la pantalla de lector móvil: vista de cámara con overlay de
- * escaneo, estados de permiso/error, selector de cámara (si hay varias) y un
- * ingreso manual de guía como alternativa cuando la cámara no está disponible o el
- * operador prefiere teclear. Funciona en móvil y escritorio.
+ * escaneo, estados de permiso/error, selector de cámara (si hay varias),
+ * control de linterna/flash para baja luz, y un ingreso manual de guía como
+ * alternativa cuando la cámara no está disponible o el operador prefiere teclear.
+ * Funciona en móvil y escritorio de forma responsiva.
  */
 export function MobileScannerPanel({
   videoRef,
@@ -40,6 +45,9 @@ export function MobileScannerPanel({
   onSelectDevice,
   onStart,
   onManualSubmit,
+  hasTorch = false,
+  torchActive = false,
+  onToggleTorch,
 }: MobileScannerPanelProps) {
   const [manual, setManual] = useState('')
 
@@ -64,7 +72,7 @@ export function MobileScannerPanel({
   const statusText = paused ? 'Procesando…' : 'Cámara activa · apunta al código de barras'
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 font-sans">
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-border/60 bg-foreground/90 shadow-sm sm:aspect-video">
         {/* La cámara siempre monta el <video>; los estados se superponen encima. */}
         <video
@@ -99,19 +107,38 @@ export function MobileScannerPanel({
               </div>
             </div>
 
-            {/* Selector de cámara cuando hay más de una */}
-            {devices.length > 1 ? (
-              <button
-                type="button"
-                onClick={cycleCamera}
-                className="absolute right-2 top-2 flex items-center gap-1.5 rounded-full bg-foreground/60 px-2.5 py-1 text-xs font-medium text-background backdrop-blur-sm transition-colors hover:bg-foreground/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                title="Cambiar cámara"
-                aria-label="Cambiar cámara"
-              >
-                <SwitchCamera className="size-4" />
-                <span className="hidden sm:inline">Cambiar cámara</span>
-              </button>
-            ) : null}
+            {/* Controles de cámara en la esquina superior derecha */}
+            <div className="absolute right-2 top-2 flex items-center gap-2">
+              {/* Botón de linterna (torch) */}
+              {hasTorch ? (
+                <button
+                  type="button"
+                  onClick={onToggleTorch}
+                  className={cn(
+                    'flex size-9 items-center justify-center rounded-full bg-foreground/60 text-background backdrop-blur-sm transition-all hover:bg-foreground/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    torchActive && 'bg-amber-500 text-foreground scale-[1.05] shadow-lg shadow-amber-500/20'
+                  )}
+                  title={torchActive ? 'Apagar linterna' : 'Encender linterna'}
+                  aria-label={torchActive ? 'Apagar linterna' : 'Encender linterna'}
+                >
+                  <Flashlight className="size-4" />
+                </button>
+              ) : null}
+
+              {/* Selector de cámara cuando hay más de una */}
+              {devices.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={cycleCamera}
+                  className="flex h-9 items-center gap-1.5 rounded-full bg-foreground/60 px-3 text-xs font-medium text-background backdrop-blur-sm transition-colors hover:bg-foreground/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  title="Cambiar cámara"
+                  aria-label="Cambiar cámara"
+                >
+                  <SwitchCamera className="size-4" />
+                  <span className="hidden sm:inline">Cambiar cámara</span>
+                </button>
+              ) : null}
+            </div>
 
             {/* Estado en la parte inferior */}
             <div className="pointer-events-none absolute inset-x-0 bottom-3 px-3 text-center">
