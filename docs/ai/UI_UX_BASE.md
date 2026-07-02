@@ -86,14 +86,18 @@ Colores de paleta cruda que **permanecen de forma intencional** por carecer de t
 Este patrón unifica la lectura continua de códigos de barras (lector tipiadora en ordenador) con la captura por cámara en smartphones dentro de la misma pantalla operativa, garantizando consistencia en bodegas con baja iluminación.
 
 ### 1. Captura Dual
-* **Selección de Modo:** Uso de `SegmentedToggle` con diseño de vidrio esmerilado (`backdrop-blur-md bg-muted/30 border border-border/30`) para alternar entre **Lector** (entrada física USB/Bluetooth) y **Cámara** (escáner móvil).
+* **Selección de Modo:** Uso de `components/scanner/CaptureModeToggle.tsx` para alternar entre **Lector** (entrada física USB/Bluetooth) y **Cámara** (escáner móvil). El control usa grid de dos columnas, ancho estable y textos truncables para evitar solapes en pantallas móviles o toolbars densas.
 * **Autofocus Persistente (Lector):** Enfoque continuo monitoreado mediante un listener de `focus` que re-enfoca el input del lector en caso de clicks accidentales fuera del área, bloqueando cualquier pérdida de captura física.
 
 ### 2. Escáner Móvil (Cámara)
-* **Componente y Hook Reutilizables:** Encapsulado a través de `useBarcodeScanner.ts` y `MobileScannerPanel.tsx` consumiendo la API `@zxing/browser`.
+* **Componente y Hook Reutilizables:** Encapsulado a través de `useBarcodeScanner.ts`, `MobileScannerPanel.tsx` y `CaptureModeToggle.tsx` consumiendo la API `@zxing/browser`.
 * **Soporte para Baja Luz (Torch):** Interroga las capacidades del track (`track.getCapabilities()`). Si cuenta con soporte físico, se dibuja un botón interactivo de linterna (`Flashlight` de Lucide) que se ilumina en color ámbar (`bg-amber-500`) y escala levemente cuando está activo.
 * **Cámara Trasera por Defecto:** Selección inteligente priorizando cámaras con etiquetas `back`, `rear`, `posterior`, `trasera` o `environment`.
 * **Selector de Dispositivo:** Cuando el dispositivo móvil posee múltiples cámaras traseras/delanteras, se muestra el botón `SwitchCamera` para iterar entre los deviceIds.
+
+### Estado MVP 2/3 — barrido global de captura operativa
+
+Los flujos operativos de captura intensiva de guías/paquetes usan el patrón dual común (`CaptureModeToggle` + `MobileScannerPanel` + `useBarcodeScanner`): Lote Recepción normal, Lote Especial, Ensacado, Despacho clásico (captura de cola/sacas/paquetes no registrados), Despachos rápidos móvil y Listas etiquetadas en modo operario. [verificado en Git]
 
 ### 3. Fallback Manual e Historial
 * **Ingreso Manual Secundario:** En el modo de cámara se expone permanentemente un input de texto secundario y un botón de submit alternativo como respaldo si la cámara no enfoca o la etiqueta del paquete está rota.

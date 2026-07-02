@@ -8,9 +8,7 @@ export default function HomePage() {
       {/* Cabecera minimalista de la Landing */}
       <header className="flex h-16 items-center justify-between px-6 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-xs font-bold text-primary-foreground shadow-sm">
-            C
-          </div>
+          <img src="/logo-candas.svg" alt="Candas" className="size-9 rounded-xl object-cover shadow-sm ring-1 ring-border/50" />
           <span className="text-sm font-semibold tracking-tight">Candas</span>
         </div>
         <div>

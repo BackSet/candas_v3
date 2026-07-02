@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button'
+import { CaptureModeToggle, type CaptureMode } from '@/components/scanner/CaptureModeToggle'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { SegmentedToggle } from '@/components/ui/segmented-toggle'
 import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
-import { List as ListIcon, Loader2, Plus, Keyboard, Camera } from 'lucide-react'
+import { List as ListIcon, Loader2, Plus } from 'lucide-react'
 import type { RefObject } from 'react'
 
 export interface ColaFeedback {
@@ -41,8 +41,8 @@ export interface PaqueteCapturePanelProps {
   setPermitirNoRegistrados: (value: boolean) => void
 
   // Props opcionales para soporte de cámara móvil (captura dual)
-  modoCaptura?: 'LECTOR' | 'CAMARA'
-  setModoCaptura?: (v: 'LECTOR' | 'CAMARA') => void
+  modoCaptura?: CaptureMode
+  setModoCaptura?: (v: CaptureMode) => void
   scanner?: any
 }
 
@@ -83,15 +83,7 @@ export function PaqueteCapturePanel({
 
         {/* Toggle para alternar entre Lector Tipiadora y Cámara de Celular */}
         {setModoCaptura && (
-          <SegmentedToggle
-            value={modoCaptura}
-            onChange={(v) => setModoCaptura(v as 'LECTOR' | 'CAMARA')}
-            options={[
-              { value: 'LECTOR', label: <span className="flex items-center gap-1.5"><Keyboard className="size-3.5" /> Lector</span> },
-              { value: 'CAMARA', label: <span className="flex items-center gap-1.5"><Camera className="size-3.5" /> Cámara</span> },
-            ]}
-            className="h-8 w-full sm:w-[200px]"
-          />
+          <CaptureModeToggle value={modoCaptura} onChange={setModoCaptura} />
         )}
       </div>
 

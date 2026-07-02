@@ -133,8 +133,8 @@ export function Sidebar() {
             collapsed ? 'justify-center p-0' : 'justify-start gap-3'
           )}
         >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-border/50">
-            <img src="/logo-candas.svg" alt="Candas" className="size-6 object-contain" />
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 ring-border/50">
+            <img src="/logo-candas.svg" alt="Candas" className="size-9 rounded-xl object-cover" />
           </div>
           <div
             className={cn(

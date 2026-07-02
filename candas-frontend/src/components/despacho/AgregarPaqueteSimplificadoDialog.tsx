@@ -1,17 +1,16 @@
 import { Button } from '@/components/ui/button'
+import { CaptureModeToggle, type CaptureMode } from '@/components/scanner/CaptureModeToggle'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { SegmentedToggle } from '@/components/ui/segmented-toggle'
 import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { paqueteService } from '@/lib/api/paquete.service'
 import { notify } from '@/lib/notify'
 import type { Paquete } from '@/types/paquete'
-import { Loader2, Plus, Trash2, X, Keyboard, Camera } from 'lucide-react'
+import { Loader2, Plus, Trash2 } from 'lucide-react'
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 
 interface PaqueteTemporal {
@@ -37,7 +36,7 @@ export default function AgregarPaqueteSimplificadoDialog({
   const [numeroGuia, setNumeroGuia] = useState('')
   const [observaciones, setObservaciones] = useState('')
   const [tabValue, setTabValue] = useState<'individual' | 'lista'>('individual')
-  const [modoCaptura, setModoCaptura] = useState<'LECTOR' | 'CAMARA'>('LECTOR')
+  const [modoCaptura, setModoCaptura] = useState<CaptureMode>('LECTOR')
   const [listadoGuias, setListadoGuias] = useState('')
   const [paquetesTemporales, setPaquetesTemporales] = useState<PaqueteTemporal[]>([])
   const [creando, setCreando] = useState(false)
@@ -240,15 +239,7 @@ export default function AgregarPaqueteSimplificadoDialog({
               <TabsContent value="individual" className="flex-1 flex flex-col space-y-4 mt-0">
                 <div className="flex justify-between items-center border-b border-border/40 pb-2.5">
                   <span className="text-xs font-semibold text-muted-foreground uppercase">Modo de Captura</span>
-                  <SegmentedToggle
-                    value={modoCaptura}
-                    onChange={(v) => setModoCaptura(v as 'LECTOR' | 'CAMARA')}
-                    options={[
-                      { value: 'LECTOR', label: <span className="flex items-center gap-1.5"><Keyboard className="size-3.5" /> Lector</span> },
-                      { value: 'CAMARA', label: <span className="flex items-center gap-1.5"><Camera className="size-3.5" /> Cámara</span> },
-                    ]}
-                    className="h-7 w-[180px]"
-                  />
+                  <CaptureModeToggle value={modoCaptura} onChange={setModoCaptura} />
                 </div>
 
                 {modoCaptura === 'CAMARA' ? (

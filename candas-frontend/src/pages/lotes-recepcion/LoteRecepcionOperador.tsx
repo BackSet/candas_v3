@@ -10,8 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from "@/components/ui/label"
 import { SegmentedToggle } from '@/components/ui/segmented-toggle'
+import { CaptureModeToggle, type CaptureMode } from '@/components/scanner/CaptureModeToggle'
 import { SelectionActionBar } from '@/components/list/SelectionActionBar'
-import { Separator } from '@/components/ui/separator'
 import {
     Table,
     TableBody,
@@ -24,7 +24,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useInfiniteList } from '@/hooks/useInfiniteList'
 import { usePaquetesLoteRecepcion } from '@/hooks/useLotesRecepcion'
-import { useUpdatePaquete } from '@/hooks/usePaquetes'
 import { loteRecepcionService } from '@/lib/api/lote-recepcion.service'
 import { paqueteService } from '@/lib/api/paquete.service'
 import { notify } from '@/lib/notify'
@@ -33,7 +32,7 @@ import { TipoDestino, TipoPaquete, type Paquete } from '@/types/paquete'
 import { formatDireccionPaquete, formatPesoKg } from '@/utils/paqueteDisplay'
 import { guiaEfectiva } from '@/utils/paqueteGuia'
 import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { useParams } from '@tanstack/react-router'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
 import {
@@ -49,8 +48,6 @@ import {
     ScanLine,
     Scissors,
     X,
-    Keyboard,
-    Camera
 } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -60,7 +57,7 @@ interface ScannedPackage {
     timestamp: Date
     destinoType: 'DOMICILIO' | 'AGENCIA'
     observacion?: string
-    tipoPaquete?: TipoPaquete | null
+    modoClasificacion?: ModoClasificacion
     ref?: string
     clienteDestino?: {
         nombre?: string
@@ -74,10 +71,6 @@ interface ScannedPackage {
 
 export interface LoteRecepcionOperadorProps {
     embedded?: boolean
-}
-
-function hasDespacho(p: Paquete): boolean {
-    return p.idDespacho != null && p.idDespacho > 0
 }
 
 function buildClienteDestinoFromPaquete(p: Paquete): ScannedPackage['clienteDestino'] {
@@ -119,7 +112,57 @@ function getDireccionSortKey(p: Paquete): string {
     return 'Sin destino'
 }
 
-type ModoClasificacion = 'DOMICILIO' | 'CLEMENTINA' | 'SEPARAR' | 'CADENITA'
+function getClasificacionLabel(p: Paquete): string {
+    if (p.tipoPaquete === TipoPaquete.CLEMENTINA || p.idPaquetePadre != null) return 'Clementina'
+    if (p.tipoPaquete === TipoPaquete.SEPARAR) return 'Separar'
+    if (p.tipoPaquete === TipoPaquete.CADENITA) return 'Cadenita'
+    return 'Normal'
+}
+
+function esPaqueteNormal(p: Paquete): boolean {
+    return (
+        p.idPaquetePadre == null &&
+        p.tipoPaquete !== TipoPaquete.CLEMENTINA &&
+        p.tipoPaquete !== TipoPaquete.SEPARAR &&
+        p.tipoPaquete !== TipoPaquete.CADENITA
+    )
+}
+
+type ModoClasificacion = 'NORMAL_UI' | 'DOMICILIO' | 'CLEMENTINA' | 'SEPARAR' | 'CADENITA'
+type ListTipoTab = 'CLEMENTINA' | 'SEPARAR' | 'CADENITA' | 'OTROS'
+
+const MODOS_CLASIFICACION: ModoClasificacion[] = ['NORMAL_UI', 'DOMICILIO', 'CLEMENTINA', 'SEPARAR', 'CADENITA']
+
+function getModoLabel(mode: ModoClasificacion): string {
+    if (mode === 'NORMAL_UI') return 'Normal'
+    if (mode === 'DOMICILIO') return 'Domicilio'
+    if (mode === 'CLEMENTINA') return 'Clementina'
+    if (mode === 'SEPARAR') return 'Separar'
+    return 'Cadenita'
+}
+
+function getModoLabelLower(mode: ModoClasificacion): string {
+    return getModoLabel(mode).toLowerCase()
+}
+
+const LIST_TIPO_TAB_META: Record<ListTipoTab, { label: string; description: string }> = {
+    OTROS: {
+        label: 'Normales',
+        description: 'Paquetes sin clasificación especial',
+    },
+    CLEMENTINA: {
+        label: 'Clementina',
+        description: 'Paquetes clasificados como Clementina e hijos asociados',
+    },
+    SEPARAR: {
+        label: 'Separar',
+        description: 'Paquetes clasificados para separar',
+    },
+    CADENITA: {
+        label: 'Cadenita',
+        description: 'Paquetes clasificados como Cadenita',
+    },
+}
 
 export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcionOperadorProps = {}) {
     const { id } = useParams({ strict: false })
@@ -129,8 +172,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
     // Data Fetching
     const { data: paquetes, isLoading } = usePaquetesLoteRecepcion(id ? Number(id) : undefined)
 
-    const [listFilter, setListFilter] = useState<'PENDIENTES' | 'PROCESADOS'>('PENDIENTES')
-    const [listTipoTab, setListTipoTab] = useState<'CLEMENTINA' | 'SEPARAR' | 'CADENITA' | 'OTROS'>('OTROS')
+    const [listTipoTab, setListTipoTab] = useState<ListTipoTab>('OTROS')
 
     const [showAgregarAtencionDialog, setShowAgregarAtencionDialog] = useState(false)
     const [paqueteParaAtencion, setPaqueteParaAtencion] = useState<Paquete | null>(null)
@@ -178,30 +220,26 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             if (p.tipoPaquete === TipoPaquete.CLEMENTINA || p.idPaquetePadre != null) c.CLEMENTINA++
             else if (p.tipoPaquete === TipoPaquete.SEPARAR) c.SEPARAR++
             else if (p.tipoPaquete === TipoPaquete.CADENITA) c.CADENITA++
-            else c.OTROS++
+            else if (esPaqueteNormal(p)) c.OTROS++
         }
         return c
     }, [paquetesParaLista])
 
-    // Filtrar por pestaña de tipo (Clementina, Separar, Cadenita, Otros)
+    // Filtrar por pestaña de tipo (Normales, Clementina, Separar, Cadenita)
     const paquetesPorTipoTab = useMemo(() => {
         if (!paquetesParaLista.length) return []
         return paquetesParaLista.filter(p => {
             if (listTipoTab === 'CLEMENTINA') return p.tipoPaquete === TipoPaquete.CLEMENTINA || p.idPaquetePadre != null
             if (listTipoTab === 'SEPARAR') return p.tipoPaquete === TipoPaquete.SEPARAR
             if (listTipoTab === 'CADENITA') return p.tipoPaquete === TipoPaquete.CADENITA
-            return p.idPaquetePadre == null && p.tipoPaquete !== TipoPaquete.CLEMENTINA && p.tipoPaquete !== TipoPaquete.SEPARAR && p.tipoPaquete !== TipoPaquete.CADENITA
+            return esPaqueteNormal(p)
         })
     }, [paquetesParaLista, listTipoTab])
 
     const sortedPaquetes = useMemo(() => {
         if (!paquetesPorTipoTab.length) return []
 
-        const baseList = paquetesPorTipoTab.filter(p => {
-            if (listFilter === 'PENDIENTES') return !hasDespacho(p)
-            if (listFilter === 'PROCESADOS') return hasDespacho(p)
-            return true
-        })
+        const baseList = paquetesPorTipoTab
 
         const refKey = (p: Paquete) => (p.ref || '').trim().toLowerCase() || '\uFFFF'
         return [...baseList].sort((a, b) => {
@@ -213,15 +251,15 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             const dirB = getDireccionSortKey(b).toLowerCase()
             return dirA.localeCompare(dirB)
         })
-    }, [paquetesPorTipoTab, listFilter])
+    }, [paquetesPorTipoTab])
 
     // Infinite Scroll
     const { visibleItems, observerTarget } = useInfiniteList(sortedPaquetes, { initialItems: 50, itemsPerBatch: 50 })
 
     // State principal
     const [activeTab, setActiveTab] = useState<'operacion' | 'lista'>('operacion')
-    const [scanMode, setScanMode] = useState<ModoClasificacion>('DOMICILIO')
-    const [modoCaptura, setModoCaptura] = useState<'LECTOR' | 'CAMARA'>('LECTOR')
+    const [scanMode, setScanMode] = useState<ModoClasificacion>('NORMAL_UI')
+    const [modoCaptura, setModoCaptura] = useState<CaptureMode>('LECTOR')
     const [inputValue, setInputValue] = useState('')
     const [lastScanned, setLastScanned] = useState<ScannedPackage | null>(null)
     const [selectedPackageIds, setSelectedPackageIds] = useState<Set<number>>(new Set())
@@ -229,6 +267,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
     // Cola de paquetes tipiados por modo
     const [typedPackagesByMode, setTypedPackagesByMode] = useState<Record<ModoClasificacion, Paquete[]>>({
+        NORMAL_UI: [],
         DOMICILIO: [],
         CLEMENTINA: [],
         SEPARAR: [],
@@ -339,11 +378,17 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             }
 
             const mode = scanMode
-            const otherModes = (['DOMICILIO', 'CLEMENTINA', 'SEPARAR', 'CADENITA'] as const).filter(m => m !== mode)
+            const otherModes = MODOS_CLASIFICACION.filter(m => m !== mode)
             const alreadyInMode = otherModes.find(m => typedPackagesByMode[m].some(p => p.idPaquete === paquete.idPaquete))
 
             if (alreadyInMode) {
-                notify.error(`La guía ${guia} ya está en la cola de ${alreadyInMode.charAt(0) + alreadyInMode.slice(1).toLowerCase()}.`)
+                notify.error(`La guía ${guia} ya está en la cola de ${getModoLabelLower(alreadyInMode)}.`)
+                setInputValue('')
+                return
+            }
+
+            if (mode === 'NORMAL_UI' && !esPaqueteNormal(paquete)) {
+                notify.error(`La guía ${guia} ya tiene clasificación especial y no puede tipearse como Normal.`)
                 setInputValue('')
                 return
             }
@@ -357,7 +402,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 (mode === 'SEPARAR' && tipoP === 'SEPARAR') ||
                 (mode === 'CADENITA' && tipoP === 'CADENITA')
 
-            if (hasTipo && !mismoTipoQueModo) {
+            if (mode !== 'NORMAL_UI' && hasTipo && !mismoTipoQueModo) {
                 setPendingTypeConfirm({ paquete, mode })
                 return
             }
@@ -367,7 +412,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 guia: paquete.numeroGuia || guia,
                 timestamp: new Date(),
                 destinoType: mode === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
-                tipoPaquete: mode as TipoPaquete,
+                modoClasificacion: mode,
                 ref: paquete.ref?.trim() || undefined,
                 clienteDestino: buildClienteDestinoFromPaquete(paquete),
                 observacion: paquete.observaciones?.trim() || undefined
@@ -375,7 +420,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
 
             const alreadyInCurrentMode = typedPackagesByMode[mode].some(p => p.idPaquete === paquete.idPaquete)
             if (alreadyInCurrentMode) {
-                notify.info(`Ya tipiado en ${scanMode.charAt(0) + scanMode.slice(1).toLowerCase()}`)
+                notify.info(`Ya tipiado en ${getModoLabelLower(scanMode)}`)
                 setLastScanned(lastScannedPayloadClass)
                 setInputValue('')
                 return
@@ -412,7 +457,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
             modo: scanMode,
         }
 
-        const otherModesForCurrent = (['DOMICILIO', 'CLEMENTINA', 'SEPARAR', 'CADENITA'] as const).filter(m => m !== scanMode)
+        const otherModesForCurrent = MODOS_CLASIFICACION.filter(m => m !== scanMode)
         const nuevosPorModo: Paquete[] = []
 
         const queue = [...pasteListGuias]
@@ -434,6 +479,11 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     const alreadyInOther = otherModesForCurrent.find(m => typedPackagesByMode[m].some(p => p.idPaquete === id))
                     if (alreadyInOther) {
                         result.conflictosOtroModo.push({ guia: paquete.numeroGuia ?? guia, otroModo: alreadyInOther })
+                        continue
+                    }
+
+                    if (scanMode === 'NORMAL_UI' && !esPaqueteNormal(paquete)) {
+                        result.otrosErrores.push(paquete.numeroGuia ?? guia)
                         continue
                     }
 
@@ -468,7 +518,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     guia: pkg.numeroGuia ?? '',
                     timestamp: new Date(),
                     destinoType: scanMode === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
-                    tipoPaquete: scanMode as TipoPaquete,
+                    modoClasificacion: scanMode,
                     ref: pkg.ref?.trim() || undefined,
                     clienteDestino: buildClienteDestinoFromPaquete(pkg),
                     observacion: pkg.observaciones?.trim() || undefined
@@ -479,7 +529,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
         setPasteListProcessing(false)
         setPasteListResult(result)
         if (result.agregados > 0) {
-            notify.success(`${result.agregados} guía(s) agregadas a ${scanMode}`)
+            notify.success(`${result.agregados} guía(s) agregadas a ${getModoLabel(scanMode)}`)
         }
     }
 
@@ -496,7 +546,9 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                 await loteRecepcionService.agregarPaquetes(loteId, ids)
             }
 
-            if (mode === 'DOMICILIO') {
+            if (mode === 'NORMAL_UI') {
+                // Normal es una clasificación de UI: persiste como paquete sin tipo especial.
+            } else if (mode === 'DOMICILIO') {
                 for (const p of list) {
                     if (!p.idPaquete) continue
                     await paqueteService.update(p.idPaquete, {
@@ -569,33 +621,28 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         
                         <Card className="border border-border shadow-sm bg-card overflow-hidden shrink-0">
                             {/* Header: Modo Clasificación + Modo de Entrada */}
-                            <div className="p-3 bg-muted/40 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div className="p-3 bg-muted/40 border-b border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                                 <Tabs value={scanMode} onValueChange={(v) => setScanMode(v as ModoClasificacion)} className="w-full sm:w-auto">
-                                    <TabsList className="w-full grid grid-cols-4 h-9 bg-muted">
-                                        <TabsTrigger value="DOMICILIO" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
-                                            Domicilio ({typedPackagesByMode.DOMICILIO.length})
+                                    <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 h-auto p-1 gap-1 bg-muted">
+                                        <TabsTrigger value="NORMAL_UI" className="min-w-0 px-2 data-[state=active]:bg-background data-[state=active]:text-foreground text-xs">
+                                            <span className="truncate">Normal ({typedPackagesByMode.NORMAL_UI.length})</span>
                                         </TabsTrigger>
-                                        <TabsTrigger value="CLEMENTINA" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
-                                            Clementina ({typedPackagesByMode.CLEMENTINA.length})
+                                        <TabsTrigger value="DOMICILIO" className="min-w-0 px-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
+                                            <span className="truncate">Domicilio ({typedPackagesByMode.DOMICILIO.length})</span>
                                         </TabsTrigger>
-                                        <TabsTrigger value="SEPARAR" className="data-[state=active]:bg-red-500 data-[state=active]:text-white text-xs">
-                                            Separar ({typedPackagesByMode.SEPARAR.length})
+                                        <TabsTrigger value="CLEMENTINA" className="min-w-0 px-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs">
+                                            <span className="truncate">Clementina ({typedPackagesByMode.CLEMENTINA.length})</span>
                                         </TabsTrigger>
-                                        <TabsTrigger value="CADENITA" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white text-xs">
-                                            Cadenita ({typedPackagesByMode.CADENITA.length})
+                                        <TabsTrigger value="SEPARAR" className="min-w-0 px-2 data-[state=active]:bg-red-500 data-[state=active]:text-white text-xs">
+                                            <span className="truncate">Separar ({typedPackagesByMode.SEPARAR.length})</span>
+                                        </TabsTrigger>
+                                        <TabsTrigger value="CADENITA" className="min-w-0 px-2 data-[state=active]:bg-violet-600 data-[state=active]:text-white text-xs">
+                                            <span className="truncate">Cadenita ({typedPackagesByMode.CADENITA.length})</span>
                                         </TabsTrigger>
                                     </TabsList>
                                 </Tabs>
 
-                                <SegmentedToggle
-                                    value={modoCaptura}
-                                    onChange={(v) => setModoCaptura(v as 'LECTOR' | 'CAMARA')}
-                                    options={[
-                                        { value: 'LECTOR', label: <span className="flex items-center gap-1.5"><Keyboard className="h-3.5 w-3.5" /> Lector</span> },
-                                        { value: 'CAMARA', label: <span className="flex items-center gap-1.5"><Camera className="h-3.5 w-3.5" /> Cámara</span> }
-                                    ]}
-                                    className="h-8"
-                                />
+                                <CaptureModeToggle value={modoCaptura} onChange={setModoCaptura} />
                             </div>
 
                             <CardContent className="p-5 space-y-4">
@@ -608,7 +655,8 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                             onChange={(e) => setInputValue(e.target.value)}
                                             onKeyDown={handleKeyDown}
                                             className={cn(
-                                                "h-20 pl-20 text-3xl font-mono tracking-widest uppercase border-2 focus:ring-4 focus:ring-offset-2 placeholder:text-muted-foreground/40 bg-background transition-colors duration-200",
+                                                "h-16 pl-14 pr-28 text-xl sm:h-20 sm:pl-20 sm:text-3xl font-mono tracking-widest uppercase border-2 focus:ring-4 focus:ring-offset-2 placeholder:text-muted-foreground/40 bg-background transition-colors duration-200",
+                                                scanMode === 'NORMAL_UI' && "border-border focus:border-primary focus:ring-primary/20",
                                                 scanMode === 'DOMICILIO' && "border-blue-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-blue-900/50 dark:focus:border-blue-400",
                                                 scanMode === 'CLEMENTINA' && "border-orange-200 focus:border-orange-500 focus:ring-orange-500/20 dark:border-orange-900/50 dark:focus:orange-400",
                                                 scanMode === 'SEPARAR' && "border-red-200 focus:border-red-500 focus:ring-red-500/20 dark:border-red-900/50 dark:focus:border-red-400",
@@ -617,7 +665,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                             placeholder="ESCANEAR GUÍA..."
                                             autoComplete="off"
                                         />
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-semibold bg-muted px-3 py-1.5 rounded-md border border-border">
+                                        <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-semibold bg-muted px-2.5 sm:px-3 py-1.5 rounded-md border border-border">
                                             <span>AUTO-FOCUS</span>
                                         </div>
                                     </div>
@@ -662,18 +710,20 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                             {lastScanned ? (
                                 <Card className={cn(
                                     "h-full border-l-[8px] shadow-sm flex flex-col justify-center bg-card transition-all duration-300 border-border",
-                                    (lastScanned.tipoPaquete as any) === 'DOMICILIO' && "border-l-blue-500 bg-blue-500/5 dark:bg-blue-500/10",
-                                    lastScanned.tipoPaquete === 'CLEMENTINA' && "border-l-orange-500 bg-orange-500/5 dark:bg-orange-500/10",
-                                    lastScanned.tipoPaquete === 'SEPARAR' && "border-l-red-500 bg-red-500/5 dark:bg-red-500/10",
-                                    lastScanned.tipoPaquete === 'CADENITA' && "border-l-violet-500 bg-violet-500/5 dark:bg-violet-500/10"
+                                    lastScanned.modoClasificacion === 'NORMAL_UI' && "border-l-border bg-muted/20",
+                                    lastScanned.modoClasificacion === 'DOMICILIO' && "border-l-blue-500 bg-blue-500/5 dark:bg-blue-500/10",
+                                    lastScanned.modoClasificacion === 'CLEMENTINA' && "border-l-orange-500 bg-orange-500/5 dark:bg-orange-500/10",
+                                    lastScanned.modoClasificacion === 'SEPARAR' && "border-l-red-500 bg-red-500/5 dark:bg-red-500/10",
+                                    lastScanned.modoClasificacion === 'CADENITA' && "border-l-violet-500 bg-violet-500/5 dark:bg-violet-500/10"
                                 )}>
                                     <CardContent className="p-6 space-y-4">
-                                        <div className="flex items-center gap-4 border-b border-border/50 pb-4">
-                                            <div className="p-3 bg-background rounded-full shadow-sm border border-border shrink-0">
-                                                {(lastScanned.tipoPaquete as any) === 'DOMICILIO' && <MapPin className="h-8 w-8 text-blue-500" />}
-                                                {lastScanned.tipoPaquete === 'CLEMENTINA' && <Box className="h-8 w-8 text-orange-500" />}
-                                                {lastScanned.tipoPaquete === 'SEPARAR' && <Scissors className="h-8 w-8 text-red-500" />}
-                                                {lastScanned.tipoPaquete === 'CADENITA' && <LinkIcon className="h-8 w-8 text-violet-500" />}
+                                            <div className="flex items-center gap-4 border-b border-border/50 pb-4">
+                                                <div className="p-3 bg-background rounded-full shadow-sm border border-border shrink-0">
+                                                {lastScanned.modoClasificacion === 'NORMAL_UI' && <CheckCircle2 className="h-8 w-8 text-muted-foreground" />}
+                                                {lastScanned.modoClasificacion === 'DOMICILIO' && <MapPin className="h-8 w-8 text-blue-500" />}
+                                                {lastScanned.modoClasificacion === 'CLEMENTINA' && <Box className="h-8 w-8 text-orange-500" />}
+                                                {lastScanned.modoClasificacion === 'SEPARAR' && <Scissors className="h-8 w-8 text-red-500" />}
+                                                {lastScanned.modoClasificacion === 'CADENITA' && <LinkIcon className="h-8 w-8 text-violet-500" />}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <h2 className="text-3xl font-black tracking-tight text-foreground font-mono leading-none truncate">
@@ -682,12 +732,13 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                 <div className="mt-2 flex items-center gap-2">
                                                     <Badge className={cn(
                                                         "text-xs px-2 py-0.5 font-bold uppercase border shadow-none",
-                                                        (lastScanned.tipoPaquete as any) === 'DOMICILIO' && "bg-blue-500/10 text-blue-600 border-blue-500/20",
-                                                        lastScanned.tipoPaquete === 'CLEMENTINA' && "bg-orange-500/10 text-orange-600 border-orange-500/20",
-                                                        lastScanned.tipoPaquete === 'SEPARAR' && "bg-red-500/10 text-red-600 border-red-500/20",
-                                                        lastScanned.tipoPaquete === 'CADENITA' && "bg-violet-500/10 text-violet-600 border-violet-500/20"
+                                                        lastScanned.modoClasificacion === 'NORMAL_UI' && "bg-muted text-muted-foreground border-border",
+                                                        lastScanned.modoClasificacion === 'DOMICILIO' && "bg-blue-500/10 text-blue-600 border-blue-500/20",
+                                                        lastScanned.modoClasificacion === 'CLEMENTINA' && "bg-orange-500/10 text-orange-600 border-orange-500/20",
+                                                        lastScanned.modoClasificacion === 'SEPARAR' && "bg-red-500/10 text-red-600 border-red-500/20",
+                                                        lastScanned.modoClasificacion === 'CADENITA' && "bg-violet-500/10 text-violet-600 border-violet-500/20"
                                                     )}>
-                                                        {lastScanned.tipoPaquete === 'CADENITA' ? 'Cadenita' : lastScanned.tipoPaquete}
+                                                        {lastScanned.modoClasificacion ? getModoLabel(lastScanned.modoClasificacion) : 'Normal'}
                                                     </Badge>
                                                     {lastScanned.ref && (
                                                         <span className="text-xs text-muted-foreground font-mono font-medium">
@@ -759,11 +810,12 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         <Card className="h-full border border-border shadow-sm bg-card text-foreground flex flex-col overflow-hidden relative">
                             <CardHeader className="pb-3 border-b border-border bg-muted/30 pt-4 px-4">
                                 <CardTitle className="text-base flex items-center gap-2 text-foreground">
+                                    {scanMode === 'NORMAL_UI' && <CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
                                     {scanMode === 'DOMICILIO' && <MapPin className="h-4 w-4 text-blue-500" />}
                                     {scanMode === 'CLEMENTINA' && <Box className="h-4 w-4 text-orange-500" />}
                                     {scanMode === 'SEPARAR' && <Scissors className="h-4 w-4 text-red-500" />}
                                     {scanMode === 'CADENITA' && <LinkIcon className="h-4 w-4 text-violet-500" />}
-                                    Paquetes para {scanMode.charAt(0) + scanMode.slice(1).toLowerCase()}
+                                    Paquetes para {getModoLabel(scanMode)}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col pt-4 px-4 space-y-4 overflow-hidden">
@@ -774,6 +826,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                         <>
                                             <div className={cn(
                                                 "flex items-center justify-between p-3 rounded-lg border",
+                                                scanMode === 'NORMAL_UI' && "bg-muted/30 border-border",
                                                 scanMode === 'DOMICILIO' && "bg-blue-500/5 border-blue-500/10",
                                                 scanMode === 'CLEMENTINA' && "bg-orange-500/5 border-orange-500/10",
                                                 scanMode === 'SEPARAR' && "bg-red-500/5 border-red-500/10",
@@ -782,6 +835,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                 <div className="flex flex-col">
                                                     <span className={cn(
                                                         "text-2xl font-bold text-foreground",
+                                                        scanMode === 'NORMAL_UI' && "text-foreground",
                                                         scanMode === 'DOMICILIO' && "text-blue-600 dark:text-blue-400",
                                                         scanMode === 'CLEMENTINA' && "text-orange-600 dark:text-orange-400",
                                                         scanMode === 'SEPARAR' && "text-red-600 dark:text-red-400",
@@ -834,6 +888,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                     size="lg"
                                                     className={cn(
                                                         "w-full font-bold shadow-sm h-11",
+                                                        scanMode === 'NORMAL_UI' && "bg-foreground text-background hover:bg-foreground/90",
                                                         scanMode === 'DOMICILIO' && "bg-blue-600 hover:bg-blue-700 text-white",
                                                         scanMode === 'CLEMENTINA' && "bg-orange-600 hover:bg-orange-700 text-white",
                                                         scanMode === 'SEPARAR' && "bg-red-600 hover:bg-red-700 text-white",
@@ -846,6 +901,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                         <>Procesando...</>
                                                     ) : (
                                                         <span className="flex items-center justify-center gap-1.5">
+                                                            {scanMode === 'NORMAL_UI' && <CheckCircle2 className="h-4 w-4" />}
                                                             {scanMode === 'DOMICILIO' && <MapPin className="h-4 w-4" />}
                                                             {scanMode === 'CLEMENTINA' && <Box className="h-4 w-4" />}
                                                             {scanMode === 'SEPARAR' && <Scissors className="h-4 w-4" />}
@@ -877,7 +933,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                         setSelectedPackageIds(new Set())
                                     }}
                                     options={[
-                                        { value: 'OTROS', label: `Comunes (${countsPorTipoTab.OTROS})` },
+                                        { value: 'OTROS', label: `Normales (${countsPorTipoTab.OTROS})` },
                                         { value: 'CLEMENTINA', label: `Clementina (${countsPorTipoTab.CLEMENTINA})` },
                                         { value: 'SEPARAR', label: `Separar (${countsPorTipoTab.SEPARAR})` },
                                         { value: 'CADENITA', label: `Cadenita (${countsPorTipoTab.CADENITA})` },
@@ -885,22 +941,6 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                     className="h-8"
                                 />
 
-                                <Separator orientation="vertical" className="hidden sm:block h-6" />
-
-                                <SegmentedToggle
-                                    value={listFilter}
-                                    onChange={(value) => {
-                                        if (value === 'PROCESADOS') {
-                                            setSelectedPackageIds(new Set())
-                                        }
-                                        setListFilter(value)
-                                    }}
-                                    options={[
-                                        { value: 'PENDIENTES', label: 'Pendientes' },
-                                        { value: 'PROCESADOS', label: 'Trabajados' },
-                                    ]}
-                                    className="h-8"
-                                />
                             </div>
 
                             <div className="flex items-center justify-between gap-3 shrink-0">
@@ -912,20 +952,26 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                 </Button>
                             </div>
                         </div>
+                        <div className="rounded-lg border border-border bg-background px-3 py-2">
+                            <p className="text-sm font-semibold text-foreground">
+                                Paquetes {LIST_TIPO_TAB_META[listTipoTab].label.toLowerCase()}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                {LIST_TIPO_TAB_META[listTipoTab].description}
+                            </p>
+                        </div>
                     </CardHeader>
 
                     <CardContent className="p-0 flex-1 overflow-auto bg-background min-h-0">
                         <Table>
                             <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-sm">
                                 <TableRow className="hover:bg-muted/50">
-                                    {listFilter === 'PENDIENTES' && (
-                                        <TableHead className="w-[40px] pl-4">
-                                            <Checkbox
-                                                checked={sortedPaquetes.length > 0 && selectedPackageIds.size === sortedPaquetes.length}
-                                                onCheckedChange={(checked) => toggleSelectAll(!!checked)}
-                                            />
-                                        </TableHead>
-                                    )}
+                                    <TableHead className="w-[40px] pl-4">
+                                        <Checkbox
+                                            checked={sortedPaquetes.length > 0 && selectedPackageIds.size === sortedPaquetes.length}
+                                            onCheckedChange={(checked) => toggleSelectAll(!!checked)}
+                                        />
+                                    </TableHead>
                                     <TableHead className="w-[200px]">Paquete</TableHead>
                                     <TableHead className="w-[280px]">Destino</TableHead>
                                     <TableHead className="w-[120px]">Estado</TableHead>
@@ -936,13 +982,13 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                             <TableBody>
                                 {!sortedPaquetes || sortedPaquetes.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={listFilter === 'PENDIENTES' ? 6 : 5} className="h-32 text-center text-muted-foreground">
-                                            No hay paquetes en esta vista.
+                                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                                            No hay paquetes {LIST_TIPO_TAB_META[listTipoTab].label.toLowerCase()} en esta vista.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     (() => {
-                                        const colCount = listFilter === 'PENDIENTES' ? 6 : 5
+                                        const colCount = 6
                                         const getRefLabel = (p: Paquete) => (p.ref || '').trim() || null
                                         return visibleItems.map((pkg, i) => {
                                             const refLabel = getRefLabel(pkg)
@@ -958,20 +1004,15 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                         </TableRow>
                                                     )}
                                                     <TableRow
-                                                        data-state={listFilter === 'PENDIENTES' && selectedPackageIds.has(pkg.idPaquete!) ? "selected" : undefined}
-                                                        className={cn(
-                                                            "transition-colors hover:bg-muted/25 group",
-                                                            hasDespacho(pkg) ? "opacity-75 bg-muted/5" : ""
-                                                        )}
+                                                        data-state={selectedPackageIds.has(pkg.idPaquete!) ? "selected" : undefined}
+                                                        className="transition-colors hover:bg-muted/25 group"
                                                     >
-                                                        {listFilter === 'PENDIENTES' && (
-                                                            <TableCell className="pl-4">
-                                                                <Checkbox
-                                                                    checked={pkg.idPaquete ? selectedPackageIds.has(pkg.idPaquete) : false}
-                                                                    onCheckedChange={(checked) => pkg.idPaquete && toggleSelectPackage(pkg.idPaquete, !!checked)}
-                                                                />
-                                                            </TableCell>
-                                                        )}
+                                                        <TableCell className="pl-4">
+                                                            <Checkbox
+                                                                checked={pkg.idPaquete ? selectedPackageIds.has(pkg.idPaquete) : false}
+                                                                onCheckedChange={(checked) => pkg.idPaquete && toggleSelectPackage(pkg.idPaquete, !!checked)}
+                                                            />
+                                                        </TableCell>
                                                         <TableCell className="align-top py-3">
                                                             <div className="flex flex-col gap-1">
                                                                 <span className="flex items-baseline gap-2">
@@ -1007,15 +1048,9 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="align-top py-3">
-                                                            {hasDespacho(pkg) ? (
-                                                                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 font-semibold shadow-none select-none">
-                                                                    Despachado
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/20 font-semibold shadow-none select-none">
-                                                                    Pendiente
-                                                                </Badge>
-                                                            )}
+                                                            <Badge variant="outline" className="font-semibold shadow-none select-none">
+                                                                {getClasificacionLabel(pkg)}
+                                                            </Badge>
                                                         </TableCell>
                                                         <TableCell className="align-top py-3 max-w-[240px]">
                                                             <span className="text-xs text-muted-foreground whitespace-pre-wrap break-words block" title={pkg.observaciones}>
@@ -1043,7 +1078,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                     })()
                                 )}
                                 <TableRow className="hover:bg-transparent">
-                                    <TableCell colSpan={listFilter === 'PENDIENTES' ? 6 : 5} className="p-0 border-0">
+                                    <TableCell colSpan={6} className="p-0 border-0">
                                         <div ref={observerTarget} className="h-4 w-full" />
                                     </TableCell>
                                 </TableRow>
@@ -1052,7 +1087,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                     </CardContent>
 
                     <SelectionActionBar
-                        count={listFilter === 'PENDIENTES' ? selectedPackageIds.size : 0}
+                        count={selectedPackageIds.size}
                         onClear={() => setSelectedPackageIds(new Set())}
                         itemLabel="paquete"
                     >
@@ -1077,6 +1112,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                         <div className="flex items-center gap-3">
                             <div className={cn(
                                 "p-2.5 rounded-xl shrink-0",
+                                scanMode === 'NORMAL_UI' && "bg-muted text-muted-foreground",
                                 scanMode === 'DOMICILIO' && "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400",
                                 scanMode === 'CLEMENTINA' && "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400",
                                 scanMode === 'SEPARAR' && "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400",
@@ -1088,11 +1124,11 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                 <DialogTitle className="text-lg">
                                     Pegar lista de guías
                                     <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                        · Modo {scanMode.charAt(0) + scanMode.slice(1).toLowerCase()}
+                                        · Modo {getModoLabel(scanMode)}
                                     </span>
                                 </DialogTitle>
                                 <DialogDescription className="text-xs mt-1">
-                                    Pega las guías separadas por saltos de línea para agregarlas a la cola de {scanMode.charAt(0) + scanMode.slice(1).toLowerCase()}.
+                                    Pega las guías separadas por saltos de línea para agregarlas a la cola de {getModoLabelLower(scanMode)}.
                                 </DialogDescription>
                             </div>
                         </div>
@@ -1163,7 +1199,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                             <div className="rounded-md border border-orange-100 dark:border-orange-950/30 bg-orange-50/50 dark:bg-orange-950/5 p-2 font-mono text-[10px] max-h-24 overflow-y-auto space-y-0.5">
                                                 {pasteListResult.conflictosOtroModo.map((c, i) => (
                                                     <div key={`conflict-paste-${i}`}>
-                                                        {c.guia} <span className="text-orange-600/80">→ {c.otroModo}</span>
+                                                        {c.guia} <span className="text-orange-600/80">→ {getModoLabel(c.otroModo)}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1316,7 +1352,7 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                             {pendingTypeConfirm && (
                                 <>
                                     Este paquete ya cuenta con una clasificación como <strong>{pendingTypeConfirm.paquete.tipoPaquete || pendingTypeConfirm.paquete.tipoDestino}</strong>.
-                                    ¿Deseas clasificarlo como <strong>{pendingTypeConfirm.mode.charAt(0) + pendingTypeConfirm.mode.slice(1).toLowerCase()}</strong>?
+                                    ¿Deseas clasificarlo como <strong>{getModoLabel(pendingTypeConfirm.mode)}</strong>?
                                 </>
                             )}
                         </DialogDescription>
@@ -1331,13 +1367,13 @@ export default function LoteRecepcionOperador({ embedded = false }: LoteRecepcio
                                 if (!pendingTypeConfirm) return
                                 const { paquete, mode } = pendingTypeConfirm
                                 addToTypedQueue(mode, paquete)
-                                notify.success(`Paquete ${paquete.numeroGuia || paquete.idPaquete} agregado a ${mode}`)
+                                notify.success(`Paquete ${paquete.numeroGuia || paquete.idPaquete} agregado a ${getModoLabel(mode)}`)
                                 setLastScanned({
                                     id: String(paquete.idPaquete),
                                     guia: paquete.numeroGuia ?? '',
                                     timestamp: new Date(),
                                     destinoType: mode === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
-                                    tipoPaquete: mode as TipoPaquete,
+                                    modoClasificacion: mode,
                                     ref: paquete.ref?.trim() || undefined,
                                     clienteDestino: buildClienteDestinoFromPaquete(paquete),
                                     observacion: paquete.observaciones?.trim() || undefined

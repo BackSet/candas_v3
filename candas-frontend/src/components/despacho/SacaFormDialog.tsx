@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { CaptureModeToggle, type CaptureMode } from '@/components/scanner/CaptureModeToggle'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -13,11 +14,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { useListFilter } from '@/hooks/useListFilter'
 import { usePaqueteScanner } from '@/hooks/usePaqueteScanner'
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
-import { SegmentedToggle } from '@/components/ui/segmented-toggle'
 import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
 import type { SacaFormData } from '@/hooks/useSacasManager'
 import type { Paquete } from '@/types/paquete'
-import { Plus, Search, Keyboard, Camera } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { notify } from '@/lib/notify'
 
@@ -43,7 +43,7 @@ export default function SacaFormDialog({
   onProcesarListado,
 }: SacaFormDialogProps) {
   const [listadoPaquetes, setListadoPaquetes] = useState('')
-  const [modoCaptura, setModoCaptura] = useState<'LECTOR' | 'CAMARA'>('LECTOR')
+  const [modoCaptura, setModoCaptura] = useState<CaptureMode>('LECTOR')
 
   const paquetesFiltrados = useListFilter(
     paquetesDisponibles,
@@ -163,15 +163,7 @@ export default function SacaFormDialog({
             </DialogDescription>
           </div>
 
-          <SegmentedToggle
-            value={modoCaptura}
-            onChange={(v) => setModoCaptura(v as 'LECTOR' | 'CAMARA')}
-            options={[
-              { value: 'LECTOR', label: <span className="flex items-center gap-1.5"><Keyboard className="size-3.5" /> Lector</span> },
-              { value: 'CAMARA', label: <span className="flex items-center gap-1.5"><Camera className="size-3.5" /> Cámara</span> },
-            ]}
-            className="h-8 w-full sm:w-[200px] shrink-0"
-          />
+          <CaptureModeToggle value={modoCaptura} onChange={setModoCaptura} className="shrink-0" />
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col space-y-4 pt-3">

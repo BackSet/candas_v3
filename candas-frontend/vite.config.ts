@@ -77,7 +77,7 @@ export default defineConfig(({ mode }) => {
           scope: '/',
           display: 'standalone',
           orientation: 'any',
-          theme_color: '#2563eb',
+          theme_color: '#0b1623',
           background_color: '#0b1623',
           categories: ['business', 'productivity', 'logistics'],
           icons: [

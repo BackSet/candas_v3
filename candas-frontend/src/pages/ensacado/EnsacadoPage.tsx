@@ -2,10 +2,10 @@ import { EnsacadoLayoutHeader } from '@/components/ensacado/EnsacadoLayoutHeader
 import { SacaGuiasPanel } from '@/components/ensacado/SacaGuiasPanel'
 import { SyncStatusIndicator } from '@/components/ensacado/SyncStatusIndicator'
 import { AppIcon, ModulePageIcon } from '@/components/icons'
+import { CaptureModeToggle, type CaptureMode } from '@/components/scanner/CaptureModeToggle'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SegmentedToggle } from '@/components/ui/segmented-toggle'
 import { ENSACADO_POLL, ENSACADO_SCAN } from '@/constants/ensacado'
 import {
   esGuiaValidaParaBuscar,
@@ -34,10 +34,8 @@ import {
   VolumeX,
   X,
   XCircle,
-  Keyboard,
-  Camera
 } from 'lucide-react'
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PaqueteInfoCard } from './PaqueteInfoCard'
 import { VistaEnsacadoSoloLectura } from './VistaEnsacadoSoloLectura'
 
@@ -55,7 +53,7 @@ interface ScanHistorial {
 
 function EnsacadoPage() {
   const [modo, setModo] = useState<Modo>('selector')
-  const [modoCaptura, setModoCaptura] = useState<'LECTOR' | 'CAMARA'>('LECTOR')
+  const [modoCaptura, setModoCaptura] = useState<CaptureMode>('LECTOR')
   const [numeroGuia, setNumeroGuia] = useState('')
   const [numeroGuiaDebounced, setNumeroGuiaDebounced] = useState('')
   const [ultimoPaqueteMostrado, setUltimoPaqueteMostrado] = useState<PaqueteEnsacadoInfo | null>(null)
@@ -424,15 +422,7 @@ function EnsacadoPage() {
         <div className="mx-auto max-w-3xl space-y-5">
           {/* Selector de Captura Dual */}
           <div className="flex justify-center">
-            <SegmentedToggle
-              value={modoCaptura}
-              onChange={(v) => setModoCaptura(v as 'LECTOR' | 'CAMARA')}
-              options={[
-                { value: 'LECTOR', label: <span className="flex items-center gap-1.5"><Keyboard className="size-4" /> Lector</span> },
-                { value: 'CAMARA', label: <span className="flex items-center gap-1.5"><Camera className="size-4" /> Cámara</span> },
-              ]}
-              className="h-9 w-full sm:w-[280px]"
-            />
+            <CaptureModeToggle value={modoCaptura} onChange={setModoCaptura} className="sm:min-w-[280px]" />
           </div>
 
           {modoCaptura === 'LECTOR' ? (

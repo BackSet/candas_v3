@@ -76,8 +76,8 @@ export default function Login() {
           {/* Header */}
           <div className="flex flex-col items-center space-y-2 text-center">
             {/* Logo */}
-            <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-lg shadow-primary/20 ring-1 ring-border/50">
-              <img src="/logo-candas.svg" alt="Candas" className="h-10 w-10 object-contain" />
+            <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg shadow-primary/20 ring-1 ring-border/50">
+              <img src="/logo-candas.svg" alt="Candas" className="h-14 w-14 rounded-2xl object-cover" />
             </div>
             <h1 className="text-2xl font-semibold tracking-tight">Iniciar Sesión</h1>
             <p className="text-sm text-muted-foreground">
