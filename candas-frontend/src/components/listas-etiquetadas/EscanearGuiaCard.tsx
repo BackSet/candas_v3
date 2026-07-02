@@ -2,6 +2,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card,CardContent,CardDescription,CardHeader,CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import { CaptureModeToggle, type CaptureMode } from '@/components/scanner/CaptureModeToggle'
+import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -12,6 +14,7 @@ TableHead,
 TableHeader,
 TableRow,
 } from '@/components/ui/table'
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
 import { notify } from '@/lib/notify'
 import { obtenerColorEtiqueta } from '@/utils/coloresEtiquetas'
@@ -34,6 +37,7 @@ const STORAGE_KEY = 'escaneos-guias-historial'
 
 export default function EscanearGuiaCard() {
   const [numeroGuia, setNumeroGuia] = useState('')
+  const [modoCaptura, setModoCaptura] = useState<CaptureMode>('LECTOR')
   const [buscando, setBuscando] = useState(false)
   const [resultadoActual, setResultadoActual] = useState<EscaneoResultado | null>(null)
   const [historial, setHistorial] = useState<EscaneoResultado[]>([])
@@ -42,6 +46,27 @@ export default function EscanearGuiaCard() {
   const [pendienteElegirEtiqueta, setPendienteElegirEtiqueta] = useState<{ numeroGuia: string; etiquetas: string[] } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const resultadoRef = useRef<HTMLDivElement>(null)
+
+  const scanner = useBarcodeScanner({
+    onResult: (guia) => {
+      if (guia) {
+        void buscarEtiqueta(guia)
+      }
+    },
+    cooldownMs: 2200,
+    paused: buscando || !!pendienteElegirEtiqueta,
+  })
+
+  useEffect(() => {
+    if (modoCaptura === 'CAMARA') {
+      void scanner.start()
+    } else {
+      scanner.stop()
+    }
+    return () => {
+      scanner.stop()
+    }
+  }, [modoCaptura])
 
   // Cargar historial desde backend al montar el componente
   useEffect(() => {
@@ -97,18 +122,18 @@ export default function EscanearGuiaCard() {
 
   // Auto-focus permanente en el input
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    if (modoCaptura === 'LECTOR') inputRef.current?.focus()
+  }, [modoCaptura])
 
   // Auto-focus después de buscar
   useEffect(() => {
-    if (!buscando && !numeroGuia) {
+    if (modoCaptura === 'LECTOR' && !buscando && !numeroGuia) {
       const timer = setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [buscando, numeroGuia])
+  }, [buscando, numeroGuia, modoCaptura])
 
   // Scroll al resultado cuando cambia
   useEffect(() => {
@@ -366,20 +391,45 @@ export default function EscanearGuiaCard() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Campo de entrada grande estilo VistaOperario */}
-          <div className="space-y-2">
-            <Label htmlFor="numeroGuiaEscaneo" className="sr-only">Número de Guía</Label>
-            <Input
-              ref={inputRef}
-              id="numeroGuiaEscaneo"
-              placeholder="Escanea o tipea el número de guía y presiona Enter..."
-              value={numeroGuia}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              disabled={buscando}
-              className="font-mono text-2xl h-16 text-center"
-              autoFocus
-              aria-label="Campo para escanear o tipear número de guía"
-            />
+          <div className="space-y-3">
+            <div className="flex justify-center">
+              <CaptureModeToggle value={modoCaptura} onChange={setModoCaptura} />
+            </div>
+
+            {modoCaptura === 'CAMARA' ? (
+              <MobileScannerPanel
+                videoRef={scanner.videoRef}
+                permission={scanner.permission}
+                isScanning={scanner.isScanning}
+                paused={buscando || !!pendienteElegirEtiqueta}
+                error={scanner.error}
+                devices={scanner.devices}
+                selectedDeviceId={scanner.selectedDeviceId}
+                onSelectDevice={scanner.selectDevice}
+                onStart={() => void scanner.start()}
+                onManualSubmit={(guia) => void buscarEtiqueta(guia)}
+                hasTorch={scanner.hasTorch}
+                torchActive={scanner.torchActive}
+                onToggleTorch={scanner.toggleTorch}
+              />
+            ) : (
+              <>
+                <Label htmlFor="numeroGuiaEscaneo" className="sr-only">Número de Guía</Label>
+                <Input
+                  ref={inputRef}
+                  id="numeroGuiaEscaneo"
+                  placeholder="Escanea o tipea el número de guía y presiona Enter..."
+                  value={numeroGuia}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  disabled={buscando}
+                  className="font-mono text-2xl h-16 text-center"
+                  autoFocus
+                  aria-label="Campo para escanear o tipear número de guía"
+                />
+              </>
+            )}
+
             {buscando && (
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />

@@ -1,8 +1,24 @@
 import type { PageResponse,Paquete,PaqueteNoImportado } from './paquete'
 
+/** Etiquetas en español para mostrar el tipo de lote en toda la UI. */
+export const TIPO_LOTE_LABELS: Record<string, string> = {
+  NORMAL: 'Normal',
+  ESPECIAL: 'Especial',
+  AUTOMATICO_DESPACHO: 'Automático (despacho)',
+}
+
+/**
+ * Devuelve la etiqueta amigable para el tipo de lote.
+ * Si el valor no está en el mapa (legacy o desconocido), devuelve "Normal".
+ */
+export function getTipoLoteLabel(tipoLote: string | undefined): string {
+  if (!tipoLote) return 'Normal'
+  return TIPO_LOTE_LABELS[tipoLote] ?? 'Normal'
+}
+
 export interface LoteRecepcion {
   idLoteRecepcion?: number
-  /** NORMAL o ESPECIAL */
+  /** NORMAL, ESPECIAL o AUTOMATICO_DESPACHO (creado automáticamente desde despachos rápidos/clásicos) */
   tipoLote?: string
   numeroRecepcion?: string
   idAgencia: number

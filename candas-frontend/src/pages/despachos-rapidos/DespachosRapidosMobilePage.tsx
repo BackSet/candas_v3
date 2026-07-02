@@ -1,6 +1,6 @@
 import { EnsacadoLayoutHeader } from '@/components/ensacado/EnsacadoLayoutHeader'
-import { Header } from '@/app/layout/Header'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ConfirmDeleteDialog } from '@/components/dialogs/ConfirmDeleteDialog'
 import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
 import { paqueteService } from '@/lib/api/paquete.service'
 import { DestinoSelector } from '@/components/despachos-rapidos/DestinoSelector'
@@ -49,6 +49,7 @@ function DespachosRapidosMobilePage() {
   const [activeSacaId, setActiveSacaId] = useState<number | null>(null)
   const [locked, setLocked] = useState(false)
   const [permitirNoRegistrados, setPermitirNoRegistrados] = useState(false)
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false)
 
   const feedback = useScanFeedback()
   const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -231,26 +232,18 @@ function DespachosRapidosMobilePage() {
     mutationFn: () => despachoRapidoService.eliminar(despacho!.idDespacho),
     onSuccess: () => {
       notify.success('Despacho rápido eliminado con éxito')
+      setConfirmandoEliminar(false)
       setActiveDespachoId(null)
       setDespacho(null)
       setActiveSacaId(null)
       void queryClient.invalidateQueries({ queryKey: ['despachos-rapidos'] })
     },
     onError: (e) => {
+      setConfirmandoEliminar(false)
       notify.error(e, 'No se pudo eliminar el despacho')
       refrescarDespachoActual()
     },
   })
-
-  const handleEliminarDespachoClick = () => {
-    if (!despacho) return
-    const confirmado = window.confirm(
-      '¿Está seguro de que desea eliminar este despacho rápido? Se desasociarán los paquetes, pero no se eliminarán del sistema.'
-    )
-    if (confirmado) {
-      eliminarDespachoMut.mutate()
-    }
-  }
 
   const nuevaSacaMut = useMutation({
     mutationFn: (tamanoSaca: TamanoSaca) =>
@@ -372,7 +365,7 @@ function DespachosRapidosMobilePage() {
   if (!despacho) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-muted/20">
-        <EnsacadoLayoutHeader title="Despacho rapido" subtitle="Captura movil" showScanIcon />
+        <EnsacadoLayoutHeader title="Despacho rápido" subtitle="Ensacado rápido · captura móvil" showScanIcon />
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 p-4">
           {activeDespachoId != null && despachoQuery.isLoading ? (
             <div className="surface-panel p-4 text-center text-sm text-muted-foreground">
@@ -507,22 +500,9 @@ function DespachosRapidosMobilePage() {
             setDespacho(null)
             setActiveSacaId(null)
           }}
+          onEliminar={() => setConfirmandoEliminar(true)}
+          eliminando={eliminarDespachoMut.isPending}
         />
-
-        {despacho.estado !== 'FINALIZADO' && (
-          <div className="flex justify-end px-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 text-[11px] border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={handleEliminarDespachoClick}
-              disabled={eliminarDespachoMut.isPending}
-            >
-              {eliminarDespachoMut.isPending ? 'Eliminando...' : 'Eliminar despacho'}
-            </Button>
-          </div>
-        )}
 
         <SacaActivaPanel
           saca={sacaActiva}
@@ -532,20 +512,6 @@ function DespachosRapidosMobilePage() {
           creandoSaca={nuevaSacaMut.isPending}
           guardandoPresinto={presintoMut.isPending}
         />
-
-        <div className="flex items-center space-x-2 rounded-lg border border-border bg-card p-3 shadow-sm select-none cursor-pointer">
-          <Checkbox
-            id="permitirNoRegistradosMobile"
-            checked={permitirNoRegistrados}
-            onCheckedChange={(checked) => setPermitirNoRegistrados(Boolean(checked))}
-          />
-          <label
-            htmlFor="permitirNoRegistradosMobile"
-            className="text-xs font-semibold text-foreground cursor-pointer select-none flex-1"
-          >
-            Permitir paquetes no registrados
-          </label>
-        </div>
 
         <MobileScannerPanel
           videoRef={scanner.videoRef}
@@ -558,7 +524,22 @@ function DespachosRapidosMobilePage() {
           onSelectDevice={scanner.selectDevice}
           onStart={() => void scanner.start()}
           onManualSubmit={handleScan}
+          hasTorch={scanner.hasTorch}
+          torchActive={scanner.torchActive}
+          onToggleTorch={scanner.toggleTorch}
         />
+
+        <label
+          htmlFor="permitirNoRegistradosMobile"
+          className="flex cursor-pointer select-none items-center gap-2 px-1 text-xs font-medium text-muted-foreground"
+        >
+          <Checkbox
+            id="permitirNoRegistradosMobile"
+            checked={permitirNoRegistrados}
+            onCheckedChange={(checked) => setPermitirNoRegistrados(Boolean(checked))}
+          />
+          Permitir guías no registradas (crea el paquete al capturar)
+        </label>
 
         <PaquetesTipeadosPanel
           sacas={despacho.sacas}
@@ -591,6 +572,16 @@ function DespachosRapidosMobilePage() {
           </p>
         ) : null}
       </div>
+
+      <ConfirmDeleteDialog
+        open={confirmandoEliminar}
+        onOpenChange={setConfirmandoEliminar}
+        onConfirm={() => eliminarDespachoMut.mutate()}
+        isPending={eliminarDespachoMut.isPending}
+        title="Eliminar despacho rápido"
+        description="Los paquetes se desasociarán del despacho, pero no se eliminarán del sistema."
+        message={`¿Está seguro de que desea eliminar el despacho ${despacho.numeroManifiesto ?? `#${despacho.idDespacho}`}?`}
+      />
     </div>
   )
 }

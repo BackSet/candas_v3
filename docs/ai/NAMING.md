@@ -17,6 +17,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Punto de origen | UI/documentacion; `punto_origen` en DB; `puntos-origen` en rutas | [verificado en Git] |
 | Lote Recepcion | UI/rutas; `LoteRecepcion` backend; `lote_recepcion` DB | [verificado en Git] |
 | Lote especial | Flujo operativo asociado a `TipoLote`; rutas legacy aun existen | [verificado en Git] |
+| Lote automático (despacho) | Backend: `TipoLote.AUTOMATICO_DESPACHO`, servicio `LoteRecepcionAutomaticoService` (MVP 1/3, base sin UI/integración aún). Lote de recepción creado automáticamente para paquetes de despachos/sacas sin lote previo, agrupado por fecha del despacho + agencia propietaria. No usar en UI todavía (sin frontend asociado). | [verificado en Git] |
 | Saca | UI, API, backend, DB | [verificado en Git] |
 | Presinto | Sello de seguridad por saca. Canonico tecnico: `presinto` (UI "Presinto", DB `codigo_presinto`, `Saca.codigoPresinto`). El termino RAE es "precinto"; se mantiene `presinto` por compatibilidad con esquema y contratos. No renombrar masivamente. | [verificado en Git] |
 # Candas - Convenciones de nombres
@@ -38,6 +39,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Punto de origen | UI/documentacion; `punto_origen` en DB; `puntos-origen` en rutas | [verificado en Git] |
 | Lote Recepcion | UI/rutas; `LoteRecepcion` backend; `lote_recepcion` DB | [verificado en Git] |
 | Lote especial | Flujo operativo asociado a `TipoLote`; rutas legacy aun existen | [verificado en Git] |
+| Lote automático (despacho) | Backend: `TipoLote.AUTOMATICO_DESPACHO`, servicio `LoteRecepcionAutomaticoService` (MVP 1/3, base sin UI/integración aún). Lote de recepción creado automáticamente para paquetes de despachos/sacas sin lote previo, agrupado por fecha del despacho + agencia propietaria. No usar en UI todavía (sin frontend asociado). | [verificado en Git] |
 | Saca | UI, API, backend, DB | [verificado en Git] |
 | Presinto | Sello de seguridad por saca. Canonico tecnico: `presinto` (UI "Presinto", DB `codigo_presinto`, `Saca.codigoPresinto`). El termino RAE es "precinto"; se mantiene `presinto` por compatibilidad con esquema y contratos. No renombrar masivamente. | [verificado en Git] |
 | Despacho | UI, API, backend, DB | [verificado en Git] |
@@ -47,6 +49,8 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 | Agencia origen activa | Agencia bajo la que opera el usuario en la sesión actual (`authStore.activeAgencyId`), enviada en el header `X-Agencia-Origen-Activa-Id`. Usar "agencia activa" en UI. | [verificado en Git] |
 | Agencia por defecto / predeterminada | Preferencia de agencia activa que el usuario fija para restaurarla al iniciar sesión (`authStore.defaultAgencyId`, persistida en localStorage `candas-default-active-agency:<idUsuario>`). Usar "predeterminada" en UI. | [verificado en Git] |
 | Usuario, Rol, Permiso | RBAC | [verificado en Git] |
+| Captura móvil / Lector móvil | UI, Documentación | Uso de cámara y linterna para capturar códigos de barras en smartphones. |
+
 
 ## Reglas por contexto
 
@@ -54,7 +58,7 @@ Este archivo fija terminos canonicos para nuevas implementaciones y documentacio
 
 - Rutas en kebab-case plural: `/paquetes`, `/clientes`, `/agencias`, `/puntos-origen`, `/lotes-recepcion`, `/destinatarios-directos`, `/manifiestos-consolidados`, `/parametros-sistema`. [verificado en Git]
 - Formularios nuevos usan sufijo `/new`; edicion usa `/$id/edit`; detalle usa `/$id`. [verificado en Git]
-- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos, Despacho masivo, Despachos rápidos, Despacho rápido (móvil), Ensacado, Lector móvil, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
+- Nombres visibles de navegacion vigentes: Dashboard, Paquetes, Clientes, Destinatarios, Agencias, Distribuidores, Puntos Origen, Lotes Recepcion, Despachos (grupo con subitems: General, Rápidos, Ensacado rápido), Ensacado, Atencion, Manifiestos, Usuarios, Roles, Permisos, Parametros. [verificado en Git]
 - Mantener `VITE_API_BASE_URL` como nombre de variable para API. No introducir `VITE_API_URL`. [verificado en Git] [verificado en documentacion]
 
 ### API

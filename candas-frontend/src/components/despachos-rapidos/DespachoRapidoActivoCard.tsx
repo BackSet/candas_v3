@@ -2,11 +2,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { DespachoRapido } from '@/types/despacho-rapido'
 import { ESTADO_DESPACHO_RAPIDO_LABEL } from '@/types/despacho-rapido'
-import { ArrowLeftRight, MapPin, PackageCheck, ScanLine } from 'lucide-react'
+import { ArrowLeftRight, MapPin, PackageCheck, ScanLine, Trash2 } from 'lucide-react'
 
 interface DespachoRapidoActivoCardProps {
   despacho: DespachoRapido
   onCambiarDespacho: () => void
+  onEliminar?: () => void
+  eliminando?: boolean
 }
 
 const ESTADO_VARIANT: Record<DespachoRapido['estado'], 'secondary' | 'info' | 'warning' | 'success'> = {
@@ -16,7 +18,12 @@ const ESTADO_VARIANT: Record<DespachoRapido['estado'], 'secondary' | 'info' | 'w
   FINALIZADO: 'success',
 }
 
-export function DespachoRapidoActivoCard({ despacho, onCambiarDespacho }: DespachoRapidoActivoCardProps) {
+export function DespachoRapidoActivoCard({
+  despacho,
+  onCambiarDespacho,
+  onEliminar,
+  eliminando = false,
+}: DespachoRapidoActivoCardProps) {
   const destino = despacho.nombreAgencia ?? despacho.nombreDestinatarioDirecto ?? 'Sin destino'
 
   return (
@@ -46,11 +53,25 @@ export function DespachoRapidoActivoCard({ despacho, onCambiarDespacho }: Despac
       <div className="grid grid-cols-3 divide-x divide-border/40">
         <Metric label="Sacas" value={String(despacho.totalSacas)} />
         <Metric label="Paquetes" value={String(despacho.totalPaquetes)} />
-        <div className="flex items-center justify-center p-3">
+        <div className="flex items-center justify-center gap-0.5 p-3">
           <Button type="button" variant="ghost" size="sm" className="h-8 gap-1.5 px-2" onClick={onCambiarDespacho}>
             <ArrowLeftRight className="size-3.5" />
             Cambiar
           </Button>
+          {onEliminar ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              onClick={onEliminar}
+              disabled={eliminando}
+              title="Eliminar despacho"
+              aria-label="Eliminar despacho"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          ) : null}
         </div>
       </div>
     </section>

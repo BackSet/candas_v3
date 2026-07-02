@@ -14,12 +14,14 @@ Package,
 ScanBarcode,
 Shield,
 SlidersHorizontal,
+Smartphone,
 Sparkles,
 Store,
 Truck,
 UserRound,
 Users,
 Warehouse,
+Zap,
 } from 'lucide-react'
 
 /** Identificadores de módulos del sistema (fuente única para iconografía). */
@@ -34,6 +36,8 @@ export type ModuleId =
   | 'lotesRecepcion'
   | 'lotesEspeciales'
   | 'despachos'
+  | 'despachosRapidos'
+  | 'despachosRapidosMovil'
   | 'sacas'
   | 'ensacado'
   | 'atencionPaquetes'
@@ -61,6 +65,8 @@ export const MODULE_ICONS: Record<ModuleId, ModuleIconConfig> = {
   lotesRecepcion: { icon: Inbox, title: 'Lotes de recepción' },
   lotesEspeciales: { icon: Sparkles, title: 'Lotes especiales' },
   despachos: { icon: Truck, title: 'Despachos' },
+  despachosRapidos: { icon: Zap, title: 'Despachos rápidos' },
+  despachosRapidosMovil: { icon: Smartphone, title: 'Ensacado rápido (móvil)' },
   sacas: { icon: BaggageClaim, title: 'Sacas' },
   ensacado: { icon: ScanBarcode, title: 'Ensacado' },
   atencionPaquetes: { icon: Headset, title: 'Atención de paquetes' },

@@ -12,11 +12,15 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface LoteRecepcionRepository extends JpaRepository<LoteRecepcion, Long>, JpaSpecificationExecutor<LoteRecepcion> {
 
     Page<LoteRecepcion> findByTipoLote(TipoLote tipoLote, Pageable pageable);
+
+    /** Lote automático por agencia y fecha: numeroRecepcion es determinístico para esta combinación. */
+    Optional<LoteRecepcion> findByNumeroRecepcion(String numeroRecepcion);
     
     @Query("SELECT COUNT(p) FROM Paquete p WHERE p.loteRecepcion.idLoteRecepcion = :idLoteRecepcion")
     Long countPaquetesByLoteRecepcion(@Param("idLoteRecepcion") Long idLoteRecepcion);

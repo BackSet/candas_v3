@@ -22,7 +22,8 @@ public interface DestinatarioDirectoRepository extends JpaRepository<Destinatari
             "OR LOWER(COALESCE(d.direccion_destinatario, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
             "OR LOWER(COALESCE(d.canton, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
             "OR LOWER(COALESCE(d.codigo, '')) LIKE LOWER(CONCAT('%', :query, '%')) " +
-            "OR LOWER(COALESCE(d.nombre_empresa, '')) LIKE LOWER(CONCAT('%', :query, '%')))", nativeQuery = true)
+            "OR LOWER(COALESCE(d.nombre_empresa, '')) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+            "ORDER BY CASE WHEN d.tipo_uso = 'FRECUENTE' THEN 1 ELSE 2 END ASC, d.nombre_destinatario ASC", nativeQuery = true)
     List<DestinatarioDirecto> search(@Param("query") String query);
 
     Optional<DestinatarioDirecto> findByTelefonoDestinatarioAndActivoTrue(String telefono);

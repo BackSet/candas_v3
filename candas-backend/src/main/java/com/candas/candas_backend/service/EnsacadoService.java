@@ -62,31 +62,27 @@ public class EnsacadoService {
         TamanoSaca.GRANDE, new BigDecimal("50.0")
     );
 
-    /**
-     * Busca un paquete por número de guía y retorna información completa para ensacado
-     */
     public PaqueteEnsacadoInfoDTO buscarPaqueteParaEnsacar(String numeroGuia) {
         Paquete paquete = paqueteRepository.findByNumeroGuiaIgnoreCase(numeroGuia)
             .orElseThrow(() -> new ResourceNotFoundException("Paquete con número de guía: " + numeroGuia));
 
-        assertPaqueteAccesibleEnsacado(paquete);
-        
-        // Verificar si el paquete está en una saca
+        // Verificar si el paquete está en una saca con despacho
         PaqueteSaca ps = null;
         if (paquete.getPaqueteSacas() != null && !paquete.getPaqueteSacas().isEmpty()) {
             ps = paquete.getPaqueteSacas().stream()
                 .filter(p -> p.getSaca().getDespacho() != null)
                 .max(Comparator.comparing(p -> p.getSaca().getFechaCreacion()))
-                .orElse(paquete.getPaqueteSacas().get(0));
+                .orElse(null);
         }
         boolean enSaca = ps != null && ps.getSaca() != null && ps.getSaca().getDespacho() != null;
 
-        // Si no está en saca, retornar información básica del paquete
+        // Si no está en saca con despacho, retornar información básica del paquete
         if (!enSaca) {
             PaqueteEnsacadoInfoDTO info = new PaqueteEnsacadoInfoDTO();
             info.setIdPaquete(paquete.getIdPaquete());
             info.setNumeroGuia(paquete.getNumeroGuia());
             info.setEnSaca(false);
+            info.setPesoPaquete(paquete.getPesoKilos());
             
             // Obtener dirección del destinatario
             if (paquete.getClienteDestinatario() != null) {
@@ -102,11 +98,13 @@ public class EnsacadoService {
             info.setObservaciones(paquete.getObservaciones());
             
             // Establecer mensaje de alerta
-            info.setMensajeAlerta("El paquete no está asignado a ninguna saca. Estado actual: " + 
-                (paquete.getEstado() != null ? paquete.getEstado().toString() : "null"));
+            info.setMensajeAlerta("Este paquete no está asignado a ningún despacho/saca para ensacado.");
             
             return info;
         }
+
+        // Si sí está en saca, ahora sí validar accesibilidad por agencia
+        assertPaqueteAccesibleEnsacado(paquete);
 
         // En este punto enSaca es true, por tanto ps y saca no son null; comprobación explícita para el analizador
         if (ps == null) {
@@ -142,6 +140,7 @@ public class EnsacadoService {
         info.setIdPaquete(paquete.getIdPaquete());
         info.setNumeroGuia(paquete.getNumeroGuia());
         info.setEnSaca(true);
+        info.setPesoPaquete(paquete.getPesoKilos());
         info.setIdSacaAsignada(sacaAsignada.getIdSaca());
         info.setCodigoQrSaca(sacaAsignada.getCodigoQr());
         info.setNumeroOrdenSaca(sacaAsignada.getNumeroOrden());
@@ -234,6 +233,21 @@ public class EnsacadoService {
         Paquete paquete = paqueteRepository.findById(idPaquete)
             .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
 
+        // Verificar si el paquete está en una saca con despacho
+        PaqueteSaca ps = null;
+        if (paquete.getPaqueteSacas() != null && !paquete.getPaqueteSacas().isEmpty()) {
+            ps = paquete.getPaqueteSacas().stream()
+                .filter(p -> p.getSaca().getDespacho() != null)
+                .max(Comparator.comparing(p -> p.getSaca().getFechaCreacion()))
+                .orElse(null);
+        }
+        boolean enSaca = ps != null && ps.getSaca() != null && ps.getSaca().getDespacho() != null;
+
+        if (!enSaca) {
+            throw new IllegalArgumentException("Este paquete no está asignado a ningún despacho/saca para ensacado.");
+        }
+
+        // Si sí está en saca, validar agencia
         assertPaqueteAccesibleEnsacado(paquete);
         
         if (paquete.getEstado() == EstadoPaquete.ENSACADO) {
@@ -245,17 +259,13 @@ public class EnsacadoService {
                 (paquete.getEstado() != null ? paquete.getEstado().toString() : "null"));
         }
         
-        if (paquete.getPaqueteSacas() == null || paquete.getPaqueteSacas().isEmpty()) {
-            throw new IllegalArgumentException("El paquete no está asociado a ninguna saca");
-        }
-        
         paquete.setEstado(EstadoPaquete.ENSACADO);
         paquete.setFechaEnsacado(LocalDateTime.now());
         paqueteRepository.save(paquete);
         
         // Actualizar peso total de la saca(s)
-        for (PaqueteSaca ps : paquete.getPaqueteSacas()) {
-            Saca saca = ps.getSaca();
+        for (PaqueteSaca psSaca : paquete.getPaqueteSacas()) {
+            Saca saca = psSaca.getSaca();
             BigDecimal nuevoPeso = calcularPesoActualSaca(saca);
             saca.setPesoTotal(nuevoPeso);
             if (saca.getFechaEnsacado() == null) {
@@ -277,6 +287,21 @@ public class EnsacadoService {
         Paquete paquete = paqueteRepository.findById(idPaquete)
             .orElseThrow(() -> new ResourceNotFoundException("Paquete", idPaquete));
 
+        // Verificar si el paquete está en una saca con despacho
+        PaqueteSaca ps = null;
+        if (paquete.getPaqueteSacas() != null && !paquete.getPaqueteSacas().isEmpty()) {
+            ps = paquete.getPaqueteSacas().stream()
+                .filter(p -> p.getSaca().getDespacho() != null)
+                .max(Comparator.comparing(p -> p.getSaca().getFechaCreacion()))
+                .orElse(null);
+        }
+        boolean enSaca = ps != null && ps.getSaca() != null && ps.getSaca().getDespacho() != null;
+
+        if (!enSaca) {
+            throw new IllegalArgumentException("Este paquete no está asignado a ningún despacho/saca para ensacado.");
+        }
+
+        // Si sí está en saca, validar agencia
         assertPaqueteAccesibleEnsacado(paquete);
 
         if (paquete.getEstado() == EstadoPaquete.DESPACHADO) {
@@ -297,8 +322,8 @@ public class EnsacadoService {
         paqueteRepository.save(paquete);
 
         // Recalcular peso total de la(s) saca(s) tras revertir el ensacado
-        for (PaqueteSaca ps : paquete.getPaqueteSacas()) {
-            Saca saca = ps.getSaca();
+        for (PaqueteSaca psSaca : paquete.getPaqueteSacas()) {
+            Saca saca = psSaca.getSaca();
             BigDecimal nuevoPeso = calcularPesoActualSaca(saca);
             saca.setPesoTotal(nuevoPeso);
             // Si ya no quedan paquetes ensacados en la saca, limpiar la marca de ensacado
@@ -510,10 +535,14 @@ public class EnsacadoService {
                 .orElse("agencia con id " + idAgenciaUsuario);
         String agenciaRecurso = "agencia no identificada";
         if (despachoEnSaca != null) {
-            agenciaRecurso = Optional.ofNullable(despachoEnSaca.getUsuarioRegistro())
-                    .map(Usuario::getAgencia)
-                    .map(this::descripcionAgencia)
-                    .orElse("agencia no identificada");
+            if (despachoEnSaca.getAgencia() != null) {
+                agenciaRecurso = descripcionAgencia(despachoEnSaca.getAgencia());
+            } else {
+                agenciaRecurso = Optional.ofNullable(despachoEnSaca.getUsuarioRegistro())
+                        .map(Usuario::getAgencia)
+                        .map(this::descripcionAgencia)
+                        .orElse("agencia no identificada");
+            }
         } else if (paquete.getAgenciaDestino() != null) {
             agenciaRecurso = descripcionAgencia(paquete.getAgenciaDestino());
         } else if (paquete.getLoteRecepcion() != null && paquete.getLoteRecepcion().getAgencia() != null) {

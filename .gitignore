@@ -15,6 +15,7 @@ desktop.ini
 .agent/
 .cursor/
 .obsidian/
+.claude/
 
 # ─── Logs & Debug ────────────────────────────────────────────
 *.log

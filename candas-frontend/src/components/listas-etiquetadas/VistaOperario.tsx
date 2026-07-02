@@ -1,5 +1,8 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { CaptureModeToggle, type CaptureMode } from '@/components/scanner/CaptureModeToggle'
+import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
 import { listasEtiquetadasService } from '@/lib/api/listas-etiquetadas.service'
 import { notify } from '@/lib/notify'
 import { cn } from '@/lib/utils'
@@ -25,6 +28,7 @@ interface VistaOperarioProps {
 export default function VistaOperario({ onVolver }: VistaOperarioProps) {
   const navigate = useNavigate()
   const [numeroGuia, setNumeroGuia] = useState('')
+  const [modoCaptura, setModoCaptura] = useState<CaptureMode>('LECTOR')
   const [buscando, setBuscando] = useState(false)
   const [resultadoActual, setResultadoActual] = useState<EscaneoResultado | null>(null)
   const [historial, setHistorial] = useState<EscaneoResultado[]>([])
@@ -34,6 +38,27 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
   const [pendienteElegirEtiqueta, setPendienteElegirEtiqueta] = useState<{ numeroGuia: string; etiquetas: string[] } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const resultadoRef = useRef<HTMLDivElement>(null)
+
+  const scanner = useBarcodeScanner({
+    onResult: (guia) => {
+      if (guia) {
+        void buscarEtiqueta(guia)
+      }
+    },
+    cooldownMs: 2200,
+    paused: buscando || !!pendienteElegirEtiqueta,
+  })
+
+  useEffect(() => {
+    if (modoCaptura === 'CAMARA') {
+      void scanner.start()
+    } else {
+      scanner.stop()
+    }
+    return () => {
+      scanner.stop()
+    }
+  }, [modoCaptura])
 
   useEffect(() => {
     try {
@@ -68,8 +93,8 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
   }, [historial])
 
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    if (modoCaptura === 'LECTOR') inputRef.current?.focus()
+  }, [modoCaptura])
 
   useEffect(() => {
     if ((resultadoActual || pendienteElegirEtiqueta) && resultadoRef.current) {
@@ -345,32 +370,54 @@ export default function VistaOperario({ onVolver }: VistaOperarioProps) {
 
           {/* Input Area */}
           <div className="w-full max-w-2xl mx-auto space-y-8 z-10">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-xl blur transition duration-500 group-hover:opacity-100 opacity-75"></div>
-              <div className="relative bg-background rounded-lg shadow-xl ring-1 ring-border">
-                <div className="flex items-center px-4 border-b border-border/40 h-10 bg-muted/30 rounded-t-lg">
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-error/10 border border-error/20"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-warning/10 border border-warning/20"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-success/10 border border-success/20"></div>
+            <div className="flex justify-center">
+              <CaptureModeToggle value={modoCaptura} onChange={setModoCaptura} />
+            </div>
+
+            {modoCaptura === 'CAMARA' ? (
+              <MobileScannerPanel
+                videoRef={scanner.videoRef}
+                permission={scanner.permission}
+                isScanning={scanner.isScanning}
+                paused={buscando || !!pendienteElegirEtiqueta}
+                error={scanner.error}
+                devices={scanner.devices}
+                selectedDeviceId={scanner.selectedDeviceId}
+                onSelectDevice={scanner.selectDevice}
+                onStart={() => void scanner.start()}
+                onManualSubmit={(guia) => void buscarEtiqueta(guia)}
+                hasTorch={scanner.hasTorch}
+                torchActive={scanner.torchActive}
+                onToggleTorch={scanner.toggleTorch}
+              />
+            ) : (
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/10 rounded-xl blur transition duration-500 group-hover:opacity-100 opacity-75"></div>
+                <div className="relative bg-background rounded-lg shadow-xl ring-1 ring-border">
+                  <div className="flex items-center px-4 border-b border-border/40 h-10 bg-muted/30 rounded-t-lg">
+                    <div className="flex gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-error/10 border border-error/20"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-warning/10 border border-warning/20"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-success/10 border border-success/20"></div>
+                    </div>
+                    <div className="mx-auto text-[10px] font-mono text-muted-foreground tracking-widest uppercase">INPUT</div>
                   </div>
-                  <div className="mx-auto text-[10px] font-mono text-muted-foreground tracking-widest uppercase">INPUT</div>
-                </div>
-                <div className="p-2">
-                  <input
-                    ref={inputRef}
-                    value={numeroGuia}
-                    onChange={handleInputChange}
-                    onKeyDown={handleKeyDown}
-                    disabled={buscando}
-                    className="w-full bg-transparent border-none text-center font-mono text-3xl md:text-4xl font-bold tracking-tight py-4 focus:ring-0 placeholder:text-muted-foreground/20 text-foreground"
-                    placeholder="ESCANEAR GUÍA..."
-                    autoFocus
-                    spellCheck={false}
-                  />
+                  <div className="p-2">
+                    <input
+                      ref={inputRef}
+                      value={numeroGuia}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      disabled={buscando}
+                      className="w-full bg-transparent border-none text-center font-mono text-3xl md:text-4xl font-bold tracking-tight py-4 focus:ring-0 placeholder:text-muted-foreground/20 text-foreground"
+                      placeholder="ESCANEAR GUÍA..."
+                      autoFocus
+                      spellCheck={false}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {buscando && (
               <div className="flex flex-col items-center gap-2 text-muted-foreground animate-pulse">

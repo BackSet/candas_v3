@@ -14,7 +14,8 @@ import { notify } from '@/lib/notify'
 import { PERMISSIONS } from '@/types/permissions'
 import type { DespachoRapido, FinalizarDespachoRapidoPayload } from '@/types/despacho-rapido'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { PackageCheck, RefreshCw } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { PackageCheck, RefreshCw, Smartphone } from 'lucide-react'
 import { useState } from 'react'
 
 type Filtro = 'LISTO_PARA_GUIA' | 'TODOS'
@@ -37,6 +38,7 @@ function DespachosRapidosPage() {
   const [despachoAFinalizar, setDespachoAFinalizar] = useState<DespachoRapido | null>(null)
   const queryClient = useQueryClient()
   const puedeFinalizar = useHasPermission(PERMISSIONS.DESPACHOS.EDITAR)
+  const puedeCapturar = useHasPermission(PERMISSIONS.DESPACHOS.CREAR)
 
   const queryKey = ['despachos-rapidos', filtro] as const
   const {
@@ -99,6 +101,25 @@ function DespachosRapidosPage() {
         }
       />
 
+      {puedeCapturar && (
+        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
+              <Smartphone className="size-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">¿Estás en un teléfono móvil?</p>
+              <p className="text-xs text-muted-foreground">Usa la cámara trasera y linterna para capturar y ensacar guías rápidamente.</p>
+            </div>
+          </div>
+          <Button asChild size="sm" variant="outline" className="w-full sm:w-auto gap-1.5 shrink-0">
+            <Link to="/despachos/rapidos/mobile">
+              Captura móvil
+            </Link>
+          </Button>
+        </div>
+      )}
+
       {isLoading ? (
         <LoadingState label="Cargando despachos rápidos…" />
       ) : error ? (
@@ -110,7 +131,7 @@ function DespachosRapidosPage() {
         <EmptyState
           icon={<PackageCheck />}
           title={filtro === 'LISTO_PARA_GUIA' ? 'No hay despachos listos para guía' : 'No hay despachos activos'}
-          description="Los despachos aparecen aquí cuando el operario los marca listos desde el lector móvil."
+          description="Los despachos aparecen aquí cuando el operario los marca listos desde el ensacado rápido (móvil)."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">

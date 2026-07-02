@@ -1,21 +1,25 @@
 import { Button } from '@/components/ui/button'
+import { CaptureModeToggle, type CaptureMode } from '@/components/scanner/CaptureModeToggle'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-Dialog,
-DialogContent,
-DialogDescription,
-DialogFooter,
-DialogHeader,
-DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useListFilter } from '@/hooks/useListFilter'
 import { usePaqueteScanner } from '@/hooks/usePaqueteScanner'
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner'
+import { MobileScannerPanel } from '@/components/ensacado/MobileScannerPanel'
 import type { SacaFormData } from '@/hooks/useSacasManager'
 import type { Paquete } from '@/types/paquete'
-import { Plus,Search } from 'lucide-react'
-import { useState } from 'react'
+import { Plus, Search } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { notify } from '@/lib/notify'
 
 interface SacaFormDialogProps {
   open: boolean
@@ -39,6 +43,7 @@ export default function SacaFormDialog({
   onProcesarListado,
 }: SacaFormDialogProps) {
   const [listadoPaquetes, setListadoPaquetes] = useState('')
+  const [modoCaptura, setModoCaptura] = useState<CaptureMode>('LECTOR')
 
   const paquetesFiltrados = useListFilter(
     paquetesDisponibles,
@@ -49,7 +54,8 @@ export default function SacaFormDialog({
     ]
   )
 
-  const scanner = usePaqueteScanner(
+  // 1. Tipiadora / Lector clásico de PC
+  const pcScanner = usePaqueteScanner(
     paquetesDisponibles,
     (paquete) => {
       const nuevosIds = saca.idPaquetes.includes(paquete.idPaquete!)
@@ -57,8 +63,46 @@ export default function SacaFormDialog({
         : [...saca.idPaquetes, paquete.idPaquete!]
       onPaquetesChange(sacaIndex, nuevosIds)
     },
-    open
+    open && modoCaptura === 'LECTOR'
   )
+
+  // 2. Escáner de cámara de celular (Móvil)
+  const handleMobileScan = useCallback(
+    (guia: string) => {
+      const paquete = paquetesDisponibles.find(
+        p => p.numeroGuia?.toUpperCase() === guia.toUpperCase() ||
+             p.idPaquete?.toString() === guia
+      )
+      if (paquete) {
+        const nuevosIds = saca.idPaquetes.includes(paquete.idPaquete!)
+          ? saca.idPaquetes
+          : [...saca.idPaquetes, paquete.idPaquete!]
+        onPaquetesChange(sacaIndex, nuevosIds)
+        notify.success(`Paquete ${guia} agregado`)
+      } else {
+        notify.error(`No se encontró el paquete ${guia} en el lote/bodega`)
+      }
+    },
+    [paquetesDisponibles, saca.idPaquetes, onPaquetesChange, sacaIndex]
+  )
+
+  const mobileScanner = useBarcodeScanner({
+    onResult: handleMobileScan,
+    cooldownMs: 2000,
+    paused: !open || modoCaptura !== 'CAMARA'
+  })
+
+  // Controlar ciclo de vida de la cámara
+  useEffect(() => {
+    if (open && modoCaptura === 'CAMARA') {
+      void mobileScanner.start()
+    } else {
+      mobileScanner.stop()
+    }
+    return () => {
+      mobileScanner.stop()
+    }
+  }, [open, modoCaptura])
 
   const handleProcesarListado = () => {
     if (!listadoPaquetes.trim()) {
@@ -87,18 +131,10 @@ export default function SacaFormDialog({
       )
 
       if (paqueteEnOtraSaca !== -1) {
-        // Remover de la otra saca
+        // Remover de la otra saca y por ahora alertar o actualizar
         const nuevasSacas = [...sacas]
         nuevasSacas[paqueteEnOtraSaca].idPaquetes =
           nuevasSacas[paqueteEnOtraSaca].idPaquetes.filter(id => id !== paqueteId)
-        // Actualizar todas las sacas
-        nuevasSacas.forEach((s, idx) => {
-          if (idx === sacaIndex && !s.idPaquetes.includes(paqueteId)) {
-            s.idPaquetes.push(paqueteId)
-          }
-        })
-        // Nota: Esto requiere una función más compleja para actualizar todas las sacas
-        // Por ahora, solo actualizamos la saca actual
       }
 
       if (!saca.idPaquetes.includes(paqueteId)) {
@@ -110,38 +146,63 @@ export default function SacaFormDialog({
   }
 
   const handleClose = () => {
-    scanner.limpiarBusqueda()
+    pcScanner.limpiarBusqueda()
     setListadoPaquetes('')
+    mobileScanner.stop()
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Seleccionar Paquetes</DialogTitle>
-          <DialogDescription>
-            Escanea el código de barras o busca por número de guía. También puedes seleccionar de la lista.
-          </DialogDescription>
+        <DialogHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/40 pb-3">
+          <div className="space-y-1">
+            <DialogTitle>Seleccionar Paquetes</DialogTitle>
+            <DialogDescription>
+              Escanea el código de barras o busca por número de guía.
+            </DialogDescription>
+          </div>
+
+          <CaptureModeToggle value={modoCaptura} onChange={setModoCaptura} className="shrink-0" />
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col space-y-4">
-          <div className="space-y-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Escanea código o busca por número de guía/ID (Enter para buscar)..."
-                value={scanner.busqueda}
-                onChange={(e) => scanner.handleBusquedaChange(e.target.value)}
-                onKeyDown={scanner.handleBusquedaKeyDown}
-                className="pl-9 text-lg"
-                autoFocus
+        <div className="flex-1 overflow-hidden flex flex-col space-y-4 pt-3">
+          {modoCaptura === 'CAMARA' ? (
+            <div className="animate-in fade-in duration-200">
+              <MobileScannerPanel
+                videoRef={mobileScanner.videoRef}
+                permission={mobileScanner.permission}
+                isScanning={mobileScanner.isScanning}
+                paused={!open}
+                error={mobileScanner.error}
+                devices={mobileScanner.devices}
+                selectedDeviceId={mobileScanner.selectedDeviceId}
+                onSelectDevice={mobileScanner.selectDevice}
+                onStart={() => void mobileScanner.start()}
+                onManualSubmit={handleMobileScan}
+                hasTorch={mobileScanner.hasTorch}
+                torchActive={mobileScanner.torchActive}
+                onToggleTorch={mobileScanner.toggleTorch}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              💡 Usa un escáner de códigos de barras o escribe el número de guía y presiona Enter
-            </p>
-          </div>
+          ) : (
+            <div className="space-y-2 animate-in fade-in duration-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Escanea código o busca por número de guía/ID (Enter para buscar)..."
+                  value={pcScanner.busqueda}
+                  onChange={(e) => pcScanner.handleBusquedaChange(e.target.value)}
+                  onKeyDown={pcScanner.handleBusquedaKeyDown}
+                  className="pl-9 text-lg"
+                  autoFocus
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                💡 Usa un escáner de códigos de barras o escribe el número de guía y presiona Enter
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-sm font-medium">
@@ -151,7 +212,7 @@ export default function SacaFormDialog({
               placeholder={`Pega aquí los números de guía, uno por línea:\nECA7800050583\nECA7800050605\n...`}
               value={listadoPaquetes}
               onChange={(e) => setListadoPaquetes(e.target.value)}
-              rows={6}
+              rows={4}
               className="font-mono text-sm"
             />
             <Button
@@ -168,8 +229,8 @@ export default function SacaFormDialog({
           <div className="flex-1 overflow-y-auto border border-border rounded-md p-4">
             {paquetesFiltrados.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {scanner.busqueda
-                  ? `No se encontraron paquetes con "${scanner.busqueda}"`
+                {pcScanner.busqueda
+                  ? `No se encontraron paquetes con "${pcScanner.busqueda}"`
                   : 'No se encontraron paquetes disponibles'}
               </div>
             ) : (
@@ -177,9 +238,9 @@ export default function SacaFormDialog({
                 {paquetesFiltrados.map((paquete) => {
                   const estaSeleccionado = saca.idPaquetes.includes(paquete.idPaquete!)
                   const sacaDelPaquete = sacas.findIndex((s, idx) =>
-                        idx !== sacaIndex &&
-                        s.idPaquetes.includes(paquete.idPaquete!)
-                      )
+                    idx !== sacaIndex &&
+                    s.idPaquetes.includes(paquete.idPaquete!)
+                  )
                   const estaEnOtraSaca = sacaDelPaquete !== -1
 
                   return (

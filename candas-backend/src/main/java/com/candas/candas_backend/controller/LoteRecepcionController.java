@@ -35,7 +35,7 @@ public class LoteRecepcionController {
 
     @GetMapping
     @Operation(summary = "Listar lotes de recepción",
-            description = "Lista paginada con filtros opcionales: tipoLote=NORMAL|ESPECIAL, search (número recepción o usuario), idAgencia, fechaDesde/fechaHasta (yyyy-MM-dd).")
+            description = "Lista paginada con filtros opcionales: tipoLote=NORMAL|ESPECIAL|AUTOMATICO_DESPACHO, search (número recepción o usuario), idAgencia, fechaDesde/fechaHasta (yyyy-MM-dd).")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('" + PermissionConstants.LOTES_RECEPCION_LISTAR + "') or hasAuthority('" + PermissionConstants.LOTES_RECEPCION_VER + "')")
     public ResponseEntity<Page<LoteRecepcionDTO>> findAll(
             Pageable pageable,
@@ -75,9 +75,11 @@ public class LoteRecepcionController {
 
     private static TipoLote parseTipoLote(String tipoLote) {
         if (tipoLote == null || tipoLote.isBlank()) return null;
-        if ("ESPECIAL".equalsIgnoreCase(tipoLote.trim())) return TipoLote.ESPECIAL;
-        if ("NORMAL".equalsIgnoreCase(tipoLote.trim())) return TipoLote.NORMAL;
-        return null;
+        try {
+            return TipoLote.valueOf(tipoLote.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     @GetMapping("/especiales")

@@ -1,23 +1,23 @@
 import { AppIcon } from '@/components/icons'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import type { PaqueteEnsacadoInfo,SacaEnsacadoInfo } from '@/types/ensacado'
+import type { PaqueteEnsacadoInfo, SacaEnsacadoInfo } from '@/types/ensacado'
 import {
-calcularMetricasLlenadoSaca,
-formatearTamanoSaca,
-obtenerDestino,
-obtenerLabelDestino,
+  calcularMetricasLlenadoSaca,
+  formatearTamanoSaca,
+  obtenerDestino,
+  obtenerLabelDestino,
 } from '@/utils/ensacado'
 import { formatearFechaRelativa } from '@/utils/fechas'
 import {
-AlertTriangle,
-Calendar,
-CheckCircle2,
-Hash,
-MapPin,
-Package,
-Scale,
-Truck,
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  Hash,
+  MapPin,
+  Package,
+  Scale,
+  Truck,
 } from 'lucide-react'
 
 interface PaqueteInfoCardProps {
@@ -33,7 +33,7 @@ export function PaqueteInfoCard({ info, saca = null, highlightSuccess = false }:
   const metricas = calcularMetricasLlenadoSaca(info, saca)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 font-sans">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div
           className={cn(
@@ -136,6 +136,12 @@ export function PaqueteInfoCard({ info, saca = null, highlightSuccess = false }:
                   {info.observaciones}
                 </div>
               ) : null}
+              {info.pesoPaquete == null ? (
+                <div className="mt-3 flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/5 p-2.5 text-xs text-blue-600">
+                  <Scale className="size-4 shrink-0 text-blue-500" />
+                  <span>Peso no registrado en el paquete</span>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}
@@ -152,9 +158,9 @@ export function PaqueteInfoCard({ info, saca = null, highlightSuccess = false }:
           />
           <ProgressStat
             label="Llenado por peso"
-            value={`${metricas.pctPorPeso}%`}
-            sub={`${(info.pesoActualSaca ?? 0).toFixed(1)} / ${(info.capacidadMaximaSaca ?? 0).toFixed(1)} kg`}
-            percent={metricas.pctPorPeso}
+            value={info.pesoPaquete == null ? '—' : `${metricas.pctPorPeso}%`}
+            sub={info.pesoPaquete == null ? 'Peso no registrado' : `${(info.pesoActualSaca ?? 0).toFixed(1)} / ${(info.capacidadMaximaSaca ?? 0).toFixed(1)} kg`}
+            percent={info.pesoPaquete == null ? undefined : metricas.pctPorPeso}
             icon={Scale}
             tone={metricas.pctPorPeso >= 100 ? 'success' : 'muted'}
           />

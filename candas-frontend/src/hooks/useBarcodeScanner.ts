@@ -45,6 +45,9 @@ interface UseBarcodeScannerReturn {
   selectDevice: (deviceId: string) => void
   start: () => Promise<void>
   stop: () => void
+  hasTorch: boolean
+  torchActive: boolean
+  toggleTorch: () => Promise<void>
 }
 
 function isSecureCameraContext(): boolean {
@@ -90,6 +93,10 @@ export function useBarcodeScanner({
   const [devices, setDevices] = useState<CameraDevice[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
 
+  // Estados de la linterna (torch)
+  const [hasTorch, setHasTorch] = useState(false)
+  const [torchActive, setTorchActive] = useState(false)
+
   const handleDecode = useCallback(
     (text: string) => {
       const t = text.trim()
@@ -120,6 +127,10 @@ export function useBarcodeScanner({
       const reader = readerRef.current ?? (readerRef.current = new BrowserMultiFormatReader())
       stopControls()
 
+      // Resetear estados de linterna al reabrir/cambiar de cámara
+      setHasTorch(false)
+      setTorchActive(false)
+
       const controls = await reader.decodeFromVideoDevice(deviceId, video, (result) => {
         if (result) handleDecode(result.getText())
       })
@@ -138,6 +149,16 @@ export function useBarcodeScanner({
       setIsScanning(true)
       setPermission('granted')
       setError(null)
+
+      // Intentar detectar si la cámara actual soporta linterna (torch)
+      try {
+        const stream = video.srcObject as MediaStream | null
+        const track = stream?.getVideoTracks()[0]
+        const caps = track?.getCapabilities?.()
+        setHasTorch(!!(caps && 'torch' in caps))
+      } catch {
+        setHasTorch(false)
+      }
     },
     [handleDecode, stopControls]
   )
@@ -217,6 +238,8 @@ export function useBarcodeScanner({
     lastTextRef.current = null
     lastAtRef.current = 0
     setIsScanning(false)
+    setHasTorch(false)
+    setTorchActive(false)
   }, [stopControls])
 
   const selectDevice = useCallback(
@@ -231,6 +254,24 @@ export function useBarcodeScanner({
     },
     [beginDecode, selectedDeviceId]
   )
+
+  const toggleTorch = useCallback(async () => {
+    const video = videoRef.current
+    if (!video) return
+    const stream = video.srcObject as MediaStream | null
+    const track = stream?.getVideoTracks()[0]
+    if (!track || !hasTorch) return
+
+    try {
+      const nextActive = !torchActive
+      await track.applyConstraints({
+        advanced: [{ torch: nextActive }] as any,
+      })
+      setTorchActive(nextActive)
+    } catch {
+      setError('No se pudo controlar la linterna.')
+    }
+  }, [hasTorch, torchActive])
 
   // Liberar la cámara al desmontar.
   useEffect(() => {
@@ -249,5 +290,8 @@ export function useBarcodeScanner({
     selectDevice,
     start,
     stop,
+    hasTorch,
+    torchActive,
+    toggleTorch,
   }
 }

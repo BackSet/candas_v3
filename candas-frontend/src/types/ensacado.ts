@@ -50,6 +50,7 @@ export interface PaqueteEnsacadoInfo {
   direccionDestinatarioCompleta?: string // Dirección completa del destinatario del paquete
   observaciones?: string // Observaciones del paquete
   enSaca?: boolean // Si el paquete está asignado a una saca
+  pesoPaquete?: number // Peso del paquete en kilos
 }
 
 export interface SacaEnsacadoInfo {

@@ -1,5 +1,6 @@
 package com.candas.candas_backend.dto;
 
+import com.candas.candas_backend.entity.enums.TipoUsoDestinatario;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,4 +32,6 @@ public class DestinatarioDirectoDTO {
     private LocalDateTime fechaRegistro;
     
     private Boolean activo;
+
+    private TipoUsoDestinatario tipoUso;
 }
